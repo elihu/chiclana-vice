@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "origin": [
+    -6.1485,
+    36.4195
+  ],
+  "buildingCount": 7448,
+  "buildingsSha256": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217",
+  "source": "IGN / PNOA-LiDAR first coverage, normalized building heights MDSnE2.5",
+  "pilotBounds": [
+    -410,
+    110,
+    -270,
+    125
+  ],
+  "sourceUrls": {
+    "MDSnE": "https://wcs-mds.idee.es/mds?service=WCS&version=2.0.1&request=GetCoverage&coverageid=mdsn_e025&subset=x%28217012%2C218391%29&subset=y%284034565%2C4035608%29&format=image%2Ftiff"
+  },
+  "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
+  "accessDate": "2026-10-05",
+  "sourcePeriod": "2008–2015; local flight date not confirmed",
+  "license": "CC BY 4.0 scne.es",
+  "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
+  "capabilitiesUrl": "https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities",
+  "rasterCrs": "EPSG:3042",
+  "rasterResolution": [
+    2.502722323048987,
+    2.50119904076788
+  ],
+  "rasterValueResolutionMetres": 1,
+  "method": "P80 of normalized building-class heights at pixel centres in cadastral footprint eroded 1m; no terrain subtraction",
+  "acceptance": {
+    "minimumSamples": 12,
+    "minimumCoverage": 0.95,
+    "maximumP90P10Spread": 1.5,
+    "heightPerFloorRange": [
+      2.5,
+      4.5
+    ],
+    "absoluteCorrectionRange": [
+      0.6,
+      2
+    ]
+  },
+  "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
+  "versions": {
+    "rasterio": "1.5.2",
+    "pyproj": "3.8.0",
+    "shapely": "2.1.2"
+  },
+  "entries": [
+    {
+      "index": 2071,
+      "p0": [
+        -169.09,
+        117.72
+      ],
+      "vertices": 8,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 98,
+      "coverage": 0.98,
+      "spread": 1.0
+    },
+    {
+      "index": 2289,
+      "p0": [
+        -339.58,
+        -32.72
+      ],
+      "vertices": 6,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 12,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 2737,
+      "p0": [
+        -98.44,
+        -55.48
+      ],
+      "vertices": 15,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 39,
+      "coverage": 1.0,
+      "spread": 1.2
+    },
+    {
+      "index": 2742,
+      "p0": [
+        -41.66,
+        -41.36
+      ],
+      "vertices": 14,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 19,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 2799,
+      "p0": [
+        -68.06,
+        -35.17
+      ],
+      "vertices": 8,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 22,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 2805,
+      "p0": [
+        -125.93,
+        -34.06
+      ],
+      "vertices": 9,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 17,
+      "coverage": 1.0,
+      "spread": 0.4
+    },
+    {
+      "index": 2814,
+      "p0": [
+        -177.5,
+        -9.51
+      ],
+      "vertices": 6,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 15,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 2866,
+      "p0": [
+        -49.14,
+        -145.76
+      ],
+      "vertices": 4,
+      "floors": 4,
+      "old": 12.6,
+      "height": 13.8,
+      "samples": 12,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 2910,
+      "p0": [
+        -186.73,
+        -250.88
+      ],
+      "vertices": 37,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 104,
+      "coverage": 0.99,
+      "spread": 0.0
+    },
+    {
+      "index": 2915,
+      "p0": [
+        -156.58,
+        -241.52
+      ],
+      "vertices": 11,
+      "floors": 3,
+      "old": 9.55,
+      "height": 11.0,
+      "samples": 17,
+      "coverage": 1.0,
+      "spread": 0.4
+    },
+    {
+      "index": 3399,
+      "p0": [
+        45.16,
+        77.16
+      ],
+      "vertices": 7,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 20,
+      "coverage": 0.952,
+      "spread": 1.0
+    },
+    {
+      "index": 3414,
+      "p0": [
+        -32.93,
+        73.53
+      ],
+      "vertices": 11,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 20,
+      "coverage": 1.0,
+      "spread": 1.2
+    },
+    {
+      "index": 3534,
+      "p0": [
+        -7.77,
+        -79.47
+      ],
+      "vertices": 14,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 19,
+      "coverage": 0.95,
+      "spread": 1.0
+    },
+    {
+      "index": 3656,
+      "p0": [
+        -10.23,
+        -122.74
+      ],
+      "vertices": 17,
+      "floors": 4,
+      "old": 12.6,
+      "height": 14.0,
+      "samples": 51,
+      "coverage": 1.0,
+      "spread": 1.0
+    },
+    {
+      "index": 4172,
+      "p0": [
+        17.07,
+        -106.61
+      ],
+      "vertices": 4,
+      "floors": 2,
+      "old": 6.5,
+      "height": 8.0,
+      "samples": 49,
+      "coverage": 0.961,
+      "spread": 1.0
+    }
+  ]
+}

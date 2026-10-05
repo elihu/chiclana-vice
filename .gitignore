@@ -1,0 +1,13 @@
+.env
+.env.*
+.venv/
+__pycache__/
+node_modules/
+*.log
+*.zip
+*.tif
+*.tiff
+*.laz
+*.las
+rebuilt-city.json
+tools/qa3d-runtime.mjs

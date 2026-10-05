@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "codeLicense": "MIT; THIRD_PARTY_NOTICES.md excludes third-party resources",
+  "credits": "THIRD_PARTY_NOTICES.md",
+  "records": [
+    {
+      "files": [
+        "buildings.json"
+      ],
+      "source": "D.G. del Catastro INSPIRE BU, municipality 11015",
+      "date": "2026-10-04",
+      "conditions": "Catastro INSPIRE transformed-product terms; no cadastral validity",
+      "licenseUrl": "https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf",
+      "transformation": "Clipping, 0.12m topology-preserving simplification, local coordinates, game volume reconstruction and floor-based heights",
+      "sha256": {
+        "buildings.json": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217"
+      }
+    },
+    {
+      "files": [
+        "osm-world.json",
+        "roads-osm.json",
+        "street-objects.json"
+      ],
+      "source": "© OpenStreetMap contributors",
+      "date": "2026-10-04",
+      "conditions": "ODbL-1.0",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "transformation": "Local game extraction; all used roads/areas/landmarks/trees/objects made available",
+      "sha256": {
+        "osm-world.json": "ec7e847431a05856381d00ddca112b85d132e72882604901d6468ea4510302ef",
+        "roads-osm.json": "fa0197e669c2eb301282c877506aa4a3fb812baa0950262699fe39037cf97b70",
+        "street-objects.json": "f370556915fd38cba571294040d848fa77b71552c1226354a9a9e3ed9c5b8259"
+      }
+    },
+    {
+      "files": [
+        "aerial.jpg"
+      ],
+      "source": "© IGN / PNOA / SCNE",
+      "date": "2026-10-04",
+      "conditions": "CC-BY-4.0 compatible IGN terms",
+      "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
+      "sourceUrl": "https://www.ign.es/wms-inspire/pnoa-ma",
+      "transformation": "4096x3072 playable-area orthophoto crop used for ground and roofs",
+      "sha256": {
+        "aerial.jpg": "98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af"
+      }
+    },
+    {
+      "files": [
+        "height-samples.json"
+      ],
+      "source": "IGN / PNOA-LiDAR first coverage, normalized building heights MDSnE2.5",
+      "date": "2026-10-05",
+      "conditions": "CC BY 4.0 scne.es",
+      "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
+      "sourceUrls": {
+        "MDSnE": "https://wcs-mds.idee.es/mds?service=WCS&version=2.0.1&request=GetCoverage&coverageid=mdsn_e025&subset=x%28217012%2C218391%29&subset=y%284034565%2C4035608%29&format=image%2Ftiff"
+      },
+      "transformation": "P80 of normalized building-class heights at pixel centres in cadastral footprint eroded 1m; no terrain subtraction",
+      "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
+      "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
+      "sha256": {
+        "height-samples.json": "61e666ae001819c91b697103ab54b1f8c8f0c9f3d286f71949666d9a8b987521"
+      }
+    },
+    {
+      "files": [
+        "facade-profiles.json"
+      ],
+      "source": "Authored approximate procedural building parameters",
+      "conditions": "Original parameters; external reference rights not granted. See notices for photo/architecture references.",
+      "transformation": "Building features interpreted as primitives; no photographic textures, plans or photographic composition distributed",
+      "sha256": {
+        "facade-profiles.json": "ca2797371cc429b04abaa3d6eef05b2e65edb43db3b3b0ed3ebfe45686e4be27"
+      }
+    },
+    {
+      "files": [
+        "frontages.json"
+      ],
+      "source": "Catastro contours + OSM street associations + IGN or floor-based heights",
+      "conditions": "Mixed provenance; Catastro terms, ODbL for OSM associations, IGN CC BY for measurements; not blanket MIT/CC0",
+      "transformation": "Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped",
+      "sha256": {
+        "frontages.json": "e3c943959efbbf3eaf63a04c7a8830ceff723678fe9deee6455a50586df37c1d"
+      }
+    }
+  ]
+}

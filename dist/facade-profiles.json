@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "description": "Approximate authored procedural profiles, interpreted building features; no photographic textures. References and conditions in THIRD_PARTY_NOTICES.md.",
+  "palette": {"cream":"#ece7d6","ochre":"#d8b669","stone":"#cfbfaa","base":"#8e6853","glass":"#30474e","iron":"#303737","wood":"#54453c","green":"#506355","white":"#f1ede2"},
+  "streetShades": ["#e9e5db","#f4eee0","#e4d8c4","#e8e8df"],
+  "bayWidth": 3.35,
+  "facadeCellSize": 170,
+  "townhall": {"a":[-82.14,-29.4],"b":[-92.99,-2.16],"outward":[-1,-0.3],"verticalScale":1.6},
+  "market": {"outline":[[-262.93,-174.43],[-191.66,-94.14],[-210.7,-77.63],[-280.47,-156.93]],"center":[-235.67,-125.92]},
+  "churches": [
+    {"name":"Jesús Nazareno","naveHeight":10.4,"color":"#eee9dc"},
+    {"name":"San Telmo","naveHeight":11.2,"color":"#e8e3d2"},
+    {"name":"Iglesia Mayor","naveHeight":14.2,"color":"#baa483"}
+  ]
+}
