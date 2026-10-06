@@ -4,7 +4,16 @@
   "title": "Chiclana Vice: reglas de diseño de la ciudad",
   "description": "Documentación para el editor. La referencia normativa es validateCityDesign en web/js/world/design-validate.js. Rectángulos como [minX, maxX, minZ, maxZ] en metros locales (x este, z sur).",
   "type": "object",
-  "required": ["version", "zones", "frontages", "furniture"],
+  "required": [
+    "version",
+    "zones",
+    "frontages",
+    "furniture",
+    "pavements",
+    "crossings",
+    "centerLines",
+    "signs"
+  ],
   "additionalProperties": false,
   "properties": {
     "$schema": {
@@ -25,7 +34,13 @@
     "zones": {
       "description": "Rectángulos con nombre que usan los constructores del mundo.",
       "type": "object",
-      "required": ["frontagePilot", "frontageOriginal", "streetLamps"],
+      "required": [
+        "frontagePilot",
+        "frontageOriginal",
+        "streetLamps",
+        "pavedRoads",
+        "pavedSquares"
+      ],
       "additionalProperties": false,
       "properties": {
         "frontagePilot": {
@@ -37,6 +52,14 @@
         "streetLamps": {
           "$ref": "#/$defs/rect",
           "description": "Zona donde se colocan las farolas de calle."
+        },
+        "pavedRoads": {
+          "$ref": "#/$defs/rect",
+          "description": "Se pavimentan las vías con algún punto estrictamente dentro."
+        },
+        "pavedSquares": {
+          "$ref": "#/$defs/rect",
+          "description": "Se pavimentan las plazas con algún punto estrictamente dentro."
         }
       }
     },
@@ -217,6 +240,183 @@
           "additionalProperties": {
             "enum": ["lamp", "bench"]
           }
+        }
+      }
+    },
+    "pavements": {
+      "description": "Pavimentos de calles y plazas.",
+      "type": "object",
+      "required": ["pedestrianTypes", "nonDrivableTypes", "minimumHalfWidth", "layerHeights"],
+      "additionalProperties": false,
+      "properties": {
+        "pedestrianTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Tipos de vía OSM que se pavimentan con piedra; el resto, con asfalto."
+        },
+        "nonDrivableTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Tipos de vía OSM por los que no circulan vehículos (grafo de calles)."
+        },
+        "minimumHalfWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "layerHeights": {
+          "description": "Altura en metros de cada capa sobre el suelo; ver docs/plan-modular/TERRENO.md.",
+          "type": "object",
+          "required": [
+            "asphalt",
+            "stone",
+            "slabs",
+            "centerLine",
+            "crossing",
+            "water",
+            "deck",
+            "railing"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "asphalt": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "stone": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "slabs": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "centerLine": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "crossing": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "water": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "deck": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "railing": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        }
+      }
+    },
+    "crossings": {
+      "description": "Pasos de peatones sobre los nodos OSM highway=crossing a menos de maximumDistance de una vía de coche de al menos minimumRoadWidth, sin puente.",
+      "type": "object",
+      "required": [
+        "maximumDistance",
+        "minimumRoadWidth",
+        "halfWidthFactor",
+        "edgeStart",
+        "edgeEnd",
+        "stripeSpacing",
+        "stripeWidth",
+        "stripeHalfLength"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maximumDistance": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumRoadWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "halfWidthFactor": {
+          "$ref": "#/$defs/positive"
+        },
+        "edgeStart": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "edgeEnd": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "stripeSpacing": {
+          "$ref": "#/$defs/positive"
+        },
+        "stripeWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "stripeHalfLength": {
+          "$ref": "#/$defs/positive"
+        }
+      }
+    },
+    "centerLines": {
+      "description": "Línea central discontinua de las vías de coche anchas.",
+      "type": "object",
+      "required": [
+        "minimumWidth",
+        "minimumLength",
+        "start",
+        "endMargin",
+        "spacing",
+        "dash",
+        "halfWidth",
+        "color",
+        "opacity"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "minimumWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumLength": {
+          "$ref": "#/$defs/positive"
+        },
+        "start": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "endMargin": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "spacing": {
+          "$ref": "#/$defs/positive"
+        },
+        "dash": {
+          "$ref": "#/$defs/positive"
+        },
+        "halfWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "opacity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "signs": {
+      "description": "Placas de calle: una por nombre de vía, hasta maximum.",
+      "type": "object",
+      "required": ["maximum", "offset", "minimumPoints"],
+      "additionalProperties": false,
+      "properties": {
+        "maximum": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "minimumPoints": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     }

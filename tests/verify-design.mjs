@@ -625,6 +625,8 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         frontagePilot: [-10, 10, -10, 10],
         frontageOriginal: [-5, 5, -5, 5],
         streetLamps: [-5, 5, -5, 5],
+        pavedRoads: [-6, 6, -6, 6],
+        pavedSquares: [-7, 7, -7, 7],
       },
       frontages: {
         streets: ['A', 'B'],
@@ -667,6 +669,43 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         },
         fromOsm: { 'highway=street_lamp': 'lamp' },
       },
+      pavements: {
+        pedestrianTypes: ['pedestrian'],
+        nonDrivableTypes: ['pedestrian', 'path'],
+        minimumHalfWidth: 0.65,
+        layerHeights: {
+          asphalt: 0.028,
+          stone: 0.05,
+          slabs: 0.036,
+          centerLine: 0.065,
+          crossing: 0.082,
+          water: 0.025,
+          deck: 0.02,
+          railing: 1,
+        },
+      },
+      crossings: {
+        maximumDistance: 8,
+        minimumRoadWidth: 4,
+        halfWidthFactor: 0.43,
+        edgeStart: 0.25,
+        edgeEnd: 0.2,
+        stripeSpacing: 0.85,
+        stripeWidth: 0.43,
+        stripeHalfLength: 2,
+      },
+      centerLines: {
+        minimumWidth: 7,
+        minimumLength: 9,
+        start: 1,
+        endMargin: 2,
+        spacing: 9,
+        dash: 3,
+        halfWidth: 0.07,
+        color: '#e8dfbb',
+        opacity: 0.55,
+      },
+      signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
     };
     const check = (edit, pattern) => {
       const copy = structuredClone(base);
@@ -696,6 +735,15 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => delete c.furniture.bollards.endMargin, /bollards\.endMargin: falta/);
     check((c) => (c.furniture.fromOsm['amenity=bench'] = 'sofa'), /debe ser lamp o bench/);
     check((c) => (c.furniture.fromOsm.lamp = 'lamp'), /etiqueta no válida/);
+    check((c) => delete c.zones.pavedRoads, /zones\.pavedRoads: falta/);
+    check((c) => (c.pavements.pedestrianTypes = ['a', 'a']), /textos sin repetir/);
+    check((c) => (c.pavements.layerHeights.deck = -1), /layerHeights\.deck: .*>= 0/);
+    check((c) => delete c.pavements.layerHeights.railing, /layerHeights\.railing: falta/);
+    check((c) => (c.crossings.stripeSpacing = 0), /crossings\.stripeSpacing: .*positivo/);
+    check((c) => (c.centerLines.color = 'rojo'), /centerLines\.color: se esperaba #rrggbb/);
+    check((c) => (c.centerLines.opacity = 2), /centerLines\.opacity: .*\(0, 1\]/);
+    check((c) => (c.signs.maximum = 0), /signs\.maximum: .*entero/);
+    check((c) => delete c.crossings, /crossings: se esperaba un objeto/);
   }
   delete globalThis.document;
 }

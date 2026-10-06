@@ -111,6 +111,12 @@ for (const f of catalog.fronts) {
     assert(inside(p), `furniture point ${p} inside the world`);
   for (const street of furniture.bollards.streets)
     assert(roadNames.has(street), `bollard street ${street} exists in OSM roads`);
+  // Tipos de vía de city-design.json: existen en OSM y los peatonales no son circulables.
+  const roadTypes = new Set(world.roads.map((r) => r.type));
+  for (const type of city.pavements.nonDrivableTypes)
+    assert(roadTypes.has(type), `non-drivable type ${type} exists in OSM roads`);
+  for (const type of city.pavements.pedestrianTypes)
+    assert(city.pavements.nonDrivableTypes.includes(type), `pedestrian type ${type} not drivable`);
   const claimed = new Map();
   for (const b of designs.buildings) {
     if (b.landmark)

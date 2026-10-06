@@ -7,7 +7,9 @@
   "zones": {
     "frontagePilot": [-410, 110, -270, 125],
     "frontageOriginal": [-365, 90, -230, 125],
-    "streetLamps": [-355, 90, -230, 100]
+    "streetLamps": [-355, 90, -230, 100],
+    "pavedRoads": [-370, 100, -250, 110],
+    "pavedSquares": [-360, 100, -240, 100]
   },
   "frontages": {
     "streets": [
@@ -84,5 +86,46 @@
       "highway=street_lamp": "lamp",
       "amenity=bench": "bench"
     }
+  },
+  "pavements": {
+    "pedestrianTypes": ["pedestrian", "footway", "path"],
+    "nonDrivableTypes": ["footway", "pedestrian", "cycleway", "path"],
+    "minimumHalfWidth": 0.65,
+    "layerHeights": {
+      "asphalt": 0.028,
+      "stone": 0.05,
+      "slabs": 0.036,
+      "centerLine": 0.065,
+      "crossing": 0.082,
+      "water": 0.025,
+      "deck": 0.02,
+      "railing": 1
+    }
+  },
+  "crossings": {
+    "maximumDistance": 8,
+    "minimumRoadWidth": 4,
+    "halfWidthFactor": 0.43,
+    "edgeStart": 0.25,
+    "edgeEnd": 0.2,
+    "stripeSpacing": 0.85,
+    "stripeWidth": 0.43,
+    "stripeHalfLength": 2
+  },
+  "centerLines": {
+    "minimumWidth": 7,
+    "minimumLength": 9,
+    "start": 1,
+    "endMargin": 2,
+    "spacing": 9,
+    "dash": 3,
+    "halfWidth": 0.07,
+    "color": "#e8dfbb",
+    "opacity": 0.55
+  },
+  "signs": {
+    "maximum": 91,
+    "offset": 0.5,
+    "minimumPoints": 3
   }
 }

@@ -13,7 +13,7 @@ export function buildRoadGraph() {
     return id;
   }
   for (const r of world.city.roads) {
-    let drive = !['footway', 'pedestrian', 'cycleway', 'path'].includes(r.type);
+    let drive = !world.cityDesign.pavements.nonDrivableTypes.includes(r.type);
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
         b = r.p[i],

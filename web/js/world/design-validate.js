@@ -446,6 +446,12 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     rect,
     color: (v, p) => (typeof v === 'string' && HEX.test(v) ? 0 : fail(p, 'se esperaba #rrggbb')),
     names,
+    strings: (v, p) =>
+      Array.isArray(v) && v.every((n) => typeof n === 'string' && n) && new Set(v).size === v.length
+        ? 0
+        : fail(p, 'se esperaba una lista de textos sin repetir'),
+    opacity: (v, p) =>
+      Number.isFinite(v) && v > 0 && v <= 1 ? 0 : fail(p, 'se esperaba un número en (0, 1]'),
     // Banco: [x, z, ángulo] o, en plazaLamps, [dx, dz, ángulo].
     bench: (v, p) =>
       Array.isArray(v) && v.length === 3 && v.every(Number.isFinite)
@@ -475,7 +481,15 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       else TYPES[type](obj[k], `${path}.${k}`);
     }
   }
-  const sections = ['zones', 'frontages', 'furniture'];
+  const sections = [
+    'zones',
+    'frontages',
+    'furniture',
+    'pavements',
+    'crossings',
+    'centerLines',
+    'signs',
+  ];
   onlyKeys(json, ['$schema', 'version', 'description', 'license', 'attribution', ...sections], '$');
   if (json.version !== 1) fail('version', 'debe ser 1');
   for (const k of ['description', 'license', 'attribution'])
@@ -483,7 +497,13 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
 
   check(
     json.zones,
-    { frontagePilot: 'rect', frontageOriginal: 'rect', streetLamps: 'rect' },
+    {
+      frontagePilot: 'rect',
+      frontageOriginal: 'rect',
+      streetLamps: 'rect',
+      pavedRoads: 'rect',
+      pavedSquares: 'rect',
+    },
     'zones',
   );
 
@@ -552,5 +572,54 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     },
     'furniture',
   );
+  check(
+    json.pavements,
+    {
+      pedestrianTypes: 'strings',
+      nonDrivableTypes: 'strings',
+      minimumHalfWidth: 'pos',
+      layerHeights: {
+        asphalt: 'nonneg',
+        stone: 'nonneg',
+        slabs: 'nonneg',
+        centerLine: 'nonneg',
+        crossing: 'nonneg',
+        water: 'nonneg',
+        deck: 'nonneg',
+        railing: 'nonneg',
+      },
+    },
+    'pavements',
+  );
+  check(
+    json.crossings,
+    {
+      maximumDistance: 'pos',
+      minimumRoadWidth: 'pos',
+      halfWidthFactor: 'pos',
+      edgeStart: 'nonneg',
+      edgeEnd: 'nonneg',
+      stripeSpacing: 'pos',
+      stripeWidth: 'pos',
+      stripeHalfLength: 'pos',
+    },
+    'crossings',
+  );
+  check(
+    json.centerLines,
+    {
+      minimumWidth: 'pos',
+      minimumLength: 'pos',
+      start: 'nonneg',
+      endMargin: 'nonneg',
+      spacing: 'pos',
+      dash: 'pos',
+      halfWidth: 'pos',
+      color: 'color',
+      opacity: 'opacity',
+    },
+    'centerLines',
+  );
+  check(json.signs, { maximum: 'int', offset: 'nonneg', minimumPoints: 'int' }, 'signs');
   return errors;
 }
