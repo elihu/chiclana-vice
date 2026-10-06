@@ -1,80 +1,55 @@
 import * as THREE from '../vendor/three.module.min.js';
+import { $, setStyle, setText, sleepFrame, ui } from './core/dom.js';
 import {
+  PLACES,
+  POPULATION,
+  PROGRESS_LIMITS,
   SAVE_KEY,
   SPAWN_POSITION,
-  POPULATION,
-  PLACES,
   VIEWPOINTS,
-  PROGRESS_LIMITS,
   JOBS as jobs,
 } from '../game-data.js';
-import { readProgress } from '../progress.js';
+import { TAU, clamp, d, fold, lerp, pInside, pointSeg } from './core/math.js';
 import {
-  input,
-  keys,
-  holdPointers,
-  state,
-  player,
+  actors,
+  audio,
   base,
-  camPos,
-  camTarget,
+  buildingGrid,
   camDesired,
   camLook,
-  labelPoint,
+  camPos,
+  camTarget,
   cars,
-  police,
-  traffic,
-  vehicles,
-  people,
   chunks,
-  waterAreas,
-  pois,
-  graph,
-  segments,
-  buildingGrid,
   driveNetwork,
   facadeWork,
-  streetEnvironment,
-  world,
   gfx,
-  session,
-  audio,
-  view,
+  graph,
+  holdPointers,
+  input,
+  keys,
+  labelPoint,
+  people,
+  player,
   pointer,
-  actors,
+  pois,
+  police,
+  segments,
+  session,
+  state,
+  streetEnvironment,
+  traffic,
+  vehicles,
+  view,
+  waterAreas,
+  world,
 } from './core/state.js';
+import { asset, setAssetVersion } from './core/assets.js';
+import { readProgress } from '../progress.js';
+import { rnd } from './core/random.js';
 
-// Cache-busting suffix shared by every runtime resource, passed by the entry module.
-let ASSET_VERSION = null;
-const asset = (path) => (ASSET_VERSION ? path + '?v=' + encodeURIComponent(ASSET_VERSION) : path);
 let platform = null;
-const $ = (id) => document.getElementById(id),
-  clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
-  lerp = (a, b, t) => a + (b - a) * t,
-  TAU = Math.PI * 2;
-// Cached element references; per-frame HUD writes touch the DOM only when values change.
-const domRefs = new Map(),
-  domValues = new WeakMap();
-function ui(id) {
-  let e = domRefs.get(id);
-  if (!e) domRefs.set(id, (e = $(id)));
-  return e;
-}
-function domCache(e) {
-  let c = domValues.get(e);
-  if (!c) domValues.set(e, (c = {}));
-  return c;
-}
-function setText(target, value) {
-  const e = typeof target === 'string' ? ui(target) : target,
-    c = domCache(e);
-  if (c.text !== value) e.textContent = c.text = value;
-}
-function setStyle(target, prop, value) {
-  const e = typeof target === 'string' ? ui(target) : target,
-    c = domCache(e);
-  if (c[prop] !== value) e.style[prop] = c[prop] = value;
-}
+
 function installTouchDetection() {
   gfx.W = innerWidth;
   gfx.H = innerHeight;
@@ -97,11 +72,7 @@ function installTouchDetection() {
     { capture: true, passive: true },
   );
 }
-let randSeed = 7631;
-const rnd = () => {
-  randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
-  return randSeed / 4294967296;
-};
+
 function loadSavedProgress() {
   const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
   if (stored.quality === 'low') gfx.quality = 'low';
@@ -109,20 +80,20 @@ function loadSavedProgress() {
   state.job = stored.job;
   state.found = new Set(stored.found);
 }
+
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
   $('loadTrack').setAttribute('aria-valuenow', String(p));
 }
-function sleepFrame() {
-  return new Promise((r) => requestAnimationFrame(r));
-}
+
 function toast(message, duration = 4) {
   setText('toast', message);
   ui('toast').classList.add('show');
   session.toastClock = duration;
   session.toastShown = true;
 }
+
 function save() {
   try {
     localStorage.setItem(
@@ -136,30 +107,7 @@ function save() {
     );
   } catch {}
 }
-function d(a, b) {
-  return Math.hypot(a.x - b.x, a.z - b.z);
-}
-function pInside(x, z, poly) {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    let a = poly[i],
-      b = poly[j];
-    if (a[1] > z !== b[1] > z && x < ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]) + a[0])
-      inside = !inside;
-  }
-  return inside;
-}
-function pointSeg(x, z, a, b) {
-  let dx = b[0] - a[0],
-    dz = b[1] - a[1],
-    u = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1);
-  return {
-    x: a[0] + dx * u,
-    z: a[1] + dz * u,
-    d: Math.hypot(x - a[0] - dx * u, z - a[1] - dz * u),
-    u,
-  };
-}
+
 function inBuilding(x, z, pad = 0.3) {
   const seen = new Set();
   for (let gx = Math.floor((x - pad) / 25); gx <= Math.floor((x + pad) / 25); gx++)
@@ -177,6 +125,7 @@ function inBuilding(x, z, pad = 0.3) {
       }
   return false;
 }
+
 function nearestRoad(x, z, driveOnly = false) {
   let best = null,
     md = Infinity;
@@ -190,6 +139,7 @@ function nearestRoad(x, z, driveOnly = false) {
   }
   return best;
 }
+
 function blocked(x, z, r = 0.3) {
   if (Math.abs(x) > world.worldW / 2 - 5 || Math.abs(z) > world.worldH / 2 - 5) return true;
   if (inBuilding(x, z, r)) return true;
@@ -200,6 +150,7 @@ function blocked(x, z, r = 0.3) {
   }
   return false;
 }
+
 function safePoint(x, z, drive = false) {
   let best = null,
     md = Infinity;
@@ -214,6 +165,7 @@ function safePoint(x, z, drive = false) {
   }
   return best || { x: base.x, z: base.z, a: 0 };
 }
+
 function buildGraph() {
   let ids = new Map();
   function node(p) {
@@ -257,6 +209,7 @@ function buildGraph() {
   }
   waterAreas.push(...world.city.areas.filter((a) => a.kind === 'water'));
 }
+
 function connectOpenSpaces() {
   const parent = graph.map((_, i) => i);
   const root = (i) => {
@@ -295,6 +248,7 @@ function connectOpenSpaces() {
     parent[root(i)] = root(j);
   }
 }
+
 // Directed driving network for traffic and police (the player drives freely). Each drive
 // component must stay strongly connected (no dead ends, police routes everywhere): oneway
 // is ignored only on segments around nodes that would otherwise be unreachable or have no
@@ -352,6 +306,7 @@ function driveComponents() {
   }
   return comp;
 }
+
 function orientDriveGraph() {
   for (const s of segments) {
     if (!s.drive) continue;
@@ -438,6 +393,7 @@ function orientDriveGraph() {
     mainNodes: main.length,
   });
 }
+
 function nearestNode(x, z, driveOnly = false) {
   let md = Infinity,
     best = 0;
@@ -452,9 +408,11 @@ function nearestNode(x, z, driveOnly = false) {
   }
   return best;
 }
+
 // Dijkstra with a binary heap keyed by (distance, node). Ties settle the lowest node
 // first and relaxation is strict, as in the previous O(N²) scan: identical routes.
 let routeDist, routePrev, routeUsed, heapDist, heapNode;
+
 function findRoute(from, to, driveOnly = false) {
   if (from === to) return [from];
   const n = graph.length;
@@ -539,9 +497,11 @@ function findRoute(from, to, driveOnly = false) {
   }
   return out.reverse();
 }
+
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
 }
+
 function flatGeometry(p, holes = []) {
   let shape = new THREE.Shape(p.map((v) => new THREE.Vector2(v[0], -v[1])));
   shape.holes = holes.map((h) => new THREE.Path(h.map((v) => new THREE.Vector2(v[0], -v[1]))));
@@ -549,12 +509,14 @@ function flatGeometry(p, holes = []) {
   geo.rotateX(-Math.PI / 2);
   return geo;
 }
+
 function flatPolygon(p, y, material, holes = []) {
   let mesh = new THREE.Mesh(flatGeometry(p, holes), material);
   mesh.position.y = y;
   mesh.receiveShadow = true;
   return mesh;
 }
+
 // Reference-led facade upgrade: civic landmarks and their four surrounding streets.
 const originalFacadeStreets = [
   'Calle Constitución',
@@ -563,6 +525,7 @@ const originalFacadeStreets = [
   'Calle Caraza',
   'Calle Jesús Nazareno',
 ];
+
 // Optional LiDAR pilot: preserve cadastral floor counts/heights and footprint data.
 function applyHeightSamples(samples) {
   if (
@@ -598,6 +561,7 @@ function applyHeightSamples(samples) {
     b.heightSource = samples.source;
   }
 }
+
 function prepareFacades() {
   const special = world.city.landmarks.filter((p) =>
     /Ayuntamiento de Chiclana|Mercado Municipal/.test(p.name),
@@ -672,6 +636,7 @@ function prepareFacades() {
   }
   facadeWork.parts = world.city.buildings.filter((b) => b.detailType).length;
 }
+
 function buildDetailedFacades() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
     staging = new THREE.Group(),
@@ -1418,6 +1383,7 @@ function facadeTexture() {
   tex.anisotropy = 4;
   return tex;
 }
+
 async function buildBuildings() {
   let groups = new Map(),
     facade = facadeTexture(),
@@ -1533,24 +1499,29 @@ async function buildBuildings() {
     chunks.push(group);
   }
 }
+
 // Model geometry/materials are immutable and shared; transforms stay on each mesh.
 const modelGeometryCache = new Map(),
   modelMaterialCache = new Map();
+
 function modelGeometry(key, create) {
   if (!modelGeometryCache.has(key)) modelGeometryCache.set(key, create());
   return modelGeometryCache.get(key);
 }
+
 function modelMaterial(color, extra = {}) {
   let key = JSON.stringify([color, extra]);
   if (!modelMaterialCache.has(key)) modelMaterialCache.set(key, mat(color, extra));
   return modelMaterialCache.get(key);
 }
+
 function modelCylinder(top, bottom, height, segments) {
   return modelGeometry(
     'cylinder:' + top + ',' + bottom + ',' + height + ',' + segments,
     () => new THREE.CylinderGeometry(top, bottom, height, segments),
   );
 }
+
 function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
   let g = modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
     m = new THREE.Mesh(g, material);
@@ -1558,6 +1529,7 @@ function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
   m.castShadow = m.receiveShadow = true;
   return m;
 }
+
 function bevelGeometry(w, h, l, bevel) {
   return modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
     let shape = new THREE.Shape();
@@ -1580,12 +1552,14 @@ function bevelGeometry(w, h, l, bevel) {
     return g;
   });
 }
+
 function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
   let mesh = new THREE.Mesh(bevelGeometry(w, h, l, bevel), material);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   return mesh;
 }
+
 // Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
 function mergeParts(parts) {
   let vertices = 0,
@@ -1631,6 +1605,7 @@ function mergeParts(parts) {
   g.computeBoundingSphere();
   return g;
 }
+
 // Static pieces of a model are grouped by slot (one material each) and merged once per key;
 // all instances share the cached geometry, keeping one draw call per material.
 function modelParts() {
@@ -1671,6 +1646,7 @@ function modelParts() {
     },
   };
 }
+
 function carCabin(material) {
   const p = [
       [-0.84, 0.86, -1.15],
@@ -1699,6 +1675,7 @@ function carCabin(material) {
   });
   return new THREE.Mesh(geo, material);
 }
+
 function createCar(color = '#b9b8aa', cop = false) {
   let group = new THREE.Group(),
     paint = modelMaterial(color, { metalness: 0.55, roughness: 0.29 }),
@@ -1789,6 +1766,7 @@ function createCar(color = '#b9b8aa', cop = false) {
     radius: 1.12,
   };
 }
+
 function createPerson(color = '#78805a') {
   const g = new THREE.Group(),
     skin = modelMaterial('#c99a78'),
@@ -1840,6 +1818,7 @@ function createPerson(color = '#78805a') {
   gfx.scene.add(g);
   return { mesh: g, limbs };
 }
+
 function buildRoadDetails() {
   const positions = [],
     colors = [];
@@ -1916,6 +1895,7 @@ function buildRoadDetails() {
     for (const p of parts) p.geometry.dispose();
   }
 }
+
 // Street-level materials and lightweight instanced urban detail.
 function surfaceTexture(kind) {
   let c = document.createElement('canvas');
@@ -1959,6 +1939,7 @@ function surfaceTexture(kind) {
   tex.anisotropy = 4;
   return tex;
 }
+
 function buildStreetSurfaces() {
   let asphalt = surfaceTexture('asphalt'),
     stone = surfaceTexture('stone'),
@@ -2076,6 +2057,7 @@ function buildStreetSurfaces() {
   mg.computeVertexNormals();
   gfx.scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }
+
 function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
     staging = new THREE.Group(),
@@ -2264,6 +2246,7 @@ function buildUrbanFurniture() {
   }
   gfx.scene.add(root);
 }
+
 // Partition static vegetation without changing any instance transform or color.
 function addVegetationCells(root, source, kind, cellSize = 255) {
   let cells = new Map(),
@@ -2296,6 +2279,7 @@ function addVegetationCells(root, source, kind, cellSize = 255) {
   }
   source.dispose();
 }
+
 function buildTrees() {
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
@@ -2529,6 +2513,7 @@ function addSigns() {
   gfx.scene.add(plates, posts);
   streetEnvironment.signs = signs.length;
 }
+
 function setupPOIs() {
   for (const [name, x, z] of PLACES) {
     let safe = safePoint(x, z);
@@ -2539,12 +2524,14 @@ function setupPOIs() {
     pois.push({ name, x: safe.x, z: safe.z, labelX: x, labelZ: z, el });
   }
 }
+
 function target() {
   let j = jobs[state.job];
   if (!j) return null;
   let s = j.stages[state.stage];
   return { ...pois[s.poi], ...s };
 }
+
 function updateHUD() {
   const j = jobs[state.job],
     p = target();
@@ -2561,6 +2548,7 @@ function updateHUD() {
   ui('driveControls').classList.toggle('hidden', !player.car);
   updateCameraVisibility();
 }
+
 function spawnTraffic() {
   let eligible = segments.filter((s) => s.forward.drive && s.length > 18);
   for (let i = 0; i < POPULATION.traffic; i++) {
@@ -2598,6 +2586,7 @@ function spawnTraffic() {
     people.push(person);
   }
 }
+
 async function loadWorld() {
   const read = async (file) => {
     const r = await fetch(asset(file));
@@ -2638,6 +2627,7 @@ async function loadWorld() {
     trees: Array.isArray(osm.trees) ? osm.trees : [],
   };
 }
+
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
   const [res, tex, heightSamples, profiles, streetObjects] = await Promise.all([
@@ -2785,6 +2775,7 @@ async function init() {
   requestAnimationFrame(frame);
   window.__cityGame = createPublicApi();
 }
+
 function clearInput() {
   for (const p of holdPointers.values()) p.clear();
   for (const k in input) input[k] = typeof input[k] === 'boolean' ? false : 0;
@@ -2794,6 +2785,7 @@ function clearInput() {
   $('stick').style.transform = '';
   document.querySelectorAll('.pressed').forEach((e) => e.classList.remove('pressed'));
 }
+
 function start() {
   session.started = true;
   session.paused = false;
@@ -2806,11 +2798,13 @@ function start() {
   snapCamera();
   session.last = performance.now();
 }
+
 function setHeat(n) {
   state.wanted = clamp(state.wanted + n, 0, 5);
   state.heat = 22 + state.wanted * 7;
   updateHUD();
 }
+
 function advanceStage() {
   let j = jobs[state.job];
   if (!j) return;
@@ -2834,6 +2828,7 @@ function advanceStage() {
   }
   updateHUD();
 }
+
 function dropPolice() {
   for (const p of police) {
     gfx.scene.remove(p.mesh);
@@ -2843,6 +2838,7 @@ function dropPolice() {
   state.arrest = 0;
   updateHUD();
 }
+
 function rescue() {
   state.cash = Math.max(0, state.cash - 100);
   dropPolice();
@@ -2859,6 +2855,7 @@ function rescue() {
   save();
   updateHUD();
 }
+
 function nearestCar() {
   let best = null,
     md = 5.5;
@@ -2871,6 +2868,7 @@ function nearestCar() {
   }
   return best;
 }
+
 function interact() {
   if (!session.started || session.paused) return;
   if (player.car) {
@@ -2918,6 +2916,7 @@ function interact() {
   updateHUD();
   snapCamera();
 }
+
 function carCollision(c, x, z) {
   let f = 1.4,
     r = 0.7;
@@ -2929,6 +2928,7 @@ function carCollision(c, x, z) {
     blocked(x - Math.cos(c.a) * r, z + Math.sin(c.a) * r, 0.2)
   );
 }
+
 function updatePlayer(dt) {
   let steer =
       (input.right || keys.d || keys.ArrowRight ? 1 : 0) -
@@ -3022,6 +3022,7 @@ function updatePlayer(dt) {
     );
   }
 }
+
 function stepAgent(c, dt, isCop = false) {
   if (c.next === undefined) return;
   let n = graph[c.next],
@@ -3069,6 +3070,7 @@ function stepAgent(c, dt, isCop = false) {
     }
   }
 }
+
 function updatePolice(dt) {
   if (!state.wanted) return;
   while (police.length < Math.min(3, state.wanted + 1)) {
@@ -3134,6 +3136,7 @@ function updatePolice(dt) {
     toast('HAS DESPISTADO A LA POLICÍA', 4);
   }
 }
+
 function update(dt) {
   session.t += dt;
   session.collisionClock = Math.max(0, session.collisionClock - dt);
@@ -3253,6 +3256,7 @@ function update(dt) {
     save();
   }
 }
+
 function updateCameraVisibility() {
   if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
     view.firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = true));
@@ -3261,11 +3265,13 @@ function updateCameraVisibility() {
     view.firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = false));
   actors.character.mesh.visible = !player.car && view.mode !== 1;
 }
+
 function snapCamera() {
   view.orbit = 0;
   view.lookPitch = 0;
   updateCamera(1);
 }
+
 // Sweep against cadastral volumes at the ray height; camera only, no physics changes.
 function cameraSweep(position) {
   let dx = position.x - player.x,
@@ -3304,6 +3310,7 @@ function cameraSweep(position) {
   }
   return 1;
 }
+
 function constrainCamera(position) {
   let u = cameraSweep(position);
   if (u < 1) {
@@ -3311,6 +3318,7 @@ function constrainCamera(position) {
     position.z = lerp(player.z, position.z, u);
   }
 }
+
 function updateCamera(dt) {
   let heading = player.a + view.orbit,
     follow = player.car ? 9.7 : 5.9,
@@ -3370,6 +3378,7 @@ function updateCamera(dt) {
     group.visible = Math.hypot(c.center.x - ox, c.center.z - oz) < reach + c.radius;
   }
 }
+
 function drawLabels() {
   for (const p of pois) {
     let di = Math.hypot(p.labelX - player.x, p.labelZ - player.z);
@@ -3406,7 +3415,9 @@ function drawLabels() {
   const relative = Math.atan2(Math.sin(angle), Math.cos(angle)); // normalised to [-π, π]
   setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
+
 let chart, chartCtx;
+
 function trace(c, poly) {
   c.beginPath();
   poly.forEach((p, i) =>
@@ -3415,6 +3426,7 @@ function trace(c, poly) {
       : c.moveTo(p[0] + world.worldW / 2, p[1] + world.worldH / 2),
   );
 }
+
 function prepareMap() {
   chart = document.createElement('canvas');
   chart.width = 1344;
@@ -3449,6 +3461,7 @@ function prepareMap() {
   );
   listStreets();
 }
+
 function drawMap(canvas, mini = false) {
   let cw = canvas.width,
     ch = canvas.height,
@@ -3532,12 +3545,7 @@ function drawMap(canvas, mini = false) {
     c.fillText('N ↑', cw - 14, 25);
   }
 }
-// Case- and accent-insensitive search text ("jesus" finds "Jesús").
-const fold = (text) =>
-  text
-    .toLocaleLowerCase('es')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+
 function listStreets() {
   let q = fold($('streetSearch').value),
     names = world.streetNames.filter((n) => fold(n).includes(q));
@@ -3592,9 +3600,11 @@ function listStreets() {
     list.appendChild(p);
   }
 }
+
 function mute() {
   if (audio.engineGain) audio.engineGain.gain.setTargetAtTime(0, audio.audioCtx.currentTime, 0.1);
 }
+
 function openMap() {
   if (!session.started || gfx.contextLost) return;
   session.paused = true;
@@ -3608,6 +3618,7 @@ function openMap() {
   c.height = Math.round(r.height * 1.5);
   drawMap(c);
 }
+
 function closeMap() {
   if (gfx.contextLost) return; // only reloading can bring the image back
   $('mapOverlay').classList.add('hidden');
@@ -3616,14 +3627,17 @@ function closeMap() {
   gfx.needsRender = true;
   session.last = performance.now();
 }
+
 // Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
 // dialog and focus returns to the opener on close.
 let dialogOpener = null;
+
 function openDialog(target) {
   if (!dialogOpener) dialogOpener = document.activeElement;
   $('hud').inert = true;
   target?.focus?.();
 }
+
 function closeDialog() {
   if (!$('modal').classList.contains('hidden') || !$('mapOverlay').classList.contains('hidden'))
     return;
@@ -3631,6 +3645,7 @@ function closeDialog() {
   dialogOpener?.focus?.();
   dialogOpener = null;
 }
+
 function trapFocus(e) {
   const overlay = ['mapOverlay', 'modal'].map($).find((o) => !o.classList.contains('hidden'));
   if (!overlay) return;
@@ -3649,6 +3664,7 @@ function trapFocus(e) {
     first.focus();
   }
 }
+
 function modal(html) {
   session.paused = true;
   clearInput();
@@ -3659,6 +3675,7 @@ function modal(html) {
   $('modal').classList.remove('hidden');
   openDialog($('modalBody').querySelector('button') || $('closeModal'));
 }
+
 function closeModal() {
   if (gfx.contextLost) return; // only reloading can bring the image back
   $('modal').classList.add('hidden');
@@ -3667,6 +3684,7 @@ function closeModal() {
   gfx.needsRender = true;
   session.last = performance.now();
 }
+
 function help() {
   if (gfx.contextLost) return;
   modal(
@@ -3674,6 +3692,7 @@ function help() {
   );
   $('understood').onclick = closeModal;
 }
+
 function toggleAudio() {
   audio.audioOn = !audio.audioOn;
   try {
@@ -3693,6 +3712,7 @@ function toggleAudio() {
   }
   toast(audio.audioOn ? 'Sonido del motor activado' : 'Sonido desactivado', 2);
 }
+
 // Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
 function applyQuality() {
   const low = gfx.quality === 'low';
@@ -3702,6 +3722,7 @@ function applyQuality() {
   gfx.scene.fog.far = low ? 380 : 620;
   gfx.needsRender = true;
 }
+
 function pauseMenu() {
   if (gfx.contextLost) return;
   modal(
@@ -3749,6 +3770,7 @@ function pauseMenu() {
     $('noReset').onclick = pauseMenu;
   };
 }
+
 function cycleCamera() {
   view.mode = (view.mode + 1) % 3;
   snapCamera();
@@ -3759,6 +3781,7 @@ function cycleCamera() {
     2,
   );
 }
+
 function installControls() {
   $('start').onclick = start;
   $('introHelp').onclick = help;
@@ -3928,7 +3951,9 @@ function installControls() {
     $('reload').onclick = () => location.reload();
   });
 }
+
 let frameCount = 0;
+
 function frame(now) {
   let dt = clamp((now - session.last) / 1000, 0, 0.04) || 0.016;
   session.last = now;
@@ -3964,6 +3989,7 @@ function frame(now) {
   }
   requestAnimationFrame(frame);
 }
+
 function showStartupError(err) {
   console.error(err);
   $('loadStatus').textContent = 'No se ha podido iniciar el mundo 3D. ' + err.message;
@@ -4013,6 +4039,7 @@ function createPublicApi() {
     },
   };
 }
+
 function createTestApi() {
   const extra = {
     inBuilding,
@@ -4065,7 +4092,7 @@ function createTestApi() {
 }
 
 export async function startGame({ version = null, platform: injected = {} } = {}) {
-  ASSET_VERSION = version;
+  setAssetVersion(version);
   installTouchDetection();
   loadSavedProgress();
   installControls();
