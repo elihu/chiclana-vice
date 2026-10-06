@@ -1,4 +1,4 @@
-import * as THREE from './vendor/three.module.js';
+import * as THREE from './vendor/three.module.min.js';
 const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
@@ -300,19 +300,15 @@ function findRoute(from, to, driveOnly = false) {
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
 }
-function box(w, h, l, material, x = 0, y = 0, z = 0) {
-  let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), material);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  m.receiveShadow = true;
-  return m;
-}
-function flatPolygon(p, y, material, holes = []) {
+function flatGeometry(p, holes = []) {
   let shape = new THREE.Shape(p.map((v) => new THREE.Vector2(v[0], -v[1])));
   shape.holes = holes.map((h) => new THREE.Path(h.map((v) => new THREE.Vector2(v[0], -v[1]))));
   let geo = new THREE.ShapeGeometry(shape);
   geo.rotateX(-Math.PI / 2);
-  let mesh = new THREE.Mesh(geo, material);
+  return geo;
+}
+function flatPolygon(p, y, material, holes = []) {
+  let mesh = new THREE.Mesh(flatGeometry(p, holes), material);
   mesh.position.y = y;
   mesh.receiveShadow = true;
   return mesh;
@@ -446,7 +442,8 @@ function prepareFacades() {
   facadeWork.parts = city.buildings.filter((b) => b.detailType).length;
 }
 function buildDetailedFacades() {
-  const staging = new THREE.Group(),
+  const unitBox = new THREE.BoxGeometry(1, 1, 1),
+    staging = new THREE.Group(),
     palette = facadeProfiles.palette;
   const materials = new Map();
   function material(color) {
@@ -462,9 +459,11 @@ function buildDetailedFacades() {
       );
     return materials.get(color);
   }
+  // Staging only: one unit box scaled per piece; the batches bake the final vertices.
   function cube(g, x, y, z, w, h, d, color) {
-    let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material(color));
+    let m = new THREE.Mesh(unitBox, material(color));
     m.position.set(x, y, z);
+    m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
@@ -1060,7 +1059,36 @@ function buildDetailedFacades() {
       }
     }
   }
-  // Batch by material and 170 m cell, so off-screen frontage groups can be culled.
+  // Closed solids only show their outside, so they can use FrontSide; flat shapes and
+  // open surfaces (half tori, tubes, the dome) keep DoubleSide.
+  function closedSolid(geometry) {
+    const p = geometry.parameters || {},
+      full = (v) => v === undefined || v >= TAU - 1e-9;
+    switch (geometry.type) {
+      case 'BoxGeometry':
+      case 'ExtrudeGeometry':
+        return true;
+      case 'CylinderGeometry':
+      case 'ConeGeometry':
+        return !p.openEnded && full(p.thetaLength);
+      case 'SphereGeometry':
+        return full(p.phiLength) && !p.thetaStart && p.thetaLength >= Math.PI - 1e-9;
+      case 'TorusGeometry':
+        return full(p.arc);
+      default:
+        return false;
+    }
+  }
+  const frontMaterials = new Map();
+  function frontSide(m) {
+    if (!frontMaterials.has(m)) {
+      let front = m.clone();
+      front.side = THREE.FrontSide;
+      frontMaterials.set(m, front);
+    }
+    return frontMaterials.get(m);
+  }
+  // Batch by material, side and 170 m cell, so off-screen frontage groups can be culled.
   staging.updateMatrixWorld(true);
   let batches = new Map(),
     textMeshes = [];
@@ -1070,8 +1098,19 @@ function buildDetailedFacades() {
       textMeshes.push(o);
       return;
     }
-    let geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    let geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(),
+      closed = closedSolid(o.geometry);
     geom.applyMatrix4(o.matrixWorld);
+    if (o.matrixWorld.determinant() < 0) {
+      // A mirrored transform reverses triangle winding; restore it for FrontSide culling.
+      for (const attr of [geom.getAttribute('position'), geom.getAttribute('normal')])
+        for (let i = 0; i < attr.count; i += 3)
+          for (let c = 0; c < 3; c++) {
+            let t = attr.array[(i + 1) * 3 + c];
+            attr.array[(i + 1) * 3 + c] = attr.array[(i + 2) * 3 + c];
+            attr.array[(i + 2) * 3 + c] = t;
+          }
+    }
     geom.computeBoundingSphere();
     let cell =
       Math.floor(geom.boundingSphere.center.x / facadeProfiles.facadeCellSize) +
@@ -1079,10 +1118,10 @@ function buildDetailedFacades() {
       Math.floor(geom.boundingSphere.center.z / facadeProfiles.facadeCellSize);
     let p = geom.getAttribute('position'),
       n = geom.getAttribute('normal'),
-      key = o.material.color.getHexString() + '@' + cell,
+      key = o.material.color.getHexString() + (closed ? '-front' : '') + '@' + cell,
       bucket = batches.get(key);
     if (!bucket) {
-      bucket = { p: [], n: [], material: o.material };
+      bucket = { p: [], n: [], material: closed ? frontSide(o.material) : o.material };
       batches.set(key, bucket);
     }
     for (let i = 0; i < p.array.length; i++) bucket.p.push(p.array[i]);
@@ -1158,7 +1197,7 @@ async function buildBuildings() {
       side: THREE.DoubleSide,
     }),
     roofMat = new THREE.MeshStandardMaterial({
-      map: groundTexture,
+      ...(groundTexture ? { map: groundTexture } : { color: '#b4a58f' }),
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
@@ -1288,14 +1327,14 @@ function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
   m.castShadow = m.receiveShadow = true;
   return m;
 }
-function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
-  let shape = new THREE.Shape();
-  shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
-  shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
-  shape.lineTo(w / 2 - bevel, l / 2 - bevel);
-  shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
-  shape.closePath();
-  let geo = modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
+function bevelGeometry(w, h, l, bevel) {
+  return modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
+    let shape = new THREE.Shape();
+    shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
+    shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
+    shape.lineTo(w / 2 - bevel, l / 2 - bevel);
+    shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
+    shape.closePath();
     let g = new THREE.ExtrudeGeometry(shape, {
       depth: h - 2 * bevel,
       bevelEnabled: true,
@@ -1309,10 +1348,97 @@ function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
     g.translate(0, -h / 2 + bevel, 0);
     return g;
   });
-  let mesh = new THREE.Mesh(geo, material);
+}
+function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
+  let mesh = new THREE.Mesh(bevelGeometry(w, h, l, bevel), material);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   return mesh;
+}
+// Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
+function mergeParts(parts) {
+  let vertices = 0,
+    indices = 0;
+  for (const { geometry } of parts) {
+    vertices += geometry.attributes.position.count;
+    indices += geometry.index ? geometry.index.count : geometry.attributes.position.count;
+  }
+  const position = new Float32Array(vertices * 3),
+    normal = new Float32Array(vertices * 3),
+    index = vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
+    v = new THREE.Vector3(),
+    normalMatrix = new THREE.Matrix3();
+  let base = 0,
+    at = 0;
+  for (const { geometry, matrix } of parts) {
+    const pos = geometry.attributes.position,
+      nor = geometry.attributes.normal,
+      source = geometry.index,
+      count = source ? source.count : pos.count,
+      order = matrix.determinant() < 0 ? [0, 2, 1] : [0, 1, 2];
+    normalMatrix.getNormalMatrix(matrix);
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i)
+        .applyMatrix4(matrix)
+        .toArray(position, (base + i) * 3);
+      v.fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize();
+      v.toArray(normal, (base + i) * 3);
+    }
+    for (let i = 0; i < count; i += 3)
+      for (let j = 0; j < 3; j++) {
+        let k = i + order[j];
+        index[at + i + j] = base + (source ? source.getX(k) : k);
+      }
+    base += pos.count;
+    at += count;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  g.setIndex(new THREE.BufferAttribute(index, 1));
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  return g;
+}
+// Static pieces of a model are grouped by slot (one material each) and merged once per key;
+// all instances share the cached geometry, keeping one draw call per material.
+function modelParts() {
+  const slots = new Map(),
+    euler = new THREE.Euler(),
+    quaternion = new THREE.Quaternion(),
+    offset = new THREE.Vector3(),
+    size = new THREE.Vector3();
+  return {
+    add(slot, material, geometry, x = 0, y = 0, z = 0, rotation = [0, 0, 0], scale = [1, 1, 1]) {
+      if (!slots.has(slot)) slots.set(slot, { material, parts: [] });
+      quaternion.setFromEuler(euler.set(...rotation));
+      slots.get(slot).parts.push({
+        geometry,
+        matrix: new THREE.Matrix4().compose(offset.set(x, y, z), quaternion, size.set(...scale)),
+      });
+    },
+    box(slot, material, w, h, l, x, y, z) {
+      this.add(
+        slot,
+        material,
+        modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
+        x,
+        y,
+        z,
+      );
+    },
+    attach(parent, key, receive = []) {
+      for (const [slot, { material, parts }] of slots) {
+        const m = new THREE.Mesh(
+          modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
+          material,
+        );
+        m.castShadow = true;
+        m.receiveShadow = receive.includes(slot);
+        parent.add(m);
+      }
+    },
+  };
 }
 function carCabin(material) {
   const p = [
@@ -1347,66 +1473,50 @@ function createCar(color = '#b9b8aa', cop = false) {
     paint = modelMaterial(color, { metalness: 0.55, roughness: 0.29 }),
     glass = modelMaterial('#345465', { metalness: 0.35, roughness: 0.2, side: THREE.DoubleSide }),
     black = modelMaterial('#182123'),
-    chrome = modelMaterial('#a9b3b6', { metalness: 0.85, roughness: 0.23 });
-  group.add(sculptedBox(1.84, 0.48, 4.28, paint, 0, 0.58, 0, 0.1));
-  group.add(modelBox(1.9, 0.13, 4.12, paint, 0, 0.38, 0));
-  group.add(sculptedBox(1.75, 0.19, 1.25, paint, 0, 0.89, 1.32, 0.06));
+    chrome = modelMaterial('#a9b3b6', { metalness: 0.85, roughness: 0.23 }),
+    parts = modelParts(),
+    sideways = [0, 0, Math.PI / 2];
+  // Body, lights and wheels never move relative to the car: one mesh per material.
+  // Bevelled body panels never received shadows; skirt, mirrors and pillars did ('trim').
+  parts.add('paint', paint, bevelGeometry(1.84, 0.48, 4.28, 0.1), 0, 0.58, 0);
+  parts.box('trim', paint, 1.9, 0.13, 4.12, 0, 0.38, 0);
+  parts.add('paint', paint, bevelGeometry(1.75, 0.19, 1.25, 0.06), 0, 0.89, 1.32);
+  parts.add('paint', paint, bevelGeometry(1.79, 0.17, 0.85, 0.05), 0, 0.91, -1.55);
+  parts.box('black', black, 1.74, 0.17, 0.13, 0, 0.48, 2.15);
+  parts.box('black', black, 0.67, 0.2, 0.04, 0, 0.73, 2.17);
+  parts.box('plate', modelMaterial('#edf0dd'), 0.46, 0.18, 0.03, 0, 0.54, -2.16);
+  const head = modelMaterial('#fff3c5', { emissive: '#ffeeaa', emissiveIntensity: 0.5 }),
+    tail = modelMaterial('#b52428', { emissive: '#a0141c', emissiveIntensity: 0.4 });
+  for (const x of [-0.66, 0.66]) {
+    parts.box('head', head, 0.46, 0.12, 0.05, x, 0.78, 2.13);
+    parts.box('tail', tail, 0.46, 0.13, 0.05, x, 0.74, -2.16);
+    parts.box('trim', paint, 0.22, 0.16, 0.31, x > 0 ? 0.99 : -0.99, 1.06, 0.54);
+    parts.box('trim', paint, 0.05, 0.46, 0.09, x > 0 ? 0.86 : -0.86, 1.04, -0.38);
+    parts.box('chrome', chrome, 0.09, 0.03, 0.19, x > 0 ? 0.927 : -0.927, 0.83, -0.2);
+  }
+  for (let x of [-0.91, 0.91])
+    for (let z of [-1.34, 1.35]) {
+      parts.add('black', black, modelCylinder(0.34, 0.34, 0.23, 24), x, 0.34, z, sideways);
+      parts.add('chrome', chrome, modelCylinder(0.22, 0.22, 0.245, 20), x, 0.34, z, sideways);
+      parts.add('black', black, modelCylinder(0.09, 0.09, 0.255, 12), x, 0.34, z, sideways);
+    }
+  if (cop) parts.box('livery', modelMaterial('#e9efed'), 1.86, 0.32, 1.6, 0, 0.63, -0.1);
+  parts.attach(group, cop ? 'cop' : 'car', [
+    'trim',
+    'black',
+    'chrome',
+    'plate',
+    'head',
+    'tail',
+    'livery',
+  ]);
+  // Cabin and roof stay separate: first-person view hides them.
   const cabin = carCabin(glass),
     roof = sculptedBox(1.43, 0.11, 1.24, paint, 0, 1.39, -0.25, 0.04);
   group.add(cabin);
   group.add(roof);
-  group.add(sculptedBox(1.79, 0.17, 0.85, paint, 0, 0.91, -1.55, 0.05));
-  group.add(modelBox(1.74, 0.17, 0.13, black, 0, 0.48, 2.15));
-  group.add(modelBox(0.67, 0.2, 0.04, black, 0, 0.73, 2.17));
-  group.add(modelBox(0.46, 0.18, 0.03, modelMaterial('#edf0dd'), 0, 0.54, -2.16));
-  for (const x of [-0.66, 0.66]) {
-    group.add(
-      modelBox(
-        0.46,
-        0.12,
-        0.05,
-        modelMaterial('#fff3c5', { emissive: '#ffeeaa', emissiveIntensity: 0.5 }),
-        x,
-        0.78,
-        2.13,
-      ),
-    );
-    group.add(
-      modelBox(
-        0.46,
-        0.13,
-        0.05,
-        modelMaterial('#b52428', { emissive: '#a0141c', emissiveIntensity: 0.4 }),
-        x,
-        0.74,
-        -2.16,
-      ),
-    );
-    group.add(modelBox(0.22, 0.16, 0.31, paint, x > 0 ? 0.99 : -0.99, 1.06, 0.54));
-    group.add(modelBox(0.05, 0.46, 0.09, paint, x > 0 ? 0.86 : -0.86, 1.04, -0.38));
-    group.add(modelBox(0.09, 0.03, 0.19, chrome, x > 0 ? 0.927 : -0.927, 0.83, -0.2));
-  }
-  const wheels = [];
-  for (let x of [-0.91, 0.91])
-    for (let z of [-1.34, 1.35]) {
-      let tire = new THREE.Mesh(modelCylinder(0.34, 0.34, 0.23, 24), black);
-      tire.rotation.z = Math.PI / 2;
-      tire.position.set(x, 0.34, z);
-      tire.castShadow = true;
-      group.add(tire);
-      let rim = new THREE.Mesh(modelCylinder(0.22, 0.22, 0.245, 20), chrome);
-      rim.rotation.z = Math.PI / 2;
-      rim.position.copy(tire.position);
-      group.add(rim);
-      let hub = new THREE.Mesh(modelCylinder(0.09, 0.09, 0.255, 12), black);
-      hub.rotation.z = Math.PI / 2;
-      hub.position.copy(tire.position);
-      group.add(hub);
-      wheels.push(tire, rim);
-    }
   let siren = null;
   if (cop) {
-    group.add(modelBox(1.86, 0.32, 1.6, modelMaterial('#e9efed'), 0, 0.63, -0.1));
     siren = new THREE.Group();
     siren.position.y = 1.46;
     siren.add(
@@ -1442,7 +1552,6 @@ function createCar(color = '#b9b8aa', cop = false) {
     a: 0,
     speed: 0,
     health: 100,
-    wheels,
     cop,
     siren,
     name: cop ? 'PATRULLA' : 'COSTA GT',
@@ -1455,49 +1564,44 @@ function createPerson(color = '#78805a') {
     shirt = modelMaterial(color),
     pants = modelMaterial('#334550'),
     shoes = modelMaterial('#252b2d'),
-    hair = modelMaterial('#3b302a');
-  function oval(parent, m, x, y, z, sx, sy, sz) {
-    const o = new THREE.Mesh(
-      modelGeometry('person-sphere', () => new THREE.SphereGeometry(1, 12, 8)),
-      m,
-    );
-    o.position.set(x, y, z);
-    o.scale.set(sx, sy, sz);
-    o.castShadow = true;
-    parent.add(o);
-    return o;
-  }
-  function limb(parent, m, top, bottom, length, y) {
-    const o = new THREE.Mesh(modelCylinder(top, bottom, length, 10), m);
-    o.position.y = y;
-    o.castShadow = true;
-    parent.add(o);
-  }
-  oval(g, shirt, 0, 1.14, 0, 0.215, 0.285, 0.135);
-  oval(g, pants, 0, 0.91, 0, 0.185, 0.15, 0.13);
-  limb(g, skin, 0.055, 0.06, 0.12, 1.44);
-  oval(g, skin, 0, 1.585, 0, 0.115, 0.145, 0.117);
-  oval(g, hair, 0, 1.665, -0.024, 0.118, 0.079, 0.108);
-  oval(g, skin, 0, 1.57, 0.114, 0.033, 0.035, 0.03);
-  for (const x of [-0.116, 0.116]) oval(g, skin, x, 1.59, 0, 0.023, 0.04, 0.027);
+    hair = modelMaterial('#3b302a'),
+    sphere = modelGeometry('person-sphere', () => new THREE.SphereGeometry(1, 12, 8));
+  // Torso/head and each leg/arm are merged per material; legs and arms remain animated groups.
+  const oval = (parts, slot, m, x, y, z, sx, sy, sz) =>
+    parts.add(slot, m, sphere, x, y, z, [0, 0, 0], [sx, sy, sz]);
+  const limb = (parts, slot, m, top, bottom, length, y) =>
+    parts.add(slot, m, modelCylinder(top, bottom, length, 10), 0, y);
+  let body = modelParts();
+  oval(body, 'shirt', shirt, 0, 1.14, 0, 0.215, 0.285, 0.135);
+  oval(body, 'pants', pants, 0, 0.91, 0, 0.185, 0.15, 0.13);
+  limb(body, 'skin', skin, 0.055, 0.06, 0.12, 1.44);
+  oval(body, 'skin', skin, 0, 1.585, 0, 0.115, 0.145, 0.117);
+  oval(body, 'hair', hair, 0, 1.665, -0.024, 0.118, 0.079, 0.108);
+  oval(body, 'skin', skin, 0, 1.57, 0.114, 0.033, 0.035, 0.03);
+  for (const x of [-0.116, 0.116]) oval(body, 'skin', skin, x, 1.59, 0, 0.023, 0.04, 0.027);
+  body.attach(g, 'person-body');
   const limbs = [];
   for (const x of [-0.105, 0.105]) {
-    const leg = new THREE.Group();
+    const leg = new THREE.Group(),
+      parts = modelParts();
     leg.position.set(x, 0.9, 0);
-    limb(leg, pants, 0.083, 0.065, 0.39, -0.19);
-    oval(leg, pants, 0, -0.39, 0, 0.065, 0.073, 0.067);
-    limb(leg, pants, 0.062, 0.048, 0.36, -0.58);
-    oval(leg, shoes, 0, -0.815, 0.055, 0.069, 0.075, 0.145);
+    limb(parts, 'pants', pants, 0.083, 0.065, 0.39, -0.19);
+    oval(parts, 'pants', pants, 0, -0.39, 0, 0.065, 0.073, 0.067);
+    limb(parts, 'pants', pants, 0.062, 0.048, 0.36, -0.58);
+    oval(parts, 'shoes', shoes, 0, -0.815, 0.055, 0.069, 0.075, 0.145);
+    parts.attach(leg, 'person-leg');
     g.add(leg);
     limbs.push(leg);
   }
   for (const x of [-0.237, 0.237]) {
-    const arm = new THREE.Group();
+    const arm = new THREE.Group(),
+      parts = modelParts();
     arm.position.set(x, 1.34, 0);
-    oval(arm, shirt, 0, -0.065, 0, 0.073, 0.1, 0.073);
-    limb(arm, shirt, 0.068, 0.052, 0.22, -0.13);
-    limb(arm, skin, 0.048, 0.034, 0.24, -0.35);
-    oval(arm, skin, 0, -0.49, 0, 0.042, 0.068, 0.044);
+    oval(parts, 'shirt', shirt, 0, -0.065, 0, 0.073, 0.1, 0.073);
+    limb(parts, 'shirt', shirt, 0.068, 0.052, 0.22, -0.13);
+    limb(parts, 'skin', skin, 0.048, 0.034, 0.24, -0.35);
+    oval(parts, 'skin', skin, 0, -0.49, 0, 0.042, 0.068, 0.044);
+    parts.attach(arm, 'person-arm');
     g.add(arm);
     limbs.push(arm);
   }
@@ -1538,11 +1642,13 @@ function buildRoadDetails() {
       mat('#e8dfbb', { side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
     ),
   );
-  // Retain actual river outline and actual mapped bridges.
-  for (const a of waterAreas) {
-    let m = flatPolygon(a.p, 0.025, mat('#658b80', { metalness: 0.2, roughness: 0.45 }));
-    scene.add(m);
-  }
+  // Retain actual river outline and actual mapped bridges. Static pieces share one
+  // cached material per colour and are merged into one mesh per material.
+  const water = [],
+    decks = [],
+    rails = [],
+    at = (x, y, z, angle = 0) => new THREE.Matrix4().makeRotationY(angle).setPosition(x, y, z);
+  for (const a of waterAreas) water.push({ geometry: flatGeometry(a.p), matrix: at(0, 0.025, 0) });
   for (const r of city.roads) {
     if (!r.bridge) continue;
     for (let i = 1; i < r.p.length; i++) {
@@ -1550,31 +1656,33 @@ function buildRoadDetails() {
         b = r.p[i],
         length = Math.hypot(b[0] - a[0], b[1] - a[1]),
         angle = Math.atan2(b[0] - a[0], b[1] - a[1]);
-      let bridge = box(
-        r.w,
-        0.12,
-        length,
-        mat('#b9b5a5'),
-        (a[0] + b[0]) / 2,
-        0.02,
-        (a[1] + b[1]) / 2,
-      );
-      bridge.rotation.y = angle;
-      scene.add(bridge);
-      for (let side of [-1, 1]) {
-        let rail = box(
-          0.12,
-          0.12,
-          length,
-          mat('#b7b9af'),
-          (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
-          1,
-          (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
-        );
-        rail.rotation.y = angle;
-        scene.add(rail);
-      }
+      decks.push({
+        geometry: new THREE.BoxGeometry(r.w, 0.12, length),
+        matrix: at((a[0] + b[0]) / 2, 0.02, (a[1] + b[1]) / 2, angle),
+      });
+      for (let side of [-1, 1])
+        rails.push({
+          geometry: new THREE.BoxGeometry(0.12, 0.12, length),
+          matrix: at(
+            (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
+            1,
+            (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
+            angle,
+          ),
+        });
     }
+  }
+  for (const [parts, material, cast] of [
+    [water, modelMaterial('#658b80', { metalness: 0.2, roughness: 0.45 }), false],
+    [decks, modelMaterial('#b9b5a5'), true],
+    [rails, modelMaterial('#b7b9af'), true],
+  ]) {
+    if (!parts.length) continue;
+    let mesh = new THREE.Mesh(mergeParts(parts), material);
+    mesh.castShadow = cast;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    for (const p of parts) p.geometry.dispose();
   }
 }
 const mappedStreetObjects = [
@@ -1731,6 +1839,7 @@ let streetEnvironment = {
   trees: 0,
   crossings: 0,
   surfaces: 0,
+  signs: 0,
 };
 function surfaceTexture(kind) {
   let c = document.createElement('canvas');
@@ -1781,7 +1890,7 @@ function buildStreetSurfaces() {
   let groups = {
     asphalt: { p: [], uv: [], tex: asphalt },
     stone: { p: [], uv: [], tex: stone },
-    slabs: { p: [], uv: [], tex: slabs },
+    slabs: { p: [], uv: [], tex: slabs, roughness: 0.98 },
   };
   function tri(g, pts, uv) {
     for (let i of [0, 1, 2, 0, 2, 3]) {
@@ -1830,16 +1939,18 @@ function buildStreetSurfaces() {
       !a.p.some((p) => p[0] > -360 && p[0] < 100 && p[1] > -240 && p[1] < 100)
     )
       continue;
-    let mesh = flatPolygon(
-      a.p,
-      0.036,
-      new THREE.MeshStandardMaterial({ map: slabs, roughness: 0.98, side: THREE.DoubleSide }),
-    );
-    const p = mesh.geometry.getAttribute('position'),
-      uv = mesh.geometry.getAttribute('uv');
-    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / 4, -p.getZ(i) / 4);
-    uv.needsUpdate = true;
-    scene.add(mesh);
+    // All squares share the slab material and one merged mesh.
+    let geo = flatGeometry(a.p),
+      p = geo.getAttribute('position'),
+      index = geo.index;
+    for (let i = 0; i < index.count; i++) {
+      let k = index.getX(i),
+        x = p.getX(k),
+        z = p.getZ(k);
+      groups.slabs.p.push(x, 0.036 + p.getY(k), z);
+      groups.slabs.uv.push(x / 4, -z / 4);
+    }
+    geo.dispose();
     streetEnvironment.surfaces++;
   }
   for (const g of Object.values(groups)) {
@@ -1850,7 +1961,11 @@ function buildStreetSurfaces() {
     geo.computeVertexNormals();
     let mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshStandardMaterial({ map: g.tex, roughness: 0.96, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({
+        map: g.tex,
+        roughness: g.roughness ?? 0.96,
+        side: THREE.DoubleSide,
+      }),
     );
     mesh.receiveShadow = true;
     scene.add(mesh);
@@ -1886,15 +2001,17 @@ function buildStreetSurfaces() {
   scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }
 function buildUrbanFurniture() {
-  const staging = new THREE.Group(),
+  const unitBox = new THREE.BoxGeometry(1, 1, 1),
+    staging = new THREE.Group(),
     materials = new Map();
   function ma(col) {
     if (!materials.has(col)) materials.set(col, mat(col));
     return materials.get(col);
   }
   function cube(g, x, y, z, w, h, d, c) {
-    let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ma(c));
+    let m = new THREE.Mesh(unitBox, ma(c));
     m.position.set(x, y, z);
+    m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
@@ -2247,9 +2364,11 @@ function buildTrees() {
   addVegetationCells(vegetation, leaves, 'shrubs');
 }
 
+// Street signs: one canvas atlas, one material and one merged mesh; posts are instanced.
 function addSigns() {
   let selected = city.roads.filter((r) => r.name && r.p.length > 2),
-    seen = new Set();
+    seen = new Set(),
+    signs = [];
   for (const r of selected) {
     if (seen.has(r.name)) continue;
     seen.add(r.name);
@@ -2261,32 +2380,78 @@ function addSigns() {
       x = p[0] + Math.cos(ang) * (r.w / 2 + 0.5),
       z = p[1] - Math.sin(ang) * (r.w / 2 + 0.5);
     if (inBuilding(x, z, 0.15)) continue;
-    let cn = document.createElement('canvas');
-    cn.width = 512;
-    cn.height = 96;
-    let a = cn.getContext('2d');
-    a.fillStyle = '#204e66';
-    a.fillRect(0, 0, 512, 96);
-    a.strokeStyle = '#ececdc';
-    a.lineWidth = 5;
-    a.strokeRect(8, 8, 496, 80);
-    a.fillStyle = '#f2eedc';
-    a.font = 'bold 30px Arial';
-    a.textAlign = 'center';
-    a.textBaseline = 'middle';
-    a.fillText(r.name.toUpperCase(), 256, 50, 470);
-    let tex = new THREE.CanvasTexture(cn);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    let sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.3, 0.62),
-      new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }),
-    );
-    sign.position.set(x, 2.45, z);
-    sign.rotation.y = ang;
-    let post = box(0.06, 2.8, 0.06, mat('#5d6260'), x, 1.4, z);
-    scene.add(sign, post);
+    signs.push({ name: r.name, x, z, ang });
     if (seen.size > 90) break;
   }
+  if (!signs.length) return;
+  // 512×96 cells as before, separated by an 8 px gutter of the background colour so
+  // mipmaps do not bleed neighbouring text.
+  const cellW = 512,
+    cellH = 96,
+    gutter = 8,
+    cols = 4,
+    pitchW = cellW + gutter * 2,
+    pitchH = cellH + gutter * 2,
+    atlas = document.createElement('canvas');
+  atlas.width = cols * pitchW;
+  atlas.height = Math.ceil(signs.length / cols) * pitchH;
+  let a = atlas.getContext('2d');
+  a.fillStyle = '#204e66';
+  a.fillRect(0, 0, atlas.width, atlas.height);
+  a.strokeStyle = '#ececdc';
+  a.lineWidth = 5;
+  a.fillStyle = '#f2eedc';
+  a.font = 'bold 30px Arial';
+  a.textAlign = 'center';
+  a.textBaseline = 'middle';
+  const position = [],
+    uv = [],
+    index = [],
+    posts = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.06, 2.8, 0.06),
+      mat('#5d6260'),
+      signs.length,
+    ),
+    matrix = new THREE.Matrix4();
+  signs.forEach((sign, i) => {
+    let ox = (i % cols) * pitchW + gutter,
+      oy = Math.floor(i / cols) * pitchH + gutter;
+    a.strokeRect(ox + 8, oy + 8, 496, 80);
+    a.fillText(sign.name.toUpperCase(), ox + 256, oy + 50, 470);
+    let cos = Math.cos(sign.ang),
+      sin = Math.sin(sign.ang),
+      base = position.length / 3;
+    // Same vertex order and UV orientation as PlaneGeometry(3.3, 0.62) rotated by ang.
+    for (const [u, v] of [
+      [0, 1],
+      [1, 1],
+      [0, 0],
+      [1, 0],
+    ]) {
+      let lx = (u - 0.5) * 3.3;
+      position.push(sign.x + lx * cos, 2.45 + (v - 0.5) * 0.62, sign.z - lx * sin);
+      uv.push((ox + u * cellW) / atlas.width, 1 - (oy + (1 - v) * cellH) / atlas.height);
+    }
+    index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
+    posts.setMatrixAt(i, matrix.makeTranslation(sign.x, 1.4, sign.z));
+  });
+  let tex = new THREE.CanvasTexture(atlas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  let geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(index);
+  geo.computeBoundingSphere();
+  let plates = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }),
+  );
+  plates.name = 'street-signs';
+  posts.name = 'street-sign-posts';
+  posts.castShadow = posts.receiveShadow = true;
+  posts.computeBoundingSphere();
+  scene.add(plates, posts);
+  streetEnvironment.signs = signs.length;
 }
 function setupPOIs() {
   const spec = [
@@ -2429,7 +2594,11 @@ async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
   const [res, tex, heightSamples, profiles] = await Promise.all([
     loadWorld(),
-    new THREE.TextureLoader().loadAsync('aerial.jpg'),
+    // Light mode and touch devices start with the 2048×1536 derivative (same extent).
+    // Toggling quality later does not reload it. Without the orthophoto, plain colours.
+    new THREE.TextureLoader()
+      .loadAsync(quality === 'low' || coarse ? 'aerial-2048.jpg' : 'aerial.jpg')
+      .catch(() => null),
     fetch('height-samples.json')
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
@@ -2442,8 +2611,10 @@ async function init() {
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   facadeProfiles = profiles;
   groundTexture = tex;
-  groundTexture.colorSpace = THREE.SRGBColorSpace;
-  groundTexture.anisotropy = 4;
+  if (groundTexture) {
+    groundTexture.colorSpace = THREE.SRGBColorSpace;
+    groundTexture.anisotropy = 4;
+  } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
   [worldW, worldH] = city.size;
   loadProgress('Preparando el mundo 3D…', 25);
   renderer = new THREE.WebGLRenderer({
@@ -2482,7 +2653,9 @@ async function init() {
   scene.add(sun, sun.target);
   let g = new THREE.Mesh(
     new THREE.PlaneGeometry(worldW, worldH),
-    new THREE.MeshStandardMaterial({ map: groundTexture, roughness: 1 }),
+    new THREE.MeshStandardMaterial(
+      groundTexture ? { map: groundTexture, roughness: 1 } : { color: '#9a9b86', roughness: 1 },
+    ),
   );
   g.rotation.x = -Math.PI / 2;
   g.receiveShadow = true;
@@ -3181,8 +3354,6 @@ function drawLabels() {
   el.style.top = y - 19 + 'px';
   el.textContent = Math.abs(angle % TAU) > Math.PI * 0.65 ? '↶' : '◆';
 }
-const aerialImage = new Image();
-aerialImage.src = 'aerial.jpg';
 let streetNames = [];
 const chart = document.createElement('canvas');
 chart.width = 1344;
@@ -3238,7 +3409,9 @@ function drawMap(canvas, mini = false) {
   c.save();
   c.translate(ox - (worldW / 2) * scale, oy - (worldH / 2) * scale);
   c.scale(scale, scale);
-  if (mapAerial && !mini && aerialImage.complete) c.drawImage(aerialImage, 0, 0, worldW, worldH);
+  // The 2D orthophoto reuses the image already loaded for the ground texture.
+  if (mapAerial && !mini && groundTexture?.image)
+    c.drawImage(groundTexture.image, 0, 0, worldW, worldH);
   else c.drawImage(chart, 0, 0, worldW, worldH);
   c.translate(worldW / 2, worldH / 2);
   if (route.length) {

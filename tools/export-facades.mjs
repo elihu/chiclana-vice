@@ -15,8 +15,8 @@ try {
     verifier
       .slice(0, marker.index + marker[0].length)
       .replace(
-        "'../web/vendor/three.module.js'",
-        JSON.stringify(pathToFileURL(path.resolve('web/vendor/three.module.js')).href),
+        "'../web/vendor/three.module.min.js'",
+        JSON.stringify(pathToFileURL(path.resolve('web/vendor/three.module.min.js')).href),
       )
       .replace("'tests/qa3d-runtime.mjs'", JSON.stringify(path.join(temp, 'runtime.mjs')))
       .replace("'./qa3d-runtime.mjs'", "'./runtime.mjs'") + '\nexport { g };\n';

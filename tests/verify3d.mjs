@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import * as Real from '../web/vendor/three.module.js';
+import * as Real from '../web/vendor/three.module.min.js';
 const noop = () => {};
 const context = new Proxy(
   { measureText: (s) => ({ width: s.length * 7 }) },
@@ -68,7 +68,8 @@ class Renderer {
   render() {}
 }
 class Loader {
-  loadAsync() {
+  loadAsync(url) {
+    globalThis.__aerialUrl = url;
     return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
   }
 }
@@ -76,7 +77,7 @@ globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader }
 let code = fs
   .readFileSync('web/game3d.js', 'utf8')
   .replace(
-    /import \* as THREE from ['"]\.\/vendor\/three\.module\.js['"];?/,
+    /import \* as THREE from ['"]\.\/vendor\/three\.module(?:\.min)?\.js['"];?/,
     'const THREE=globalThis.__THREE;',
   )
   .replace(
@@ -88,6 +89,11 @@ fs.writeFileSync('tests/qa3d-runtime.mjs', code);
 await import('./qa3d-runtime.mjs');
 await globalThis.__initPromise;
 assert(globalThis.__cityGame, 'init completed');
+assert.equal(
+  globalThis.__aerialUrl,
+  'aerial-2048.jpg',
+  'touch devices load the reduced orthophoto',
+);
 const g = globalThis.__cityGame;
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
 console.log(
@@ -175,6 +181,10 @@ console.log(
 const detail = g.scene.getObjectByName('reference-led-facades');
 assert(detail, 'custom details exist');
 assert(g.facadeWork.fronts.length > 20, 'street frontages upgraded');
+// Closed facade solids are single-sided; flat/open shapes keep DoubleSide.
+const facadeSides = detail.children.map((m) => m.material.side);
+assert(facadeSides.filter((s) => s === Real.FrontSide).length > facadeSides.length / 2);
+assert(facadeSides.includes(Real.DoubleSide), 'flat facade shapes stay double-sided');
 for (const p of [
   [-99, -15],
   [-215, -145],
@@ -194,6 +204,15 @@ assert(
     environmentCounts.crossings > 0,
   'environment generated',
 );
+
+const signPlates = g.scene.getObjectByName('street-signs'),
+  signPosts = g.scene.getObjectByName('street-sign-posts');
+assert(signPlates && signPosts.isInstancedMesh, 'sign atlas and instanced posts');
+assert.equal(signPosts.count, environmentCounts.signs);
+assert.equal(signPlates.geometry.index.count, environmentCounts.signs * 6, 'one quad per sign');
+const signUV = signPlates.geometry.getAttribute('uv');
+for (let i = 0; i < signUV.count; i++)
+  assert(signUV.getX(i) >= 0 && signUV.getX(i) <= 1 && signUV.getY(i) >= 0 && signUV.getY(i) <= 1);
 
 const person = g.createPerson();
 const bounds = new Real.Box3().setFromObject(person.mesh);
@@ -249,6 +268,15 @@ am.forEach((m, i) => {
   assert.equal(m.material, bm[i].material, 'same-color materials shared');
   assert.notEqual(m.position, bm[i].position, 'transforms independent');
 });
+// Static parts are merged per material; cabin/roof, siren and animated limbs stay separate.
+assert.equal(am.length, 9, 'car merged per material and shadow role');
+const cop = g.createCar('#123456', true);
+assert.equal(carMeshes(cop).length, 12, 'patrol keeps separate siren');
+assert(cop.siren.isGroup && cop.siren.children.length === 2);
+assert(a.firstPersonOccluders.every((m) => m.parent === a.mesh && am.includes(m)));
+assert.equal(carMeshes({ mesh: person.mesh }).length, 12, 'person merged per material');
+assert.equal(person.limbs.length, 4);
+for (const limb of person.limbs) assert(limb.isGroup && limb.children.length === 2);
 const otherPerson = g.createPerson();
 assert.equal(
   person.mesh.children[0].geometry,

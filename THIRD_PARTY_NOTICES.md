@@ -44,6 +44,10 @@ GetMap comprobado el 6/10/2026 coincide por SHA256 con aerial.jpg distribuida
 (98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af).
 `aerial.jpg`: ortofoto PNOA máxima actualidad consultada 4/10/2026,
 WMS IGN, recorte 4096 × 3072 de la zona jugable; usado en suelo y tejados.
+`aerial-2048.jpg`: obra derivada de `aerial.jpg` (PNOA 2022-07, CC BY 4.0
+IGN / PNOA / SCNE, scne.es) con el mismo recorte y georreferencia, remuestreada
+a 2048 × 1536 (Lanczos, JPEG calidad 82) con `tools/reduce-aerial.py`; la cargan
+el modo ligero y los dispositivos táctiles. Misma atribución y condiciones.
 `height-samples.json` y auditoría IGN: derivados independientes del producto
 MDSnE2,5 de PRIMERA cobertura PNOA-LiDAR (2008–2015), consultado 5/10/2026.
 El servicio WCS declara CC BY 4.0 scne.es. Se seleccionó una ventana local y
@@ -61,6 +65,10 @@ https://creativecommons.org/licenses/by/4.0/
 ## Three.js
 
 Three.js 0.169.0, MIT, Copyright © 2010–2024 three.js authors.
+`vendor/three.module.min.js`: build minificada oficial sin modificar, tomada de
+`build/three.module.min.js` del paquete npm three@0.169.0 (integridad
+sha512-Ed906MA3dR4TS5riErd4QBsRGPcx+HBDX2O5yYE5GqJeFQTPU+M56Va/f/Oph9X7uZo3W3o4l2ZhBZ6f6qUv0w==);
+conserva la cabecera de licencia.
 Mantener `vendor/LICENSE-three.txt` junto a la librería.
 
 ## Fachadas, monumentos y referencias
