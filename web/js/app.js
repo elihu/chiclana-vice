@@ -39,6 +39,9 @@ import {
   gfx,
   session,
   audio,
+  view,
+  pointer,
+  actors,
 } from './core/state.js';
 
 // Cache-busting suffix shared by every runtime resource, passed by the entry module.
@@ -72,7 +75,6 @@ function setStyle(target, prop, value) {
     c = domCache(e);
   if (c[prop] !== value) e.style[prop] = c[prop] = value;
 }
-let mode = 0;
 function installTouchDetection() {
   gfx.W = innerWidth;
   gfx.H = innerHeight;
@@ -100,14 +102,6 @@ const rnd = () => {
   randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
   return randSeed / 4294967296;
 };
-let joyId = null,
-  dragId = null,
-  dragX = 0,
-  dragY = 0,
-  orbit = 0,
-  lookPitch = 0,
-  orbitAge = 0,
-  firstPersonCar = null;
 function loadSavedProgress() {
   const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
   if (stored.quality === 'low') gfx.quality = 'low';
@@ -115,7 +109,6 @@ function loadSavedProgress() {
   state.job = stored.job;
   state.found = new Set(stored.found);
 }
-let character, ring, beam, arrow;
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
@@ -2746,11 +2739,11 @@ async function init() {
   cars.push(car);
   Object.assign(player, spawn);
   player.car = car;
-  character = createPerson('#d7d5b0');
-  character.mesh.visible = false;
+  actors.character = createPerson('#d7d5b0');
+  actors.character.mesh.visible = false;
   spawnTraffic();
   vehicles.push(...cars, ...traffic);
-  ring = new THREE.Mesh(
+  actors.ring = new THREE.Mesh(
     new THREE.RingGeometry(5.5, 6.2, 48),
     new THREE.MeshBasicMaterial({
       color: '#ffd285',
@@ -2759,10 +2752,10 @@ async function init() {
       opacity: 0.85,
     }),
   );
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.y = 0.15;
-  gfx.scene.add(ring);
-  beam = new THREE.Mesh(
+  actors.ring.rotation.x = -Math.PI / 2;
+  actors.ring.position.y = 0.15;
+  gfx.scene.add(actors.ring);
+  actors.beam = new THREE.Mesh(
     new THREE.CylinderGeometry(5.6, 5.6, 4, 32, 1, true),
     new THREE.MeshBasicMaterial({
       color: '#ffc177',
@@ -2772,10 +2765,10 @@ async function init() {
       depthWrite: false,
     }),
   );
-  gfx.scene.add(beam);
+  gfx.scene.add(actors.beam);
   let arrowGeo = new THREE.ConeGeometry(0.55, 1.5, 4);
-  arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#edfa88' }));
-  gfx.scene.add(arrow);
+  actors.arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#edfa88' }));
+  gfx.scene.add(actors.arrow);
   camPos.set(player.x - 15, 12, player.z - 15);
   camTarget.set(player.x, 1, player.z);
   gfx.camera.position.copy(camPos);
@@ -2796,8 +2789,8 @@ function clearInput() {
   for (const p of holdPointers.values()) p.clear();
   for (const k in input) input[k] = typeof input[k] === 'boolean' ? false : 0;
   for (const k in keys) delete keys[k];
-  joyId = null;
-  dragId = null;
+  pointer.joyId = null;
+  pointer.dragId = null;
   $('stick').style.transform = '';
   document.querySelectorAll('.pressed').forEach((e) => e.classList.remove('pressed'));
 }
@@ -2993,12 +2986,12 @@ function updatePlayer(dt) {
   } else {
     let ix = input.jx,
       iy = -input.jy;
-    if (joyId === null) {
+    if (pointer.joyId === null) {
       ix = steer;
       iy = (gas ? 1 : 0) - (brake ? 1 : 0);
     }
     let mag = Math.min(1, Math.hypot(ix, iy)),
-      heading = player.a + orbit;
+      heading = player.a + view.orbit;
     let a = heading - Math.atan2(ix, iy),
       v = (boost ? 6.1 : 3.2) * mag;
     if (mag > 0.1) {
@@ -3006,11 +2999,11 @@ function updatePlayer(dt) {
         nz = player.z + Math.cos(a) * v * dt;
       if (!blocked(nx, player.z, 0.28)) player.x = nx;
       if (!blocked(player.x, nz, 0.28)) player.z = nz;
-      character.mesh.rotation.y = a;
+      actors.character.mesh.rotation.y = a;
     }
     player.speed = v;
-    character.mesh.position.set(player.x, 0, player.z);
-    character.limbs.forEach(
+    actors.character.mesh.position.set(player.x, 0, player.z);
+    actors.character.limbs.forEach(
       (l, i) =>
         (l.rotation.x =
           Math.sin(session.t * (boost ? 12 : 8) + (i % 2) * Math.PI) * Math.min(0.65, v * 0.13)),
@@ -3201,16 +3194,16 @@ function update(dt) {
       save();
     }
   if (goal && !goal.escape) {
-    ring.visible = beam.visible = true;
-    ring.position.set(goal.x, 0.16, goal.z);
-    ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
-    beam.position.set(goal.x, 2, goal.z);
-    beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
-    arrow.visible = true;
-    arrow.position.set(goal.x, 6 + Math.sin(session.t * 2) * 0.4, goal.z);
-    arrow.rotation.z = Math.PI;
-    arrow.rotation.y = session.t * 0.7;
-  } else ring.visible = beam.visible = arrow.visible = false;
+    actors.ring.visible = actors.beam.visible = true;
+    actors.ring.position.set(goal.x, 0.16, goal.z);
+    actors.ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
+    actors.beam.position.set(goal.x, 2, goal.z);
+    actors.beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
+    actors.arrow.visible = true;
+    actors.arrow.position.set(goal.x, 6 + Math.sin(session.t * 2) * 0.4, goal.z);
+    actors.arrow.rotation.z = Math.PI;
+    actors.arrow.rotation.y = session.t * 0.7;
+  } else actors.ring.visible = actors.beam.visible = actors.arrow.visible = false;
   session.routeClock -= dt;
   if (session.routeClock <= 0) {
     session.routeClock = 2.5;
@@ -3219,8 +3212,8 @@ function update(dt) {
         ? findRoute(nearestNode(player.x, player.z), nearestNode(goal.x, goal.z))
         : [];
   }
-  if (orbitAge > 0) orbitAge -= dt;
-  else if (player.car && mode !== 1) orbit = lerp(orbit, 0, dt * 2);
+  if (view.orbitAge > 0) view.orbitAge -= dt;
+  else if (player.car && view.mode !== 1) view.orbit = lerp(view.orbit, 0, dt * 2);
   updateCamera(dt);
   setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
   setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
@@ -3261,15 +3254,16 @@ function update(dt) {
   }
 }
 function updateCameraVisibility() {
-  if (firstPersonCar && (mode !== 1 || firstPersonCar !== player.car))
-    firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = true));
-  firstPersonCar = mode === 1 ? player.car : null;
-  if (firstPersonCar) firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = false));
-  character.mesh.visible = !player.car && mode !== 1;
+  if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
+    view.firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = true));
+  view.firstPersonCar = view.mode === 1 ? player.car : null;
+  if (view.firstPersonCar)
+    view.firstPersonCar.firstPersonOccluders.forEach((m) => (m.visible = false));
+  actors.character.mesh.visible = !player.car && view.mode !== 1;
 }
 function snapCamera() {
-  orbit = 0;
-  lookPitch = 0;
+  view.orbit = 0;
+  view.lookPitch = 0;
   updateCamera(1);
 }
 // Sweep against cadastral volumes at the ray height; camera only, no physics changes.
@@ -3318,12 +3312,12 @@ function constrainCamera(position) {
   }
 }
 function updateCamera(dt) {
-  let heading = player.a + orbit,
+  let heading = player.a + view.orbit,
     follow = player.car ? 9.7 : 5.9,
     y = player.car ? 4.7 : 3.2,
     look = player.car ? 4.8 : 2.8;
   let desired, target;
-  if (mode === 1) {
+  if (view.mode === 1) {
     let ahead = player.car ? -0.15 : 0,
       side = player.car ? 0.38 : 0;
     desired = camDesired.set(
@@ -3332,14 +3326,14 @@ function updateCamera(dt) {
       player.z + Math.cos(player.a) * ahead - Math.sin(player.a) * side,
     );
     target = camLook.set(
-      desired.x + Math.sin(heading) * Math.cos(lookPitch) * 18,
-      desired.y + Math.sin(lookPitch) * 18,
-      desired.z + Math.cos(heading) * Math.cos(lookPitch) * 18,
+      desired.x + Math.sin(heading) * Math.cos(view.lookPitch) * 18,
+      desired.y + Math.sin(view.lookPitch) * 18,
+      desired.z + Math.cos(heading) * Math.cos(view.lookPitch) * 18,
     );
     camPos.copy(desired);
     camTarget.copy(target);
   } else {
-    if (mode === 2) {
+    if (view.mode === 2) {
       follow = 25;
       y = 45;
       look = 0;
@@ -3351,13 +3345,13 @@ function updateCamera(dt) {
     );
     target = camLook.set(
       player.x + Math.sin(heading) * look,
-      mode === 2 ? 0 : 1.1 + Math.tan(lookPitch) * look,
+      view.mode === 2 ? 0 : 1.1 + Math.tan(view.lookPitch) * look,
       player.z + Math.cos(heading) * look,
     );
-    if (mode === 0) constrainCamera(desired);
+    if (view.mode === 0) constrainCamera(desired);
     camPos.lerp(desired, 1 - Math.exp(-dt * 6));
     camTarget.lerp(target, 1 - Math.exp(-dt * 8));
-    if (mode === 0) constrainCamera(camPos);
+    if (view.mode === 0) constrainCamera(camPos);
   }
   updateCameraVisibility();
   gfx.camera.position.copy(camPos);
@@ -3367,7 +3361,7 @@ function updateCamera(dt) {
   gfx.sun.target.updateMatrixWorld();
   // In light mode, chunks beyond the fog end are culled (measured from the camera).
   const low = gfx.quality === 'low',
-    reach = low ? gfx.scene.fog.far : mode === 2 ? 650 : 520,
+    reach = low ? gfx.scene.fog.far : view.mode === 2 ? 650 : 520,
     ox = low ? gfx.camera.position.x : player.x,
     oz = low ? gfx.camera.position.z : player.z;
   for (const group of chunks) {
@@ -3379,7 +3373,7 @@ function updateCamera(dt) {
 function drawLabels() {
   for (const p of pois) {
     let di = Math.hypot(p.labelX - player.x, p.labelZ - player.z);
-    if (di > 125 || mode === 1) {
+    if (di > 125 || view.mode === 1) {
       setStyle(p.el, 'display', 'none');
       continue;
     }
@@ -3403,7 +3397,7 @@ function drawLabels() {
     setStyle(el, 'display', 'none');
     return;
   }
-  let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + orbit);
+  let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + view.orbit);
   let x = gfx.W / 2 - Math.sin(angle) * Math.min(gfx.W * 0.33, 180),
     y = gfx.H * 0.47 - Math.cos(angle) * Math.min(gfx.H * 0.18, 90);
   setStyle(el, 'display', 'grid');
@@ -3562,7 +3556,7 @@ function listStreets() {
       }
       Object.assign(player, position);
       player.speed = 0;
-      mode = 0;
+      view.mode = 0;
       session.routeClock = 0;
       closeMap();
       snapCamera();
@@ -3756,11 +3750,11 @@ function pauseMenu() {
   };
 }
 function cycleCamera() {
-  mode = (mode + 1) % 3;
+  view.mode = (view.mode + 1) % 3;
   snapCamera();
   toast(
     ['Cámara de seguimiento', 'Primera persona · mirada libre', 'Vista aérea del trazado real'][
-      mode
+      view.mode
     ],
     2,
   );
@@ -3812,7 +3806,7 @@ function installControls() {
   bindHold('boost', 'boost');
   const joy = $('joy');
   function joyMove(e) {
-    if (e.pointerId !== joyId) return;
+    if (e.pointerId !== pointer.joyId) return;
     let r = joy.getBoundingClientRect(),
       dx = e.clientX - r.left - r.width / 2,
       dz = e.clientY - r.top - r.height / 2,
@@ -3825,42 +3819,42 @@ function installControls() {
   }
   joy.onpointerdown = (e) => {
     e.preventDefault();
-    if (joyId !== null) return;
-    joyId = e.pointerId;
+    if (pointer.joyId !== null) return;
+    pointer.joyId = e.pointerId;
     joy.setPointerCapture(e.pointerId);
     joyMove(e);
   };
   joy.onpointermove = joyMove;
   for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
     joy.addEventListener(n, (e) => {
-      if (e.pointerId !== joyId) return;
-      joyId = null;
+      if (e.pointerId !== pointer.joyId) return;
+      pointer.joyId = null;
       input.jx = input.jy = 0;
       $('stick').style.transform = '';
     });
   $('world').onpointerdown = (e) => {
-    if (!session.started || session.paused || dragId !== null) return;
-    dragId = e.pointerId;
-    dragX = e.clientX;
-    dragY = e.clientY;
+    if (!session.started || session.paused || pointer.dragId !== null) return;
+    pointer.dragId = e.pointerId;
+    pointer.dragX = e.clientX;
+    pointer.dragY = e.clientY;
     $('world').setPointerCapture(e.pointerId);
   };
   $('world').onpointermove = (e) => {
-    if (e.pointerId !== dragId) return;
-    orbit -= (e.clientX - dragX) * 0.008;
-    if (mode !== 2)
-      lookPitch = clamp(
-        lookPitch - (e.clientY - dragY) * 0.006,
-        mode === 1 ? -1.35 : -0.65,
-        mode === 1 ? 1.35 : 0.65,
+    if (e.pointerId !== pointer.dragId) return;
+    view.orbit -= (e.clientX - pointer.dragX) * 0.008;
+    if (view.mode !== 2)
+      view.lookPitch = clamp(
+        view.lookPitch - (e.clientY - pointer.dragY) * 0.006,
+        view.mode === 1 ? -1.35 : -0.65,
+        view.mode === 1 ? 1.35 : 0.65,
       );
-    dragX = e.clientX;
-    dragY = e.clientY;
-    orbitAge = 2.5;
+    pointer.dragX = e.clientX;
+    pointer.dragY = e.clientY;
+    view.orbitAge = 2.5;
   };
   for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
     $('world').addEventListener(n, (e) => {
-      if (e.pointerId === dragId) dragId = null;
+      if (e.pointerId === pointer.dragId) pointer.dragId = null;
     });
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Tab') return trapFocus(e);
@@ -3984,7 +3978,7 @@ function showStartupError(err) {
 function createPublicApi() {
   return {
     get character() {
-      return character;
+      return actors.character;
     },
     createCar,
     createPerson,
@@ -4007,11 +4001,11 @@ function createPublicApi() {
     get view() {
       return {
         position: gfx.camera.position.toArray(),
-        mode,
-        pitch: lookPitch,
-        yaw: player.a + orbit,
+        mode: view.mode,
+        pitch: view.lookPitch,
+        yaw: player.a + view.orbit,
         direction: gfx.camera.getWorldDirection(new THREE.Vector3()).toArray(),
-        obstructed: mode === 0 && cameraSweep(gfx.camera.position) < 1,
+        obstructed: view.mode === 0 && cameraSweep(gfx.camera.position) < 1,
       };
     },
     get stats() {
@@ -4033,7 +4027,7 @@ function createTestApi() {
     cycleCamera,
     camPos,
     setOrbit: (v) => {
-      orbit = v;
+      view.orbit = v;
     },
     carCollision,
     findRoute,
