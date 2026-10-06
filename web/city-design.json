@@ -1,4 +1,5 @@
 {
+  "$schema": "../schemas/city-design.schema.json",
   "version": 1,
   "description": "Authored street design rules. Rectangles are [minX, maxX, minZ, maxZ] in local metres. Values equal those of main 5666928 (web/game3d.js); recipes live in facade-designs.json.",
   "license": "ODbL-1.0",
