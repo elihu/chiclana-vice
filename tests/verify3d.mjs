@@ -7,6 +7,22 @@ const context = new Proxy(
   { get: (o, k) => (k in o ? o[k] : noop), set: (o, k, v) => ((o[k] = v), true) },
 );
 const els = {};
+// Initial classes from index.html, so classList reflects which overlays are hidden.
+const initialClasses = {};
+for (const [tag] of fs.readFileSync('web/index.html', 'utf8').matchAll(/<[a-z]+\b[^>]*>/g)) {
+  const id = tag.match(/\bid="([^"]+)"/)?.[1],
+    cls = tag.match(/\bclass="([^"]+)"/)?.[1];
+  if (id) initialClasses[id] = cls ? cls.split(/\s+/) : [];
+}
+function classList(id) {
+  const set = new Set(initialClasses[id] || []);
+  return {
+    add: (...c) => c.forEach((v) => set.add(v)),
+    remove: (...c) => c.forEach((v) => set.delete(v)),
+    toggle: (c, force = !set.has(c)) => (force ? set.add(c) : set.delete(c), force),
+    contains: (c) => set.has(c),
+  };
+}
 function el(id) {
   return (els[id] ??= {
     id,
@@ -14,7 +30,7 @@ function el(id) {
     style: {},
     value: '',
     children: [],
-    classList: { add: noop, remove: noop, toggle: noop, contains: () => true },
+    classList: classList(id),
     getContext: () => context,
     appendChild(v) {
       this.children.push(v);
@@ -92,7 +108,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -614,3 +630,65 @@ function referenceRoute(graph, from, to, driveOnly) {
 assert.equal(g.people.length, 28, 'all planned pedestrians spawned');
 assert(g.people.every((p) => p.s.length >= 8));
 console.log('Pedestrians', g.people.length);
+
+// Street search: accent-insensitive also for viewpoints; teleport by car lands on a drive road.
+{
+  els.streetSearch.value = 'jesus';
+  g.listStreets();
+  const labels = els.streetList.children.map((b) => b.textContent);
+  assert(labels.includes('Jesús Nazareno · ver fachada'), 'viewpoint found without accent');
+  assert(labels.includes('Calle Jesús Nazareno'), 'street found without accent');
+  if (!g.player.car) g.interact();
+  if (!g.player.car) {
+    const car = g.cars[0];
+    Object.assign(g.player, { x: car.x, z: car.z });
+    car.speed = 0;
+    g.interact();
+  }
+  assert(g.player.car, 'driving for teleport test');
+  els.streetSearch.value = '';
+  g.listStreets();
+  for (const name of ['Calle Jesús Nazareno', 'Calle de la Vega', 'Plaza Mayor']) {
+    const button = els.streetList.children.find((b) => b.textContent === name);
+    if (!button) continue;
+    button.onclick();
+    const road = g.nearestRoad(g.player.x, g.player.z, true);
+    assert(road.d < 0.01, 'car teleported onto a drive road: ' + name);
+    assert.equal(g.player.car.x, g.player.x);
+  }
+  console.log('Accent-insensitive search and drive-safe teleport passed');
+}
+// Escape closes the map even while typing in the search field.
+{
+  g.openMap();
+  assert(g.paused);
+  windowListeners.keydown.forEach((f) =>
+    f({ key: 'Escape', target: { tagName: 'INPUT' }, preventDefault() {} }),
+  );
+  assert(!g.paused, 'Escape in search closes the map');
+}
+// Credits links open in a new tab, except the arcade version.
+{
+  g.help();
+  const links = [...els.modalBody.innerHTML.matchAll(/<a [^>]*>/g)].map((m) => m[0]);
+  assert(links.length > 10);
+  for (const a of links)
+    if (a.includes('href="arcade/"')) assert(!a.includes('target='));
+    else assert(a.includes('target="_blank"') && a.includes('rel="noopener"'), a);
+  g.closeModal();
+  console.log('Escape in search and credit links passed');
+}
+// After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
+{
+  els.world.listeners.webglcontextlost.forEach((f) => f({ preventDefault() {} }));
+  assert(g.paused);
+  g.closeModal();
+  windowListeners.keydown.forEach((f) =>
+    f({ key: 'Escape', target: { tagName: 'BODY' }, preventDefault() {} }),
+  );
+  assert(g.paused, 'context loss cannot be dismissed');
+  const renders = g.renderer.renders;
+  g.frame(5000);
+  assert.equal(g.renderer.renders, renders, 'no render after context loss');
+  console.log('Context loss blocks resuming passed');
+}
