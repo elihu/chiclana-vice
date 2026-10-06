@@ -68,7 +68,8 @@ class Renderer {
   render() {}
 }
 class Loader {
-  loadAsync() {
+  loadAsync(url) {
+    globalThis.__aerialUrl = url;
     return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
   }
 }
@@ -88,6 +89,11 @@ fs.writeFileSync('tests/qa3d-runtime.mjs', code);
 await import('./qa3d-runtime.mjs');
 await globalThis.__initPromise;
 assert(globalThis.__cityGame, 'init completed');
+assert.equal(
+  globalThis.__aerialUrl,
+  'aerial-2048.jpg',
+  'touch devices load the reduced orthophoto',
+);
 const g = globalThis.__cityGame;
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
 console.log(

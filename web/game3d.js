@@ -1197,7 +1197,7 @@ async function buildBuildings() {
       side: THREE.DoubleSide,
     }),
     roofMat = new THREE.MeshStandardMaterial({
-      map: groundTexture,
+      ...(groundTexture ? { map: groundTexture } : { color: '#b4a58f' }),
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
@@ -2585,7 +2585,11 @@ async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
   const [res, tex, heightSamples, profiles] = await Promise.all([
     loadWorld(),
-    new THREE.TextureLoader().loadAsync('aerial.jpg'),
+    // Light mode and touch devices start with the 2048×1536 derivative (same extent).
+    // Toggling quality later does not reload it. Without the orthophoto, plain colours.
+    new THREE.TextureLoader()
+      .loadAsync(quality === 'low' || coarse ? 'aerial-2048.jpg' : 'aerial.jpg')
+      .catch(() => null),
     fetch('height-samples.json')
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
@@ -2598,8 +2602,10 @@ async function init() {
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   facadeProfiles = profiles;
   groundTexture = tex;
-  groundTexture.colorSpace = THREE.SRGBColorSpace;
-  groundTexture.anisotropy = 4;
+  if (groundTexture) {
+    groundTexture.colorSpace = THREE.SRGBColorSpace;
+    groundTexture.anisotropy = 4;
+  } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
   [worldW, worldH] = city.size;
   loadProgress('Preparando el mundo 3D…', 25);
   renderer = new THREE.WebGLRenderer({
@@ -2638,7 +2644,9 @@ async function init() {
   scene.add(sun, sun.target);
   let g = new THREE.Mesh(
     new THREE.PlaneGeometry(worldW, worldH),
-    new THREE.MeshStandardMaterial({ map: groundTexture, roughness: 1 }),
+    new THREE.MeshStandardMaterial(
+      groundTexture ? { map: groundTexture, roughness: 1 } : { color: '#9a9b86', roughness: 1 },
+    ),
   );
   g.rotation.x = -Math.PI / 2;
   g.receiveShadow = true;
@@ -3337,8 +3345,6 @@ function drawLabels() {
   el.style.top = y - 19 + 'px';
   el.textContent = Math.abs(angle % TAU) > Math.PI * 0.65 ? '↶' : '◆';
 }
-const aerialImage = new Image();
-aerialImage.src = 'aerial.jpg';
 let streetNames = [];
 const chart = document.createElement('canvas');
 chart.width = 1344;
@@ -3394,7 +3400,9 @@ function drawMap(canvas, mini = false) {
   c.save();
   c.translate(ox - (worldW / 2) * scale, oy - (worldH / 2) * scale);
   c.scale(scale, scale);
-  if (mapAerial && !mini && aerialImage.complete) c.drawImage(aerialImage, 0, 0, worldW, worldH);
+  // The 2D orthophoto reuses the image already loaded for the ground texture.
+  if (mapAerial && !mini && groundTexture?.image)
+    c.drawImage(groundTexture.image, 0, 0, worldW, worldH);
   else c.drawImage(chart, 0, 0, worldW, worldH);
   c.translate(worldW / 2, worldH / 2);
   if (route.length) {

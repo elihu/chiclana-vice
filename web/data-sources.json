@@ -35,7 +35,8 @@
     },
     {
       "files": [
-        "aerial.jpg"
+        "aerial.jpg",
+        "aerial-2048.jpg"
       ],
       "source": "© IGN / PNOA / SCNE",
       "date": "2026-10-04",
@@ -45,9 +46,10 @@
       "attribution": "Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)",
       "acquisitionDate": "2022-07",
       "acquisitionDateEvidence": "WMS OI.MosaicElement GetFeatureInfo at playable-area centre on 2026-10-06; current GetMap SHA256 equals distributed aerial.jpg",
-      "transformation": "4096x3072 playable-area orthophoto crop used for ground and roofs",
+      "transformation": "4096x3072 playable-area orthophoto crop used for ground and roofs; aerial-2048.jpg is the same crop and extent resampled to 2048x1536 (Lanczos, JPEG q82, tools/reduce-aerial.py) for light mode and touch devices",
       "sha256": {
-        "aerial.jpg": "98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af"
+        "aerial.jpg": "98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af",
+        "aerial-2048.jpg": "00eee95e4d29b6107f2fce945c30f810789366ff24ce95657fbeea22124c47b6"
       }
     },
     {

@@ -29,7 +29,7 @@ const records = [
       'Local game extraction; all used roads/areas/landmarks/trees/objects made available',
   },
   {
-    files: ['aerial.jpg'],
+    files: ['aerial.jpg', 'aerial-2048.jpg'],
     source: '© IGN / PNOA / SCNE',
     date: '2026-10-04',
     conditions: 'CC-BY-4.0 compatible IGN terms',
@@ -39,7 +39,8 @@ const records = [
     acquisitionDate: '2022-07',
     acquisitionDateEvidence:
       'WMS OI.MosaicElement GetFeatureInfo at playable-area centre on 2026-10-06; current GetMap SHA256 equals distributed aerial.jpg',
-    transformation: '4096x3072 playable-area orthophoto crop used for ground and roofs',
+    transformation:
+      '4096x3072 playable-area orthophoto crop used for ground and roofs; aerial-2048.jpg is the same crop and extent resampled to 2048x1536 (Lanczos, JPEG q82, tools/reduce-aerial.py) for light mode and touch devices',
   },
   {
     files: ['height-samples.json'],
