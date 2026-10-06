@@ -109,17 +109,27 @@ class Loader {
   }
 }
 globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader };
-let code = fs
-  .readFileSync('web/game3d.js', 'utf8')
-  .replace(
-    /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module(?:\.min)?\.js['"]\)\);/,
-    'const THREE=globalThis.__THREE;requested.push(asset("./vendor/three.module.min.js"));',
-  )
-  .replace(
-    /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
-  )
-  .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
+// Each test hook must match exactly once; a silent no-op would give misleading failures later.
+const patch = (source, pattern, replacement) => {
+  assert(pattern.test(source), 'test hook not found in game3d.js: ' + pattern);
+  return source.replace(pattern, replacement);
+};
+let code = fs.readFileSync('web/game3d.js', 'utf8');
+code = patch(
+  code,
+  /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module(?:\.min)?\.js['"]\)\);/,
+  'const THREE=globalThis.__THREE;requested.push(asset("./vendor/three.module.min.js"));',
+);
+code = patch(
+  code,
+  /window\.__cityGame\s*=\s*\{/,
+  'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+);
+code = patch(
+  code,
+  /init\(\)\.catch\(\s*\(?err\)?\s*=>/,
+  'globalThis.__initPromise=init().catch(err=>',
+);
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
 globalThis.requested = requested;
 // Same query as index.html, so runtime resources must carry the common version suffix.

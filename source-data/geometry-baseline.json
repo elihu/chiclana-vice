@@ -1,0 +1,5 @@
+{
+  "sha256": "7b1812be46b01fd6c5eb67019cb2d1bd3dd57f3977963f157d8845be9f65fc55",
+  "covers": "buildings[].p/holes/floors and roads[].p/name/type",
+  "origin": "Equal to the private city.json snapshot (commit 3ee59e2) on 2026-10-06"
+}
