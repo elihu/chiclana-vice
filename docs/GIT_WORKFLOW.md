@@ -61,7 +61,8 @@ Cuerpo opcional: por qué se hace el cambio y qué se ha verificado.
 - Un cambio rompe compatibilidad si invalida partidas guardadas, URL públicas o el formato
   de las capas de datos. Se marca con `!` (`feat(datos)!: …`) y se explica en el cuerpo.
 - Los commits de integración usan `merge: integrar tipo/tema`.
-- Sin trailers de coautoría ni de atribución a herramientas.
+- Nunca trailers `Co-Authored-By` ni líneas de atribución, tampoco de agentes de IA, en
+  commits, merges o pull requests.
 - Revisar antes de confirmar y añadir rutas concretas:
 
 ```fish
@@ -75,6 +76,8 @@ git commit -m 'fix(juego): describir el comportamiento corregido'
 ## Integrar
 
 Lo hace el usuario o un agente al que se le pida expresamente (habilidad `integrar-rama`).
+No hay pull requests obligatorios: la integración es un merge local `--no-ff` tras
+`npm run check`, y la CI vuelve a comprobar `main` antes de desplegar.
 
 ```fish
 cd /home/elihu/GIT/chiclana-vice-public
@@ -114,6 +117,9 @@ gh release create v1.0.0 --verify-tag --generate-notes
 ```
 
 - Una etiqueta no despliega nada y no implica una prueba en móvil.
+- Primera etiqueta: `v1.0.0` (coincide con `package.json`), que crea el integrador al
+  final, cuando todas las ramas en curso estén integradas, `npm run check` pase en `main`
+  y el despliegue haya terminado. Ver [ESTADO.md](ESTADO.md).
 - No hay `CHANGELOG.md`: las notas de cada release y el historial de Conventional Commits
   cumplen esa función sin provocar conflictos entre ramas paralelas.
 
@@ -125,11 +131,12 @@ de terceros que deba retirarse. En ese caso:
 1. Copia de seguridad: `git bundle create ../chiclana-vice-AAAAMMDD.bundle --all`.
 2. Reescribir con `git filter-repo` en un clon limpio.
 3. Revisar el resultado y que `npm run check` pase.
-4. Desactivar temporalmente la regla de GitHub que bloquea el push forzado, y publicar con
-   protección contra pisar cambios ajenos:
+4. Publicar desde la cuenta propietaria (la única en la lista de omisión de la regla que
+   bloquea el push forzado; ver [PUBLICACION.md](PUBLICACION.md)), con protección contra
+   pisar cambios ajenos:
    `git push --force-with-lease=main:SHA_REMOTO_ACTUAL origin main` (obtener el SHA con
    `git ls-remote origin main`).
-5. Reactivar la regla, recrear los worktrees y documentarlo en `docs/ESTADO.md`.
+5. Recrear los worktrees y documentarlo en `docs/ESTADO.md`.
 
 GitHub puede conservar un tiempo los commits antiguos accesibles por su SHA; si hace falta
 purgarlos, hay que pedirlo a su soporte.

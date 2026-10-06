@@ -27,7 +27,11 @@ compacta.
   `feat:`, `fix:`, `perf:`, `docs:`, `test:`, `ci:`, `chore:`, `refactor:`.
 - Un commit por cambio coherente; sin credenciales, archivos temporales ni originales de
   Catastro o rásteres.
-- Los pull requests deben pasar el job `check` de la CI. Describir qué cambia, cómo se ha
+- Nunca trailers `Co-Authored-By` ni líneas de atribución en commits, merges o pull
+  requests, tampoco de agentes de IA.
+- No hay pull requests obligatorios: el mantenedor integra en local con `merge --no-ff`
+  tras `npm run check` ([docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)). Si se abre un pull
+  request, debe pasar el job `check` de la CI y describir qué cambia, cómo se ha
   verificado y qué queda pendiente.
 
 ## Derechos de terceros

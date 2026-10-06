@@ -47,7 +47,8 @@ Nunca:
   credenciales o tokens.
 - Afirmar precisión fotogramétrica, validez catastral o verificación en móvil o GPU que
   no se haya hecho.
-- Añadir trailers de coautoría o de atribución a herramientas en los commits.
+- Añadir trailers `Co-Authored-By` o líneas de atribución (tampoco de agentes de IA) en
+  commits, mensajes de merge o pull requests.
 
 ## Estructura
 

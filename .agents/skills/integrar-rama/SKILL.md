@@ -13,7 +13,8 @@ Sigue `docs/GIT_WORKFLOW.md`. Resumen verificable:
 2. `npm run check` debe pasar. Si la tarea toca interfaz, cámara o render, indica si se ha
    probado en un navegador real; si no, dilo.
 3. `git diff --check` y revisa `git diff`. Añade rutas concretas, nunca `git add -A`.
-4. Commit con Conventional Commits en español, sin trailers de coautoría.
+4. Commit con Conventional Commits en español, sin trailers
+   `Co-Authored-By` ni líneas de atribución.
 5. Informa: rama, commits (`git log --oneline main..HEAD`), comprobaciones y pendientes.
 
 ## 2. Integración (solo con petición explícita del usuario)

@@ -49,9 +49,10 @@ No se pueden versionar en el repositorio; comprobar que están así:
    - Desactivar «Allow GitHub Actions to create and approve pull requests».
    - Política de acciones: permitir solo acciones de GitHub y exigir fijación por SHA
      completo.
-4. Settings → Rules → Rulesets → nueva regla de rama para `main` (sin lista de omisión):
-   «Restrict deletions» y «Block force pushes». Ver las alternativas en
-   [GIT_WORKFLOW.md](GIT_WORKFLOW.md) y la propuesta.
+4. Settings → Rules → Rulesets → nueva regla de rama para `main`, activa: solo «Restrict
+   deletions» y «Block force pushes», con el rol «Repository admin» (el propietario) en la
+   lista de omisión. No se exige pull request ni checks requeridos: se integra en local
+   con `merge --no-ff` ([GIT_WORKFLOW.md](GIT_WORKFLOW.md)).
 5. Settings → Advanced Security: activar alertas de Dependabot y «Dependabot version
    updates» (usa `.github/dependabot.yml`).
 
