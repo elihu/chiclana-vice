@@ -21,6 +21,7 @@ let city,
   hold = 0,
   saveClock = 0,
   quality = 'auto',
+  needsRender = true,
   mapAerial = false,
   route = [],
   routeClock = 0;
@@ -50,6 +51,7 @@ let stored = {};
 try {
   stored = JSON.parse(localStorage.getItem('chiclana-real-v2') || '{}');
 } catch {}
+if (stored.quality === 'low') quality = 'low';
 const state = {
   cash: Number.isFinite(stored.cash) ? stored.cash : 250,
   job: clamp(Number(stored.job) || 0, 0, 4),
@@ -92,7 +94,7 @@ function save() {
   try {
     localStorage.setItem(
       'chiclana-real-v2',
-      JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found] }),
+      JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found], quality }),
     );
   } catch {}
 }
@@ -2451,9 +2453,7 @@ async function init() {
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75));
   renderer.setSize(W, H);
-  renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2466,7 +2466,6 @@ async function init() {
   scene.add(hemi);
   sun = new THREE.DirectionalLight('#fff0d6', 3.2);
   sun.position.set(-100, 150, 60);
-  sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, {
     left: -75,
@@ -2480,6 +2479,7 @@ async function init() {
   sun.shadow.bias = -0.0002;
   sun.shadow.normalBias = 0.09;
   scene.add(sun, sun.target);
+  applyQuality();
   let g = new THREE.Mesh(
     new THREE.PlaneGeometry(worldW, worldH),
     new THREE.MeshStandardMaterial({ map: groundTexture, roughness: 1 }),
@@ -3138,12 +3138,15 @@ function updateCamera(dt) {
   sun.position.set(player.x - 85, 125, player.z + 60);
   sun.target.position.set(player.x, 0, player.z);
   sun.target.updateMatrixWorld();
+  // In light mode, chunks beyond the fog end are culled (measured from the camera).
+  const low = quality === 'low',
+    reach = low ? scene.fog.far : mode === 2 ? 650 : 520,
+    ox = low ? camera.position.x : player.x,
+    oz = low ? camera.position.z : player.z;
   for (const group of chunks) {
     let m = group.children[0],
       c = m.geometry.boundingSphere;
-    group.visible =
-      Math.hypot(c.center.x - player.x, c.center.z - player.z) <
-      (mode === 2 ? 650 : 520) + c.radius;
+    group.visible = Math.hypot(c.center.x - ox, c.center.z - oz) < reach + c.radius;
   }
 }
 function drawLabels() {
@@ -3387,6 +3390,7 @@ function openMap() {
 function closeMap() {
   $('mapOverlay').classList.add('hidden');
   paused = false;
+  needsRender = true;
   last = performance.now();
 }
 function modal(html) {
@@ -3399,6 +3403,7 @@ function modal(html) {
 function closeModal() {
   $('modal').classList.add('hidden');
   paused = false;
+  needsRender = true;
   last = performance.now();
 }
 function help() {
@@ -3426,6 +3431,15 @@ function toggleAudio() {
   }
   toast(audioOn ? 'Sonido del motor activado' : 'Sonido desactivado', 2);
 }
+// Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
+function applyQuality() {
+  const low = quality === 'low';
+  renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75));
+  renderer.shadowMap.enabled = !low;
+  sun.castShadow = !low;
+  scene.fog.far = low ? 380 : 620;
+  needsRender = true;
+}
 function pauseMenu() {
   modal(
     `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/4 encargos · ${state.found.size}/6 lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
@@ -3438,11 +3452,8 @@ function pauseMenu() {
   };
   $('quality').onclick = () => {
     quality = quality === 'low' ? 'auto' : 'low';
-    renderer.setPixelRatio(
-      quality === 'low' ? 1 : Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75),
-    );
-    renderer.shadowMap.enabled = quality !== 'low';
-    scene.fog.far = quality === 'low' ? 380 : 620;
+    applyQuality();
+    save();
     closeModal();
     toast(quality === 'low' ? 'Modo ligero activado' : 'Calidad normal', 2);
   };
@@ -3624,6 +3635,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(W, H);
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
+  needsRender = true;
   if (!$('mapOverlay').classList.contains('hidden')) openMap();
 });
 $('world').addEventListener('webglcontextlost', (e) => {
@@ -3655,8 +3667,12 @@ function frame(now) {
       c.mesh.rotation.y = c.a;
     }
   }
-  renderer.render(scene, camera);
-  if (started && frameCount++ % 3 === 0) {
+  // While paused (map, modal), the last frame stays on screen; redraw only on demand.
+  if (!started || !paused || needsRender) {
+    renderer.render(scene, camera);
+    needsRender = false;
+  }
+  if (started && !paused && frameCount++ % 3 === 0) {
     let mini = $('mini');
     if (mini.width !== 280) {
       mini.width = 280;

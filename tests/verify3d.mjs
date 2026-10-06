@@ -37,7 +37,8 @@ globalThis.innerWidth = 390;
 globalThis.innerHeight = 844;
 globalThis.devicePixelRatio = 2;
 globalThis.matchMedia = () => ({ matches: true });
-globalThis.addEventListener = noop;
+const windowListeners = {};
+globalThis.addEventListener = (n, f) => (windowListeners[n] ??= []).push(f);
 globalThis.document = {
   getElementById: el,
   createElement: (tag) => ({ ...el('created' + Math.random()), tagName: tag.toUpperCase() }),
@@ -53,7 +54,12 @@ globalThis.Image = class {
 globalThis.requestAnimationFrame = (fn) => {
   if (fn.name !== 'frame') setTimeout(fn, 0);
 };
-globalThis.localStorage = { getItem: () => null, setItem: noop };
+const storage = {};
+globalThis.localStorage = {
+  getItem: (k) => storage[k] ?? null,
+  setItem: (k, v) => (storage[k] = String(v)),
+  removeItem: (k) => delete storage[k],
+};
 globalThis.fetch = async (url) => ({
   ok: true,
   json: async () => JSON.parse(fs.readFileSync('web/' + url, 'utf8')),
@@ -62,10 +68,15 @@ class Renderer {
   constructor() {
     this.shadowMap = {};
     this.info = { render: { calls: 0, triangles: 0 } };
+    this.renders = 0;
   }
-  setPixelRatio() {}
+  setPixelRatio(v) {
+    this.pixelRatio = v;
+  }
   setSize() {}
-  render() {}
+  render() {
+    this.renders++;
+  }
 }
 class Loader {
   loadAsync() {
@@ -81,7 +92,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -381,3 +392,42 @@ assert(g.character.mesh.visible, 'body restored in aerial');
 g.cycleCamera();
 assert(g.character.mesh.visible, 'body restored in follow');
 console.log('First-person fixed eye, hidden own models, free yaw/pitch and restoration passed');
+
+// Light mode: shadow casting follows the shadow map, persists and culls chunks at the fog end.
+assert(g.sun.castShadow && g.renderer.shadowMap.enabled, 'normal quality casts shadows');
+g.pauseMenu();
+els.quality.onclick();
+assert.equal(g.quality, 'low');
+assert(!g.sun.castShadow && !g.renderer.shadowMap.enabled, 'light mode disables sun shadows');
+assert.equal(g.renderer.pixelRatio, 1);
+assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'low', 'quality persisted');
+g.updateCamera(0.016);
+const fogFar = g.scene.fog.far;
+for (const group of g.chunks) {
+  const c = group.children[0].geometry.boundingSphere,
+    dist = Math.hypot(c.center.x - g.view.position[0], c.center.z - g.view.position[2]);
+  assert.equal(group.visible, dist < fogFar + c.radius, 'light chunks end at fog');
+}
+g.pauseMenu();
+els.quality.onclick();
+assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto');
+assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'auto');
+console.log('Light mode shadows, persistence and fog culling passed');
+
+// Paused frames reuse the last image unless something requests a redraw.
+g.pauseMenu();
+assert(g.paused);
+g.frame(984); // flushes the redraw requested by the previous quality change
+let renders = g.renderer.renders;
+g.frame(1000);
+g.frame(1016);
+assert.equal(g.renderer.renders, renders, 'no render while paused');
+windowListeners.resize.forEach((f) => f());
+g.frame(1032);
+g.frame(1048);
+assert.equal(g.renderer.renders, renders + 1, 'one render after resize while paused');
+g.closeModal();
+g.frame(1064);
+g.frame(1080);
+assert.equal(g.renderer.renders, renders + 3, 'continuous render after closing');
+console.log('Paused rendering on demand passed');
