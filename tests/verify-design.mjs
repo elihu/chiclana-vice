@@ -231,6 +231,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     recipes: {
       leaf: { params: { n: 2 }, body: [{ box: ['n', 0, 0, 1, 1, 1], color: '$stone' }] },
       all: {
+        params: { tint: '$ochre', dark: '#101010' },
         body: [
           { let: { half: 'len / 2' } },
           {
@@ -258,7 +259,8 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           { geo: ['ArchShape', 2, 3, 6], at: [0, 0, 0], color: '#ffffff', rotation: [0, 0, 1] },
           { geo: ['TriangleExtrude', 0, 0, 2, 0, 1, 1, 0.3], at: [0, 0, 0], color: '#ffffff' },
           { piece: 'cross', args: [1, 1] },
-          { roof: { y: 4, color: '#bca68b' } },
+          { box: [0, 0, 7, 1, 1, 1], color: 'tint' },
+          { box: [0, 0, 8, 1, 1, 1], color: '=len > 5 ? tint : dark' },
         ],
       },
     },
@@ -266,7 +268,15 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       {
         id: 'prueba',
         name: 'Prueba',
-        fronts: [{ anchor: { landmarkRing: 'Plaza' }, recipe: 'all', scaleY: 1.5 }],
+        fronts: [
+          {
+            anchor: { landmarkRing: 'Plaza' },
+            recipe: 'all',
+            with: { dark: '#202020' },
+            scaleY: 1.5,
+          },
+        ],
+        roof: { y: 'floor(4.5)', color: '=dark' },
       },
     ],
   };
@@ -287,11 +297,22 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   assert.equal(walls.length, 4, 'un muro por arista del anillo');
   assert.equal(kit.staging.children.length, 5, 'cuatro muros y una sola cubierta');
   assert(kit.staging.children[4].isMesh, 'la cubierta va después de los muros');
+  assert.equal(
+    kit.staging.children[4].material.color.getHexString(),
+    '202020',
+    'color de la cubierta',
+  );
   for (const g of walls) {
     assert.equal(g.scale.y, 1.5, 'scaleY del frente');
     const meshes = [];
     g.traverse((o) => o.isMesh && meshes.push(o));
-    assert.equal(meshes.length, 11, 'mallas por muro');
+    assert.equal(meshes.length, 13, 'mallas por muro');
+    for (const z of [7, 8])
+      assert.equal(
+        g.children.find((c) => c.position.z === z).material.color.getHexString(),
+        palette.ochre.slice(1),
+        'color por parámetro o expresión',
+      );
     const sub = g.children.find((c) => c.isGroup);
     assert.deepEqual(sub.position.toArray(), [1, 2, 3]);
     assert.equal(sub.rotation.y, 0.5);
@@ -312,6 +333,17 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     );
   }
   assert.throws(() => composeBuilding(kit, synthetic, 'no-existe'), /desconocido/);
+  const badColor = JSON.parse(JSON.stringify(synthetic));
+  badColor.recipes.all.params.tint = '$nada';
+  assert.throws(
+    () => composeBuilding(newKit(), badColor, 'prueba', { landmarks: [plaza] }),
+    /Color de paleta desconocido/,
+  );
+  badColor.recipes.all.params.tint = 'len';
+  assert.throws(
+    () => composeBuilding(newKit(), badColor, 'prueba', { landmarks: [plaza] }),
+    /Se esperaba un color/,
+  );
   const orphan = {
     ...synthetic,
     buildings: [
@@ -376,7 +408,14 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     /parámetro no declarado/,
   );
   expectError(mini([{ use: 'falta' }]), /receta desconocida/);
-  expectError(mini([{ roof: { y: 1, color: '#000000' } }]), /landmarkRing/);
+  expectError(
+    { ...mini([]), buildings: [{ ...mini([]).buildings[0], roof: { y: 1, color: '#000000' } }] },
+    /roof: requiere exactamente un frente con landmarkRing/,
+  );
+  expectError(mini([{ box, color: 'rojo claro' }]), /se esperaba un color/);
+  expectError(mini([{ box, color: 'nada' }]), /variable no definida «nada»/);
+  expectError(mini([{ box, color: '=nada + 1' }]), /variable no definida «nada»/);
+  expectError(mini([{ roof: { y: 1, color: '#000000' } }]), /clave de tipo/);
   expectError(
     mini([{ for: 'i', from: 0, while: 'i < 3', step: 1, body: [{ let: { i: 5 } }] }]),
     /variable de un bucle/,

@@ -32,7 +32,7 @@ export const GEOMETRY_ARITY = {
 export const PREDEFINED = ['len'];
 export const FRONT_PREDEFINED = ['h', 'floors', 'seed', 'commercialStreet'];
 
-const NODE_TYPES = ['let', 'box', 'piece', 'geo', 'group', 'for', 'if', 'use', 'roof'];
+const NODE_TYPES = ['let', 'box', 'piece', 'geo', 'group', 'for', 'if', 'use'];
 const NODE_EXTRA = {
   let: [],
   box: ['color', 'rotation'],
@@ -42,7 +42,6 @@ const NODE_EXTRA = {
   for: ['from', 'while', 'step', 'in', 'body'],
   if: ['then', 'else'],
   use: ['with'],
-  roof: [],
 };
 const ANCHORS = [
   { keys: ['a', 'b', 'outward'], type: 'segment' },
@@ -89,6 +88,7 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
     fail(path, `color no válido «${text}» (#rrggbb o $nombre de la paleta)`);
   }
   // kind: 'number' (número, expresión o pick), 'color' o 'value' (además booleano, texto y color).
+  // Un color también puede ser `=expresión` o el nombre de un parámetro o variable cuyo valor sea un color.
   function checkValue(v, path, names, kind = 'value') {
     if (typeof v === 'number') {
       if (!Number.isFinite(v)) fail(path, 'número no finito');
@@ -103,8 +103,11 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
       if (/^[#$]/.test(v)) {
         if (kind === 'number') fail(path, 'se esperaba un número o una expresión');
         else checkColor(v, path);
-      } else if (kind === 'color') fail(path, 'se esperaba un color');
-      else checkExpr(v, path, names);
+      } else if (kind === 'color') {
+        if (v[0] === '=') checkExpr(v.slice(1), path, names);
+        else if (IDENT.test(v)) checkExpr(v, path, names);
+        else fail(path, 'se esperaba un color (#rrggbb, $nombre, =expresión o un parámetro)');
+      } else checkExpr(v, path, names);
       return;
     }
     if (isObject(v) && 'text' in v) {
@@ -238,14 +241,6 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
           stack: [...ctx.stack, node.use],
         });
       }
-      default: // roof
-        if (ctx.anchor !== 'landmarkRing' && ctx.anchor !== 'any')
-          fail(at, 'solo se admite con un anclaje landmarkRing');
-        if (!isObject(node.roof)) return fail(at, 'se esperaba un objeto');
-        onlyKeys(node.roof, ['y', 'color'], at);
-        checkValue(node.roof.y, `${at}.y`, names, 'number');
-        if (typeof node.roof.color !== 'string') fail(`${at}.color`, 'falta el color');
-        else checkValue(node.roof.color, `${at}.color`, names, 'color');
     }
   }
 
@@ -319,7 +314,7 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
     if (!isObject(b)) return fail(path, 'se esperaba un objeto');
     onlyKeys(
       b,
-      ['id', 'name', 'landmark', 'detailType', 'lod', 'status', 'references', 'fronts'],
+      ['id', 'name', 'landmark', 'detailType', 'lod', 'status', 'references', 'fronts', 'roof'],
       path,
     );
     if (typeof b.id !== 'string' || !ID.test(b.id)) fail(`${path}.id`, 'identificador no válido');
@@ -355,6 +350,20 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
       if ('scaleY' in f) checkValue(f.scaleY, `${fp}.scaleY`, new Set(predefined), 'number');
       return names;
     });
+    // Cubierta única del edificio: usa el anillo del anclaje landmarkRing y sus parámetros.
+    if ('roof' in b) {
+      const at = `${path}.roof`,
+        rings = b.fronts.filter((f) => isObject(f?.anchor) && 'landmarkRing' in f.anchor);
+      if (!isObject(b.roof)) return fail(at, 'se esperaba un objeto');
+      onlyKeys(b.roof, ['y', 'color'], at);
+      if (rings.length !== 1) return fail(at, 'requiere exactamente un frente con landmarkRing');
+      const recipe = json.recipes[rings[0].recipe],
+        names = new Set(Object.keys(isObject(recipe?.params) ? recipe.params : {}));
+      if (!('y' in b.roof)) fail(`${at}.y`, 'falta la altura');
+      else checkValue(b.roof.y, `${at}.y`, names, 'number');
+      if (!('color' in b.roof)) fail(`${at}.color`, 'falta el color');
+      else checkValue(b.roof.color, `${at}.color`, names, 'color');
+    }
   });
 
   function checkAnchor(a, path) {

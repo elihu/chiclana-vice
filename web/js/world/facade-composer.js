@@ -5,7 +5,8 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { evaluate } from '../engine/expr.js';
 import { flatPolygon } from '../engine/materials.js';
 
-const MAX_ITERATIONS = 10000;
+const MAX_ITERATIONS = 10000,
+  HEX = /^#[0-9a-f]{6}$/;
 
 // Un valor del JSON: literal, color (#rrggbb o $paleta), texto, pick o expresión.
 function value(v, scope, palette) {
@@ -22,6 +23,20 @@ function value(v, scope, palette) {
   const index = evaluate(v.index, scope);
   if (!(index in v.pick)) throw new Error(`pick: índice fuera de rango (${index})`);
   return value(v.pick[index], scope, palette);
+}
+
+// Campo `color`: literal, `$paleta`, parámetro o variable (nombre), `=expresión` o pick.
+// El resultado debe ser #rrggbb (tras resolver `$paleta`); si no, error claro.
+function color(v, scope, palette) {
+  const c =
+    typeof v === 'string' && v[0] === '=' ? evaluate(v.slice(1), scope) : value(v, scope, palette);
+  const resolved =
+    typeof c === 'string' && c[0] === '$' && Object.hasOwn(palette, c.slice(1))
+      ? palette[c.slice(1)]
+      : c;
+  if (typeof resolved !== 'string' || !HEX.test(resolved))
+    throw new Error(`Se esperaba un color (#rrggbb o $paleta), no «${String(c)}»`);
+  return resolved;
 }
 
 function makeGeometry(kit, [name, ...p]) {
@@ -45,7 +60,7 @@ function run(body, scope, g, env) {
       for (const [k, v] of Object.entries(node.let)) scope[k] = val(v);
     } else if (node.box) {
       const [x, y, z, w, h, d] = vec(node.box),
-        m = env.kit.cube(g, x, y, z, w, h, d, val(node.color));
+        m = env.kit.cube(g, x, y, z, w, h, d, color(node.color, scope, env.palette));
       if (node.rotation) m.rotation.set(...vec(node.rotation));
     } else if (node.piece) {
       const m = env.kit[node.piece](g, ...node.args.map((a) => val(a)));
@@ -53,7 +68,7 @@ function run(body, scope, g, env) {
     } else if (node.geo) {
       const [x, y, z] = vec(node.at),
         geometry = makeGeometry(env.kit, [node.geo[0], ...node.geo.slice(1).map((p) => val(p))]),
-        m = env.kit.geo(g, geometry, x, y, z, val(node.color));
+        m = env.kit.geo(g, geometry, x, y, z, color(node.color, scope, env.palette));
       if (node.rotation) m.rotation.set(...vec(node.rotation));
     } else if (node.group) {
       const sub = new THREE.Group();
@@ -87,9 +102,6 @@ function run(body, scope, g, env) {
       for (const [k, v] of Object.entries(recipe.params || {})) inner[k] = val(v, inner);
       for (const [k, v] of Object.entries(node.with || {})) inner[k] = val(v, scope);
       run(recipe.body, inner, g, env);
-    } else if (node.roof) {
-      // La cubierta es una sola por frente y se añade tras todos sus muros.
-      env.roof ??= { y: val(node.roof.y), color: val(node.roof.color) };
     }
   }
 }
@@ -140,10 +152,12 @@ export function composeBuilding(kit, designs, id, context = {}) {
   const building = designs.buildings.find((b) => b.id === id);
   if (!building) throw new Error(`Diseño de fachada desconocido: ${id}`);
   const groups = [];
+  let roofRing = null,
+    roofScope = null;
   try {
     for (const front of building.fronts) {
       const recipe = designs.recipes[front.recipe],
-        env = { kit, designs, palette: kit.palette, roof: null, ring: null };
+        env = { kit, designs, palette: kit.palette, ring: null };
       for (const w of walls(front.anchor, kit, context, env)) {
         const scope = Object.create(null);
         if (w.len !== undefined) scope.len = w.len;
@@ -156,8 +170,21 @@ export function composeBuilding(kit, designs, id, context = {}) {
         run(recipe.body, scope, w.g, env);
         groups.push(w.g);
       }
-      if (env.roof)
-        kit.staging.add(flatPolygon(env.ring, env.roof.y, kit.material(env.roof.color)));
+      if (env.ring && building.roof && !roofRing) {
+        // Ámbito de la cubierta: parámetros de la receta y `with`, sin variables del muro.
+        roofRing = env.ring;
+        roofScope = Object.create(null);
+        for (const [k, v] of Object.entries(recipe.params || {}))
+          roofScope[k] = value(v, roofScope, kit.palette);
+        for (const [k, v] of Object.entries(front.with || {}))
+          roofScope[k] = value(v, roofScope, kit.palette);
+      }
+    }
+    // Una sola cubierta por edificio, tras todos sus muros (como `nave()` original).
+    if (building.roof && roofRing) {
+      const y = value(building.roof.y, roofScope, kit.palette),
+        c = color(building.roof.color, roofScope, kit.palette);
+      kit.staging.add(flatPolygon(roofRing, y, kit.material(c)));
     }
   } catch (e) {
     throw new Error(`Diseño de fachada «${id}»: ${e.message}`, { cause: e });

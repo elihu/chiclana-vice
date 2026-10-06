@@ -33,6 +33,11 @@
       "oneOf": [
         { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
         { "type": "string", "pattern": "^\\$[a-z]+$" },
+        {
+          "description": "Parámetro o variable cuyo valor es un color, o expresión con prefijo =.",
+          "type": "string",
+          "pattern": "^(=.+|[A-Za-z_][A-Za-z0-9_]*)$"
+        },
         { "$ref": "#/$defs/pick" }
       ]
     },
@@ -225,22 +230,6 @@
             "use": { "type": "string" },
             "with": { "type": "object", "additionalProperties": { "$ref": "#/$defs/value" } }
           }
-        },
-        {
-          "type": "object",
-          "required": ["roof"],
-          "additionalProperties": false,
-          "properties": {
-            "roof": {
-              "type": "object",
-              "required": ["y", "color"],
-              "additionalProperties": false,
-              "properties": {
-                "y": { "$ref": "#/$defs/number" },
-                "color": { "$ref": "#/$defs/color" }
-              }
-            }
-          }
         }
       ]
     },
@@ -313,6 +302,16 @@
         "lod": { "type": "string", "pattern": "^[0-4](\\.[0-3])?$" },
         "status": { "enum": ["approximate"] },
         "references": { "type": "array", "items": { "type": "string" } },
+        "roof": {
+          "description": "Cubierta única del edificio, tras todos sus muros; requiere un frente landmarkRing y usa los parámetros de su receta.",
+          "type": "object",
+          "required": ["y", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "y": { "$ref": "#/$defs/number" },
+            "color": { "$ref": "#/$defs/color" }
+          }
+        },
         "fronts": {
           "type": "array",
           "minItems": 1,
