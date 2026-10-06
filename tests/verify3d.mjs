@@ -92,7 +92,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,vehicles,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -610,3 +610,7 @@ function referenceRoute(graph, from, to, driveOnly) {
   assert.equal(writes, first, 'street name not rewritten while unchanged');
   console.log('HUD writes on change and shared vehicle list passed');
 }
+
+assert.equal(g.people.length, 28, 'all planned pedestrians spawned');
+assert(g.people.every((p) => p.s.length >= 8));
+console.log('Pedestrians', g.people.length);

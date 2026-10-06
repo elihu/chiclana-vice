@@ -2623,10 +2623,11 @@ function spawnTraffic() {
     Object.assign(car, p);
     cars.push(car);
   }
-  for (let i = 0; i < 28; i++) {
+  // 28 pedestrians on segments of at least 8 m; bounded attempts keep start-up predictable.
+  for (let i = 0, attempts = 0; i < 28 && attempts < 600; attempts++) {
     let s = segments[Math.floor(rnd() * segments.length)];
     if (s.length < 8) continue;
-    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i % 4]);
+    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
     Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1 });
     people.push(person);
   }
