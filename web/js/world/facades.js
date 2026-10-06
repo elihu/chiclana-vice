@@ -93,7 +93,7 @@ export function buildDetailedFacades() {
   const staging = new THREE.Group(),
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
-  const { cube, geo, wall, pane, balcony, archShape, pediment, column, door, belfry } = kit;
+  const { cube, geo, wall, pane, balcony, archShape, pediment, column, door } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
@@ -105,50 +105,7 @@ export function buildDetailedFacades() {
   // Jesús Nazareno: white side facade, ochre bands and sculpted marble portal.
   composeBuilding(kit, world.facadeDesigns, 'portada-jesus-nazareno');
   // San Telmo: ochre-trimmed gable and offset bell-screen; no invented twin towers.
-  {
-    let { g, len } = wall([-17.15, -161.36], [-6.55, -171.73], [1, 1]),
-      x = len * 0.5;
-    cube(g, len / 2, 5.6, 0.05, len, 11.2, 0.14, '#eeeade');
-    cube(g, len / 2, 0.4, 0.16, len, 0.8, 0.2, '#868d87');
-    for (let y of [4.6, 10.9]) cube(g, len / 2, y, 0.2, len, 0.2, 0.45, '#c9ad69');
-    door(g, x, 0.08, 2.9, 4.3);
-    pane(g, x, 8.1, 1.65, 2.55, 0.14);
-    for (let xx of [x - 4.8, x + 4.8]) {
-      pane(g, xx, 6.25, 1.35, 2, 0.15);
-      balcony(g, xx, 5.18, 1.7, palette.iron, 0.35);
-    }
-    let shape = new THREE.Shape();
-    shape.moveTo(x - 7.5, 11.2);
-    shape.lineTo(x + 7.5, 11.2);
-    shape.lineTo(x, 15.5);
-    shape.closePath();
-    geo(
-      g,
-      new THREE.ExtrudeGeometry(shape, { depth: 0.28, bevelEnabled: false }),
-      0,
-      0,
-      0.02,
-      '#eeeade',
-    );
-    for (let side of [-1, 1]) {
-      let slope = cube(g, x + side * 3.75, 13.35, 0.22, 8.65, 0.21, 0.38, '#c9ad69');
-      slope.rotation.z = -side * Math.atan2(4.3, 7.5);
-    }
-    geo(g, new THREE.CircleGeometry(0.64, 24), x, 13.25, 0.34, '#46514b');
-    geo(g, new THREE.TorusGeometry(0.7, 0.13, 8, 28), x, 13.25, 0.36, '#c9ad69');
-    belfry(g, x - 6.2, 11.15, 3.5, 3.4);
-    balcony(g, x - 6.2, 11.05, 4.1, palette.iron, 0.5);
-    for (let side of [-1, 1])
-      cube(g, x - 6.2 + side * 1.65, 12.9, 0.26, 0.19, 3.55, 0.55, '#c9ad69');
-    pediment(g, x - 6.2, 14.65, 3.8);
-    let wing = new THREE.Group();
-    wing.position.set(x - 6.2, 0, -0.15);
-    wing.rotation.y = Math.PI / 2;
-    g.add(wing);
-    belfry(wing, 1.5, 11.15, 3, 3.4);
-    balcony(wing, 1.5, 11.05, 3.5, palette.iron, 0.4);
-    pediment(wing, 1.5, 14.65, 3.4);
-  }
+  composeBuilding(kit, world.facadeDesigns, 'portada-san-telmo');
   // San Juan Bautista: three-bay stone facade, giant pilasters and a central pediment.
   {
     let { g, len } = wall([206.93, 180.32], [218.19, 152.82], [-1, -0.4]),

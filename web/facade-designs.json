@@ -665,6 +665,125 @@
           "args": ["len - 0.9", 16.15]
         }
       ]
+    },
+    "portada-san-telmo": {
+      "description": "Ochre-trimmed gable and offset bell-screen with a turned wing; no invented twin towers. Equivalent to the San Telmo block of buildDetailedFacades in main 5666928.",
+      "params": {},
+      "body": [
+        {
+          "let": {
+            "x": "len * 0.5"
+          }
+        },
+        {
+          "box": ["len / 2", 5.6, 0.05, "len", 11.2, 0.14],
+          "color": "#eeeade"
+        },
+        {
+          "box": ["len / 2", 0.4, 0.16, "len", 0.8, 0.2],
+          "color": "#868d87"
+        },
+        {
+          "for": "y",
+          "in": [4.6, 10.9],
+          "body": [
+            {
+              "box": ["len / 2", "y", 0.2, "len", 0.2, 0.45],
+              "color": "#c9ad69"
+            }
+          ]
+        },
+        {
+          "piece": "door",
+          "args": ["x", 0.08, 2.9, 4.3]
+        },
+        {
+          "piece": "pane",
+          "args": ["x", 8.1, 1.65, 2.55, 0.14]
+        },
+        {
+          "for": "xx",
+          "in": ["x - 4.8", "x + 4.8"],
+          "body": [
+            {
+              "piece": "pane",
+              "args": ["xx", 6.25, 1.35, 2, 0.15]
+            },
+            {
+              "piece": "balcony",
+              "args": ["xx", 5.18, 1.7, "$iron", 0.35]
+            }
+          ]
+        },
+        {
+          "geo": ["TriangleExtrude", "x - 7.5", 11.2, "x + 7.5", 11.2, "x", 15.5, 0.28],
+          "at": [0, 0, 0.02],
+          "color": "#eeeade"
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "box": ["x + side * 3.75", 13.35, 0.22, 8.65, 0.21, 0.38],
+              "color": "#c9ad69",
+              "rotation": [0, 0, "-side * atan2(4.3, 7.5)"]
+            }
+          ]
+        },
+        {
+          "geo": ["CircleGeometry", 0.64, 24],
+          "at": ["x", 13.25, 0.34],
+          "color": "#46514b"
+        },
+        {
+          "geo": ["TorusGeometry", 0.7, 0.13, 8, 28],
+          "at": ["x", 13.25, 0.36],
+          "color": "#c9ad69"
+        },
+        {
+          "piece": "belfry",
+          "args": ["x - 6.2", 11.15, 3.5, 3.4]
+        },
+        {
+          "piece": "balcony",
+          "args": ["x - 6.2", 11.05, 4.1, "$iron", 0.5]
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "box": ["x - 6.2 + side * 1.65", 12.9, 0.26, 0.19, 3.55, 0.55],
+              "color": "#c9ad69"
+            }
+          ]
+        },
+        {
+          "piece": "pediment",
+          "args": ["x - 6.2", 14.65, 3.8]
+        },
+        {
+          "group": {
+            "at": ["x - 6.2", 0, -0.15],
+            "rotation": [0, "PI / 2", 0]
+          },
+          "body": [
+            {
+              "piece": "belfry",
+              "args": [1.5, 11.15, 3, 3.4]
+            },
+            {
+              "piece": "balcony",
+              "args": [1.5, 11.05, 3.5, "$iron", 0.4]
+            },
+            {
+              "piece": "pediment",
+              "args": [1.5, 14.65, 3.4]
+            }
+          ]
+        }
+      ]
     }
   },
   "buildings": [
@@ -816,6 +935,28 @@
             "outward": [0, -1]
           },
           "recipe": "portada-jesus-nazareno"
+        }
+      ]
+    },
+    {
+      "id": "portada-san-telmo",
+      "name": "Portada de San Telmo",
+      "landmark": "San Telmo",
+      "detailType": "church",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": [
+        "THIRD_PARTY_NOTICES.md: San Telmo, Xemenendura (5/12/2021), CC BY-SA 4.0, reference only",
+        "THIRD_PARTY_NOTICES.md: turismo.chiclana.es tourism sheets, reference only"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "a": [-17.15, -161.36],
+            "b": [-6.55, -171.73],
+            "outward": [1, 1]
+          },
+          "recipe": "portada-san-telmo"
         }
       ]
     }
