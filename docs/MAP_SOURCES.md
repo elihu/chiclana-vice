@@ -46,7 +46,7 @@ se sustituye.
   distribuyen fotos ni planos como texturas.
 - Las alturas de iglesias y Ayuntamiento son aproximaciones visuales, no mediciones LiDAR.
 - Parámetros principales en `web/facade-profiles.json`; recetas de geometría en
-  `web/game3d.js`.
+  `web/js/world/facades.js`.
 
 ## Aproximaciones
 

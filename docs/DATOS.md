@@ -13,7 +13,7 @@ obligatorio) y `height-samples.json` (alturas IGN; si falta, el juego usa la alt
 plantas). `web/data-sources.json` registra fuente, condiciones y SHA-256 de
 cada archivo de datos publicado.
 
-Las recetas de geometría siguen en `web/game3d.js`: separar parámetros en JSON no equivale
+Las recetas de geometría siguen en `web/js/world/facades.js`: separar parámetros en JSON no equivale
 a hornear la escena.
 
 ## Reglas

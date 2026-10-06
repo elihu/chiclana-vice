@@ -23,13 +23,13 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-| Script                 | Qué hace                                                         |
-| ---------------------- | ---------------------------------------------------------------- |
-| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                |
-| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración     |
-| `npm run format`       | Aplica el formato                                                |
-| `npm test`             | `tests/verify-world.mjs` (datos) y `tests/verify3d.mjs` (flujos) |
-| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                     |
+| Script                 | Qué hace                                                          |
+| ---------------------- | ----------------------------------------------------------------- |
+| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                 |
+| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración      |
+| `npm run format`       | Aplica el formato                                                 |
+| `npm test`             | `verify-world.mjs` (datos), `verify-modules.mjs` y `verify3d.mjs` |
+| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                      |
 
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
@@ -55,6 +55,8 @@ se versiona. El juego no necesita `node_modules`.
 | Ruta             | Contenido                                                          |
 | ---------------- | ------------------------------------------------------------------ |
 | `web/`           | Juego, capas de datos y recursos publicados en Pages               |
+| `web/game3d.js`  | Entrada del juego: lee `?v=` y llama a `startGame()`               |
+| `web/js/`        | Módulos ES del juego, por capas (ver «Módulos del juego»)          |
 | `web/arcade/`    | Versión arcade anterior, independiente                             |
 | `web/vendor/`    | Three.js r169 y su licencia; no se reformatea                      |
 | `web/licenses/`  | Textos completos de licencias de datos                             |
@@ -76,6 +78,42 @@ el juego y los tests. `web/progress.js` valida las partidas guardadas antes de u
 
 Los objetos de calle se cargan de `web/street-objects.json` (capa opcional) y
 `web/osm-world.json` es la única copia de las vías.
+
+## Módulos del juego
+
+`web/game3d.js` es solo la entrada; el código está en módulos ES nativos bajo `web/js/`,
+sin bundler ni compilación:
+
+| Carpeta          | Contenido                                                                      |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `js/core/`       | Estado compartido (`state.js`), matemáticas, azar con semilla, DOM y `asset()` |
+| `js/engine/`     | Materiales y cachés de geometría, texturas, renderizador, cámara y audio       |
+| `js/world/`      | Carga de capas, índice espacial y constructores (edificios, fachadas, calles…) |
+| `js/game/`       | Grafo y rutas, vehículos, personas, tráfico, policía, misiones, jugador, bucle |
+| `js/ui/`         | Avisos, HUD, mapa, diálogos, entrada y controles                               |
+| `js/app.js`      | `startGame`, `init`, `frame` y `showStartupError`                              |
+| `js/test-api.js` | API de pruebas (`createPublicApi`, `createTestApi`)                            |
+
+Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. La
+excepción es `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
+puede importarse desde cualquier capa. `tests/verify-modules.mjs` falla si aparece un
+ciclo.
+
+- **Sin efectos de nivel superior**: ningún módulo toca `document`, `window`,
+  `localStorage` ni registra oyentes al evaluarse; todo ocurre dentro de funciones que
+  llama `startGame()`. Así Node puede importar cualquier módulo sin DOM.
+- **Estado compartido**: los contenedores (arrays, `Map`, objetos) se exportan de
+  `core/state.js` con su nombre y se mutan, nunca se reasignan; los escalares
+  reasignables son propiedades de `world`, `gfx`, `session`, `view`, `pointer`, `actors`
+  y `audio`. No se desestructuran fuera de una función.
+- **Importmap y versión**: los módulos se importan con rutas relativas sin `?v=`.
+  `index.html` declara un importmap cuyas claves son esas rutas y cuyos valores llevan
+  `?v=VERSION`, más un `modulepreload` por módulo. `game3d.js` pasa su propio `?v=` a
+  `startGame({ version })`, que lo usa para los JSON y la ortofoto. Al añadir un módulo,
+  inclúyelo en el importmap y en los `modulepreload`.
+- **Cambiar la versión**: sustituir todas las apariciones a la vez, por ejemplo
+  `sed -i 's/?v=[^"]*"/?v=NUEVA"/g' web/index.html`; `verify-modules.mjs` detecta
+  cualquier olvido.
 
 ## Modo ligero
 
