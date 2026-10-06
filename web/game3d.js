@@ -1288,14 +1288,14 @@ function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
   m.castShadow = m.receiveShadow = true;
   return m;
 }
-function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
-  let shape = new THREE.Shape();
-  shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
-  shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
-  shape.lineTo(w / 2 - bevel, l / 2 - bevel);
-  shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
-  shape.closePath();
-  let geo = modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
+function bevelGeometry(w, h, l, bevel) {
+  return modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
+    let shape = new THREE.Shape();
+    shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
+    shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
+    shape.lineTo(w / 2 - bevel, l / 2 - bevel);
+    shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
+    shape.closePath();
     let g = new THREE.ExtrudeGeometry(shape, {
       depth: h - 2 * bevel,
       bevelEnabled: true,
@@ -1309,10 +1309,97 @@ function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
     g.translate(0, -h / 2 + bevel, 0);
     return g;
   });
-  let mesh = new THREE.Mesh(geo, material);
+}
+function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
+  let mesh = new THREE.Mesh(bevelGeometry(w, h, l, bevel), material);
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   return mesh;
+}
+// Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
+function mergeParts(parts) {
+  let vertices = 0,
+    indices = 0;
+  for (const { geometry } of parts) {
+    vertices += geometry.attributes.position.count;
+    indices += geometry.index ? geometry.index.count : geometry.attributes.position.count;
+  }
+  const position = new Float32Array(vertices * 3),
+    normal = new Float32Array(vertices * 3),
+    index = vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
+    v = new THREE.Vector3(),
+    normalMatrix = new THREE.Matrix3();
+  let base = 0,
+    at = 0;
+  for (const { geometry, matrix } of parts) {
+    const pos = geometry.attributes.position,
+      nor = geometry.attributes.normal,
+      source = geometry.index,
+      count = source ? source.count : pos.count,
+      order = matrix.determinant() < 0 ? [0, 2, 1] : [0, 1, 2];
+    normalMatrix.getNormalMatrix(matrix);
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i)
+        .applyMatrix4(matrix)
+        .toArray(position, (base + i) * 3);
+      v.fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize();
+      v.toArray(normal, (base + i) * 3);
+    }
+    for (let i = 0; i < count; i += 3)
+      for (let j = 0; j < 3; j++) {
+        let k = i + order[j];
+        index[at + i + j] = base + (source ? source.getX(k) : k);
+      }
+    base += pos.count;
+    at += count;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  g.setIndex(new THREE.BufferAttribute(index, 1));
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
+  return g;
+}
+// Static pieces of a model are grouped by slot (one material each) and merged once per key;
+// all instances share the cached geometry, keeping one draw call per material.
+function modelParts() {
+  const slots = new Map(),
+    euler = new THREE.Euler(),
+    quaternion = new THREE.Quaternion(),
+    offset = new THREE.Vector3(),
+    size = new THREE.Vector3();
+  return {
+    add(slot, material, geometry, x = 0, y = 0, z = 0, rotation = [0, 0, 0], scale = [1, 1, 1]) {
+      if (!slots.has(slot)) slots.set(slot, { material, parts: [] });
+      quaternion.setFromEuler(euler.set(...rotation));
+      slots.get(slot).parts.push({
+        geometry,
+        matrix: new THREE.Matrix4().compose(offset.set(x, y, z), quaternion, size.set(...scale)),
+      });
+    },
+    box(slot, material, w, h, l, x, y, z) {
+      this.add(
+        slot,
+        material,
+        modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
+        x,
+        y,
+        z,
+      );
+    },
+    attach(parent, key, receive = []) {
+      for (const [slot, { material, parts }] of slots) {
+        const m = new THREE.Mesh(
+          modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
+          material,
+        );
+        m.castShadow = true;
+        m.receiveShadow = receive.includes(slot);
+        parent.add(m);
+      }
+    },
+  };
 }
 function carCabin(material) {
   const p = [
@@ -1347,66 +1434,41 @@ function createCar(color = '#b9b8aa', cop = false) {
     paint = modelMaterial(color, { metalness: 0.55, roughness: 0.29 }),
     glass = modelMaterial('#345465', { metalness: 0.35, roughness: 0.2, side: THREE.DoubleSide }),
     black = modelMaterial('#182123'),
-    chrome = modelMaterial('#a9b3b6', { metalness: 0.85, roughness: 0.23 });
-  group.add(sculptedBox(1.84, 0.48, 4.28, paint, 0, 0.58, 0, 0.1));
-  group.add(modelBox(1.9, 0.13, 4.12, paint, 0, 0.38, 0));
-  group.add(sculptedBox(1.75, 0.19, 1.25, paint, 0, 0.89, 1.32, 0.06));
+    chrome = modelMaterial('#a9b3b6', { metalness: 0.85, roughness: 0.23 }),
+    parts = modelParts(),
+    sideways = [0, 0, Math.PI / 2];
+  // Body, lights and wheels never move relative to the car: one mesh per material.
+  parts.add('paint', paint, bevelGeometry(1.84, 0.48, 4.28, 0.1), 0, 0.58, 0);
+  parts.box('paint', paint, 1.9, 0.13, 4.12, 0, 0.38, 0);
+  parts.add('paint', paint, bevelGeometry(1.75, 0.19, 1.25, 0.06), 0, 0.89, 1.32);
+  parts.add('paint', paint, bevelGeometry(1.79, 0.17, 0.85, 0.05), 0, 0.91, -1.55);
+  parts.box('black', black, 1.74, 0.17, 0.13, 0, 0.48, 2.15);
+  parts.box('black', black, 0.67, 0.2, 0.04, 0, 0.73, 2.17);
+  parts.box('plate', modelMaterial('#edf0dd'), 0.46, 0.18, 0.03, 0, 0.54, -2.16);
+  const head = modelMaterial('#fff3c5', { emissive: '#ffeeaa', emissiveIntensity: 0.5 }),
+    tail = modelMaterial('#b52428', { emissive: '#a0141c', emissiveIntensity: 0.4 });
+  for (const x of [-0.66, 0.66]) {
+    parts.box('head', head, 0.46, 0.12, 0.05, x, 0.78, 2.13);
+    parts.box('tail', tail, 0.46, 0.13, 0.05, x, 0.74, -2.16);
+    parts.box('paint', paint, 0.22, 0.16, 0.31, x > 0 ? 0.99 : -0.99, 1.06, 0.54);
+    parts.box('paint', paint, 0.05, 0.46, 0.09, x > 0 ? 0.86 : -0.86, 1.04, -0.38);
+    parts.box('chrome', chrome, 0.09, 0.03, 0.19, x > 0 ? 0.927 : -0.927, 0.83, -0.2);
+  }
+  for (let x of [-0.91, 0.91])
+    for (let z of [-1.34, 1.35]) {
+      parts.add('black', black, modelCylinder(0.34, 0.34, 0.23, 24), x, 0.34, z, sideways);
+      parts.add('chrome', chrome, modelCylinder(0.22, 0.22, 0.245, 20), x, 0.34, z, sideways);
+      parts.add('black', black, modelCylinder(0.09, 0.09, 0.255, 12), x, 0.34, z, sideways);
+    }
+  if (cop) parts.box('livery', modelMaterial('#e9efed'), 1.86, 0.32, 1.6, 0, 0.63, -0.1);
+  parts.attach(group, cop ? 'cop' : 'car', ['black', 'chrome', 'plate', 'head', 'tail', 'livery']);
+  // Cabin and roof stay separate: first-person view hides them.
   const cabin = carCabin(glass),
     roof = sculptedBox(1.43, 0.11, 1.24, paint, 0, 1.39, -0.25, 0.04);
   group.add(cabin);
   group.add(roof);
-  group.add(sculptedBox(1.79, 0.17, 0.85, paint, 0, 0.91, -1.55, 0.05));
-  group.add(modelBox(1.74, 0.17, 0.13, black, 0, 0.48, 2.15));
-  group.add(modelBox(0.67, 0.2, 0.04, black, 0, 0.73, 2.17));
-  group.add(modelBox(0.46, 0.18, 0.03, modelMaterial('#edf0dd'), 0, 0.54, -2.16));
-  for (const x of [-0.66, 0.66]) {
-    group.add(
-      modelBox(
-        0.46,
-        0.12,
-        0.05,
-        modelMaterial('#fff3c5', { emissive: '#ffeeaa', emissiveIntensity: 0.5 }),
-        x,
-        0.78,
-        2.13,
-      ),
-    );
-    group.add(
-      modelBox(
-        0.46,
-        0.13,
-        0.05,
-        modelMaterial('#b52428', { emissive: '#a0141c', emissiveIntensity: 0.4 }),
-        x,
-        0.74,
-        -2.16,
-      ),
-    );
-    group.add(modelBox(0.22, 0.16, 0.31, paint, x > 0 ? 0.99 : -0.99, 1.06, 0.54));
-    group.add(modelBox(0.05, 0.46, 0.09, paint, x > 0 ? 0.86 : -0.86, 1.04, -0.38));
-    group.add(modelBox(0.09, 0.03, 0.19, chrome, x > 0 ? 0.927 : -0.927, 0.83, -0.2));
-  }
-  const wheels = [];
-  for (let x of [-0.91, 0.91])
-    for (let z of [-1.34, 1.35]) {
-      let tire = new THREE.Mesh(modelCylinder(0.34, 0.34, 0.23, 24), black);
-      tire.rotation.z = Math.PI / 2;
-      tire.position.set(x, 0.34, z);
-      tire.castShadow = true;
-      group.add(tire);
-      let rim = new THREE.Mesh(modelCylinder(0.22, 0.22, 0.245, 20), chrome);
-      rim.rotation.z = Math.PI / 2;
-      rim.position.copy(tire.position);
-      group.add(rim);
-      let hub = new THREE.Mesh(modelCylinder(0.09, 0.09, 0.255, 12), black);
-      hub.rotation.z = Math.PI / 2;
-      hub.position.copy(tire.position);
-      group.add(hub);
-      wheels.push(tire, rim);
-    }
   let siren = null;
   if (cop) {
-    group.add(modelBox(1.86, 0.32, 1.6, modelMaterial('#e9efed'), 0, 0.63, -0.1));
     siren = new THREE.Group();
     siren.position.y = 1.46;
     siren.add(
@@ -1442,7 +1504,6 @@ function createCar(color = '#b9b8aa', cop = false) {
     a: 0,
     speed: 0,
     health: 100,
-    wheels,
     cop,
     siren,
     name: cop ? 'PATRULLA' : 'COSTA GT',
@@ -1455,49 +1516,44 @@ function createPerson(color = '#78805a') {
     shirt = modelMaterial(color),
     pants = modelMaterial('#334550'),
     shoes = modelMaterial('#252b2d'),
-    hair = modelMaterial('#3b302a');
-  function oval(parent, m, x, y, z, sx, sy, sz) {
-    const o = new THREE.Mesh(
-      modelGeometry('person-sphere', () => new THREE.SphereGeometry(1, 12, 8)),
-      m,
-    );
-    o.position.set(x, y, z);
-    o.scale.set(sx, sy, sz);
-    o.castShadow = true;
-    parent.add(o);
-    return o;
-  }
-  function limb(parent, m, top, bottom, length, y) {
-    const o = new THREE.Mesh(modelCylinder(top, bottom, length, 10), m);
-    o.position.y = y;
-    o.castShadow = true;
-    parent.add(o);
-  }
-  oval(g, shirt, 0, 1.14, 0, 0.215, 0.285, 0.135);
-  oval(g, pants, 0, 0.91, 0, 0.185, 0.15, 0.13);
-  limb(g, skin, 0.055, 0.06, 0.12, 1.44);
-  oval(g, skin, 0, 1.585, 0, 0.115, 0.145, 0.117);
-  oval(g, hair, 0, 1.665, -0.024, 0.118, 0.079, 0.108);
-  oval(g, skin, 0, 1.57, 0.114, 0.033, 0.035, 0.03);
-  for (const x of [-0.116, 0.116]) oval(g, skin, x, 1.59, 0, 0.023, 0.04, 0.027);
+    hair = modelMaterial('#3b302a'),
+    sphere = modelGeometry('person-sphere', () => new THREE.SphereGeometry(1, 12, 8));
+  // Torso/head and each leg/arm are merged per material; legs and arms remain animated groups.
+  const oval = (parts, slot, m, x, y, z, sx, sy, sz) =>
+    parts.add(slot, m, sphere, x, y, z, [0, 0, 0], [sx, sy, sz]);
+  const limb = (parts, slot, m, top, bottom, length, y) =>
+    parts.add(slot, m, modelCylinder(top, bottom, length, 10), 0, y);
+  let body = modelParts();
+  oval(body, 'shirt', shirt, 0, 1.14, 0, 0.215, 0.285, 0.135);
+  oval(body, 'pants', pants, 0, 0.91, 0, 0.185, 0.15, 0.13);
+  limb(body, 'skin', skin, 0.055, 0.06, 0.12, 1.44);
+  oval(body, 'skin', skin, 0, 1.585, 0, 0.115, 0.145, 0.117);
+  oval(body, 'hair', hair, 0, 1.665, -0.024, 0.118, 0.079, 0.108);
+  oval(body, 'skin', skin, 0, 1.57, 0.114, 0.033, 0.035, 0.03);
+  for (const x of [-0.116, 0.116]) oval(body, 'skin', skin, x, 1.59, 0, 0.023, 0.04, 0.027);
+  body.attach(g, 'person-body');
   const limbs = [];
   for (const x of [-0.105, 0.105]) {
-    const leg = new THREE.Group();
+    const leg = new THREE.Group(),
+      parts = modelParts();
     leg.position.set(x, 0.9, 0);
-    limb(leg, pants, 0.083, 0.065, 0.39, -0.19);
-    oval(leg, pants, 0, -0.39, 0, 0.065, 0.073, 0.067);
-    limb(leg, pants, 0.062, 0.048, 0.36, -0.58);
-    oval(leg, shoes, 0, -0.815, 0.055, 0.069, 0.075, 0.145);
+    limb(parts, 'pants', pants, 0.083, 0.065, 0.39, -0.19);
+    oval(parts, 'pants', pants, 0, -0.39, 0, 0.065, 0.073, 0.067);
+    limb(parts, 'pants', pants, 0.062, 0.048, 0.36, -0.58);
+    oval(parts, 'shoes', shoes, 0, -0.815, 0.055, 0.069, 0.075, 0.145);
+    parts.attach(leg, 'person-leg');
     g.add(leg);
     limbs.push(leg);
   }
   for (const x of [-0.237, 0.237]) {
-    const arm = new THREE.Group();
+    const arm = new THREE.Group(),
+      parts = modelParts();
     arm.position.set(x, 1.34, 0);
-    oval(arm, shirt, 0, -0.065, 0, 0.073, 0.1, 0.073);
-    limb(arm, shirt, 0.068, 0.052, 0.22, -0.13);
-    limb(arm, skin, 0.048, 0.034, 0.24, -0.35);
-    oval(arm, skin, 0, -0.49, 0, 0.042, 0.068, 0.044);
+    oval(parts, 'shirt', shirt, 0, -0.065, 0, 0.073, 0.1, 0.073);
+    limb(parts, 'shirt', shirt, 0.068, 0.052, 0.22, -0.13);
+    limb(parts, 'skin', skin, 0.048, 0.034, 0.24, -0.35);
+    oval(parts, 'skin', skin, 0, -0.49, 0, 0.042, 0.068, 0.044);
+    parts.attach(arm, 'person-arm');
     g.add(arm);
     limbs.push(arm);
   }
