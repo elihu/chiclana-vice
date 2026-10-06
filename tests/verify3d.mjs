@@ -92,7 +92,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -130,6 +130,56 @@ g.input.gas = false;
 g.input.right = false;
 g.player.car.speed = 0;
 for (let i = 0; i < 30; i++) g.update(0.016);
+// Oneway: traffic graph strongly connected inside every drive component; walking unaffected.
+{
+  const net = g.driveNetwork,
+    drive = (i) => g.graph[i].adj.some((e) => e.s?.drive && !e.s.blocked);
+  assert(net.oneway > 0 && net.relaxed < net.oneway / 2, 'oneway respected on most segments');
+  assert(net.blocked < 100, 'few alleys excluded from traffic');
+  for (const s of g.segments) {
+    const open = s.drive && !s.blocked;
+    assert(s.forward.drive === open, 'forward direction drivable');
+    if (s.oneway && !s.relaxed) assert(!s.reverse.drive, 'oneway reverse closed to traffic');
+    if (!s.oneway) assert.equal(s.reverse.drive, open);
+    assert(s.drive || !s.oneway);
+  }
+  const bfs = (root, forward) => {
+    const seen = new Set([root]),
+      queue = [root];
+    for (let k = 0; k < queue.length; k++)
+      for (let u = 0; u < g.graph.length; u++) {
+        if (forward && u !== queue[k]) continue;
+        for (const e of g.graph[u].adj) {
+          if (!e.drive) continue;
+          const [from, to] = forward ? [u, e.to] : [e.to, u];
+          if (from === queue[k] && !seen.has(to)) {
+            seen.add(to);
+            queue.push(to);
+          }
+        }
+      }
+    return seen;
+  };
+  const mainNodes = g.graph.map((n, i) => (n.driveMain ? i : -1)).filter((i) => i >= 0);
+  assert.equal(mainNodes.length, net.mainNodes);
+  const out = bfs(mainNodes[0], true),
+    back = bfs(mainNodes[0], false);
+  for (const i of mainNodes)
+    assert(out.has(i) && back.has(i), 'main drive network strongly connected');
+  for (let i = 0; i < g.graph.length; i++)
+    if (drive(i))
+      assert(
+        g.graph[i].adj.some((e) => e.drive),
+        'no traffic dead end at ' + i,
+      );
+  const spawn = g.nearestNode(g.player.x, g.player.z, true);
+  for (const p of g.pois) {
+    const goal = g.nearestNode(p.x, p.z, true);
+    assert(g.findRoute(spawn, goal, true).length, 'police route to ' + p.name);
+    assert(g.findRoute(goal, spawn, true).length, 'police route back from ' + p.name);
+  }
+  console.log('Oneway network', JSON.stringify(net), 'strongly connected, police routes passed');
+}
 for (const p of g.pois) {
   assert(!g.blocked(p.x, p.z, 1), 'POI clear ' + p.name);
   let path = g.findRoute(g.nearestNode(g.player.x, g.player.z), g.nearestNode(p.x, p.z));
@@ -499,4 +549,42 @@ function referenceRoute(graph, from, to, driveOnly) {
     'ms per call',
     JSON.stringify(timing),
   );
+}
+
+// Traffic keeps moving along permitted directions, without dead ends.
+{
+  const vehicles = g.traffic;
+  assert(vehicles.length > 0);
+  g.player.x = g.player.z = 10000; // far away: traffic does not stop for the player
+  if (g.player.car) Object.assign(g.player.car, { x: 10000, z: 10000 });
+  const arrivals = vehicles.map(() => 0);
+  let wrongWay = 0,
+    alleyExits = 0,
+    swaps = 0;
+  for (let i = 0; i < 1500; i++) {
+    const before = vehicles.map((c) => [c.node, c.stuck || 0]);
+    for (const c of vehicles) g.stepAgent(c, 0.04);
+    vehicles.forEach((c, k) => {
+      const [from, stuck] = before[k];
+      if (c.node === from) return;
+      // A collision escape swaps node/next (pre-existing behaviour), not an arrival.
+      if (stuck > 0 && c.stuck === 0) {
+        swaps++;
+        return;
+      }
+      arrivals[k]++;
+      if (g.graph[from].adj.some((e) => e.to === c.node && e.drive)) return;
+      // Only allowed when leaving an excluded alley where the vehicle was spawned.
+      if (g.graph[from].adj.some((e) => e.drive)) wrongWay++;
+      else alleyExits++;
+    });
+  }
+  assert(
+    vehicles.every((c) => c.next !== undefined),
+    'every vehicle has a next node',
+  );
+  assert.equal(wrongWay, 0, 'traffic never drives against a respected oneway');
+  const moving = arrivals.filter((n) => n >= 5).length;
+  assert.equal(moving, vehicles.length, 'all traffic keeps moving through the network');
+  console.log('Traffic simulation', { vehicles: vehicles.length, moving, swaps, alleyExits });
 }

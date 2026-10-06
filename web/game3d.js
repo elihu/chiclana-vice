@@ -193,9 +193,13 @@ function buildGraph() {
       let ai = node(a),
         bi = node(b);
       let s = { a, b, ai, bi, length, name: r.name, width: r.w, bridge: r.bridge, drive };
+      // OSM oneway=yes follows the vertex order; walking ignores it (edge.drive only).
+      s.oneway = drive && !!r.oneway;
+      s.forward = { to: bi, length, drive, s };
+      s.reverse = { to: ai, length, drive: drive && !s.oneway, s };
       segments.push(s);
-      graph[ai].adj.push({ to: bi, length, drive, s });
-      graph[bi].adj.push({ to: ai, length, drive, s });
+      graph[ai].adj.push(s.forward);
+      graph[bi].adj.push(s.reverse);
     }
   }
   for (const b of city.buildings) {
@@ -250,12 +254,156 @@ function connectOpenSpaces() {
     parent[root(i)] = root(j);
   }
 }
+// Directed driving network for traffic and police (the player drives freely). Each drive
+// component must stay strongly connected (no dead ends, police routes everywhere): oneway
+// is ignored only on segments around nodes that would otherwise be unreachable or have no
+// exit. Segments whose centre line touches a cadastral outline (narrow alleys, where agents
+// used to get stuck) are left out of the agents' network.
+const driveNetwork = { oneway: 0, relaxed: 0, blocked: 0, components: 0, mainNodes: 0 };
+function driveComponents() {
+  const n = graph.length,
+    index = new Int32Array(n).fill(-1),
+    low = new Int32Array(n),
+    onStack = new Uint8Array(n),
+    comp = new Int32Array(n).fill(-1),
+    stack = [],
+    call = [];
+  let next = 0,
+    count = 0;
+  for (let root = 0; root < n; root++) {
+    if (index[root] !== -1) continue;
+    call.push([root, 0]);
+    while (call.length) {
+      const top = call[call.length - 1],
+        v = top[0],
+        adj = graph[v].adj;
+      if (index[v] === -1) {
+        index[v] = low[v] = next++;
+        stack.push(v);
+        onStack[v] = 1;
+      }
+      let descended = false;
+      while (top[1] < adj.length) {
+        const e = adj[top[1]++];
+        if (!e.drive) continue;
+        if (index[e.to] === -1) {
+          call.push([e.to, 0]);
+          descended = true;
+          break;
+        }
+        if (onStack[e.to]) low[v] = Math.min(low[v], index[e.to]);
+      }
+      if (descended) continue;
+      if (low[v] === index[v]) {
+        let w;
+        do {
+          w = stack.pop();
+          onStack[w] = 0;
+          comp[w] = count;
+        } while (w !== v);
+        count++;
+      }
+      call.pop();
+      if (call.length) {
+        const u = call[call.length - 1][0];
+        low[u] = Math.min(low[u], low[v]);
+      }
+    }
+  }
+  return comp;
+}
+function orientDriveGraph() {
+  for (const s of segments) {
+    if (!s.drive) continue;
+    const steps = Math.ceil(s.length / 0.5);
+    for (let i = 0; i <= steps && !s.blocked; i++)
+      s.blocked = inBuilding(
+        lerp(s.a[0], s.b[0], i / steps),
+        lerp(s.a[1], s.b[1], i / steps),
+        0.35,
+      );
+    if (s.blocked) s.forward.drive = s.reverse.drive = false;
+  }
+  const n = graph.length,
+    road = (e) => e.s?.drive && !e.s.blocked,
+    group = new Int32Array(n).fill(-1),
+    groups = [];
+  for (let i = 0; i < n; i++) {
+    if (group[i] !== -1 || !graph[i].adj.some(road)) continue;
+    const members = [i];
+    group[i] = groups.length;
+    for (let k = 0; k < members.length; k++)
+      for (const e of graph[members[k]].adj)
+        if (road(e) && group[e.to] === -1) {
+          group[e.to] = groups.length;
+          members.push(e.to);
+        }
+    groups.push(members);
+  }
+  const reach = (root, forward, members) => {
+    const seen = new Uint8Array(n),
+      queue = [root],
+      incoming = new Map();
+    if (!forward)
+      for (const u of members)
+        for (const e of graph[u].adj)
+          if (e.drive) {
+            if (!incoming.has(e.to)) incoming.set(e.to, []);
+            incoming.get(e.to).push(u);
+          }
+    seen[root] = 1;
+    const visit = (v) => {
+      if (!seen[v]) {
+        seen[v] = 1;
+        queue.push(v);
+      }
+    };
+    for (let k = 0; k < queue.length; k++) {
+      const u = queue[k];
+      if (forward) {
+        for (const e of graph[u].adj) if (e.drive) visit(e.to);
+      } else for (const v of incoming.get(u) || []) visit(v);
+    }
+    return seen;
+  };
+  const comp = driveComponents();
+  for (const members of groups) {
+    // Root in the largest strongly connected part, so only isolated pockets are relaxed.
+    const sizes = new Map();
+    for (const m of members) sizes.set(comp[m], (sizes.get(comp[m]) || 0) + 1);
+    const best = [...sizes].sort((a, b) => b[1] - a[1])[0][0],
+      root = members.find((m) => comp[m] === best);
+    for (;;) {
+      const out = reach(root, true, members),
+        back = reach(root, false, members),
+        inside = (m) => out[m] && back[m],
+        outside = members.filter((m) => !inside(m));
+      if (!outside.length) break;
+      // Relax only the oneway segments on the frontier, then grow the component again.
+      for (const m of outside)
+        for (const e of graph[m].adj)
+          if (road(e) && !e.s.reverse.drive && inside(e.to)) {
+            e.s.reverse.drive = true;
+            e.s.relaxed = true;
+          }
+    }
+  }
+  const main = groups.reduce((a, b) => (b.length > a.length ? b : a), []);
+  for (const m of main) graph[m].driveMain = true;
+  Object.assign(driveNetwork, {
+    oneway: segments.filter((s) => s.oneway).length,
+    relaxed: segments.filter((s) => s.relaxed).length,
+    blocked: segments.filter((s) => s.blocked).length,
+    components: groups.length,
+    mainNodes: main.length,
+  });
+}
 function nearestNode(x, z, driveOnly = false) {
   let md = Infinity,
     best = 0;
   for (let i = 0; i < graph.length; i++) {
     let n = graph[i];
-    if (driveOnly && !n.adj.some((e) => e.drive)) continue;
+    if (driveOnly && !n.driveMain) continue;
     let di = (x - n.x) ** 2 + (z - n.z) ** 2;
     if (di < md) {
       md = di;
@@ -2545,6 +2693,7 @@ async function init() {
   scene.add(outer);
   buildGraph();
   connectOpenSpaces();
+  orientDriveGraph();
   applyHeightSamples(heightSamples);
   prepareFacades();
   await buildBuildings();
@@ -2616,6 +2765,7 @@ async function init() {
     city,
     graph,
     segments,
+    driveNetwork,
     pois,
     scene,
     blocked,
@@ -2875,6 +3025,8 @@ function stepAgent(c, dt, isCop = false) {
     c.node = c.next;
     let candidates = graph[c.node].adj.filter((e) => e.drive && e.to !== c.prev);
     if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.drive);
+    // Last resort (spawned inside an excluded alley): any road back to the network.
+    if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.s?.drive);
     c.prev = c.node;
     let next;
     if (isCop && c.path?.length) {
@@ -2917,7 +3069,7 @@ function updatePolice(dt) {
       if (
         di > 130 + police.length * 30 &&
         di < 180 + police.length * 30 &&
-        n.adj.some((e) => e.drive) &&
+        n.driveMain &&
         !blocked(n.x, n.z, 1)
       ) {
         best = i;
