@@ -1,13 +1,13 @@
 import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import assert from 'node:assert/strict';
-import { pathToFileURL } from 'node:url';
 import { SAVE_KEY } from '../web/game-data.js';
 import * as Real from '../web/vendor/three.module.min.js';
 
-// Un mismo entorno CPU para verificadores y exportadores; no ejecuta GPU.
+// Un mismo entorno CPU para verificadores y exportadores; no ejecuta GPU. Los módulos ES
+// se evalúan una vez por proceso, así que el juego solo puede arrancarse una vez.
 export async function createRuntime({ progress = null } = {}) {
+  assert(!globalThis.__chiclanaRuntime, 'createRuntime: una sola vez por proceso');
+  globalThis.__chiclanaRuntime = true;
   const noop = () => {};
   const context = new Proxy(
     { measureText: (s) => ({ width: s.length * 7 }) },
@@ -115,61 +115,16 @@ export async function createRuntime({ progress = null } = {}) {
       return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
     }
   }
-  globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader };
 
   if (progress !== null) storage[SAVE_KEY] = JSON.stringify(progress);
   delete globalThis.__cityGame;
   const assetVersion = fs.readFileSync('web/index.html', 'utf8').match(/game3d\.js\?v=([^"]+)"/)[1];
-  const patch = (source, pattern, replacement) => {
-    assert.equal(
-      [...source.matchAll(new RegExp(pattern.source, 'g'))].length,
-      1,
-      'unique runtime hook: ' + pattern,
-    );
-    return source.replace(pattern, replacement);
-  };
-  let code = fs.readFileSync('web/game3d.js', 'utf8');
-  code = patch(
-    code,
-    /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module(?:\.min)?\.js['"]\)\);/,
-    'const THREE=globalThis.__THREE;globalThis.__runtimeRequested.push(asset("./vendor/three.module.min.js"));',
-  );
-  code = patch(
-    code,
-    /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={inBuilding,pInside,pointSeg,jobs,input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
-  );
-  code = patch(
-    code,
-    /init\(\)\.catch\(\s*\(?err\)?\s*=>/,
-    'globalThis.__initPromise=init().catch(err=>',
-  );
-  for (const file of ['game-data.js', 'progress.js']) {
-    code = patch(
-      code,
-      new RegExp("asset\\('\\./" + file.replace('.', '\\.') + "'\\)"),
-      JSON.stringify(pathToFileURL(path.resolve('web', file)).href + '?v=' + assetVersion),
-    );
-    requested.push('./' + file + '?v=' + assetVersion);
-  }
-  globalThis.__runtimeRequested = requested;
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'chiclana-runtime-'));
-  try {
-    const runtime = path.join(temp, 'runtime.mjs');
-    fs.writeFileSync(runtime, code);
-    await import(pathToFileURL(runtime).href + '?v=' + assetVersion);
-    await globalThis.__initPromise;
-    assert(globalThis.__cityGame, 'init completed');
-    return {
-      g: globalThis.__cityGame,
-      els,
-      storage,
-      requested,
-      mediaQueries,
-      windowListeners,
-      assetVersion,
-    };
-  } finally {
-    fs.rmSync(temp, { recursive: true, force: true });
-  }
+  // Import dinámico: los globales simulados ya existen cuando se evalúa el juego.
+  const { startGame } = await import('../web/js/app.js');
+  const g = await startGame({
+    version: assetVersion,
+    platform: { WebGLRenderer: Renderer, TextureLoader: Loader },
+  });
+  assert(g, 'init completed');
+  return { g, els, storage, requested, mediaQueries, windowListeners, assetVersion };
 }
