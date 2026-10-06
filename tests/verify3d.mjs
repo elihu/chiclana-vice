@@ -76,10 +76,14 @@ globalThis.localStorage = {
   setItem: (k, v) => (storage[k] = String(v)),
   removeItem: (k) => delete storage[k],
 };
-globalThis.fetch = async (url) => ({
-  ok: true,
-  json: async () => JSON.parse(fs.readFileSync('web/' + url, 'utf8')),
-});
+const requested = [];
+globalThis.fetch = async (url) => {
+  requested.push(url);
+  return {
+    ok: true,
+    json: async () => JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8')),
+  };
+};
 class Renderer {
   constructor() {
     this.shadowMap = {};
@@ -95,7 +99,8 @@ class Renderer {
   }
 }
 class Loader {
-  loadAsync() {
+  loadAsync(url) {
+    requested.push(url);
     return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
   }
 }
@@ -103,8 +108,8 @@ globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader }
 let code = fs
   .readFileSync('web/game3d.js', 'utf8')
   .replace(
-    /import \* as THREE from ['"]\.\/vendor\/three\.module\.js['"];?/,
-    'const THREE=globalThis.__THREE;',
+    /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module\.js['"]\)\);/,
+    'const THREE=globalThis.__THREE;requested.push(asset("./vendor/three.module.js"));',
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
@@ -112,10 +117,32 @@ let code = fs
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
-await import('./qa3d-runtime.mjs');
+globalThis.requested = requested;
+// Same query as index.html, so runtime resources must carry the common version suffix.
+const assetVersion = fs.readFileSync('web/index.html', 'utf8').match(/game3d\.js\?v=([^"]+)"/)[1];
+await import('./qa3d-runtime.mjs' + '?v=' + assetVersion);
 await globalThis.__initPromise;
 assert(globalThis.__cityGame, 'init completed');
 const g = globalThis.__cityGame;
+{
+  const html = fs.readFileSync('web/index.html', 'utf8');
+  assert.equal(html.match(/style\.css\?v=([^"]+)"/)[1], assetVersion, 'CSS and JS share version');
+  for (const file of [
+    'world.json',
+    'buildings.json',
+    'osm-world.json',
+    'aerial.jpg',
+    'height-samples.json',
+    'facade-profiles.json',
+    './vendor/three.module.js',
+  ])
+    assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
+  assert(
+    requested.every((u) => u.endsWith('?v=' + assetVersion)),
+    'every resource versioned',
+  );
+  console.log('Common resource version', assetVersion, 'on', requested.length, 'requests');
+}
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
 console.log(
   'spawn',

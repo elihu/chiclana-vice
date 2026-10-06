@@ -1,4 +1,8 @@
-import * as THREE from './vendor/three.module.js';
+// Cache-busting suffix shared by every runtime resource: the ?v= of this module's URL,
+// set once in index.html (style.css uses the same value). Three is imported with it too.
+const ASSET_VERSION = new URL(import.meta.url).searchParams.get('v'),
+  asset = (path) => (ASSET_VERSION ? path + '?v=' + encodeURIComponent(ASSET_VERSION) : path);
+const THREE = await import(asset('./vendor/three.module.js'));
 const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
@@ -2635,7 +2639,7 @@ function spawnTraffic() {
 }
 async function loadWorld() {
   const read = async (file) => {
-    const r = await fetch(file);
+    const r = await fetch(asset(file));
     if (!r.ok) throw Error('No se ha podido cargar ' + file);
     return r.json();
   };
@@ -2678,11 +2682,11 @@ async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
   const [res, tex, heightSamples, profiles] = await Promise.all([
     loadWorld(),
-    new THREE.TextureLoader().loadAsync('aerial.jpg'),
-    fetch('height-samples.json')
+    new THREE.TextureLoader().loadAsync(asset('aerial.jpg')),
+    fetch(asset('height-samples.json'))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
-    fetch('facade-profiles.json').then((r) => {
+    fetch(asset('facade-profiles.json')).then((r) => {
       if (!r.ok) throw Error('No se han podido cargar los perfiles');
       return r.json();
     }),
@@ -3446,7 +3450,7 @@ function drawLabels() {
   setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
 const aerialImage = new Image();
-aerialImage.src = 'aerial.jpg';
+aerialImage.src = asset('aerial.jpg');
 let streetNames = [];
 const chart = document.createElement('canvas');
 chart.width = 1344;
