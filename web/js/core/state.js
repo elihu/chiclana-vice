@@ -97,6 +97,7 @@ export const gfx = {
   coarse: false,
   // Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
   touchSeen: false,
+  platform: null,
 };
 export const session = {
   started: false,
