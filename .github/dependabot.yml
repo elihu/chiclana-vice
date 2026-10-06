@@ -1,0 +1,26 @@
+# Actualizaciones mensuales agrupadas; cada PR pasa el job check de la CI.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      acciones:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    groups:
+      herramientas:
+        dependency-type: development
+    commit-message:
+      prefix: chore
