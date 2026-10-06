@@ -1,8 +1,35 @@
-import * as THREE from './vendor/three.module.min.js';
+// Cache-busting suffix shared by every runtime resource: the ?v= of this module's URL,
+// set once in index.html (style.css uses the same value). Three is imported with it too.
+const ASSET_VERSION = new URL(import.meta.url).searchParams.get('v'),
+  asset = (path) => (ASSET_VERSION ? path + '?v=' + encodeURIComponent(ASSET_VERSION) : path);
+const THREE = await import(asset('./vendor/three.module.min.js'));
 const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
   TAU = Math.PI * 2;
+// Cached element references; per-frame HUD writes touch the DOM only when values change.
+const domRefs = new Map(),
+  domValues = new WeakMap();
+function ui(id) {
+  let e = domRefs.get(id);
+  if (!e) domRefs.set(id, (e = $(id)));
+  return e;
+}
+function domCache(e) {
+  let c = domValues.get(e);
+  if (!c) domValues.set(e, (c = {}));
+  return c;
+}
+function setText(target, value) {
+  const e = typeof target === 'string' ? ui(target) : target,
+    c = domCache(e);
+  if (c.text !== value) e.textContent = c.text = value;
+}
+function setStyle(target, prop, value) {
+  const e = typeof target === 'string' ? ui(target) : target,
+    c = domCache(e);
+  if (c[prop] !== value) e.style[prop] = c[prop] = value;
+}
 let city,
   facadeProfiles,
   renderer,
@@ -17,10 +44,13 @@ let city,
   last = 0,
   mode = 0,
   toastClock = 0,
+  toastShown = false,
   collisionClock = 0,
   hold = 0,
   saveClock = 0,
   quality = 'auto',
+  needsRender = true,
+  contextLost = false,
   mapAerial = false,
   route = [],
   routeClock = 0;
@@ -30,7 +60,26 @@ let audioOn = false,
   engineGain;
 let W = innerWidth,
   H = innerHeight,
-  coarse = matchMedia('(pointer:coarse)').matches;
+  coarse = matchMedia('(any-pointer: coarse)').matches;
+// Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
+let touchSeen = false;
+const coarseQuery = matchMedia('(any-pointer: coarse)');
+coarseQuery.addEventListener?.('change', (e) => {
+  coarse = e.matches || touchSeen;
+  if (renderer) applyQuality();
+});
+addEventListener(
+  'pointerdown',
+  (e) => {
+    if (e.pointerType !== 'touch' || touchSeen) return;
+    touchSeen = true;
+    if (!coarse) {
+      coarse = true;
+      if (renderer) applyQuality();
+    }
+  },
+  { capture: true, passive: true },
+);
 let randSeed = 7631;
 const rnd = () => {
   randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
@@ -50,6 +99,7 @@ let stored = {};
 try {
   stored = JSON.parse(localStorage.getItem('chiclana-real-v2') || '{}');
 } catch {}
+if (stored.quality === 'low') quality = 'low';
 const state = {
   cash: Number.isFinite(stored.cash) ? stored.cash : 250,
   job: clamp(Number(stored.job) || 0, 0, 4),
@@ -63,10 +113,14 @@ const state = {
 };
 const player = { x: 170, z: -150, a: 0, speed: 0, car: null };
 const camPos = new THREE.Vector3(),
-  camTarget = new THREE.Vector3();
+  camTarget = new THREE.Vector3(),
+  camDesired = new THREE.Vector3(),
+  camLook = new THREE.Vector3(),
+  labelPoint = new THREE.Vector3();
 const cars = [],
   police = [],
   traffic = [],
+  vehicles = [], // cars + traffic, kept in sync instead of spreading both every frame
   people = [],
   chunks = [],
   waterAreas = [],
@@ -74,25 +128,27 @@ const cars = [],
   graph = [],
   segments = [],
   buildingGrid = new Map();
-let character, sun, hemi, ring, beam, arrow;
+let character, sun, ring, beam, arrow;
 const base = { x: 170, z: -150 };
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
+  $('loadTrack').setAttribute('aria-valuenow', String(p));
 }
 function sleepFrame() {
   return new Promise((r) => requestAnimationFrame(r));
 }
 function toast(message, duration = 4) {
-  $('toast').textContent = message;
-  $('toast').classList.add('show');
+  setText('toast', message);
+  ui('toast').classList.add('show');
   toastClock = duration;
+  toastShown = true;
 }
 function save() {
   try {
     localStorage.setItem(
       'chiclana-real-v2',
-      JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found] }),
+      JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found], quality }),
     );
   } catch {}
 }
@@ -182,7 +238,7 @@ function buildGraph() {
     return id;
   }
   for (const r of city.roads) {
-    let drive = !['footway', 'pedestrian', 'cycleway', 'path', 'steps'].includes(r.type);
+    let drive = !['footway', 'pedestrian', 'cycleway', 'path'].includes(r.type);
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
         b = r.p[i],
@@ -191,9 +247,13 @@ function buildGraph() {
       let ai = node(a),
         bi = node(b);
       let s = { a, b, ai, bi, length, name: r.name, width: r.w, bridge: r.bridge, drive };
+      // OSM oneway=yes follows the vertex order; walking ignores it (edge.drive only).
+      s.oneway = drive && !!r.oneway;
+      s.forward = { to: bi, length, drive, s };
+      s.reverse = { to: ai, length, drive: drive && !s.oneway, s };
       segments.push(s);
-      graph[ai].adj.push({ to: bi, length, drive, s });
-      graph[bi].adj.push({ to: ai, length, drive, s });
+      graph[ai].adj.push(s.forward);
+      graph[bi].adj.push(s.reverse);
     }
   }
   for (const b of city.buildings) {
@@ -248,12 +308,156 @@ function connectOpenSpaces() {
     parent[root(i)] = root(j);
   }
 }
+// Directed driving network for traffic and police (the player drives freely). Each drive
+// component must stay strongly connected (no dead ends, police routes everywhere): oneway
+// is ignored only on segments around nodes that would otherwise be unreachable or have no
+// exit. Segments whose centre line touches a cadastral outline (narrow alleys, where agents
+// used to get stuck) are left out of the agents' network.
+const driveNetwork = { oneway: 0, relaxed: 0, blocked: 0, components: 0, mainNodes: 0 };
+function driveComponents() {
+  const n = graph.length,
+    index = new Int32Array(n).fill(-1),
+    low = new Int32Array(n),
+    onStack = new Uint8Array(n),
+    comp = new Int32Array(n).fill(-1),
+    stack = [],
+    call = [];
+  let next = 0,
+    count = 0;
+  for (let root = 0; root < n; root++) {
+    if (index[root] !== -1) continue;
+    call.push([root, 0]);
+    while (call.length) {
+      const top = call[call.length - 1],
+        v = top[0],
+        adj = graph[v].adj;
+      if (index[v] === -1) {
+        index[v] = low[v] = next++;
+        stack.push(v);
+        onStack[v] = 1;
+      }
+      let descended = false;
+      while (top[1] < adj.length) {
+        const e = adj[top[1]++];
+        if (!e.drive) continue;
+        if (index[e.to] === -1) {
+          call.push([e.to, 0]);
+          descended = true;
+          break;
+        }
+        if (onStack[e.to]) low[v] = Math.min(low[v], index[e.to]);
+      }
+      if (descended) continue;
+      if (low[v] === index[v]) {
+        let w;
+        do {
+          w = stack.pop();
+          onStack[w] = 0;
+          comp[w] = count;
+        } while (w !== v);
+        count++;
+      }
+      call.pop();
+      if (call.length) {
+        const u = call[call.length - 1][0];
+        low[u] = Math.min(low[u], low[v]);
+      }
+    }
+  }
+  return comp;
+}
+function orientDriveGraph() {
+  for (const s of segments) {
+    if (!s.drive) continue;
+    const steps = Math.ceil(s.length / 0.5);
+    for (let i = 0; i <= steps && !s.blocked; i++)
+      s.blocked = inBuilding(
+        lerp(s.a[0], s.b[0], i / steps),
+        lerp(s.a[1], s.b[1], i / steps),
+        0.35,
+      );
+    if (s.blocked) s.forward.drive = s.reverse.drive = false;
+  }
+  const n = graph.length,
+    road = (e) => e.s?.drive && !e.s.blocked,
+    group = new Int32Array(n).fill(-1),
+    groups = [];
+  for (let i = 0; i < n; i++) {
+    if (group[i] !== -1 || !graph[i].adj.some(road)) continue;
+    const members = [i];
+    group[i] = groups.length;
+    for (let k = 0; k < members.length; k++)
+      for (const e of graph[members[k]].adj)
+        if (road(e) && group[e.to] === -1) {
+          group[e.to] = groups.length;
+          members.push(e.to);
+        }
+    groups.push(members);
+  }
+  const reach = (root, forward, members) => {
+    const seen = new Uint8Array(n),
+      queue = [root],
+      incoming = new Map();
+    if (!forward)
+      for (const u of members)
+        for (const e of graph[u].adj)
+          if (e.drive) {
+            if (!incoming.has(e.to)) incoming.set(e.to, []);
+            incoming.get(e.to).push(u);
+          }
+    seen[root] = 1;
+    const visit = (v) => {
+      if (!seen[v]) {
+        seen[v] = 1;
+        queue.push(v);
+      }
+    };
+    for (let k = 0; k < queue.length; k++) {
+      const u = queue[k];
+      if (forward) {
+        for (const e of graph[u].adj) if (e.drive) visit(e.to);
+      } else for (const v of incoming.get(u) || []) visit(v);
+    }
+    return seen;
+  };
+  const comp = driveComponents();
+  for (const members of groups) {
+    // Root in the largest strongly connected part, so only isolated pockets are relaxed.
+    const sizes = new Map();
+    for (const m of members) sizes.set(comp[m], (sizes.get(comp[m]) || 0) + 1);
+    const best = [...sizes].sort((a, b) => b[1] - a[1])[0][0],
+      root = members.find((m) => comp[m] === best);
+    for (;;) {
+      const out = reach(root, true, members),
+        back = reach(root, false, members),
+        inside = (m) => out[m] && back[m],
+        outside = members.filter((m) => !inside(m));
+      if (!outside.length) break;
+      // Relax only the oneway segments on the frontier, then grow the component again.
+      for (const m of outside)
+        for (const e of graph[m].adj)
+          if (road(e) && !e.s.reverse.drive && inside(e.to)) {
+            e.s.reverse.drive = true;
+            e.s.relaxed = true;
+          }
+    }
+  }
+  const main = groups.reduce((a, b) => (b.length > a.length ? b : a), []);
+  for (const m of main) graph[m].driveMain = true;
+  Object.assign(driveNetwork, {
+    oneway: segments.filter((s) => s.oneway).length,
+    relaxed: segments.filter((s) => s.relaxed).length,
+    blocked: segments.filter((s) => s.blocked).length,
+    components: groups.length,
+    mainNodes: main.length,
+  });
+}
 function nearestNode(x, z, driveOnly = false) {
   let md = Infinity,
     best = 0;
   for (let i = 0; i < graph.length; i++) {
     let n = graph[i];
-    if (driveOnly && !n.adj.some((e) => e.drive)) continue;
+    if (driveOnly && !n.driveMain) continue;
     let di = (x - n.x) ** 2 + (z - n.z) ** 2;
     if (di < md) {
       md = di;
@@ -262,23 +466,74 @@ function nearestNode(x, z, driveOnly = false) {
   }
   return best;
 }
+// Dijkstra with a binary heap keyed by (distance, node). Ties settle the lowest node
+// first and relaxation is strict, as in the previous O(N²) scan: identical routes.
+let routeDist, routePrev, routeUsed, heapDist, heapNode;
 function findRoute(from, to, driveOnly = false) {
   if (from === to) return [from];
-  let ds = new Float64Array(graph.length);
+  const n = graph.length;
+  if (!routeDist || routeDist.length !== n) {
+    routeDist = new Float64Array(n);
+    routePrev = new Int32Array(n);
+    routeUsed = new Uint8Array(n);
+  }
+  let edges = 1;
+  for (const g of graph) edges += g.adj.length;
+  if (!heapDist || heapDist.length < edges) {
+    heapDist = new Float64Array(edges);
+    heapNode = new Int32Array(edges);
+  }
+  const ds = routeDist,
+    prev = routePrev,
+    used = routeUsed,
+    less = (i, j) =>
+      heapDist[i] < heapDist[j] || (heapDist[i] === heapDist[j] && heapNode[i] < heapNode[j]);
   ds.fill(Infinity);
-  ds[from] = 0;
-  let prev = new Int32Array(graph.length);
   prev.fill(-1);
-  let used = new Uint8Array(graph.length);
-  for (let n = 0; n < graph.length; n++) {
-    let u = -1,
-      md = Infinity;
-    for (let i = 0; i < graph.length; i++)
-      if (!used[i] && ds[i] < md) {
-        md = ds[i];
-        u = i;
-      }
-    if (u === -1 || u === to) break;
+  used.fill(0);
+  ds[from] = 0;
+  let size = 0;
+  const swap = (i, j) => {
+    let dv = heapDist[i],
+      nv = heapNode[i];
+    heapDist[i] = heapDist[j];
+    heapNode[i] = heapNode[j];
+    heapDist[j] = dv;
+    heapNode[j] = nv;
+  };
+  const push = (dv, node) => {
+    let i = size++;
+    heapDist[i] = dv;
+    heapNode[i] = node;
+    while (i > 0) {
+      let parent = (i - 1) >> 1;
+      if (!less(i, parent)) break;
+      swap(i, parent);
+      i = parent;
+    }
+  };
+  const pop = () => {
+    let top = heapNode[0];
+    size--;
+    heapDist[0] = heapDist[size];
+    heapNode[0] = heapNode[size];
+    for (let i = 0; ;) {
+      let l = i * 2 + 1,
+        r = l + 1,
+        m = i;
+      if (l < size && less(l, m)) m = l;
+      if (r < size && less(r, m)) m = r;
+      if (m === i) break;
+      swap(i, m);
+      i = m;
+    }
+    return top;
+  };
+  push(0, from);
+  while (size) {
+    let u = pop();
+    if (used[u]) continue;
+    if (u === to) break;
     used[u] = 1;
     for (let e of graph[u].adj) {
       if (driveOnly && !e.drive) continue;
@@ -286,16 +541,17 @@ function findRoute(from, to, driveOnly = false) {
       if (nd < ds[e.to]) {
         ds[e.to] = nd;
         prev[e.to] = u;
+        push(nd, e.to);
       }
     }
   }
   if (prev[to] === -1) return [];
   let out = [to];
-  while (out[0] !== from) {
-    out.unshift(prev[out[0]]);
-    if (out.length > graph.length) return [];
+  while (out[out.length - 1] !== from) {
+    out.push(prev[out[out.length - 1]]);
+    if (out.length > n) return [];
   }
-  return out;
+  return out.reverse();
 }
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
@@ -2520,16 +2776,17 @@ function target() {
 function updateHUD() {
   const j = jobs[state.job],
     p = target();
-  $('money').textContent = Math.floor(state.cash).toLocaleString('es-ES') + ' €';
-  $('stars').textContent = '★'.repeat(state.wanted) + '☆'.repeat(5 - state.wanted);
-  $('jobTag').textContent = j
-    ? String(state.job + 1).padStart(2, '0') + ' / ' + j.name
-    : 'EXPLORACIÓN LIBRE';
-  $('jobTitle').textContent = p ? p.text : 'Recorre las calles reales del centro';
-  $('interactText').textContent = player.car ? 'BAJAR' : 'SUBIR';
-  $('boostText').textContent = player.car ? 'TURBO' : 'CORRER';
-  $('joy').classList.toggle('hidden', !!player.car);
-  $('driveControls').classList.toggle('hidden', !player.car);
+  setText('money', Math.floor(state.cash).toLocaleString('es-ES') + ' €');
+  setText('stars', '★'.repeat(state.wanted) + '☆'.repeat(5 - state.wanted));
+  setText(
+    'jobTag',
+    j ? String(state.job + 1).padStart(2, '0') + ' / ' + j.name : 'EXPLORACIÓN LIBRE',
+  );
+  setText('jobTitle', p ? p.text : 'Recorre las calles reales del centro');
+  setText('interactText', player.car ? 'BAJAR' : 'SUBIR');
+  setText('boostText', player.car ? 'TURBO' : 'CORRER');
+  ui('joy').classList.toggle('hidden', !!player.car);
+  ui('driveControls').classList.toggle('hidden', !player.car);
   updateCameraVisibility();
 }
 function spawnTraffic() {
@@ -2556,38 +2813,53 @@ function spawnTraffic() {
     Object.assign(car, p);
     cars.push(car);
   }
-  for (let i = 0; i < 28; i++) {
+  // 28 pedestrians on segments of at least 8 m; bounded attempts keep start-up predictable.
+  for (let i = 0, attempts = 0; i < 28 && attempts < 600; attempts++) {
     let s = segments[Math.floor(rnd() * segments.length)];
     if (s.length < 8) continue;
-    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i % 4]);
+    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
     Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1 });
     people.push(person);
   }
 }
 async function loadWorld() {
   const read = async (file) => {
-    const r = await fetch(file);
+    const r = await fetch(asset(file));
     if (!r.ok) throw Error('No se ha podido cargar ' + file);
     return r.json();
   };
   const manifest = await read('world.json');
   if (manifest.version !== 1) throw Error('Versión de mapa incompatible');
+  // Validate the layer structure up front: a clear message instead of a TypeError later.
+  const incompatible = () => Error('Capas del mapa incompatibles'),
+    pair = (v) => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite);
+  if (
+    !pair(manifest.origin) ||
+    !pair(manifest.size) ||
+    typeof manifest.files?.buildings !== 'string' ||
+    typeof manifest.files?.osm !== 'string'
+  )
+    throw incompatible();
   const [buildings, osm] = await Promise.all([
     read(manifest.files.buildings),
     read(manifest.files.osm),
   ]);
   for (const layer of [buildings, osm])
-    if (layer.version !== 1 || layer.origin.some((v, i) => v !== manifest.origin[i]))
-      throw Error('Capas del mapa incompatibles');
+    if (
+      layer?.version !== 1 ||
+      !pair(layer.origin) ||
+      layer.origin.some((v, i) => v !== manifest.origin[i])
+    )
+      throw incompatible();
+  if (![buildings.buildings, osm.roads, osm.areas].every(Array.isArray)) throw incompatible();
   return {
     origin: manifest.origin,
     size: manifest.size,
-    meta: manifest.meta,
     buildings: buildings.buildings,
     roads: osm.roads,
     areas: osm.areas,
-    landmarks: osm.landmarks,
-    trees: osm.trees,
+    landmarks: Array.isArray(osm.landmarks) ? osm.landmarks : [],
+    trees: Array.isArray(osm.trees) ? osm.trees : [],
   };
 }
 async function init() {
@@ -2597,12 +2869,12 @@ async function init() {
     // Light mode and touch devices start with the 2048×1536 derivative (same extent).
     // Toggling quality later does not reload it. Without the orthophoto, plain colours.
     new THREE.TextureLoader()
-      .loadAsync(quality === 'low' || coarse ? 'aerial-2048.jpg' : 'aerial.jpg')
+      .loadAsync(asset(quality === 'low' || coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
       .catch(() => null),
-    fetch('height-samples.json')
+    fetch(asset('height-samples.json'))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
-    fetch('facade-profiles.json').then((r) => {
+    fetch(asset('facade-profiles.json')).then((r) => {
       if (!r.ok) throw Error('No se han podido cargar los perfiles');
       return r.json();
     }),
@@ -2622,9 +2894,7 @@ async function init() {
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75));
   renderer.setSize(W, H);
-  renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2633,11 +2903,10 @@ async function init() {
   scene.background = new THREE.Color('#a5bbc8');
   scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   camera = new THREE.PerspectiveCamera(62, W / H, 0.15, 1800);
-  hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
+  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
   scene.add(hemi);
   sun = new THREE.DirectionalLight('#fff0d6', 3.2);
   sun.position.set(-100, 150, 60);
-  sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, {
     left: -75,
@@ -2651,6 +2920,7 @@ async function init() {
   sun.shadow.bias = -0.0002;
   sun.shadow.normalBias = 0.09;
   scene.add(sun, sun.target);
+  applyQuality();
   let g = new THREE.Mesh(
     new THREE.PlaneGeometry(worldW, worldH),
     new THREE.MeshStandardMaterial(
@@ -2666,6 +2936,7 @@ async function init() {
   scene.add(outer);
   buildGraph();
   connectOpenSpaces();
+  orientDriveGraph();
   applyHeightSamples(heightSamples);
   prepareFacades();
   await buildBuildings();
@@ -2688,6 +2959,7 @@ async function init() {
   character = createPerson('#d7d5b0');
   character.mesh.visible = false;
   spawnTraffic();
+  vehicles.push(...cars, ...traffic);
   ring = new THREE.Mesh(
     new THREE.RingGeometry(5.5, 6.2, 48),
     new THREE.MeshBasicMaterial({
@@ -2737,6 +3009,7 @@ async function init() {
     city,
     graph,
     segments,
+    driveNetwork,
     pois,
     scene,
     blocked,
@@ -2835,7 +3108,7 @@ function rescue() {
 function nearestCar() {
   let best = null,
     md = 5.5;
-  for (const c of [...cars, ...traffic]) {
+  for (const c of vehicles) {
     let di = d(c, player);
     if (di < md && Math.abs(c.speed) < 3) {
       md = di;
@@ -2935,7 +3208,8 @@ function updatePlayer(dt) {
       c.x = nx;
       c.z = nz;
     }
-    for (const other of [...cars, ...traffic, ...police]) {
+    for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
+      const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
       if (other === c || d(c, other) > 3.1) continue;
       if (collisionClock <= 0 && Math.abs(c.speed) > 3) {
         c.health -= 5;
@@ -2993,9 +3267,14 @@ function stepAgent(c, dt, isCop = false) {
     speed = c.cruise || 9;
   if (!isCop && d(c, player) < 7) speed = 0;
   if (di < Math.max(1, speed * dt)) {
+    // Snap to the node so agents follow the checked segment lines exactly.
+    c.x = n.x;
+    c.z = n.z;
     c.node = c.next;
     let candidates = graph[c.node].adj.filter((e) => e.drive && e.to !== c.prev);
     if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.drive);
+    // Last resort (spawned inside an excluded alley): any road back to the network.
+    if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.s?.drive);
     c.prev = c.node;
     let next;
     if (isCop && c.path?.length) {
@@ -3038,7 +3317,7 @@ function updatePolice(dt) {
       if (
         di > 130 + police.length * 30 &&
         di < 180 + police.length * 30 &&
-        n.adj.some((e) => e.drive) &&
+        n.driveMain &&
         !blocked(n.x, n.z, 1)
       ) {
         best = i;
@@ -3097,10 +3376,13 @@ function update(dt) {
   t += dt;
   collisionClock = Math.max(0, collisionClock - dt);
   toastClock -= dt;
-  if (toastClock <= 0) $('toast').classList.remove('show');
+  if (toastShown && toastClock <= 0) {
+    toastShown = false;
+    ui('toast').classList.remove('show');
+  }
   updatePlayer(dt);
   for (const c of traffic) stepAgent(c, dt);
-  for (const c of [...cars, ...traffic]) {
+  for (const c of vehicles) {
     c.mesh.position.set(c.x, 0, c.z);
     c.mesh.rotation.y = c.a;
   }
@@ -3171,25 +3453,26 @@ function update(dt) {
   if (orbitAge > 0) orbitAge -= dt;
   else if (player.car && mode !== 1) orbit = lerp(orbit, 0, dt * 2);
   updateCamera(dt);
-  $('speed').textContent = Math.round(Math.abs(player.speed) * 3.6);
-  $('modeName').textContent = player.car
-    ? 'COSTA GT'
-    : input.boost || keys.Shift
-      ? 'CORRIENDO'
-      : 'A PIE';
-  $('conditionFill').style.width = state.health + '%';
-  $('conditionFill').style.background = state.health < 30 ? '#ff9473' : '#e7fa8a';
-  $('jobDistance').textContent = goal
-    ? goal.escape
-      ? 'Evita a las patrullas'
-      : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
-    : state.found.size + '/6 lugares descubiertos';
-  $('jobTime').textContent =
+  setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
+  setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
+  setStyle('conditionFill', 'width', state.health + '%');
+  setStyle('conditionFill', 'background', state.health < 30 ? '#ff9473' : '#e7fa8a');
+  setText(
+    'jobDistance',
+    goal
+      ? goal.escape
+        ? 'Evita a las patrullas'
+        : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
+      : state.found.size + '/6 lugares descubiertos',
+  );
+  setText(
+    'jobTime',
     state.timer > 0
       ? Math.floor(state.timer / 60) + ':' + String(Math.floor(state.timer % 60)).padStart(2, '0')
-      : '';
+      : '',
+  );
   let near = nearestRoad(player.x, player.z);
-  $('street').textContent = near?.s.name || 'Centro de Chiclana';
+  setText('street', near?.s.name || 'Centro de Chiclana');
   let hint = '';
   if (!player.car && nearestCar())
     hint = 'Coche disponible · ' + (coarse ? 'SUBIR' : 'E para subir');
@@ -3199,7 +3482,7 @@ function update(dt) {
     hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
   else if (Math.abs(player.x) > worldW / 2 - 30 || Math.abs(player.z) > worldH / 2 - 30)
     hint = 'Fin de la zona recreada · Abre el mapa para volver';
-  $('hint').textContent = hint;
+  setText('hint', hint);
   saveClock += dt;
   if (saveClock > 10) {
     saveClock = 0;
@@ -3272,12 +3555,12 @@ function updateCamera(dt) {
   if (mode === 1) {
     let ahead = player.car ? -0.15 : 0,
       side = player.car ? 0.38 : 0;
-    desired = new THREE.Vector3(
+    desired = camDesired.set(
       player.x + Math.sin(player.a) * ahead + Math.cos(player.a) * side,
       player.car ? 1.2 : 1.61,
       player.z + Math.cos(player.a) * ahead - Math.sin(player.a) * side,
     );
-    target = new THREE.Vector3(
+    target = camLook.set(
       desired.x + Math.sin(heading) * Math.cos(lookPitch) * 18,
       desired.y + Math.sin(lookPitch) * 18,
       desired.z + Math.cos(heading) * Math.cos(lookPitch) * 18,
@@ -3290,12 +3573,12 @@ function updateCamera(dt) {
       y = 45;
       look = 0;
     }
-    desired = new THREE.Vector3(
+    desired = camDesired.set(
       player.x - Math.sin(heading) * follow,
       y,
       player.z - Math.cos(heading) * follow,
     );
-    target = new THREE.Vector3(
+    target = camLook.set(
       player.x + Math.sin(heading) * look,
       mode === 2 ? 0 : 1.1 + Math.tan(lookPitch) * look,
       player.z + Math.cos(heading) * look,
@@ -3311,48 +3594,52 @@ function updateCamera(dt) {
   sun.position.set(player.x - 85, 125, player.z + 60);
   sun.target.position.set(player.x, 0, player.z);
   sun.target.updateMatrixWorld();
+  // In light mode, chunks beyond the fog end are culled (measured from the camera).
+  const low = quality === 'low',
+    reach = low ? scene.fog.far : mode === 2 ? 650 : 520,
+    ox = low ? camera.position.x : player.x,
+    oz = low ? camera.position.z : player.z;
   for (const group of chunks) {
     let m = group.children[0],
       c = m.geometry.boundingSphere;
-    group.visible =
-      Math.hypot(c.center.x - player.x, c.center.z - player.z) <
-      (mode === 2 ? 650 : 520) + c.radius;
+    group.visible = Math.hypot(c.center.x - ox, c.center.z - oz) < reach + c.radius;
   }
 }
 function drawLabels() {
   for (const p of pois) {
     let di = Math.hypot(p.labelX - player.x, p.labelZ - player.z);
     if (di > 125 || mode === 1) {
-      p.el.style.display = 'none';
+      setStyle(p.el, 'display', 'none');
       continue;
     }
-    let v = new THREE.Vector3(p.labelX, 14, p.labelZ).project(camera);
+    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(camera);
     if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) {
-      p.el.style.display = 'none';
+      setStyle(p.el, 'display', 'none');
       continue;
     }
-    p.el.style.display = 'block';
-    p.el.style.left = (v.x * 0.5 + 0.5) * W + 'px';
-    p.el.style.top = (-v.y * 0.5 + 0.5) * H + 'px';
+    setStyle(p.el, 'display', 'block');
+    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * W + 'px');
+    setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * H + 'px');
   }
   let goal = target(),
-    el = $('direction');
+    el = ui('direction');
   if (!goal || goal.escape) {
-    el.style.display = 'none';
+    setStyle(el, 'display', 'none');
     return;
   }
-  let v = new THREE.Vector3(goal.x, 2, goal.z).project(camera);
+  let v = labelPoint.set(goal.x, 2, goal.z).project(camera);
   if (v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.65) {
-    el.style.display = 'none';
+    setStyle(el, 'display', 'none');
     return;
   }
   let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + orbit);
   let x = W / 2 - Math.sin(angle) * Math.min(W * 0.33, 180),
     y = H * 0.47 - Math.cos(angle) * Math.min(H * 0.18, 90);
-  el.style.display = 'grid';
-  el.style.left = x - 19 + 'px';
-  el.style.top = y - 19 + 'px';
-  el.textContent = Math.abs(angle % TAU) > Math.PI * 0.65 ? '↶' : '◆';
+  setStyle(el, 'display', 'grid');
+  setStyle(el, 'left', x - 19 + 'px');
+  setStyle(el, 'top', y - 19 + 'px');
+  const relative = Math.atan2(Math.sin(angle), Math.cos(angle)); // normalised to [-π, π]
+  setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
 let streetNames = [];
 const chart = document.createElement('canvas');
@@ -3476,15 +3763,15 @@ function drawMap(canvas, mini = false) {
     c.fillText('N ↑', cw - 14, 25);
   }
 }
+// Case- and accent-insensitive search text ("jesus" finds "Jesús").
+const fold = (text) =>
+  text
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 function listStreets() {
-  let q = $('streetSearch').value.toLocaleLowerCase('es'),
-    names = streetNames.filter((n) =>
-      n
-        .toLocaleLowerCase('es')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .includes(q.normalize('NFD').replace(/[\u0300-\u036f]/g, '')),
-    );
+  let q = fold($('streetSearch').value),
+    names = streetNames.filter((n) => fold(n).includes(q));
   let list = $('streetList');
   list.replaceChildren();
   for (const view of [
@@ -3494,7 +3781,7 @@ function listStreets() {
     { name: 'San Telmo · ver fachada', x: -10, z: -155, tx: -12, tz: -167 },
     { name: 'Iglesia Mayor · ver fachada', x: 191, z: 163, tx: 212, tz: 167 },
   ]) {
-    if (q && !view.name.toLocaleLowerCase('es').includes(q)) continue;
+    if (q && !fold(view.name).includes(q)) continue;
     let b = document.createElement('button');
     b.textContent = view.name;
     b.style.color = '#e7fa8a';
@@ -3521,7 +3808,7 @@ function listStreets() {
       let rs = city.roads.filter((r) => r.name === n),
         r = rs.reduce((a, b) => (a.p.length > b.p.length ? a : b)),
         pt = r.p[Math.floor(r.p.length / 2)],
-        safe = safePoint(pt[0], pt[1]);
+        safe = safePoint(pt[0], pt[1], !!player.car);
       if (player.car) {
         Object.assign(player.car, safe);
         player.car.speed = 0;
@@ -3546,11 +3833,12 @@ function mute() {
   if (engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
 }
 function openMap() {
-  if (!started) return;
+  if (!started || contextLost) return;
   paused = true;
   clearInput();
   mute();
   $('mapOverlay').classList.remove('hidden');
+  openDialog($('closeMap')); // not the search field: no on-screen keyboard
   let c = $('map'),
     r = c.getBoundingClientRect();
   c.width = Math.round(r.width * 1.5);
@@ -3558,25 +3846,68 @@ function openMap() {
   drawMap(c);
 }
 function closeMap() {
+  if (contextLost) return; // only reloading can bring the image back
   $('mapOverlay').classList.add('hidden');
+  closeDialog();
   paused = false;
+  needsRender = true;
   last = performance.now();
+}
+// Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
+// dialog and focus returns to the opener on close.
+let dialogOpener = null;
+function openDialog(target) {
+  if (!dialogOpener) dialogOpener = document.activeElement;
+  $('hud').inert = true;
+  target?.focus?.();
+}
+function closeDialog() {
+  if (!$('modal').classList.contains('hidden') || !$('mapOverlay').classList.contains('hidden'))
+    return;
+  $('hud').inert = false;
+  dialogOpener?.focus?.();
+  dialogOpener = null;
+}
+function trapFocus(e) {
+  const overlay = ['mapOverlay', 'modal'].map($).find((o) => !o.classList.contains('hidden'));
+  if (!overlay) return;
+  const items = [...overlay.querySelectorAll('button, a[href], input')].filter(
+      (el) => !el.closest('.hidden'),
+    ),
+    first = items[0],
+    lastItem = items[items.length - 1];
+  if (!first) return;
+  const inside = overlay.contains(document.activeElement);
+  if (e.shiftKey && (!inside || document.activeElement === first)) {
+    e.preventDefault();
+    lastItem.focus();
+  } else if (!e.shiftKey && (!inside || document.activeElement === lastItem)) {
+    e.preventDefault();
+    first.focus();
+  }
 }
 function modal(html) {
   paused = true;
   clearInput();
   mute();
   $('modalBody').innerHTML = html;
+  const title = $('modalBody').querySelector('h2');
+  if (title) title.id = 'modalTitle';
   $('modal').classList.remove('hidden');
+  openDialog($('modalBody').querySelector('button') || $('closeModal'));
 }
 function closeModal() {
+  if (contextLost) return; // only reloading can bring the image back
   $('modal').classList.add('hidden');
+  closeDialog();
   paused = false;
+  needsRender = true;
   last = performance.now();
 }
 function help() {
+  if (contextLost) return;
   modal(
-    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa cuatro encargos y descubre seis lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download>Descargar capa OSM utilizada</a> · <a href="street-objects.json" download>Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07, CC-BY 4.0 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md">Licencias y procedencia detalladas</a> · <a href="data-sources.json">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
+    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa cuatro encargos y descubre seis lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07, CC-BY 4.0 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
   );
   $('understood').onclick = closeModal;
 }
@@ -3599,7 +3930,17 @@ function toggleAudio() {
   }
   toast(audioOn ? 'Sonido del motor activado' : 'Sonido desactivado', 2);
 }
+// Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
+function applyQuality() {
+  const low = quality === 'low';
+  renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75));
+  renderer.shadowMap.enabled = !low;
+  sun.castShadow = !low;
+  scene.fog.far = low ? 380 : 620;
+  needsRender = true;
+}
 function pauseMenu() {
+  if (contextLost) return;
   modal(
     `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/4 encargos · ${state.found.size}/6 lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
   );
@@ -3611,11 +3952,8 @@ function pauseMenu() {
   };
   $('quality').onclick = () => {
     quality = quality === 'low' ? 'auto' : 'low';
-    renderer.setPixelRatio(
-      quality === 'low' ? 1 : Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75),
-    );
-    renderer.shadowMap.enabled = quality !== 'low';
-    scene.fog.far = quality === 'low' ? 380 : 620;
+    applyQuality();
+    save();
     closeModal();
     toast(quality === 'low' ? 'Modo ligero activado' : 'Calidad normal', 2);
   };
@@ -3756,7 +4094,12 @@ for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
     if (e.pointerId === dragId) dragId = null;
   });
 window.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'Tab') return trapFocus(e);
+  if (e.target.tagName === 'INPUT') {
+    // Typing in the street search: only Escape is handled, to close the map.
+    if (e.key === 'Escape' && !$('mapOverlay').classList.contains('hidden')) closeMap();
+    return;
+  }
   let k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
   if (e.repeat) return;
@@ -3797,14 +4140,18 @@ window.addEventListener('resize', () => {
   renderer.setSize(W, H);
   camera.aspect = W / H;
   camera.updateProjectionMatrix();
+  needsRender = true;
   if (!$('mapOverlay').classList.contains('hidden')) openMap();
 });
 $('world').addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   paused = true;
+  $('mapOverlay').classList.add('hidden');
   modal(
     '<h2>Se ha interrumpido la imagen.</h2><p>Tu progreso está guardado. Recarga la página y activa el modo móvil ligero en Pausa.</p><button class="primary" id="reload">RECARGAR</button>',
   );
+  contextLost = true;
+  $('closeModal').classList.add('hidden');
   save();
   $('reload').onclick = () => location.reload();
 });
@@ -3823,14 +4170,18 @@ function frame(now) {
     camera.lookAt(player.x, 0, player.z);
     sun.target.position.set(player.x, 0, player.z);
     sun.position.set(player.x - 85, 125, player.z + 60);
-    for (let c of [...cars, ...traffic]) {
+    for (let c of vehicles) {
       c.mesh.position.set(c.x, 0, c.z);
       c.mesh.rotation.y = c.a;
     }
   }
-  renderer.render(scene, camera);
-  if (started && frameCount++ % 3 === 0) {
-    let mini = $('mini');
+  // While paused (map, modal), the last frame stays on screen; redraw only on demand.
+  if (!contextLost && (!started || !paused || needsRender)) {
+    renderer.render(scene, camera);
+    needsRender = false;
+  }
+  if (started && !paused && frameCount++ % 3 === 0) {
+    let mini = ui('mini');
     if (mini.width !== 280) {
       mini.width = 280;
       mini.height = 200;

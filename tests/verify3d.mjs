@@ -7,6 +7,22 @@ const context = new Proxy(
   { get: (o, k) => (k in o ? o[k] : noop), set: (o, k, v) => ((o[k] = v), true) },
 );
 const els = {};
+// Initial classes from index.html, so classList reflects which overlays are hidden.
+const initialClasses = {};
+for (const [tag] of fs.readFileSync('web/index.html', 'utf8').matchAll(/<[a-z]+\b[^>]*>/g)) {
+  const id = tag.match(/\bid="([^"]+)"/)?.[1],
+    cls = tag.match(/\bclass="([^"]+)"/)?.[1];
+  if (id) initialClasses[id] = cls ? cls.split(/\s+/) : [];
+}
+function classList(id) {
+  const set = new Set(initialClasses[id] || []);
+  return {
+    add: (...c) => c.forEach((v) => set.add(v)),
+    remove: (...c) => c.forEach((v) => set.delete(v)),
+    toggle: (c, force = !set.has(c)) => (force ? set.add(c) : set.delete(c), force),
+    contains: (c) => set.has(c),
+  };
+}
 function el(id) {
   return (els[id] ??= {
     id,
@@ -14,7 +30,7 @@ function el(id) {
     style: {},
     value: '',
     children: [],
-    classList: { add: noop, remove: noop, toggle: noop, contains: () => true },
+    classList: classList(id),
     getContext: () => context,
     appendChild(v) {
       this.children.push(v);
@@ -23,7 +39,9 @@ function el(id) {
       this.children = [];
     },
     querySelector: () => el(id + 'child'),
-    setAttribute: noop,
+    setAttribute(k, v) {
+      (this.attributes ??= {})[k] = v;
+    },
     listeners: {},
     addEventListener(n, f) {
       (this.listeners[n] ??= []).push(f);
@@ -36,8 +54,10 @@ globalThis.window = globalThis;
 globalThis.innerWidth = 390;
 globalThis.innerHeight = 844;
 globalThis.devicePixelRatio = 2;
-globalThis.matchMedia = () => ({ matches: true });
-globalThis.addEventListener = noop;
+const mediaQueries = [];
+globalThis.matchMedia = (q) => (mediaQueries.push(q), { matches: true });
+const windowListeners = {};
+globalThis.addEventListener = (n, f) => (windowListeners[n] ??= []).push(f);
 globalThis.document = {
   getElementById: el,
   createElement: (tag) => ({ ...el('created' + Math.random()), tagName: tag.toUpperCase() }),
@@ -53,23 +73,38 @@ globalThis.Image = class {
 globalThis.requestAnimationFrame = (fn) => {
   if (fn.name !== 'frame') setTimeout(fn, 0);
 };
-globalThis.localStorage = { getItem: () => null, setItem: noop };
-globalThis.fetch = async (url) => ({
-  ok: true,
-  json: async () => JSON.parse(fs.readFileSync('web/' + url, 'utf8')),
-});
+const storage = {};
+globalThis.localStorage = {
+  getItem: (k) => storage[k] ?? null,
+  setItem: (k, v) => (storage[k] = String(v)),
+  removeItem: (k) => delete storage[k],
+};
+const requested = [];
+globalThis.fetch = async (url) => {
+  requested.push(url);
+  return {
+    ok: true,
+    json: async () => JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8')),
+  };
+};
 class Renderer {
   constructor() {
     this.shadowMap = {};
     this.info = { render: { calls: 0, triangles: 0 } };
+    this.renders = 0;
   }
-  setPixelRatio() {}
+  setPixelRatio(v) {
+    this.pixelRatio = v;
+  }
   setSize() {}
-  render() {}
+  render() {
+    this.renders++;
+  }
 }
 class Loader {
   loadAsync(url) {
     globalThis.__aerialUrl = url;
+    requested.push(url);
     return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
   }
 }
@@ -77,24 +112,46 @@ globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader }
 let code = fs
   .readFileSync('web/game3d.js', 'utf8')
   .replace(
-    /import \* as THREE from ['"]\.\/vendor\/three\.module(?:\.min)?\.js['"];?/,
-    'const THREE=globalThis.__THREE;',
+    /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module(?:\.min)?\.js['"]\)\);/,
+    'const THREE=globalThis.__THREE;requested.push(asset("./vendor/three.module.min.js"));',
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
-await import('./qa3d-runtime.mjs');
+globalThis.requested = requested;
+// Same query as index.html, so runtime resources must carry the common version suffix.
+const assetVersion = fs.readFileSync('web/index.html', 'utf8').match(/game3d\.js\?v=([^"]+)"/)[1];
+await import('./qa3d-runtime.mjs' + '?v=' + assetVersion);
 await globalThis.__initPromise;
 assert(globalThis.__cityGame, 'init completed');
 assert.equal(
   globalThis.__aerialUrl,
-  'aerial-2048.jpg',
+  'aerial-2048.jpg?v=' + assetVersion,
   'touch devices load the reduced orthophoto',
 );
 const g = globalThis.__cityGame;
+{
+  const html = fs.readFileSync('web/index.html', 'utf8');
+  assert.equal(html.match(/style\.css\?v=([^"]+)"/)[1], assetVersion, 'CSS and JS share version');
+  for (const file of [
+    'world.json',
+    'buildings.json',
+    'osm-world.json',
+    'aerial-2048.jpg',
+    'height-samples.json',
+    'facade-profiles.json',
+    './vendor/three.module.min.js',
+  ])
+    assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
+  assert(
+    requested.every((u) => u.endsWith('?v=' + assetVersion)),
+    'every resource versioned',
+  );
+  console.log('Common resource version', assetVersion, 'on', requested.length, 'requests');
+}
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
 console.log(
   'spawn',
@@ -125,6 +182,56 @@ g.input.gas = false;
 g.input.right = false;
 g.player.car.speed = 0;
 for (let i = 0; i < 30; i++) g.update(0.016);
+// Oneway: traffic graph strongly connected inside every drive component; walking unaffected.
+{
+  const net = g.driveNetwork,
+    drive = (i) => g.graph[i].adj.some((e) => e.s?.drive && !e.s.blocked);
+  assert(net.oneway > 0 && net.relaxed < net.oneway / 2, 'oneway respected on most segments');
+  assert(net.blocked < 100, 'few alleys excluded from traffic');
+  for (const s of g.segments) {
+    const open = s.drive && !s.blocked;
+    assert(s.forward.drive === open, 'forward direction drivable');
+    if (s.oneway && !s.relaxed) assert(!s.reverse.drive, 'oneway reverse closed to traffic');
+    if (!s.oneway) assert.equal(s.reverse.drive, open);
+    assert(s.drive || !s.oneway);
+  }
+  const bfs = (root, forward) => {
+    const seen = new Set([root]),
+      queue = [root];
+    for (let k = 0; k < queue.length; k++)
+      for (let u = 0; u < g.graph.length; u++) {
+        if (forward && u !== queue[k]) continue;
+        for (const e of g.graph[u].adj) {
+          if (!e.drive) continue;
+          const [from, to] = forward ? [u, e.to] : [e.to, u];
+          if (from === queue[k] && !seen.has(to)) {
+            seen.add(to);
+            queue.push(to);
+          }
+        }
+      }
+    return seen;
+  };
+  const mainNodes = g.graph.map((n, i) => (n.driveMain ? i : -1)).filter((i) => i >= 0);
+  assert.equal(mainNodes.length, net.mainNodes);
+  const out = bfs(mainNodes[0], true),
+    back = bfs(mainNodes[0], false);
+  for (const i of mainNodes)
+    assert(out.has(i) && back.has(i), 'main drive network strongly connected');
+  for (let i = 0; i < g.graph.length; i++)
+    if (drive(i))
+      assert(
+        g.graph[i].adj.some((e) => e.drive),
+        'no traffic dead end at ' + i,
+      );
+  const spawn = g.nearestNode(g.player.x, g.player.z, true);
+  for (const p of g.pois) {
+    const goal = g.nearestNode(p.x, p.z, true);
+    assert(g.findRoute(spawn, goal, true).length, 'police route to ' + p.name);
+    assert(g.findRoute(goal, spawn, true).length, 'police route back from ' + p.name);
+  }
+  console.log('Oneway network', JSON.stringify(net), 'strongly connected, police routes passed');
+}
 for (const p of g.pois) {
   assert(!g.blocked(p.x, p.z, 1), 'POI clear ' + p.name);
   let path = g.findRoute(g.nearestNode(g.player.x, g.player.z), g.nearestNode(p.x, p.z));
@@ -409,3 +516,278 @@ assert(g.character.mesh.visible, 'body restored in aerial');
 g.cycleCamera();
 assert(g.character.mesh.visible, 'body restored in follow');
 console.log('First-person fixed eye, hidden own models, free yaw/pitch and restoration passed');
+
+// Light mode: shadow casting follows the shadow map, persists and culls chunks at the fog end.
+assert(g.sun.castShadow && g.renderer.shadowMap.enabled, 'normal quality casts shadows');
+g.pauseMenu();
+els.quality.onclick();
+assert.equal(g.quality, 'low');
+assert(!g.sun.castShadow && !g.renderer.shadowMap.enabled, 'light mode disables sun shadows');
+assert.equal(g.renderer.pixelRatio, 1);
+assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'low', 'quality persisted');
+g.updateCamera(0.016);
+const fogFar = g.scene.fog.far;
+for (const group of g.chunks) {
+  const c = group.children[0].geometry.boundingSphere,
+    dist = Math.hypot(c.center.x - g.view.position[0], c.center.z - g.view.position[2]);
+  assert.equal(group.visible, dist < fogFar + c.radius, 'light chunks end at fog');
+}
+g.pauseMenu();
+els.quality.onclick();
+assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto');
+assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'auto');
+console.log('Light mode shadows, persistence and fog culling passed');
+
+// Paused frames reuse the last image unless something requests a redraw.
+g.pauseMenu();
+assert(g.paused);
+g.frame(984); // flushes the redraw requested by the previous quality change
+let renders = g.renderer.renders;
+g.frame(1000);
+g.frame(1016);
+assert.equal(g.renderer.renders, renders, 'no render while paused');
+windowListeners.resize.forEach((f) => f());
+g.frame(1032);
+g.frame(1048);
+assert.equal(g.renderer.renders, renders + 1, 'one render after resize while paused');
+g.closeModal();
+g.frame(1064);
+g.frame(1080);
+assert.equal(g.renderer.renders, renders + 3, 'continuous render after closing');
+console.log('Paused rendering on demand passed');
+
+// findRoute (binary heap) must return exactly the routes of the reference O(N²) Dijkstra.
+function referenceRoute(graph, from, to, driveOnly) {
+  if (from === to) return [from];
+  const ds = new Float64Array(graph.length).fill(Infinity),
+    prev = new Int32Array(graph.length).fill(-1),
+    used = new Uint8Array(graph.length);
+  ds[from] = 0;
+  for (let n = 0; n < graph.length; n++) {
+    let u = -1,
+      md = Infinity;
+    for (let i = 0; i < graph.length; i++)
+      if (!used[i] && ds[i] < md) {
+        md = ds[i];
+        u = i;
+      }
+    if (u === -1 || u === to) break;
+    used[u] = 1;
+    for (const e of graph[u].adj) {
+      if (driveOnly && !e.drive) continue;
+      const nd = ds[u] + e.length;
+      if (nd < ds[e.to]) {
+        ds[e.to] = nd;
+        prev[e.to] = u;
+      }
+    }
+  }
+  if (prev[to] === -1) return [];
+  const out = [to];
+  while (out[0] !== from) out.unshift(prev[out[0]]);
+  return out;
+}
+{
+  let seed = 12345;
+  const rand = () => (seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296,
+    pairs = [];
+  for (let i = 0; i < 60; i++)
+    pairs.push([Math.floor(rand() * g.graph.length), Math.floor(rand() * g.graph.length)]);
+  const start = g.nearestNode(g.player.x, g.player.z);
+  for (const p of g.pois) pairs.push([start, g.nearestNode(p.x, p.z)]);
+  for (const p of g.pois) pairs.push([g.nearestNode(p.x, p.z, true), start]);
+  const time = (fn) => {
+      const t0 = performance.now();
+      for (let k = 0; k < 3; k++) for (const [a, b] of pairs) fn(a, b);
+      return (performance.now() - t0) / (pairs.length * 3);
+    },
+    found = [0, 0];
+  for (const drive of [false, true])
+    for (const [a, b] of pairs) {
+      const got = g.findRoute(a, b, drive);
+      assert.deepEqual(got, referenceRoute(g.graph, a, b, drive), 'same route ' + [a, b, drive]);
+      if (got.length) found[+drive]++;
+    }
+  const timing = {};
+  for (const drive of [false, true]) {
+    timing[drive ? 'drive' : 'walk'] = {
+      reference: +time((a, b) => referenceRoute(g.graph, a, b, drive)).toFixed(3),
+      heap: +time((a, b) => g.findRoute(a, b, drive)).toFixed(3),
+    };
+  }
+  console.log(
+    'findRoute matches reference Dijkstra on',
+    pairs.length * 2,
+    'queries; non-empty walk/drive',
+    found.join('/'),
+    'ms per call',
+    JSON.stringify(timing),
+  );
+}
+
+// Traffic keeps moving along permitted directions, without dead ends.
+{
+  const vehicles = g.traffic;
+  assert(vehicles.length > 0);
+  g.player.x = g.player.z = 10000; // far away: traffic does not stop for the player
+  if (g.player.car) Object.assign(g.player.car, { x: 10000, z: 10000 });
+  const arrivals = vehicles.map(() => 0);
+  let wrongWay = 0,
+    alleyExits = 0,
+    swaps = 0;
+  for (let i = 0; i < 1500; i++) {
+    const before = vehicles.map((c) => [c.node, c.stuck || 0]);
+    for (const c of vehicles) g.stepAgent(c, 0.04);
+    vehicles.forEach((c, k) => {
+      const [from, stuck] = before[k];
+      if (c.node === from) return;
+      // A collision escape swaps node/next (pre-existing behaviour), not an arrival.
+      if (stuck > 0 && c.stuck === 0) {
+        swaps++;
+        return;
+      }
+      arrivals[k]++;
+      if (g.graph[from].adj.some((e) => e.to === c.node && e.drive)) return;
+      // Only allowed when leaving an excluded alley where the vehicle was spawned.
+      if (g.graph[from].adj.some((e) => e.drive)) wrongWay++;
+      else alleyExits++;
+    });
+  }
+  assert(
+    vehicles.every((c) => c.next !== undefined),
+    'every vehicle has a next node',
+  );
+  assert.equal(wrongWay, 0, 'traffic never drives against a respected oneway');
+  const moving = arrivals.filter((n) => n >= 5).length;
+  assert.equal(moving, vehicles.length, 'all traffic keeps moving through the network');
+  console.log('Traffic simulation', { vehicles: vehicles.length, moving, swaps, alleyExits });
+}
+
+// HUD writes only on change; vehicles list mirrors cars + traffic without per-frame copies.
+{
+  assert.equal(g.vehicles.length, g.cars.length + g.traffic.length);
+  assert.equal(new Set(g.vehicles).size, g.vehicles.length);
+  for (const c of [...g.cars, ...g.traffic]) assert(g.vehicles.includes(c));
+  Object.assign(g.player, { x: g.player.car?.x ?? 0, z: g.player.car?.z ?? 0 });
+  let writes = 0,
+    text = els.street.textContent;
+  Object.defineProperty(els.street, 'textContent', {
+    get: () => text,
+    set: (v) => {
+      text = v;
+      writes++;
+    },
+  });
+  g.update(0.016);
+  const first = writes;
+  for (let i = 0; i < 5; i++) g.update(0.016);
+  assert.equal(writes, first, 'street name not rewritten while unchanged');
+  console.log('HUD writes on change and shared vehicle list passed');
+}
+
+assert.equal(g.people.length, 28, 'all planned pedestrians spawned');
+assert(g.people.every((p) => p.s.length >= 8));
+console.log('Pedestrians', g.people.length);
+
+// Street search: accent-insensitive also for viewpoints; teleport by car lands on a drive road.
+{
+  els.streetSearch.value = 'jesus';
+  g.listStreets();
+  const labels = els.streetList.children.map((b) => b.textContent);
+  assert(labels.includes('Jesús Nazareno · ver fachada'), 'viewpoint found without accent');
+  assert(labels.includes('Calle Jesús Nazareno'), 'street found without accent');
+  if (!g.player.car) g.interact();
+  if (!g.player.car) {
+    const car = g.cars[0];
+    Object.assign(g.player, { x: car.x, z: car.z });
+    car.speed = 0;
+    g.interact();
+  }
+  assert(g.player.car, 'driving for teleport test');
+  els.streetSearch.value = '';
+  g.listStreets();
+  for (const name of ['Calle Jesús Nazareno', 'Calle de la Vega', 'Plaza Mayor']) {
+    const button = els.streetList.children.find((b) => b.textContent === name);
+    if (!button) continue;
+    button.onclick();
+    const road = g.nearestRoad(g.player.x, g.player.z, true);
+    assert(road.d < 0.01, 'car teleported onto a drive road: ' + name);
+    assert.equal(g.player.car.x, g.player.x);
+  }
+  console.log('Accent-insensitive search and drive-safe teleport passed');
+}
+// Escape closes the map even while typing in the search field.
+{
+  g.openMap();
+  assert(g.paused);
+  windowListeners.keydown.forEach((f) =>
+    f({ key: 'Escape', target: { tagName: 'INPUT' }, preventDefault() {} }),
+  );
+  assert(!g.paused, 'Escape in search closes the map');
+}
+// Credits links open in a new tab, except the arcade version.
+{
+  g.help();
+  const links = [...els.modalBody.innerHTML.matchAll(/<a [^>]*>/g)].map((m) => m[0]);
+  assert(links.length > 10);
+  for (const a of links)
+    if (a.includes('href="arcade/"')) assert(!a.includes('target='));
+    else assert(a.includes('target="_blank"') && a.includes('rel="noopener"'), a);
+  g.closeModal();
+  console.log('Escape in search and credit links passed');
+}
+// Malformed layers give a clear error instead of a TypeError.
+{
+  const realFetch = globalThis.fetch;
+  for (const broken of [
+    (layer) => delete layer.origin,
+    (layer) => (layer.origin = 'x'),
+    (layer) => delete layer.roads,
+  ]) {
+    globalThis.fetch = async (url) => {
+      const data = JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8'));
+      if (url.startsWith('osm-world.json')) broken(data);
+      return { ok: true, json: async () => data };
+    };
+    await assert.rejects(g.loadWorld(), /Capas del mapa incompatibles/);
+  }
+  globalThis.fetch = realFetch;
+  await g.loadWorld();
+  console.log('Incompatible map layers rejected clearly');
+}
+assert(mediaQueries.includes('(any-pointer: coarse)'), 'touch controls for any coarse pointer');
+assert(!/\(pointer:\s*coarse\)/.test(fs.readFileSync('web/style.css', 'utf8')));
+assert(windowListeners.pointerdown, 'first touch enables touch mode');
+// Accessibility without changing zoom: dialog semantics, labels, progressbar, focus.
+{
+  const html = fs.readFileSync('web/index.html', 'utf8'),
+    css = fs.readFileSync('web/style.css', 'utf8');
+  assert(/user-scalable=no/.test(html), 'zoom policy unchanged');
+  assert.equal(html.match(/role="dialog" aria-modal="true"/g).length, 2);
+  assert(/<canvas id="world" role="img" aria-label=/.test(html));
+  assert(/role="progressbar"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"/.test(html));
+  for (const id of ['cameraBtn', 'mapBtn', 'pauseBtn'])
+    assert(new RegExp('id="' + id + '"[^>]*aria-label=').test(html), 'label ' + id);
+  for (const size of css.match(/#credits \{[^}]*\}/g).map((r) => r.match(/font-size: (\d+)px/)))
+    if (size) assert(+size[1] >= 11, 'credits at least 11 px');
+  assert.equal(els.loadTrack.attributes?.['aria-valuenow'] ?? '100', '100');
+  g.pauseMenu();
+  assert.equal(els.hud.inert, true, 'HUD inert behind dialog');
+  g.closeModal();
+  assert.equal(els.hud.inert, false);
+  console.log('Dialog semantics, labels, progressbar and credits size passed');
+}
+// After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
+{
+  els.world.listeners.webglcontextlost.forEach((f) => f({ preventDefault() {} }));
+  assert(g.paused);
+  g.closeModal();
+  windowListeners.keydown.forEach((f) =>
+    f({ key: 'Escape', target: { tagName: 'BODY' }, preventDefault() {} }),
+  );
+  assert(g.paused, 'context loss cannot be dismissed');
+  const renders = g.renderer.renders;
+  g.frame(5000);
+  assert.equal(g.renderer.renders, renders, 'no render after context loss');
+  console.log('Context loss blocks resuming passed');
+}

@@ -13,16 +13,29 @@
     />
     <title>Chiclana Vice · Calles reales, mundo 3D</title>
     <link rel="icon" href="favicon.svg" />
-    <link rel="stylesheet" href="style.css?v=churches4" />
+    <!-- Versión común de recursos: mismo ?v= en style.css y game3d.js; game3d.js la
+         propaga a los JSON, la ortofoto y Three. Cambiar ambos a la vez. -->
+    <link rel="stylesheet" href="style.css?v=2026-10-06" />
+    <script type="module" src="game3d.js?v=2026-10-06"></script>
   </head>
   <body>
-    <canvas id="world" aria-label="Juego 3D en el centro de Chiclana"></canvas>
+    <canvas id="world" role="img" aria-label="Juego 3D en el centro de Chiclana"></canvas>
     <div id="loading">
       <div class="loadingInner">
         <span class="eyebrow">CHICLANA VICE / EDICIÓN 3D</span>
         <h1>Ahora sí.<br /><em>Tu ciudad.</em></h1>
-        <p id="loadStatus">Cargando las calles reales de Chiclana…</p>
-        <div class="loadTrack"><i id="loadProgress"></i></div>
+        <p id="loadStatus" aria-live="polite">Cargando las calles reales de Chiclana…</p>
+        <div
+          id="loadTrack"
+          class="loadTrack"
+          role="progressbar"
+          aria-label="Carga del mundo 3D"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <i id="loadProgress"></i>
+        </div>
       </div>
     </div>
     <div id="welcome" class="overlay hidden">
@@ -55,9 +68,11 @@
         <div><span id="jobDistance"></span><span id="jobTime"></span></div>
       </div>
       <div class="topButtons">
-        <button id="cameraBtn" title="Cambiar cámara">◉ <span>Cámara</span></button
-        ><button id="mapBtn" title="Mapa y calles">⌖ <span>Mapa</span></button
-        ><button id="pauseBtn" title="Pausa">Ⅱ</button>
+        <button id="cameraBtn" title="Cambiar cámara" aria-label="Cambiar cámara">
+          ◉ <span>Cámara</span></button
+        ><button id="mapBtn" title="Mapa y calles" aria-label="Mapa y calles">
+          ⌖ <span>Mapa</span></button
+        ><button id="pauseBtn" title="Pausa" aria-label="Pausa y opciones">Ⅱ</button>
       </div>
       <button id="miniButton" aria-label="Abrir mapa de calles">
         <canvas id="mini"></canvas><span id="street">Plaza de las Bodegas</span><i>N ↑</i>
@@ -70,7 +85,7 @@
       <div id="hint"></div>
       <div id="toast" role="status"></div>
       <div id="poiLabels"></div>
-      <div id="direction">◆</div>
+      <div id="direction" aria-hidden="true">◆</div>
       <div id="driveControls">
         <div id="steering">
           <button id="left" aria-label="Girar a la izquierda">‹</button
@@ -83,25 +98,28 @@
         </div>
       </div>
       <div id="joy" class="hidden"><div id="stick"></div></div>
-      <button id="interact"><span>↥</span><small id="interactText">BAJAR</small></button
-      ><button id="boost"><span>»</span><small id="boostText">TURBO</small></button>
+      <button id="interact" aria-labelledby="interactText">
+        <span aria-hidden="true">↥</span><small id="interactText">BAJAR</small></button
+      ><button id="boost" aria-labelledby="boostText">
+        <span aria-hidden="true">»</span><small id="boostText">TURBO</small>
+      </button>
       <div id="desktopHelp">
         WASD / flechas · E entrar/salir · Espacio freno · Mayús turbo · C cámara · M mapa
       </div>
       <button id="credits">Fuentes: © OSM · IGN/PNOA CC BY 4.0 · Catastro</button>
     </div>
     <div id="modal" class="overlay hidden">
-      <section class="modalPanel">
+      <section class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <button id="closeModal" class="close" aria-label="Cerrar">×</button>
         <div id="modalBody"></div>
       </section>
     </div>
     <div id="mapOverlay" class="overlay hidden">
-      <section class="mapPanel">
+      <section class="mapPanel" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
         <div class="mapTitle">
           <div>
             <span class="eyebrow">TRAZADO REAL / CENTRO DE CHICLANA</span>
-            <h2>Encuentra tu calle.</h2>
+            <h2 id="mapTitle">Encuentra tu calle.</h2>
           </div>
           <button id="closeMap" class="close" aria-label="Cerrar mapa">×</button>
         </div>
@@ -117,6 +135,7 @@
               id="streetSearch"
               type="search"
               placeholder="Buscar una calle…"
+              aria-label="Buscar una calle"
               autocomplete="off"
             />
             <div id="streetList"></div>
@@ -128,6 +147,5 @@
         </p>
       </section>
     </div>
-    <script type="module" src="game3d.js?v=world10"></script>
   </body>
 </html>
