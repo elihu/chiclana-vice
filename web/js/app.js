@@ -1,7 +1,7 @@
 import * as THREE from '../vendor/three.module.min.js';
-import { $, setStyle, setText, sleepFrame, ui } from './core/dom.js';
-import { PLACES, SAVE_KEY, SPAWN_POSITION, VIEWPOINTS, JOBS as jobs } from '../game-data.js';
-import { TAU, clamp, d, fold, lerp, pInside, pointSeg } from './core/math.js';
+import { $, sleepFrame, ui } from './core/dom.js';
+import { SAVE_KEY, SPAWN_POSITION, VIEWPOINTS, JOBS as jobs } from '../game-data.js';
+import { TAU, clamp, fold, lerp, pInside, pointSeg } from './core/math.js';
 import {
   actors,
   audio,
@@ -17,7 +17,6 @@ import {
   holdPointers,
   input,
   keys,
-  labelPoint,
   people,
   player,
   pointer,
@@ -48,20 +47,20 @@ import {
 } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
 import { buildUrbanFurniture } from './world/furniture.js';
-import {
-  cameraSweep,
-  cycleCamera,
-  snapCamera,
-  updateCamera,
-  updateCameraVisibility,
-} from './engine/camera.js';
-import { carCollision, createCar, nearestCar } from './game/vehicles.js';
+import { cameraSweep, cycleCamera, snapCamera, updateCamera } from './engine/camera.js';
+import { carCollision, createCar } from './game/vehicles.js';
+import { createMissionMarkers, setupPOIs, target } from './game/jobs.js';
 import { createPerson } from './game/people.js';
+import { drawLabels, updateHUD, updateHudReadouts } from './ui/hud.js';
+import { interact, rescue, updatePlayer } from './game/player.js';
 import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress, save } from './game/save.js';
-import { mute, toggleAudio, updateEngineSound } from './engine/audio.js';
+import { mute, toggleAudio } from './engine/audio.js';
 import { setAssetVersion } from './core/assets.js';
 import { spawnTraffic, stepAgent, updatePedestrians } from './game/traffic.js';
+import { start } from './game/flow.js';
+import { updateMarkers, updateMissions } from './game/missions.js';
+import { updatePolice } from './game/police.js';
 
 function installTouchDetection() {
   gfx.W = innerWidth;
@@ -84,41 +83,6 @@ function installTouchDetection() {
     },
     { capture: true, passive: true },
   );
-}
-
-function setupPOIs() {
-  for (const [name, x, z] of PLACES) {
-    let safe = safePoint(x, z);
-    let el = document.createElement('span');
-    el.className = 'poi';
-    el.textContent = name;
-    $('poiLabels').appendChild(el);
-    pois.push({ name, x: safe.x, z: safe.z, labelX: x, labelZ: z, el });
-  }
-}
-
-function target() {
-  let j = jobs[state.job];
-  if (!j) return null;
-  let s = j.stages[state.stage];
-  return { ...pois[s.poi], ...s };
-}
-
-function updateHUD() {
-  const j = jobs[state.job],
-    p = target();
-  setText('money', Math.floor(state.cash).toLocaleString('es-ES') + ' €');
-  setText('stars', '★'.repeat(state.wanted) + '☆'.repeat(5 - state.wanted));
-  setText(
-    'jobTag',
-    j ? String(state.job + 1).padStart(2, '0') + ' / ' + j.name : 'EXPLORACIÓN LIBRE',
-  );
-  setText('jobTitle', p ? p.text : 'Recorre las calles reales del centro');
-  setText('interactText', player.car ? 'BAJAR' : 'SUBIR');
-  setText('boostText', player.car ? 'TURBO' : 'CORRER');
-  ui('joy').classList.toggle('hidden', !!player.car);
-  ui('driveControls').classList.toggle('hidden', !player.car);
-  updateCameraVisibility();
 }
 
 async function init() {
@@ -164,32 +128,7 @@ async function init() {
   actors.character.mesh.visible = false;
   spawnTraffic();
   vehicles.push(...cars, ...traffic);
-  actors.ring = new THREE.Mesh(
-    new THREE.RingGeometry(5.5, 6.2, 48),
-    new THREE.MeshBasicMaterial({
-      color: '#ffd285',
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.85,
-    }),
-  );
-  actors.ring.rotation.x = -Math.PI / 2;
-  actors.ring.position.y = 0.15;
-  gfx.scene.add(actors.ring);
-  actors.beam = new THREE.Mesh(
-    new THREE.CylinderGeometry(5.6, 5.6, 4, 32, 1, true),
-    new THREE.MeshBasicMaterial({
-      color: '#ffc177',
-      transparent: true,
-      opacity: 0.13,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  );
-  gfx.scene.add(actors.beam);
-  let arrowGeo = new THREE.ConeGeometry(0.55, 1.5, 4);
-  actors.arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#edfa88' }));
-  gfx.scene.add(actors.arrow);
+  createMissionMarkers();
   camPos.set(player.x - 15, 12, player.z - 15);
   camTarget.set(player.x, 1, player.z);
   gfx.camera.position.copy(camPos);
@@ -217,273 +156,6 @@ function clearInput() {
   document.querySelectorAll('.pressed').forEach((e) => e.classList.remove('pressed'));
 }
 
-function start() {
-  session.started = true;
-  session.paused = false;
-  $('welcome').classList.add('hidden');
-  $('hud').classList.remove('hidden');
-  toast(
-    'Alameda del Río. GAS para avanzar, flechas para girar. El mapa permite buscar una calle.',
-    6,
-  );
-  snapCamera();
-  session.last = performance.now();
-}
-
-function setHeat(n) {
-  state.wanted = clamp(state.wanted + n, 0, 5);
-  state.heat = 22 + state.wanted * 7;
-  updateHUD();
-}
-
-function advanceStage() {
-  let j = jobs[state.job];
-  if (!j) return;
-  if (state.stage === 0) {
-    state.timer = j.limit;
-    if (j.stages.some((s) => s.escape)) {
-      setHeat(2);
-      toast('Te han visto. Entrega el paquete y despista a las patrullas.', 5);
-    } else toast('Recogida completada. Sigue la ruta del minimapa.', 3);
-  }
-  state.stage++;
-  session.hold = 0;
-  session.routeClock = 0;
-  if (state.stage >= j.stages.length) {
-    state.cash += j.reward;
-    toast('ENCARGO COMPLETADO · +' + j.reward + ' €', 5);
-    state.job++;
-    state.stage = 0;
-    state.timer = 0;
-    save();
-  }
-  updateHUD();
-}
-
-function dropPolice() {
-  for (const p of police) {
-    gfx.scene.remove(p.mesh);
-  }
-  police.length = 0;
-  state.wanted = 0;
-  state.arrest = 0;
-  updateHUD();
-}
-
-function rescue() {
-  state.cash = Math.max(0, state.cash - 100);
-  dropPolice();
-  let p = safePoint(base.x, base.z, true);
-  if (player.car) {
-    Object.assign(player.car, p);
-    player.car.speed = 0;
-    player.car.health = 100;
-  }
-  Object.assign(player, p);
-  state.health = 100;
-  snapCamera();
-  toast('Traslado a la Alameda y reparación · 100 €', 4);
-  save();
-  updateHUD();
-}
-
-function interact() {
-  if (!session.started || session.paused) return;
-  if (player.car) {
-    let c = player.car;
-    if (Math.abs(c.speed) > 2.5) {
-      toast('Frena antes de bajar.', 2);
-      return;
-    }
-    let exit = null;
-    for (const sign of [1, -1]) {
-      let x = c.x + Math.cos(c.a) * 2.2 * sign,
-        z = c.z - Math.sin(c.a) * 2.2 * sign;
-      if (!blocked(x, z, 0.35)) {
-        exit = { x, z };
-        break;
-      }
-    }
-    if (!exit) {
-      toast('No hay espacio para abrir la puerta. Avanza un poco.', 3);
-      return;
-    }
-    player.car = null;
-    Object.assign(player, exit);
-    player.speed = 0;
-    toast('A pie · Usa el joystick. Arrastra la escena para mirar.', 3);
-  } else {
-    let c = nearestCar();
-    if (!c) {
-      toast('Acércate a un coche detenido para subir.', 3);
-      return;
-    }
-    let i = traffic.indexOf(c);
-    if (i >= 0) {
-      traffic.splice(i, 1);
-      cars.push(c);
-      setHeat(1);
-    }
-    player.car = c;
-    player.x = c.x;
-    player.z = c.z;
-    player.a = c.a;
-    state.health = c.health;
-    toast('Al volante · GAS, FRENO y flechas para girar.', 3);
-  }
-  updateHUD();
-  snapCamera();
-}
-
-function updatePlayer(dt) {
-  let steer =
-      (input.right || keys.d || keys.ArrowRight ? 1 : 0) -
-      (input.left || keys.a || keys.ArrowLeft ? 1 : 0),
-    gas = input.gas || keys.w || keys.ArrowUp,
-    brake = input.brake || keys.s || keys.ArrowDown,
-    boost = input.boost || keys.Shift;
-  const hand = keys[' '];
-  if (player.car) {
-    let c = player.car,
-      max = boost ? 40 : 28;
-    if (gas) c.speed += dt * (c.speed < 0 ? 16 : 9.5);
-    else if (brake) c.speed -= dt * (c.speed > 0 ? 17 : 5);
-    else
-      c.speed =
-        Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - dt * (2.3 + Math.abs(c.speed) * 0.08));
-    if (hand) c.speed *= Math.exp(-dt * 4);
-    c.speed = clamp(c.speed, -7, max);
-    let steerAngle = (steer * 0.48) / (1 + Math.abs(c.speed) * 0.028);
-    c.a -= (c.speed / 2.8) * Math.tan(steerAngle) * dt;
-    let nx = c.x + Math.sin(c.a) * c.speed * dt,
-      nz = c.z + Math.cos(c.a) * c.speed * dt;
-    if (carCollision(c, nx, nz)) {
-      if (Math.abs(c.speed) > 4 && session.collisionClock <= 0) {
-        c.health -= Math.min(20, Math.abs(c.speed) * 0.45);
-        session.collisionClock = 0.6;
-        toast('Golpe · Frena y maniobra hacia atrás.', 1.8);
-      }
-      c.speed *= -0.15;
-    } else {
-      c.x = nx;
-      c.z = nz;
-    }
-    for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
-      const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
-      if (other === c || d(c, other) > 3.1) continue;
-      if (session.collisionClock <= 0 && Math.abs(c.speed) > 3) {
-        c.health -= 5;
-        c.speed *= -0.15;
-        session.collisionClock = 1.3;
-        setHeat(other.cop ? 1 : state.wanted < 2 ? 1 : 0);
-      }
-    }
-    player.x = c.x;
-    player.z = c.z;
-    player.a = c.a;
-    player.speed = c.speed;
-    state.health = c.health;
-    c.mesh.rotation.z = lerp(
-      c.mesh.rotation.z,
-      -steer * Math.min(0.04, Math.abs(c.speed) * 0.002),
-      dt * 6,
-    );
-    if (c.health <= 0) rescue();
-  } else {
-    let ix = input.jx,
-      iy = -input.jy;
-    if (pointer.joyId === null) {
-      ix = steer;
-      iy = (gas ? 1 : 0) - (brake ? 1 : 0);
-    }
-    let mag = Math.min(1, Math.hypot(ix, iy)),
-      heading = player.a + view.orbit;
-    let a = heading - Math.atan2(ix, iy),
-      v = (boost ? 6.1 : 3.2) * mag;
-    if (mag > 0.1) {
-      let nx = player.x + Math.sin(a) * v * dt,
-        nz = player.z + Math.cos(a) * v * dt;
-      if (!blocked(nx, player.z, 0.28)) player.x = nx;
-      if (!blocked(player.x, nz, 0.28)) player.z = nz;
-      actors.character.mesh.rotation.y = a;
-    }
-    player.speed = v;
-    actors.character.mesh.position.set(player.x, 0, player.z);
-    actors.character.limbs.forEach(
-      (l, i) =>
-        (l.rotation.x =
-          Math.sin(session.t * (boost ? 12 : 8) + (i % 2) * Math.PI) * Math.min(0.65, v * 0.13)),
-    );
-  }
-  updateEngineSound();
-}
-
-function updatePolice(dt) {
-  if (!state.wanted) return;
-  while (police.length < Math.min(3, state.wanted + 1)) {
-    let best = null;
-    for (let i = 0; i < graph.length; i++) {
-      let n = graph[i],
-        di = Math.hypot(player.x - n.x, player.z - n.z);
-      if (
-        di > 130 + police.length * 30 &&
-        di < 180 + police.length * 30 &&
-        n.driveMain &&
-        !blocked(n.x, n.z, 1)
-      ) {
-        best = i;
-        break;
-      }
-    }
-    if (best === null) break;
-    let p = createCar('#293946', true),
-      n = graph[best];
-    Object.assign(p, {
-      x: n.x,
-      z: n.z,
-      a: 0,
-      node: best,
-      next: n.adj.find((e) => e.drive).to,
-      cruise: 12 + state.wanted,
-      think: 0,
-    });
-    police.push(p);
-  }
-  let close = false;
-  for (const p of police) {
-    p.think -= dt;
-    if (p.think <= 0) {
-      p.path = findRoute(p.node, nearestNode(player.x, player.z, true), true);
-      p.think = 3;
-    }
-    stepAgent(p, dt, true);
-    p.mesh.position.set(p.x, 0, p.z);
-    p.mesh.rotation.y = p.a;
-    if (p.siren) p.siren.visible = Math.sin(session.t * 14) > -0.5;
-    if (d(p, player) < 9) {
-      close = true;
-      if (Math.abs(player.speed) < 3) state.arrest += dt;
-    } else if (d(p, player) > 400) {
-      gfx.scene.remove(p.mesh);
-      police.splice(police.indexOf(p), 1);
-      break;
-    }
-  }
-  if (!close) state.arrest = Math.max(0, state.arrest - dt);
-  if (state.arrest > 4) {
-    state.cash = Math.max(0, state.cash - 150);
-    dropPolice();
-    toast('Te han parado · Multa de 150 €', 4);
-    save();
-    return;
-  }
-  state.heat -= dt * (close ? 0.2 : 1);
-  if (state.heat <= 0) {
-    dropPolice();
-    toast('HAS DESPISTADO A LA POLICÍA', 4);
-  }
-}
-
 function update(dt) {
   session.t += dt;
   session.collisionClock = Math.max(0, session.collisionClock - dt);
@@ -500,45 +172,8 @@ function update(dt) {
   }
   updatePolice(dt);
   updatePedestrians(dt);
-  let goal = target();
-  if (goal) {
-    if (state.timer > 0) {
-      state.timer -= dt;
-      if (state.timer <= 0) {
-        state.stage = 0;
-        session.hold = 0;
-        toast('Tiempo agotado. Vuelve al punto de recogida para intentarlo de nuevo.', 4);
-        updateHUD();
-        goal = target();
-      }
-    }
-    if (goal.escape) {
-      if (state.wanted === 0) advanceStage();
-    } else if (d(player, goal) < 8 && Math.abs(player.speed) < 1.8) {
-      session.hold += dt;
-      if (session.hold > 1) advanceStage();
-    } else session.hold = 0;
-    goal = target();
-  }
-  for (let i = 0; i < pois.length; i++)
-    if (d(player, pois[i]) < 24 && !state.found.has(i)) {
-      state.found.add(i);
-      state.cash += 75;
-      toast('LUGAR DESCUBIERTO · ' + pois[i].name + ' · +75 €', 3);
-      updateHUD();
-      save();
-    }
-  if (goal && !goal.escape) {
-    actors.ring.visible = actors.beam.visible = true;
-    actors.ring.position.set(goal.x, 0.16, goal.z);
-    actors.ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
-    actors.beam.position.set(goal.x, 2, goal.z);
-    actors.beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
-    actors.arrow.visible = true;
-    actors.arrow.position.set(goal.x, 6 + Math.sin(session.t * 2) * 0.4, goal.z);
-    actors.arrow.rotation.z = Math.PI;
-    actors.arrow.rotation.y = session.t * 0.7;
-  } else actors.ring.visible = actors.beam.visible = actors.arrow.visible = false;
+  let goal = updateMissions(dt);
+  updateMarkers(goal);
   session.routeClock -= dt;
   if (session.routeClock <= 0) {
     session.routeClock = 2.5;
@@ -550,80 +185,12 @@ function update(dt) {
   if (view.orbitAge > 0) view.orbitAge -= dt;
   else if (player.car && view.mode !== 1) view.orbit = lerp(view.orbit, 0, dt * 2);
   updateCamera(dt);
-  setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
-  setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
-  setStyle('conditionFill', 'width', state.health + '%');
-  setStyle('conditionFill', 'background', state.health < 30 ? '#ff9473' : '#e7fa8a');
-  setText(
-    'jobDistance',
-    goal
-      ? goal.escape
-        ? 'Evita a las patrullas'
-        : Math.round(d(player, goal)) +
-          ' m · ' +
-          (session.hold > 0 ? 'Entregando…' : 'Señal dorada')
-      : state.found.size + '/' + pois.length + ' lugares descubiertos',
-  );
-  setText(
-    'jobTime',
-    state.timer > 0
-      ? Math.floor(state.timer / 60) + ':' + String(Math.floor(state.timer % 60)).padStart(2, '0')
-      : '',
-  );
-  let near = nearestRoad(player.x, player.z);
-  setText('street', near?.s.name || 'Centro de Chiclana');
-  let hint = '';
-  if (!player.car && nearestCar())
-    hint = 'Coche disponible · ' + (gfx.coarse ? 'SUBIR' : 'E para subir');
-  else if (goal && !goal.escape && d(player, goal) < 12 && Math.abs(player.speed) > 1.8)
-    hint = 'Detente en el círculo dorado para entregar';
-  else if (state.wanted)
-    hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
-  else if (Math.abs(player.x) > world.worldW / 2 - 30 || Math.abs(player.z) > world.worldH / 2 - 30)
-    hint = 'Fin de la zona recreada · Abre el mapa para volver';
-  setText('hint', hint);
+  updateHudReadouts(goal);
   session.saveClock += dt;
   if (session.saveClock > 10) {
     session.saveClock = 0;
     save();
   }
-}
-
-function drawLabels() {
-  for (const p of pois) {
-    let di = Math.hypot(p.labelX - player.x, p.labelZ - player.z);
-    if (di > 125 || view.mode === 1) {
-      setStyle(p.el, 'display', 'none');
-      continue;
-    }
-    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(gfx.camera);
-    if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) {
-      setStyle(p.el, 'display', 'none');
-      continue;
-    }
-    setStyle(p.el, 'display', 'block');
-    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * gfx.W + 'px');
-    setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * gfx.H + 'px');
-  }
-  let goal = target(),
-    el = ui('direction');
-  if (!goal || goal.escape) {
-    setStyle(el, 'display', 'none');
-    return;
-  }
-  let v = labelPoint.set(goal.x, 2, goal.z).project(gfx.camera);
-  if (v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.65) {
-    setStyle(el, 'display', 'none');
-    return;
-  }
-  let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + view.orbit);
-  let x = gfx.W / 2 - Math.sin(angle) * Math.min(gfx.W * 0.33, 180),
-    y = gfx.H * 0.47 - Math.cos(angle) * Math.min(gfx.H * 0.18, 90);
-  setStyle(el, 'display', 'grid');
-  setStyle(el, 'left', x - 19 + 'px');
-  setStyle(el, 'top', y - 19 + 'px');
-  const relative = Math.atan2(Math.sin(angle), Math.cos(angle)); // normalised to [-π, π]
-  setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
 
 let chart, chartCtx;
