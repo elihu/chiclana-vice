@@ -269,9 +269,9 @@ am.forEach((m, i) => {
   assert.notEqual(m.position, bm[i].position, 'transforms independent');
 });
 // Static parts are merged per material; cabin/roof, siren and animated limbs stay separate.
-assert.equal(am.length, 8, 'car merged per material');
+assert.equal(am.length, 9, 'car merged per material and shadow role');
 const cop = g.createCar('#123456', true);
-assert.equal(carMeshes(cop).length, 11, 'patrol keeps separate siren');
+assert.equal(carMeshes(cop).length, 12, 'patrol keeps separate siren');
 assert(cop.siren.isGroup && cop.siren.children.length === 2);
 assert(a.firstPersonOccluders.every((m) => m.parent === a.mesh && am.includes(m)));
 assert.equal(carMeshes({ mesh: person.mesh }).length, 12, 'person merged per material');

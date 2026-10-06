@@ -1477,8 +1477,9 @@ function createCar(color = '#b9b8aa', cop = false) {
     parts = modelParts(),
     sideways = [0, 0, Math.PI / 2];
   // Body, lights and wheels never move relative to the car: one mesh per material.
+  // Bevelled body panels never received shadows; skirt, mirrors and pillars did ('trim').
   parts.add('paint', paint, bevelGeometry(1.84, 0.48, 4.28, 0.1), 0, 0.58, 0);
-  parts.box('paint', paint, 1.9, 0.13, 4.12, 0, 0.38, 0);
+  parts.box('trim', paint, 1.9, 0.13, 4.12, 0, 0.38, 0);
   parts.add('paint', paint, bevelGeometry(1.75, 0.19, 1.25, 0.06), 0, 0.89, 1.32);
   parts.add('paint', paint, bevelGeometry(1.79, 0.17, 0.85, 0.05), 0, 0.91, -1.55);
   parts.box('black', black, 1.74, 0.17, 0.13, 0, 0.48, 2.15);
@@ -1489,8 +1490,8 @@ function createCar(color = '#b9b8aa', cop = false) {
   for (const x of [-0.66, 0.66]) {
     parts.box('head', head, 0.46, 0.12, 0.05, x, 0.78, 2.13);
     parts.box('tail', tail, 0.46, 0.13, 0.05, x, 0.74, -2.16);
-    parts.box('paint', paint, 0.22, 0.16, 0.31, x > 0 ? 0.99 : -0.99, 1.06, 0.54);
-    parts.box('paint', paint, 0.05, 0.46, 0.09, x > 0 ? 0.86 : -0.86, 1.04, -0.38);
+    parts.box('trim', paint, 0.22, 0.16, 0.31, x > 0 ? 0.99 : -0.99, 1.06, 0.54);
+    parts.box('trim', paint, 0.05, 0.46, 0.09, x > 0 ? 0.86 : -0.86, 1.04, -0.38);
     parts.box('chrome', chrome, 0.09, 0.03, 0.19, x > 0 ? 0.927 : -0.927, 0.83, -0.2);
   }
   for (let x of [-0.91, 0.91])
@@ -1500,7 +1501,15 @@ function createCar(color = '#b9b8aa', cop = false) {
       parts.add('black', black, modelCylinder(0.09, 0.09, 0.255, 12), x, 0.34, z, sideways);
     }
   if (cop) parts.box('livery', modelMaterial('#e9efed'), 1.86, 0.32, 1.6, 0, 0.63, -0.1);
-  parts.attach(group, cop ? 'cop' : 'car', ['black', 'chrome', 'plate', 'head', 'tail', 'livery']);
+  parts.attach(group, cop ? 'cop' : 'car', [
+    'trim',
+    'black',
+    'chrome',
+    'plate',
+    'head',
+    'tail',
+    'livery',
+  ]);
   // Cabin and roof stay separate: first-person view hides them.
   const cabin = carCabin(glass),
     roof = sculptedBox(1.43, 0.11, 1.24, paint, 0, 1.39, -0.25, 0.04);
