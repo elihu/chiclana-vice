@@ -442,7 +442,8 @@ function prepareFacades() {
   facadeWork.parts = city.buildings.filter((b) => b.detailType).length;
 }
 function buildDetailedFacades() {
-  const staging = new THREE.Group(),
+  const unitBox = new THREE.BoxGeometry(1, 1, 1),
+    staging = new THREE.Group(),
     palette = facadeProfiles.palette;
   const materials = new Map();
   function material(color) {
@@ -458,9 +459,11 @@ function buildDetailedFacades() {
       );
     return materials.get(color);
   }
+  // Staging only: one unit box scaled per piece; the batches bake the final vertices.
   function cube(g, x, y, z, w, h, d, color) {
-    let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material(color));
+    let m = new THREE.Mesh(unitBox, material(color));
     m.position.set(x, y, z);
+    m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
@@ -1949,15 +1952,17 @@ function buildStreetSurfaces() {
   scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }
 function buildUrbanFurniture() {
-  const staging = new THREE.Group(),
+  const unitBox = new THREE.BoxGeometry(1, 1, 1),
+    staging = new THREE.Group(),
     materials = new Map();
   function ma(col) {
     if (!materials.has(col)) materials.set(col, mat(col));
     return materials.get(col);
   }
   function cube(g, x, y, z, w, h, d, c) {
-    let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ma(c));
+    let m = new THREE.Mesh(unitBox, ma(c));
     m.position.set(x, y, z);
+    m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
