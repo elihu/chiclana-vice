@@ -3,7 +3,6 @@ import { $, setStyle, setText, sleepFrame, ui } from './core/dom.js';
 import {
   PLACES,
   POPULATION,
-  PROGRESS_LIMITS,
   SAVE_KEY,
   SPAWN_POSITION,
   VIEWPOINTS,
@@ -59,7 +58,8 @@ import {
   sculptedBox,
 } from './engine/materials.js';
 import { facadeTexture, surfaceTexture } from './engine/textures.js';
-import { readProgress } from '../progress.js';
+import { loadProgress, toast } from './ui/feedback.js';
+import { loadSavedProgress, save } from './game/save.js';
 import { rnd } from './core/random.js';
 
 let platform = null;
@@ -85,41 +85,6 @@ function installTouchDetection() {
     },
     { capture: true, passive: true },
   );
-}
-
-function loadSavedProgress() {
-  const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
-  if (stored.quality === 'low') gfx.quality = 'low';
-  state.cash = stored.cash;
-  state.job = stored.job;
-  state.found = new Set(stored.found);
-}
-
-function loadProgress(message, p) {
-  $('loadStatus').textContent = message;
-  $('loadProgress').style.width = p + '%';
-  $('loadTrack').setAttribute('aria-valuenow', String(p));
-}
-
-function toast(message, duration = 4) {
-  setText('toast', message);
-  ui('toast').classList.add('show');
-  session.toastClock = duration;
-  session.toastShown = true;
-}
-
-function save() {
-  try {
-    localStorage.setItem(
-      SAVE_KEY,
-      JSON.stringify({
-        cash: state.cash,
-        job: state.job,
-        found: [...state.found],
-        quality: gfx.quality,
-      }),
-    );
-  } catch {}
 }
 
 function inBuilding(x, z, pad = 0.3) {
