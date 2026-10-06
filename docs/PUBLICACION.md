@@ -1,57 +1,73 @@
-# Publicación gratuita con GitHub Pages
+# Publicación y CI
 
-Repositorio público personal: https://github.com/elihu/chiclana-vice
-Remoto origin: https://github.com/elihu/chiclana-vice.git
-GitHub Pages configurado con GitHub Actions: https://elihu.github.io/chiclana-vice/
-Configuración realizada el 6/10/2026 en la cuenta personal elihu, fuera de organizaciones.
-El workflow .github/workflows/pages.yml verifica capas y juego, publica únicamente
-`web/` al hacer push a `main` y permite ejecución manual desde main. Las ramas de
-features no publican; integrarlas tras revisar y probar. Sin compilación/frameworks.
+- Repositorio público: https://github.com/elihu/chiclana-vice (cuenta personal elihu).
+- Juego publicado: https://elihu.github.io/chiclana-vice/
+- Pages con origen «GitHub Actions»; se publica la carpeta `web/` tal cual.
 
-## Coste
+## Workflow `.github/workflows/ci.yml`
 
-Usar repositorio público, Pages y runner Ubuntu estándar. No hace falta comprar
-un dominio: URL habitual https://USUARIO.github.io/chiclana-vice/.
-Sin cachés, LFS ni runners grandes; artefacto pequeño retenido un día.
-No se activa presupuesto ni servicio de pago. GitHub puede aplicar límites de
-uso (sitio ≤1 GB, ancho de banda orientativo 100 GB/mes); no es alojamiento ilimitado.
-La copia estática ocupa unos pocos MB. Si la cuenta tiene pagos activados para
-otros usos, mantener gasto adicional de Actions bloqueado para este proyecto.
+| Job      | Cuándo                                       | Permisos                                            | Qué hace                                                           |
+| -------- | -------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| `check`  | Push a cualquier rama, PR y ejecución manual | `contents: read`                                    | `npm ci --ignore-scripts` y `npm run check` con Node 22.13.0 y LTS |
+| `deploy` | Solo en `main`, fuera de PR, si `check` pasa | `contents: read`, `pages: write`, `id-token: write` | Empaqueta `web/` y lo publica; no instala dependencias npm         |
 
-Referencias oficiales:
+- Las acciones están fijadas por SHA de commit, con la versión en un comentario.
+  Dependabot (`.github/dependabot.yml`) propone cada mes las actualizaciones de acciones y
+  de herramientas npm, agrupadas y con unos días de espera tras cada versión nueva.
+- `concurrency`: en ramas de trabajo un push nuevo cancela la comprobación anterior; en
+  `main` no se cancela nada, y los despliegues van en cola en el grupo `pages`.
+- La CI no usa caché de npm: son pocas herramientas y así se evita reutilizar una caché
+  envenenada.
+- Matriz de Node: `22.13.0` es el mínimo de `engines` en `package.json`; `lts/*` sigue la
+  LTS vigente. Si cambia `engines`, cambiar también la matriz.
 
-- https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
-- https://docs.github.com/en/billing/concepts/product-billing/github-actions
-- https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
+Seguir una ejecución: `gh run list --workflow ci.yml` o la pestaña Actions.
 
-## Edición pública preparada
+## Publicar
 
-Código propio MIT, excluyendo derechos de terceros. Catastro: volúmenes de juego
-transformados, sin ZIP/GML originales. Alturas recalculadas independientemente
-con IGN / PNOA-LiDAR primera cobertura, CC BY 4.0; no usa alturas/auditorías REDIAM.
-OSM: capa completa utilizada disponible bajo ODbL; créditos IGN, Catastro, OSM,
-Three y referencias visibles. Fotos de referencia no empaquetadas ni usadas como
-texturas; no se concede bajo MIT una licencia sobre fotografías ajenas.
-Ver THIRD_PARTY_NOTICES.md y DATOS_PUBLICOS.md para alcances y límites.
-
-El exportador crea una carpeta nueva mediante lista explícita. Excluye .git,
-ZIP originales, configuración del sitio anterior, credenciales, capturas y
-mediciones antiguas. No basta borrar un original y subir el historial viejo.
-El Git local se conserva completo; el Git público empieza con un snapshot revisado.
-No se reescribe ni destruye el historial local.
-
-## Primer despliegue
-
-GitHub CLI instalado y autenticado localmente. Repositorio creado desde esta
-copia pública, con historial independiente; Pages usa build_type=workflow.
-Para publicar cambios verificados, integrarlos en main y ejecutar:
+Publicar es integrar en `main` y ejecutar, solo con petición explícita:
 
 ```fish
 git push origin main
 ```
 
-Seguir el despliegue con `gh run list` o la pestaña Actions del repositorio.
-No enviar tokens ni contraseñas al chat.
+Una rama o un PR nunca publican. Si `check` falla en `main`, `deploy` no se ejecuta y Pages
+sigue sirviendo la versión anterior.
 
-El progreso se guarda por navegador/origen; no hay cuentas, backend, analytics ni
-multijugador. Tu amigo puede jugar su propia partida al abrir la URL.
+Para retirar la web de inmediato (por ejemplo, ante una reclamación de derechos): Settings
+→ Pages → «Unpublish site», o revertir el cambio y publicar. Ver el procedimiento en
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md#reclamaciones-y-retirada).
+
+## Ajustes manuales en GitHub
+
+No se pueden versionar en el repositorio; comprobar que están así:
+
+1. Settings → Pages → Source: «GitHub Actions».
+2. Settings → Environments → `github-pages` → Deployment branches: solo `main`.
+3. Settings → Actions → General:
+   - Workflow permissions: «Read repository contents and packages permissions».
+   - Desactivar «Allow GitHub Actions to create and approve pull requests».
+   - Política de acciones: permitir solo acciones de GitHub y exigir fijación por SHA
+     completo.
+4. Settings → Rules → Rulesets → nueva regla de rama para `main` (sin lista de omisión):
+   «Restrict deletions» y «Block force pushes». Ver las alternativas en
+   [GIT_WORKFLOW.md](GIT_WORKFLOW.md) y la propuesta.
+5. Settings → Advanced Security: activar alertas de Dependabot y «Dependabot version
+   updates» (usa `.github/dependabot.yml`).
+
+## Coste y límites
+
+Repositorio público, Pages y runners Ubuntu estándar: sin coste. No se necesita dominio
+propio. GitHub aplica límites de uso (sitio de hasta 1 GB y un ancho de banda orientativo
+de 100 GB al mes); no es alojamiento ilimitado. El artefacto publicado ocupa unos pocos MB
+y se conserva un día. Si la cuenta tiene pagos activados para otros usos, mantener
+bloqueado el gasto adicional de Actions.
+
+- https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+- https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
+- https://docs.github.com/en/billing/concepts/product-billing/github-actions
+
+## Privacidad
+
+El juego no tiene cuentas, backend, analítica ni multijugador. El progreso se guarda en el
+navegador de cada jugador. No enviar tokens ni contraseñas a agentes ni al chat.

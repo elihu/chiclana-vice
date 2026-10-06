@@ -1,97 +1,89 @@
-# Datos de juego y edición pública
+# Reproducir los datos del juego
 
-## Separación actual
+Qué contiene cada capa y de dónde sale: [MAP_SOURCES.md](MAP_SOURCES.md). Licencias:
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). Este documento solo describe cómo
+regenerar los datos.
 
-El navegador carga `web/world.json`, seguido de dos capas independientes:
-`buildings.json` (7.448 partes transformadas de Catastro) y `osm-world.json`
-(616 vías, 69 áreas, 20 hitos y 14 árboles cartografiados). El motor las compone
-sin cambiar coordenadas, plantas, patios ni capacidades. La población completa
-de 310 árboles y el mobiliario siguen incluyendo recreaciones procedurales.
+## Capas
 
-`height-samples.json` aplica 15 estimaciones independientes IGN al piloto;
-`facade-profiles.json` reúne paleta, variantes, ancho de huecos, tamaño de celdas,
-posición/escala cívica, contorno Mercado y alturas de naves. Las recetas de mallas
-siguen en JavaScript: separar parámetros no equivale a hornear toda la escena,
-ni demuestra una mejora de FPS. Las instancias/materiales compartidos y el
-agrupamiento por celdas se conservan.
+El navegador carga `web/world.json`, un manifiesto que referencia las capas
+`buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Carga además la
+ortofoto `aerial.jpg`, `facade-profiles.json` (parámetros de fachadas propios,
+obligatorio) y `height-samples.json` (alturas IGN; si falta, el juego usa la altura por
+plantas). `web/data-sources.json` registra fuente, condiciones y SHA-256 de
+cada archivo de datos publicado.
 
-`source-data/facade-catalog.json` identifica los 276 frentes mediante edificio/arista,
-huella, normal, dimensión, plantas y fuente de altura. Nombres de calle: OSM;
-contornos: Catastro; estimaciones LiDAR: IGN. La licencia MIT del motor no cambia
-esas condiciones. `web/data-sources.json` y THIRD_PARTY_NOTICES.md delimitan fuentes.
-Cada ID está ligado a esta instantánea; hashes permiten detectar cambios.
+Las recetas de geometría siguen en `web/game3d.js`: separar parámetros en JSON no equivale
+a hornear la escena.
 
-## Reproducir sin originales en el repositorio público
+## Reglas
 
-Python siempre se ejecuta con uv. Fuentes originales se descargan localmente
-fuera de Git; mantener URLs/fechas/licencias y checksums, no credenciales.
+- Los originales (ZIP/GML de Catastro, extracto OSM, recortes ráster IGN) se descargan a
+  una carpeta fuera del repositorio y nunca se añaden a Git. Conservar URL, fecha,
+  licencia y checksum, nunca credenciales.
+- Python siempre con `uv`.
+- Cualquier generador va seguido de `node tools/export-provenance.mjs` y de `npm test`.
+  `export-provenance` copia el catálogo de frentes, `LICENSE` y `THIRD_PARTY_NOTICES.md` a
+  `web/` y recalcula los checksums de `data-sources.json`; sin él, `verify-world` falla.
 
-1. Si se necesita regenerar los contornos, descargar los originales Catastro y OSM
-   desde las URLs de MAP_SOURCES.md a una carpeta externa y ejecutar:
+## 1. Contornos y vías (opcional)
+
+Solo si hay que reconstruir el mapa desde originales descargados con las URL de
+[MAP_SOURCES.md](MAP_SOURCES.md):
 
 ```fish
-uv run --no-project --with pyproj --with shapely python extras/rebuild-map.py --catastro /ruta/local/catastro.zip --osm /ruta/local/osm.xml
+uv run --no-project --with pyproj --with shapely python tools/rebuild-map.py --catastro /ruta/local/catastro.zip --osm /ruta/local/osm.xml
 ```
 
-El resultado es `rebuilt-city.json`; revisar antes de usarlo. No cambia el juego.
-Para dividir una instantánea revisada: `node tools/prepare-world.mjs rebuilt-city.json`.
-Para regenerar las capas actuales sin originales: `node tools/prepare-world.mjs`.
+Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
+contornos a coordenadas de juego. Escribe `rebuilt-city.json` en la raíz (ignorado por
+Git); no sustituye el mapa. Revisarlo y, si se adopta deliberadamente:
 
-2. Alturas: solo un recorte WCS de 551 × 417 píxeles, unos 450 KB; nunca el mosaico
-   nacional. Caché predeterminada `/tmp/chiclana-ign`, fuera del repositorio:
+```fish
+node tools/prepare-world.mjs rebuilt-city.json
+```
+
+Sin argumento, `prepare-world.mjs` vuelve a escribir las capas actuales y recalcula sus
+checksums; no las regenera desde originales.
+
+## 2. Alturas IGN (opcional)
+
+Descarga solo un recorte WCS pequeño de la zona (nunca el mosaico nacional) a una caché
+fuera del repositorio, por defecto `/tmp/chiclana-ign`:
 
 ```fish
 uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay web/height-samples.json
 ```
 
-MDSnE2,5 está ya normalizado al terreno. P80 dentro de huella erosionada 1 m,
-≥12 muestras, ≥95% cobertura válida, P90−P10 ≤1,5 m, altura/planta 2,5–4,5 m,
-corrección absoluta 0,6–2 m. Excluir hitos protegidos. 1.399 candidatos, 274 con
-al menos 12 muestras y 15 aceptados; no se han relajado filtros para obtener esa cifra.
-Fuente: primera cobertura 2008–2015; vuelo local exacto sin confirmar. Píxeles ~2,5 m,
-valores en pasos de 1 m; no afirmar precisión de 10 cm porque la salida use decimales.
-La segunda cobertura está catalogada, pero no se obtuvo una tesela verificable;
-el proceso actual no la utiliza. No copia alturas ni auditorías REDIAM anteriores.
+Escribe la auditoría completa en `source-data/height-audit-ign.json` y las entradas
+aceptadas en el overlay. Los filtros de aceptación están en el propio script y en el
+campo `acceptance` del overlay; no relajarlos para obtener más alturas. Detalle de las
+partes aceptadas: [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
 
-3. Actualizar catálogo y comprobar capas/juego:
+TODO(integración): el script aún no escribe el campo `attribution` del overlay (auditoría
+N1). Hasta que se corrija, comprobar `git diff web/height-samples.json` y restaurar la
+atribución antes de seguir.
+
+## 3. Catálogo de frentes
 
 ```fish
 node tools/export-facades.mjs
-node tests/verify-world.mjs
-node tests/verify3d.mjs
 ```
 
-Actualizar también checksums de `data-sources.json` si se modifican sus archivos:
-`node tools/export-provenance.mjs`.
-Las comprobaciones CPU no acreditan GPU ni móvil físico. Probar el navegador.
+Actualiza `source-data/facade-catalog.json` a partir de las capas y del juego.
 
-## Exportación pública
+## 4. Procedencia y comprobación (siempre)
 
 ```fish
-node tools/export-public.mjs /ruta/nueva/chiclana-vice-public
+node tools/export-provenance.mjs
+npm test
 ```
 
-El destino debe ser nuevo y estar fuera del repositorio local. Se copia una lista
-explícita de archivos; no .git, originales ZIP/GML/ráster, configuración del hosting
-anterior, credenciales, mediciones históricas ni auditorías REDIAM. No se sobrescribe
-una carpeta existente. Se conserva el historial local completo para investigación.
-El exportador copia README.md y las guías actuales de docs/, sin plantillas duplicadas.
+`verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
+overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
+`web/` coinciden y que las licencias están incluidas. No compara la geometría con una
+instantánea fija anterior (auditoría N2). TODO(integración): actualizar cuando se fusione
+la huella geométrica fija de las pruebas.
 
-En la copia nueva se puede inicializar un Git convencional con rama main y un
-commit inicial. Publicar requiere remoto/cuenta GitHub y seleccionar Pages →
-GitHub Actions. El workflow verifica el juego antes de publicar solo web;
-las ramas de features no despliegan. No hay pagos ni dominio de pago necesarios.
-
-## Validación de esta conversión
-
-`verify-world` compara las capas con la instantánea local anterior: contornos,
-patios, plantas, vías, áreas, árboles cartografiados e hitos idénticos. Verifica
-checksums de capas/manifiesto y que los 276 frentes usan las alturas actuales.
-Los flujos CPU (misiones, colisiones, táctil simulado y cámaras) pasan también
-en la exportación pública, que no incluye city.json.
-
-Chrome headless desktop 1366×768 DPR1, GPU Intel Iris Xe: capturas de Ayuntamiento,
-Mercado, Nazareno y primera persona al volante/a pie inspeccionadas; cero errores
-JavaScript. La copia pública se ha servido bajo /chiclana-vice/ para comprobar
-rutas relativas como en GitHub Pages, con carga y cambios de cámara correctos.
-Esto no mide FPS, no acredita móvil físico ni es un despliegue externo.
+Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
+probar el juego en un navegador.

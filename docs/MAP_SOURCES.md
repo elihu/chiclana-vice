@@ -1,65 +1,58 @@
-# Chiclana Vice — fuentes de la edición actual
+# Fuentes del mapa y aproximaciones
 
-Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen
-[-6.1485,36.4195]; x este, z sur, metros. No se mueve ni sustituye el trazado.
+Qué fuentes se usan, cómo se han transformado y qué partes son aproximadas. Las
+licencias, atribuciones exactas y avisos legales están solo en
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); cómo regenerar los datos, en
+[DATOS_PUBLICOS.md](DATOS_PUBLICOS.md).
 
-- Catastro INSPIRE BU, municipio 11015, descarga 4/10/2026. 7.448 partes,
-  contornos y patios recortados/simplificados 0,12 m, EPSG:25829 a WGS84 y
-  coordenadas locales a 0,01 m. Plantas conservadas; altura base plantas×3,05+0,4 m.
-  Reconstrucción de juego sin validez catastral. El ZIP original no se publica.
+Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen local
+[-6.1485, 36.4195]; x hacia el este, z hacia el sur, en metros. El trazado no se mueve ni
+se sustituye.
+
+## Fuentes
+
+- **Catastro INSPIRE BU**, municipio 11015, descarga del 4/10/2026. 7.448 partes de
+  edificio: contornos y patios recortados, simplificados a 0,12 m y transformados de
+  EPSG:25829 a coordenadas locales con precisión de 0,01 m. Se conservan las plantas;
+  altura base = plantas × 3,05 + 0,4 m. Capa: `web/buildings.json`.
   https://www.catastro.hacienda.gob.es/INSPIRE/Buildings/11/11015-CHICLANA%20DE%20LA%20FRONTERA/A.ES.SDGC.BU.11015.zip
-  https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf
-- © colaboradores OpenStreetMap, ODbL 1.0, extracto 4/10/2026. 616 vías,
-  69 áreas, 20 hitos, 14 árboles cartografiados; objetos de calle extraídos aparte.
-  Anchuras/categorías de juego inferidas donde no constan. Capas y objetos usados
-  disponibles en web/osm-world.json y web/street-objects.json.
+- **OpenStreetMap**, extracto del 4/10/2026: 616 vías, 69 áreas, 20 hitos y 14 árboles
+  cartografiados; objetos de calle extraídos aparte. Anchuras y categorías de juego
+  inferidas donde OSM no las indica. Capas: `web/osm-world.json` y
+  `web/street-objects.json`.
   https://www.openstreetmap.org/api/0.6/map?bbox=-6.156,36.415,-6.141,36.424
-  https://www.openstreetmap.org/copyright
-- © IGN / PNOA / SCNE, ortofoto máxima actualidad, CC BY 4.0 compatible.
-  WMS 1.1.1, capa OI.OrthoimageCoverage, EPSG:4326, límites anteriores,
-  4096×3072 JPEG para suelo/tejados. Consulta 4/10/2026.
-  Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es).
-  Fecha comprobada el 6/10/2026 con GetFeatureInfo OI.MosaicElement en el centro
-  del sector; GetMap actual coincide por SHA256 con aerial.jpg distribuida.
+- **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa OI.OrthoimageCoverage,
+  EPSG:4326, mismos límites, 4096 × 3072 JPEG para suelo y tejados; consulta del 4/10/2026.
+  La fecha de vuelo en el centro del sector es 2022-07 (GetFeatureInfo
+  OI.MosaicElement, comprobado el 6/10/2026). Archivo: `web/aerial.jpg`. TODO(integración):
+  añadir la versión reducida para el modo ligero si se fusiona.
   https://www.ign.es/wms-inspire/pnoa-ma
-- IGN / PNOA-LiDAR PRIMERA cobertura 2008–2015: MDSnE2,5 WCS, CC BY 4.0
-  scne.es declarado por el servicio, consulta 5/10/2026. Recorte local EPSG:3042,
-  551×417 píxeles ~2,5 m, valores enteros en metros. Quince estimaciones de cubierta
-  pasan filtros conservadores de 1.399 candidatos/274 con ≥12 muestras.
-  Fuente ya normalizada; no restar MDT. Fecha exacta de vuelo local sin confirmar.
-  No afirmar cobertura 2020–21, precisión submétrica ni medidas arquitectónicas.
-  URL/checksum/filtros/versiones en height-samples.json y height-audit-ign.json.
+- **PNOA-LiDAR, primera cobertura 2008–2015** (IGN): MDSnE2,5 por WCS, consulta del
+  5/10/2026. Recorte local EPSG:3042 de unos 2,5 m por píxel con valores enteros en
+  metros, ya normalizado al terreno. De 1.399 candidatos, 274 tienen al menos 12 muestras
+  y 15 pasan los filtros conservadores. Fecha exacta del vuelo local sin confirmar.
+  Parámetros, URL y checksums en `web/height-samples.json` y
+  `source-data/height-audit-ign.json`; detalle en [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
-  https://pnoa.ign.es/pnoa-lidar/productos-a-descarga
-  https://www.ign.es/web/ign/portal/politica-datos
-- Three.js 0.169.0 local, MIT; licencia en web/vendor/LICENSE-three.txt.
+- **Three.js r169** local en `web/vendor/`.
 
-## Fachadas y aproximaciones
+## Fachadas y monumentos
 
-276 frentes en 243 partes, incluyendo Constitución, La Vega, La Plaza, Caraza,
-Jesús Nazareno, Álamo, García Gutiérrez y Corredera Baja. Genéricas aproximadas,
-no cada vivienda fotografiada. Ayuntamiento/Mercado e iglesias usan primitivas
-interpretando rasgos del edificio real; referencias completas y condiciones en
-THIRD_PARTY_NOTICES.md. No se distribuyen originales de fotos/planos como texturas.
-Parámetros principales en facade-profiles.json; recetas de geometría en game3d.js.
-Alturas de iglesias y Ayuntamiento son aproximaciones visuales independientes,
-no mediciones LiDAR. No se aumenta globalmente el número de plantas.
+- 276 frentes en 243 partes catalogados en `source-data/facade-catalog.json` (Constitución,
+  La Vega, La Plaza, Caraza, Jesús Nazareno, Álamo, García Gutiérrez, Corredera Baja…).
+  Son fachadas genéricas generadas por reglas, no cada vivienda fotografiada.
+- Ayuntamiento, Mercado e iglesias se modelan con primitivas que interpretan rasgos del
+  edificio real a partir de las referencias citadas en los avisos de terceros. No se
+  distribuyen fotos ni planos como texturas.
+- Las alturas de iglesias y Ayuntamiento son aproximaciones visuales, no mediciones LiDAR.
+- Parámetros principales en `web/facade-profiles.json`; recetas de geometría en
+  `web/game3d.js`.
 
-Terreno plano; monumentos simplificados, cubiertas/interiores incompletos.
-Árboles: puntos OSM más plantación aproximada determinista (310 en total).
-Mobiliario/pavimentos recreados; pasos de peatones toman posiciones OSM.
-Puentes, agua, rutas, policía, circulación, cuatro encargos y paseo conservados.
-La versión arcade anterior permanece en web/arcade/.
+## Aproximaciones
 
-## Distribución y verificación
-
-La edición pública contiene datos transformados, código y conversores, con
-procedencia separada; no originales Catastro ni antiguos derivados REDIAM.
-El historial local conserva investigación previa y no se copia a GitHub.
-La conversión de formato no elimina licencias. DATOS_PUBLICOS.md documenta
-reproducción/exportación; THIRD_PARTY_NOTICES.md delimita derechos y referencias.
-
-Se comprueban invariantes geográficas, checksums, plantas, catálogo de aristas,
-flujos del juego y cámaras con DOM/WebGL simulados. Chrome desktop en GPU Intel
-Iris Xe comprobado; móvil físico pendiente. No afirmar FPS móvil, precisión
-fotogramétrica ni ausencia absoluta de reclamaciones.
+- Terreno plano. Monumentos simplificados; cubiertas e interiores incompletos.
+- Árboles: puntos de OSM más una plantación aproximada y determinista.
+- Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
+- Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
+  TODO(integración): mencionar el sentido único de las vías si se fusiona.
+- Sin precisión fotogramétrica ni validez catastral; no son medidas arquitectónicas.

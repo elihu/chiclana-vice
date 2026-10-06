@@ -1,13 +1,25 @@
 # Documentación
 
-- [Estructura y convenciones](ESTRUCTURA.md)
-- [Desarrollo y ejecución local](DESARROLLO.md)
-- [Flujo de Git](GIT_WORKFLOW.md)
-- [Publicación con GitHub Pages](PUBLICACION.md)
-- [Fuentes del mapa y aproximaciones](MAP_SOURCES.md)
-- [Datos, conversores y exportación](DATOS_PUBLICOS.md)
-- [Las 15 correcciones del piloto de alturas](ALTURAS_PILOTO.md)
-- [Estado y continuidad del trabajo](CONTINUAR-CODEX.md)
-- [Licencias y atribuciones de terceros](../THIRD_PARTY_NOTICES.md)
+Los comandos se ejecutan desde la raíz del repositorio. Cada afirmación vive en un solo
+documento; los demás enlazan a él.
 
-Los comandos de las guías se ejecutan desde la raíz del repositorio.
+## Trabajar en el proyecto
+
+- [Desarrollo, estructura y convenciones](DESARROLLO.md): ejecutar, comprobar, modo ligero,
+  herramientas de medición.
+- [Flujo de Git](GIT_WORKFLOW.md): ramas, worktrees por agente, commits, etiquetas e
+  historial.
+- [Publicación y CI](PUBLICACION.md): GitHub Actions, Pages y ajustes del repositorio.
+- [Reproducir los datos](DATOS_PUBLICOS.md): conversores y orden de los pasos.
+
+## Referencia
+
+- [Fuentes del mapa y aproximaciones](MAP_SOURCES.md).
+- [Las 15 correcciones del piloto de alturas](ALTURAS_PILOTO.md).
+- [Licencias, atribuciones y retirada](../THIRD_PARTY_NOTICES.md): única fuente legal.
+
+## Estado
+
+- [Estado actual y pendientes](ESTADO.md).
+- [Propuesta de convenciones](PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
+  documentación, Git y CI.
