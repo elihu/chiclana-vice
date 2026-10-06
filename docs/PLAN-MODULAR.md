@@ -1091,6 +1091,29 @@ Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas deci
 5. **Reanclar el Mercado**: sí, en un commit `feat` propio, separado del refactor, con
    huella nueva documentada y revisión visual del usuario antes de seguir.
 
+### 11.1 Decisiones tras la parada de 2.4 (6/10/2026)
+
+- **Criterio nuevo del usuario**: se aceptan decisiones que mejoren el diseño aunque la
+  escena deje de ser idéntica a `main`. Condiciones: van en commits `feat` propios,
+  separados de los commits de refactor (que siguen exigiendo huella idéntica); el mensaje
+  y el informe explican el cambio; se regenera la referencia de huella después del commit
+  (`/tmp/chiclana-fp/base.json`, guardando la anterior con otro nombre) y se adjuntan
+  capturas antes y después en los puntos de VB. Nunca se cambian coordenadas reales,
+  contornos ni calles.
+- **`roof`**: una cubierta por edificio, compuesta tras todos sus muros (como `nave()`
+  original), no una por frente. Un nodo `roof` en el nivel del edificio, no de la receta.
+- **`commercialStreet`**: la regla pasa a datos. El contexto de expresión expone `hash`
+  (el hash determinista por frente que ya usa el código) y `street`; la regla exacta
+  actual (incluido `hash % 3`) se escribe como expresión en el diseño, de modo que el
+  resultado no cambia. Si una regla más clara mejora el diseño, aplicarla después en un
+  commit `feat` según el criterio anterior.
+- **`outwardOf(building, edge)`**: se extrae al kit en 2.8, cuando lo necesiten los anclajes
+  `front`.
+- **Colores paramétricos**: el campo `color` acepta también una expresión (cadena que empieza
+  por `=`) o un parámetro de receta cuyo valor sea `#hex` o `$paleta`; el compositor valida
+  el resultado y falla con un error claro si no es un color.
+- **Puntos dentro del mundo**: `|x| ≤ size[0]/2` y `|z| ≤ size[1]/2` (origen centrado).
+
 ## 12. Fuentes consultadas
 
 Consultas del 6/10/2026 salvo que se indique.
