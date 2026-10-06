@@ -70,28 +70,33 @@ let audioOn = false,
   audioCtx,
   engineOsc,
   engineGain;
-let W = innerWidth,
-  H = innerHeight,
-  coarse = matchMedia('(any-pointer: coarse)').matches;
+let W = 0,
+  H = 0,
+  coarse = false;
 // Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
 let touchSeen = false;
-const coarseQuery = matchMedia('(any-pointer: coarse)');
-coarseQuery.addEventListener?.('change', (e) => {
-  coarse = e.matches || touchSeen;
-  if (renderer) applyQuality();
-});
-addEventListener(
-  'pointerdown',
-  (e) => {
-    if (e.pointerType !== 'touch' || touchSeen) return;
-    touchSeen = true;
-    if (!coarse) {
-      coarse = true;
-      if (renderer) applyQuality();
-    }
-  },
-  { capture: true, passive: true },
-);
+function installTouchDetection() {
+  W = innerWidth;
+  H = innerHeight;
+  coarse = matchMedia('(any-pointer: coarse)').matches;
+  const coarseQuery = matchMedia('(any-pointer: coarse)');
+  coarseQuery.addEventListener?.('change', (e) => {
+    coarse = e.matches || touchSeen;
+    if (renderer) applyQuality();
+  });
+  addEventListener(
+    'pointerdown',
+    (e) => {
+      if (e.pointerType !== 'touch' || touchSeen) return;
+      touchSeen = true;
+      if (!coarse) {
+        coarse = true;
+        if (renderer) applyQuality();
+      }
+    },
+    { capture: true, passive: true },
+  );
+}
 let randSeed = 7631;
 const rnd = () => {
   randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
@@ -107,19 +112,24 @@ let joyId = null,
   lookPitch = 0,
   orbitAge = 0,
   firstPersonCar = null;
-const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
-if (stored.quality === 'low') quality = 'low';
 const state = {
-  cash: stored.cash,
-  job: stored.job,
+  cash: 0,
+  job: 0,
   stage: 0,
   timer: 0,
   wanted: 0,
   heat: 0,
   arrest: 0,
-  found: new Set(stored.found),
+  found: new Set(),
   health: 100,
 };
+function loadSavedProgress() {
+  const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
+  if (stored.quality === 'low') quality = 'low';
+  state.cash = stored.cash;
+  state.job = stored.job;
+  state.found = new Set(stored.found);
+}
 const player = { ...INITIAL_POSITION, a: 0, speed: 0, car: null };
 const camPos = new THREE.Vector3(),
   camTarget = new THREE.Vector3(),
@@ -3447,10 +3457,7 @@ function drawLabels() {
   setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
 let streetNames = [];
-const chart = document.createElement('canvas');
-chart.width = 1344;
-chart.height = 1002;
-const chartCtx = chart.getContext('2d');
+let chart, chartCtx;
 function trace(c, poly) {
   c.beginPath();
   poly.forEach((p, i) =>
@@ -3460,6 +3467,10 @@ function trace(c, poly) {
   );
 }
 function prepareMap() {
+  chart = document.createElement('canvas');
+  chart.width = 1344;
+  chart.height = 1002;
+  chartCtx = chart.getContext('2d');
   chartCtx.fillStyle = '#6c806f';
   chartCtx.fillRect(0, 0, chart.width, chart.height);
   for (let a of city.areas) {
@@ -3795,171 +3806,173 @@ function cycleCamera() {
     2,
   );
 }
-$('start').onclick = start;
-$('introHelp').onclick = help;
-$('credits').onclick = help;
-$('closeModal').onclick = closeModal;
-$('pauseBtn').onclick = pauseMenu;
-$('mapBtn').onclick = openMap;
-$('miniButton').onclick = openMap;
-$('closeMap').onclick = closeMap;
-$('cameraBtn').onclick = cycleCamera;
-$('interact').onclick = interact;
-$('streetSearch').oninput = listStreets;
-$('mapStyle').onclick = () => {
-  mapAerial = !mapAerial;
-  $('mapStyle').textContent = mapAerial ? 'Ver callejero' : 'Ver ortofoto';
-  drawMap($('map'));
-};
 const holdPointers = new Map();
-function bindHold(id, key) {
-  let e = $(id),
-    pointers = new Set();
-  holdPointers.set(key, pointers);
-  e.onpointerdown = (v) => {
-    v.preventDefault();
-    if (!started || paused) return;
-    pointers.add(v.pointerId);
-    e.setPointerCapture(v.pointerId);
-    input[key] = true;
-    e.classList.add('pressed');
+function installControls() {
+  $('start').onclick = start;
+  $('introHelp').onclick = help;
+  $('credits').onclick = help;
+  $('closeModal').onclick = closeModal;
+  $('pauseBtn').onclick = pauseMenu;
+  $('mapBtn').onclick = openMap;
+  $('miniButton').onclick = openMap;
+  $('closeMap').onclick = closeMap;
+  $('cameraBtn').onclick = cycleCamera;
+  $('interact').onclick = interact;
+  $('streetSearch').oninput = listStreets;
+  $('mapStyle').onclick = () => {
+    mapAerial = !mapAerial;
+    $('mapStyle').textContent = mapAerial ? 'Ver callejero' : 'Ver ortofoto';
+    drawMap($('map'));
+  };
+  function bindHold(id, key) {
+    let e = $(id),
+      pointers = new Set();
+    holdPointers.set(key, pointers);
+    e.onpointerdown = (v) => {
+      v.preventDefault();
+      if (!started || paused) return;
+      pointers.add(v.pointerId);
+      e.setPointerCapture(v.pointerId);
+      input[key] = true;
+      e.classList.add('pressed');
+    };
+    for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
+      e.addEventListener(n, (v) => {
+        pointers.delete(v.pointerId);
+        input[key] = pointers.size > 0;
+        e.classList.toggle('pressed', input[key]);
+      });
+  }
+  for (const type of ['contextmenu', 'selectstart', 'dragstart'])
+    document.addEventListener(type, (e) => {
+      if (e.target.closest?.('#hud, #world')) e.preventDefault();
+    });
+  bindHold('left', 'left');
+  bindHold('right', 'right');
+  bindHold('gas', 'gas');
+  bindHold('brake', 'brake');
+  bindHold('boost', 'boost');
+  const joy = $('joy');
+  function joyMove(e) {
+    if (e.pointerId !== joyId) return;
+    let r = joy.getBoundingClientRect(),
+      dx = e.clientX - r.left - r.width / 2,
+      dz = e.clientY - r.top - r.height / 2,
+      max = r.width * 0.32,
+      len = Math.hypot(dx, dz),
+      s = len > max ? max / len : 1;
+    input.jx = (dx * s) / max;
+    input.jy = (dz * s) / max;
+    $('stick').style.transform = `translate(${dx * s}px,${dz * s}px)`;
+  }
+  joy.onpointerdown = (e) => {
+    e.preventDefault();
+    if (joyId !== null) return;
+    joyId = e.pointerId;
+    joy.setPointerCapture(e.pointerId);
+    joyMove(e);
+  };
+  joy.onpointermove = joyMove;
+  for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
+    joy.addEventListener(n, (e) => {
+      if (e.pointerId !== joyId) return;
+      joyId = null;
+      input.jx = input.jy = 0;
+      $('stick').style.transform = '';
+    });
+  $('world').onpointerdown = (e) => {
+    if (!started || paused || dragId !== null) return;
+    dragId = e.pointerId;
+    dragX = e.clientX;
+    dragY = e.clientY;
+    $('world').setPointerCapture(e.pointerId);
+  };
+  $('world').onpointermove = (e) => {
+    if (e.pointerId !== dragId) return;
+    orbit -= (e.clientX - dragX) * 0.008;
+    if (mode !== 2)
+      lookPitch = clamp(
+        lookPitch - (e.clientY - dragY) * 0.006,
+        mode === 1 ? -1.35 : -0.65,
+        mode === 1 ? 1.35 : 0.65,
+      );
+    dragX = e.clientX;
+    dragY = e.clientY;
+    orbitAge = 2.5;
   };
   for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
-    e.addEventListener(n, (v) => {
-      pointers.delete(v.pointerId);
-      input[key] = pointers.size > 0;
-      e.classList.toggle('pressed', input[key]);
+    $('world').addEventListener(n, (e) => {
+      if (e.pointerId === dragId) dragId = null;
     });
-}
-for (const type of ['contextmenu', 'selectstart', 'dragstart'])
-  document.addEventListener(type, (e) => {
-    if (e.target.closest?.('#hud, #world')) e.preventDefault();
-  });
-bindHold('left', 'left');
-bindHold('right', 'right');
-bindHold('gas', 'gas');
-bindHold('brake', 'brake');
-bindHold('boost', 'boost');
-let joy = $('joy');
-function joyMove(e) {
-  if (e.pointerId !== joyId) return;
-  let r = joy.getBoundingClientRect(),
-    dx = e.clientX - r.left - r.width / 2,
-    dz = e.clientY - r.top - r.height / 2,
-    max = r.width * 0.32,
-    len = Math.hypot(dx, dz),
-    s = len > max ? max / len : 1;
-  input.jx = (dx * s) / max;
-  input.jy = (dz * s) / max;
-  $('stick').style.transform = `translate(${dx * s}px,${dz * s}px)`;
-}
-joy.onpointerdown = (e) => {
-  e.preventDefault();
-  if (joyId !== null) return;
-  joyId = e.pointerId;
-  joy.setPointerCapture(e.pointerId);
-  joyMove(e);
-};
-joy.onpointermove = joyMove;
-for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
-  joy.addEventListener(n, (e) => {
-    if (e.pointerId !== joyId) return;
-    joyId = null;
-    input.jx = input.jy = 0;
-    $('stick').style.transform = '';
-  });
-$('world').onpointerdown = (e) => {
-  if (!started || paused || dragId !== null) return;
-  dragId = e.pointerId;
-  dragX = e.clientX;
-  dragY = e.clientY;
-  $('world').setPointerCapture(e.pointerId);
-};
-$('world').onpointermove = (e) => {
-  if (e.pointerId !== dragId) return;
-  orbit -= (e.clientX - dragX) * 0.008;
-  if (mode !== 2)
-    lookPitch = clamp(
-      lookPitch - (e.clientY - dragY) * 0.006,
-      mode === 1 ? -1.35 : -0.65,
-      mode === 1 ? 1.35 : 0.65,
-    );
-  dragX = e.clientX;
-  dragY = e.clientY;
-  orbitAge = 2.5;
-};
-for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
-  $('world').addEventListener(n, (e) => {
-    if (e.pointerId === dragId) dragId = null;
-  });
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') return trapFocus(e);
-  const editable =
-    ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
-  const control = ['BUTTON', 'A'].includes(e.target.tagName);
-  if (editable || (control && (paused || !started || e.key === ' ' || e.key === 'Enter'))) {
-    // Edición y activación nativas; los atajos de conducción siguen tras pulsar Cámara.
-    if (e.key === 'Escape') {
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') return trapFocus(e);
+    const editable =
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
+    const control = ['BUTTON', 'A'].includes(e.target.tagName);
+    if (editable || (control && (paused || !started || e.key === ' ' || e.key === 'Enter'))) {
+      // Edición y activación nativas; los atajos de conducción siguen tras pulsar Cámara.
+      if (e.key === 'Escape') {
+        if (!$('mapOverlay').classList.contains('hidden')) closeMap();
+        else if (!$('modal').classList.contains('hidden')) closeModal();
+      }
+      return;
+    }
+    let k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
+    if (e.repeat) return;
+    keys[k] = true;
+    if (k === 'e') interact();
+    if (k === 'c' && started && !paused) cycleCamera();
+    if (k === 'm') {
+      if (!$('mapOverlay').classList.contains('hidden')) closeMap();
+      else if (!paused) openMap();
+    }
+    if (k === 'Escape') {
       if (!$('mapOverlay').classList.contains('hidden')) closeMap();
       else if (!$('modal').classList.contains('hidden')) closeModal();
+      else if (started) pauseMenu();
     }
-    return;
-  }
-  let k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
-  if (e.repeat) return;
-  keys[k] = true;
-  if (k === 'e') interact();
-  if (k === 'c' && started && !paused) cycleCamera();
-  if (k === 'm') {
-    if (!$('mapOverlay').classList.contains('hidden')) closeMap();
-    else if (!paused) openMap();
-  }
-  if (k === 'Escape') {
-    if (!$('mapOverlay').classList.contains('hidden')) closeMap();
-    else if (!$('modal').classList.contains('hidden')) closeModal();
-    else if (started) pauseMenu();
-  }
-});
-window.addEventListener(
-  'keyup',
-  (e) => (keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false),
-);
-window.addEventListener('blur', () => {
-  clearInput();
-  if (started && !paused) pauseMenu();
-});
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    save();
+  });
+  window.addEventListener(
+    'keyup',
+    (e) => (keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false),
+  );
+  window.addEventListener('blur', () => {
     clearInput();
     if (started && !paused) pauseMenu();
-  }
-  last = performance.now();
-});
-window.addEventListener('pagehide', save);
-window.addEventListener('resize', () => {
-  W = innerWidth;
-  H = innerHeight;
-  if (!renderer) return;
-  renderer.setSize(W, H);
-  camera.aspect = W / H;
-  camera.updateProjectionMatrix();
-  needsRender = true;
-  if (!$('mapOverlay').classList.contains('hidden')) openMap();
-});
-$('world').addEventListener('webglcontextlost', (e) => {
-  e.preventDefault();
-  paused = true;
-  $('mapOverlay').classList.add('hidden');
-  modal(
-    '<h2>Se ha interrumpido la imagen.</h2><p>Tu progreso está guardado. Recarga la página y activa el modo móvil ligero en Pausa.</p><button class="primary" id="reload">RECARGAR</button>',
-  );
-  contextLost = true;
-  $('closeModal').classList.add('hidden');
-  save();
-  $('reload').onclick = () => location.reload();
-});
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      save();
+      clearInput();
+      if (started && !paused) pauseMenu();
+    }
+    last = performance.now();
+  });
+  window.addEventListener('pagehide', save);
+  window.addEventListener('resize', () => {
+    W = innerWidth;
+    H = innerHeight;
+    if (!renderer) return;
+    renderer.setSize(W, H);
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    needsRender = true;
+    if (!$('mapOverlay').classList.contains('hidden')) openMap();
+  });
+  $('world').addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    paused = true;
+    $('mapOverlay').classList.add('hidden');
+    modal(
+      '<h2>Se ha interrumpido la imagen.</h2><p>Tu progreso está guardado. Recarga la página y activa el modo móvil ligero en Pausa.</p><button class="primary" id="reload">RECARGAR</button>',
+    );
+    contextLost = true;
+    $('closeModal').classList.add('hidden');
+    save();
+    $('reload').onclick = () => location.reload();
+  });
+}
 let frameCount = 0;
 function frame(now) {
   let dt = clamp((now - last) / 1000, 0, 0.04) || 0.016;
@@ -4098,6 +4111,9 @@ function createTestApi() {
 
 export async function startGame({ version = null, platform: injected = {} } = {}) {
   ASSET_VERSION = version;
+  installTouchDetection();
+  loadSavedProgress();
+  installControls();
   platform = {
     WebGLRenderer: THREE.WebGLRenderer,
     TextureLoader: THREE.TextureLoader,

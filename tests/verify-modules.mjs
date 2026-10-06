@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 // Paso 1.1: false. Desde el paso 1.2: true.
-const STRICT_TOP_LEVEL = false;
+const STRICT_TOP_LEVEL = true;
 // Se cargan solo bajo demanda (import dinámico); van en el importmap pero no se precargan.
 const ON_DEMAND = new Set(['./js/debug/inspector.js']);
 
