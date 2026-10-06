@@ -1131,6 +1131,21 @@ Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas deci
   `prepareFacades` y el anclaje `front` de un frente no seleccionado (con `street` vacío).
 - `facade-profiles.json` conserva `palette`, `facadeCellSize` y `heightPolicy`.
 
+### 11.3 Decisiones tras la parada de 2.8 (6/10/2026)
+
+- **Calles comerciales**: se mantiene la lista `frontages.residentialStreets` en
+  `city-design.json` y el booleano `commercialStreet` calculado por el juego. No se añaden
+  cadenas a `expr.js`: la lista en datos es más clara y suficiente.
+- **`bayWidth` y `streetShades`** viven en la receta `street-generic`: cada receta es
+  dueña de su aspecto. Aceptado.
+- **`facade-profiles.json`** queda solo con paleta, `facadeCellSize` y política de alturas.
+  En 2.9, mover a `city-design.json` las listas de INVENTARIO-DATOS.md (lugares, encargos,
+  miradores, zonas, puntos protegidos) y dejar `facade-profiles.json` con eso únicamente.
+- **Esquema de `city-design.json`**: crear `schemas/city-design.schema.json` en 2.9 y
+  añadir el `$schema` al fichero.
+- K3 y K4 se leen con las precisiones de 11.2 (`roof` por edificio, `composeFront` para
+  frentes genéricos).
+
 ## 12. Fuentes consultadas
 
 Consultas del 6/10/2026 salvo que se indique.
