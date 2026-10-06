@@ -24,6 +24,9 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Cierre de la auditoría local
 
+Integrado en `main` local desde `fix/auditoria-y-pendientes`. Pendiente de revisión
+visual del usuario y publicación.
+
 - Partidas dañadas recuperables, activación nativa del teclado en controles y colisiones
   con margen en celdas vecinas corregidas. Tráfico generado sobre tramos transitables.
 - SP-4, SP-6, SP-8, SP-11 y S17: datos de juego compartidos, arnés temporal común,
