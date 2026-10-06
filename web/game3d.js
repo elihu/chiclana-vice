@@ -300,19 +300,15 @@ function findRoute(from, to, driveOnly = false) {
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
 }
-function box(w, h, l, material, x = 0, y = 0, z = 0) {
-  let m = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), material);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  m.receiveShadow = true;
-  return m;
-}
-function flatPolygon(p, y, material, holes = []) {
+function flatGeometry(p, holes = []) {
   let shape = new THREE.Shape(p.map((v) => new THREE.Vector2(v[0], -v[1])));
   shape.holes = holes.map((h) => new THREE.Path(h.map((v) => new THREE.Vector2(v[0], -v[1]))));
   let geo = new THREE.ShapeGeometry(shape);
   geo.rotateX(-Math.PI / 2);
-  let mesh = new THREE.Mesh(geo, material);
+  return geo;
+}
+function flatPolygon(p, y, material, holes = []) {
+  let mesh = new THREE.Mesh(flatGeometry(p, holes), material);
   mesh.position.y = y;
   mesh.receiveShadow = true;
   return mesh;
@@ -1594,11 +1590,13 @@ function buildRoadDetails() {
       mat('#e8dfbb', { side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
     ),
   );
-  // Retain actual river outline and actual mapped bridges.
-  for (const a of waterAreas) {
-    let m = flatPolygon(a.p, 0.025, mat('#658b80', { metalness: 0.2, roughness: 0.45 }));
-    scene.add(m);
-  }
+  // Retain actual river outline and actual mapped bridges. Static pieces share one
+  // cached material per colour and are merged into one mesh per material.
+  const water = [],
+    decks = [],
+    rails = [],
+    at = (x, y, z, angle = 0) => new THREE.Matrix4().makeRotationY(angle).setPosition(x, y, z);
+  for (const a of waterAreas) water.push({ geometry: flatGeometry(a.p), matrix: at(0, 0.025, 0) });
   for (const r of city.roads) {
     if (!r.bridge) continue;
     for (let i = 1; i < r.p.length; i++) {
@@ -1606,31 +1604,33 @@ function buildRoadDetails() {
         b = r.p[i],
         length = Math.hypot(b[0] - a[0], b[1] - a[1]),
         angle = Math.atan2(b[0] - a[0], b[1] - a[1]);
-      let bridge = box(
-        r.w,
-        0.12,
-        length,
-        mat('#b9b5a5'),
-        (a[0] + b[0]) / 2,
-        0.02,
-        (a[1] + b[1]) / 2,
-      );
-      bridge.rotation.y = angle;
-      scene.add(bridge);
-      for (let side of [-1, 1]) {
-        let rail = box(
-          0.12,
-          0.12,
-          length,
-          mat('#b7b9af'),
-          (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
-          1,
-          (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
-        );
-        rail.rotation.y = angle;
-        scene.add(rail);
-      }
+      decks.push({
+        geometry: new THREE.BoxGeometry(r.w, 0.12, length),
+        matrix: at((a[0] + b[0]) / 2, 0.02, (a[1] + b[1]) / 2, angle),
+      });
+      for (let side of [-1, 1])
+        rails.push({
+          geometry: new THREE.BoxGeometry(0.12, 0.12, length),
+          matrix: at(
+            (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
+            1,
+            (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
+            angle,
+          ),
+        });
     }
+  }
+  for (const [parts, material, cast] of [
+    [water, modelMaterial('#658b80', { metalness: 0.2, roughness: 0.45 }), false],
+    [decks, modelMaterial('#b9b5a5'), true],
+    [rails, modelMaterial('#b7b9af'), true],
+  ]) {
+    if (!parts.length) continue;
+    let mesh = new THREE.Mesh(mergeParts(parts), material);
+    mesh.castShadow = cast;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    for (const p of parts) p.geometry.dispose();
   }
 }
 const mappedStreetObjects = [
@@ -1838,7 +1838,7 @@ function buildStreetSurfaces() {
   let groups = {
     asphalt: { p: [], uv: [], tex: asphalt },
     stone: { p: [], uv: [], tex: stone },
-    slabs: { p: [], uv: [], tex: slabs },
+    slabs: { p: [], uv: [], tex: slabs, roughness: 0.98 },
   };
   function tri(g, pts, uv) {
     for (let i of [0, 1, 2, 0, 2, 3]) {
@@ -1887,16 +1887,18 @@ function buildStreetSurfaces() {
       !a.p.some((p) => p[0] > -360 && p[0] < 100 && p[1] > -240 && p[1] < 100)
     )
       continue;
-    let mesh = flatPolygon(
-      a.p,
-      0.036,
-      new THREE.MeshStandardMaterial({ map: slabs, roughness: 0.98, side: THREE.DoubleSide }),
-    );
-    const p = mesh.geometry.getAttribute('position'),
-      uv = mesh.geometry.getAttribute('uv');
-    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / 4, -p.getZ(i) / 4);
-    uv.needsUpdate = true;
-    scene.add(mesh);
+    // All squares share the slab material and one merged mesh.
+    let geo = flatGeometry(a.p),
+      p = geo.getAttribute('position'),
+      index = geo.index;
+    for (let i = 0; i < index.count; i++) {
+      let k = index.getX(i),
+        x = p.getX(k),
+        z = p.getZ(k);
+      groups.slabs.p.push(x, 0.036 + p.getY(k), z);
+      groups.slabs.uv.push(x / 4, -z / 4);
+    }
+    geo.dispose();
     streetEnvironment.surfaces++;
   }
   for (const g of Object.values(groups)) {
@@ -1907,7 +1909,11 @@ function buildStreetSurfaces() {
     geo.computeVertexNormals();
     let mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshStandardMaterial({ map: g.tex, roughness: 0.96, side: THREE.DoubleSide }),
+      new THREE.MeshStandardMaterial({
+        map: g.tex,
+        roughness: g.roughness ?? 0.96,
+        side: THREE.DoubleSide,
+      }),
     );
     mesh.receiveShadow = true;
     scene.add(mesh);
