@@ -43,21 +43,20 @@ import { buildTrees } from './world/vegetation.js';
 import { buildUrbanFurniture } from './world/furniture.js';
 import { cameraSweep, cycleCamera, updateCamera } from './engine/camera.js';
 import { carCollision, createCar } from './game/vehicles.js';
-import { clamp, lerp, pInside, pointSeg } from './core/math.js';
+import { clamp, pInside, pointSeg } from './core/math.js';
 import { closeModal, help, pauseMenu } from './ui/dialogs.js';
 import { createMissionMarkers, setupPOIs, target } from './game/jobs.js';
 import { createPerson } from './game/people.js';
-import { drawLabels, updateHUD, updateHudReadouts } from './ui/hud.js';
+import { drawLabels, updateHUD } from './ui/hud.js';
 import { drawMap, listStreets, openMap, prepareMap } from './ui/map.js';
 import { installControls, installTouchDetection } from './ui/controls.js';
-import { interact, updatePlayer } from './game/player.js';
+import { interact } from './game/player.js';
 import { loadProgress, toast } from './ui/feedback.js';
-import { loadSavedProgress, save } from './game/save.js';
+import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
-import { spawnTraffic, stepAgent, updatePedestrians } from './game/traffic.js';
+import { spawnTraffic, stepAgent } from './game/traffic.js';
 import { start } from './game/flow.js';
-import { updateMarkers, updateMissions } from './game/missions.js';
-import { updatePolice } from './game/police.js';
+import { update } from './game/update.js';
 
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
@@ -118,43 +117,6 @@ async function init() {
   session.last = performance.now();
   requestAnimationFrame(frame);
   window.__cityGame = createPublicApi();
-}
-
-function update(dt) {
-  session.t += dt;
-  session.collisionClock = Math.max(0, session.collisionClock - dt);
-  session.toastClock -= dt;
-  if (session.toastShown && session.toastClock <= 0) {
-    session.toastShown = false;
-    ui('toast').classList.remove('show');
-  }
-  updatePlayer(dt);
-  for (const c of traffic) stepAgent(c, dt);
-  for (const c of vehicles) {
-    c.mesh.position.set(c.x, 0, c.z);
-    c.mesh.rotation.y = c.a;
-  }
-  updatePolice(dt);
-  updatePedestrians(dt);
-  let goal = updateMissions(dt);
-  updateMarkers(goal);
-  session.routeClock -= dt;
-  if (session.routeClock <= 0) {
-    session.routeClock = 2.5;
-    session.route =
-      goal && !goal.escape
-        ? findRoute(nearestNode(player.x, player.z), nearestNode(goal.x, goal.z))
-        : [];
-  }
-  if (view.orbitAge > 0) view.orbitAge -= dt;
-  else if (player.car && view.mode !== 1) view.orbit = lerp(view.orbit, 0, dt * 2);
-  updateCamera(dt);
-  updateHudReadouts(goal);
-  session.saveClock += dt;
-  if (session.saveClock > 10) {
-    session.saveClock = 0;
-    save();
-  }
 }
 
 let frameCount = 0;
