@@ -501,6 +501,170 @@
           "color": "color"
         }
       ]
+    },
+    "portada-jesus-nazareno": {
+      "description": "White side facade with ochre bands and a sculpted marble portal, with a corner belfry. Equivalent to the Jesús Nazareno block of buildDetailedFacades in main 5666928.",
+      "params": {},
+      "body": [
+        {
+          "let": {
+            "x": "len * 0.52"
+          }
+        },
+        {
+          "box": ["len / 2", 5.2, 0.09, "len", 10.4, 0.16],
+          "color": "#f0ede2"
+        },
+        {
+          "for": "y",
+          "in": [3.2, 6.75, 10.2],
+          "body": [
+            {
+              "box": ["len / 2", "y", 0.22, "len", 0.18, 0.4],
+              "color": "#bd9038"
+            }
+          ]
+        },
+        {
+          "for": "u",
+          "from": 1.5,
+          "while": "u < len",
+          "step": 3.6,
+          "body": [
+            {
+              "geo": ["CircleGeometry", 0.28, 20],
+              "at": ["u", 8.9, 0.19],
+              "color": "#4c5350"
+            },
+            {
+              "geo": ["TorusGeometry", 0.29, 0.045, 6, 20],
+              "at": ["u", 8.9, 0.22],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "box": ["x", 3.25, 0.27, 5.8, 6.5, 0.24],
+          "color": "$cream"
+        },
+        {
+          "box": ["x", 2.15, 0.43, 2.6, 4.3, 0.09],
+          "color": "#433832"
+        },
+        {
+          "box": ["x", 2.15, 0.49, 0.045, 4.2, 0.035],
+          "color": "#7d6c55"
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "for": "delta",
+              "in": [1.8, 2.7],
+              "body": [
+                {
+                  "let": {
+                    "xx": "x + side * delta"
+                  }
+                },
+                {
+                  "box": ["xx", 0.56, 0.55, 0.7, 1.1, 0.65],
+                  "color": "$cream"
+                },
+                {
+                  "piece": "spiralColumn",
+                  "args": ["xx"]
+                },
+                {
+                  "box": ["xx", 5, 0.55, 0.75, 0.3, 0.72],
+                  "color": "$cream"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "y",
+          "in": [5.22, 5.6, 5.88],
+          "body": [
+            {
+              "box": ["x", "y", 0.48, 6.4, 0.16, 0.85],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "geo": ["ArchShape", 2.2, 2.6, 18],
+          "at": ["x", 5.98, 0.33],
+          "color": "#7d8887"
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "piece": "column",
+              "args": ["x + side * 1.45", 7.13, 2.4, 0.18, "$cream"]
+            },
+            {
+              "geo": ["TorusGeometry", 0.55, 0.1, 6, 20, "PI"],
+              "at": ["x + side * 2", 6.18, 0.42],
+              "color": "$cream",
+              "rotation": [0, 0, "side < 0 ? 0 : PI"]
+            }
+          ]
+        },
+        {
+          "piece": "statue",
+          "args": ["x", 6.15, 1.25]
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "piece": "statue",
+              "args": ["x + side * 2.24", 1.2, 0.85]
+            }
+          ]
+        },
+        {
+          "box": ["x + 0.2", 7.3, 0.66, 0.12, 1.9, 0.12],
+          "color": "$cream",
+          "rotation": [0, 0, 0.65]
+        },
+        {
+          "box": ["x + 0.15", 7.62, 0.67, 0.75, 0.12, 0.12],
+          "color": "$cream",
+          "rotation": [0, 0, 0.65]
+        },
+        {
+          "geo": ["TorusGeometry", 1.75, 0.13, 6, 28, "PI"],
+          "at": ["x", 8.1, 0.4],
+          "color": "$cream"
+        },
+        {
+          "piece": "cross",
+          "args": ["x", 10.7]
+        },
+        {
+          "box": ["len - 0.9", 11.3, -1.2, 2.8, 2.2, 2.8],
+          "color": "#ede5d4"
+        },
+        {
+          "piece": "belfry",
+          "args": ["len - 0.9", 12.4, 2.8, 2.7]
+        },
+        {
+          "box": ["len - 0.9", 15.18, 0.1, 3.2, 0.2, 0.9],
+          "color": "#bd9038"
+        },
+        {
+          "piece": "cross",
+          "args": ["len - 0.9", 16.15]
+        }
+      ]
     }
   },
   "buildings": [
@@ -632,6 +796,28 @@
         "y": "h",
         "color": "#bca68b"
       }
+    },
+    {
+      "id": "portada-jesus-nazareno",
+      "name": "Portada lateral de Jesús Nazareno",
+      "landmark": "Iglesia de Jesús Nazareno",
+      "detailType": "church",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": [
+        "THIRD_PARTY_NOTICES.md: Portada Jesús Nazareno, Xemenendura (29/12/2015), CC BY-SA 3.0, reference only",
+        "THIRD_PARTY_NOTICES.md: IAPH, Fachadas lateral y principal del Convento de Jesús Nazareno (2012), CC BY-NC-SA 3.0, reference only"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "a": [-73.04, 73.69],
+            "b": [-50.77, 76.89],
+            "outward": [0, -1]
+          },
+          "recipe": "portada-jesus-nazareno"
+        }
+      ]
     }
   ]
 }

@@ -93,8 +93,7 @@ export function buildDetailedFacades() {
   const staging = new THREE.Group(),
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
-  const { cube, geo, wall, pane, balcony, archShape, pediment, cross, column, door, belfry } = kit;
-  const { statue, spiralColumn } = kit;
+  const { cube, geo, wall, pane, balcony, archShape, pediment, column, door, belfry } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
@@ -104,52 +103,7 @@ export function buildDetailedFacades() {
   for (const id of ['nave-jesus-nazareno', 'nave-san-telmo', 'nave-iglesia-mayor'])
     composeBuilding(kit, world.facadeDesigns, id, { landmarks: world.city.landmarks });
   // Jesús Nazareno: white side facade, ochre bands and sculpted marble portal.
-  {
-    let { g, len } = wall([-73.04, 73.69], [-50.77, 76.89], [0, -1]),
-      x = len * 0.52;
-    cube(g, len / 2, 5.2, 0.09, len, 10.4, 0.16, '#f0ede2');
-    for (let y of [3.2, 6.75, 10.2]) cube(g, len / 2, y, 0.22, len, 0.18, 0.4, '#bd9038');
-    for (let u = 1.5; u < len; u += 3.6) {
-      geo(g, new THREE.CircleGeometry(0.28, 20), u, 8.9, 0.19, '#4c5350');
-      geo(g, new THREE.TorusGeometry(0.29, 0.045, 6, 20), u, 8.9, 0.22, palette.cream);
-    }
-    cube(g, x, 3.25, 0.27, 5.8, 6.5, 0.24, palette.cream);
-    cube(g, x, 2.15, 0.43, 2.6, 4.3, 0.09, '#433832');
-    cube(g, x, 2.15, 0.49, 0.045, 4.2, 0.035, '#7d6c55');
-    for (let side of [-1, 1])
-      for (let delta of [1.8, 2.7]) {
-        let xx = x + side * delta;
-        cube(g, xx, 0.56, 0.55, 0.7, 1.1, 0.65, palette.cream);
-        spiralColumn(g, xx);
-        cube(g, xx, 5, 0.55, 0.75, 0.3, 0.72, palette.cream);
-      }
-    for (let y of [5.22, 5.6, 5.88]) cube(g, x, y, 0.48, 6.4, 0.16, 0.85, palette.cream);
-    geo(g, new THREE.ShapeGeometry(archShape(2.2, 2.6), 18), x, 5.98, 0.33, '#7d8887');
-    for (let side of [-1, 1]) {
-      column(g, x + side * 1.45, 7.13, 2.4, 0.18, palette.cream);
-      let scroll = geo(
-        g,
-        new THREE.TorusGeometry(0.55, 0.1, 6, 20, Math.PI),
-        x + side * 2,
-        6.18,
-        0.42,
-        palette.cream,
-      );
-      scroll.rotation.z = side < 0 ? 0 : Math.PI;
-    }
-    statue(g, x, 6.15, 1.25);
-    for (let side of [-1, 1]) statue(g, x + side * 2.24, 1.2, 0.85);
-    let crossbar = cube(g, x + 0.2, 7.3, 0.66, 0.12, 1.9, 0.12, palette.cream);
-    crossbar.rotation.z = 0.65;
-    crossbar = cube(g, x + 0.15, 7.62, 0.67, 0.75, 0.12, 0.12, palette.cream);
-    crossbar.rotation.z = 0.65;
-    geo(g, new THREE.TorusGeometry(1.75, 0.13, 6, 28, Math.PI), x, 8.1, 0.4, palette.cream);
-    cross(g, x, 10.7);
-    cube(g, len - 0.9, 11.3, -1.2, 2.8, 2.2, 2.8, '#ede5d4');
-    belfry(g, len - 0.9, 12.4, 2.8, 2.7);
-    cube(g, len - 0.9, 15.18, 0.1, 3.2, 0.2, 0.9, '#bd9038');
-    cross(g, len - 0.9, 16.15);
-  }
+  composeBuilding(kit, world.facadeDesigns, 'portada-jesus-nazareno');
   // San Telmo: ochre-trimmed gable and offset bell-screen; no invented twin towers.
   {
     let { g, len } = wall([-17.15, -161.36], [-6.55, -171.73], [1, 1]),
