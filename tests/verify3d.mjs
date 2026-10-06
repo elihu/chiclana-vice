@@ -195,6 +195,15 @@ assert(
   'environment generated',
 );
 
+const signPlates = g.scene.getObjectByName('street-signs'),
+  signPosts = g.scene.getObjectByName('street-sign-posts');
+assert(signPlates && signPosts.isInstancedMesh, 'sign atlas and instanced posts');
+assert.equal(signPosts.count, environmentCounts.signs);
+assert.equal(signPlates.geometry.index.count, environmentCounts.signs * 6, 'one quad per sign');
+const signUV = signPlates.geometry.getAttribute('uv');
+for (let i = 0; i < signUV.count; i++)
+  assert(signUV.getX(i) >= 0 && signUV.getX(i) <= 1 && signUV.getY(i) >= 0 && signUV.getY(i) <= 1);
+
 const person = g.createPerson();
 const bounds = new Real.Box3().setFromObject(person.mesh);
 assert(bounds.max.y < 1.76 && bounds.min.y >= -0.001, 'human scale 1.74m with feet grounded');
