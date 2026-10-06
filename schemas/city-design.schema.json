@@ -13,7 +13,8 @@
     "crossings",
     "centerLines",
     "signs",
-    "vegetation"
+    "vegetation",
+    "buildings"
   ],
   "additionalProperties": false,
   "properties": {
@@ -503,6 +504,93 @@
         },
         "shrubBuildingClearance": {
           "$ref": "#/$defs/nonNegative"
+        }
+      }
+    },
+    "buildings": {
+      "description": "Edificios genéricos: paleta, colores por tipo, alturas mínimas y escala UV.",
+      "type": "object",
+      "required": ["palette", "detailColors", "minimumHeights", "wallUvWidth"],
+      "additionalProperties": false,
+      "properties": {
+        "palette": {
+          "description": "Colores de los edificios genéricos, elegidos con el azar con semilla del juego.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/color"
+          },
+          "minItems": 1
+        },
+        "detailColors": {
+          "description": "Color de pared por tipo de detalle de fachada.",
+          "type": "object",
+          "required": ["church", "townhall", "market", "street"],
+          "additionalProperties": false,
+          "properties": {
+            "church": {
+              "$ref": "#/$defs/color"
+            },
+            "townhall": {
+              "$ref": "#/$defs/color"
+            },
+            "market": {
+              "$ref": "#/$defs/color"
+            },
+            "street": {
+              "$ref": "#/$defs/color"
+            }
+          }
+        },
+        "minimumHeights": {
+          "description": "Alturas mínimas especiales, aplicadas en orden: un círculo (center, radius) sobre el centro del edificio o un tipo de detalle con plantas mínimas.",
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["name", "center", "radius", "height"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "center": {
+                    "$ref": "#/$defs/point"
+                  },
+                  "radius": {
+                    "$ref": "#/$defs/positive"
+                  },
+                  "height": {
+                    "$ref": "#/$defs/positive"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["name", "detailType", "minimumFloors", "height"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "detailType": {
+                    "enum": ["market", "townhall", "church", "street"]
+                  },
+                  "minimumFloors": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "height": {
+                    "$ref": "#/$defs/positive"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "wallUvWidth": {
+          "$ref": "#/$defs/positive",
+          "description": "Metros de pared por repetición horizontal de la textura de fachada."
         }
       }
     }

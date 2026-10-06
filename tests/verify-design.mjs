@@ -706,6 +706,20 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         opacity: 0.55,
       },
       signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
+      buildings: {
+        palette: ['#eee7d7', '#f4ece1'],
+        detailColors: {
+          church: '#e9e1cd',
+          townhall: '#d8b669',
+          market: '#cfbfaa',
+          street: '#eee9db',
+        },
+        minimumHeights: [
+          { name: 'Arquillo', center: [1, 2], radius: 9, height: 17 },
+          { name: 'Ayuntamiento', detailType: 'townhall', minimumFloors: 3, height: 15.1 },
+        ],
+        wallUvWidth: 4.8,
+      },
       vegetation: {
         parkDensity: 105,
         parkMaximum: 100,
@@ -768,6 +782,19 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.vegetation.marketTrees.from = [1]), /marketTrees\.from: se esperaba \[x, z\]/);
     check((c) => delete c.vegetation.shrubEveryVertex, /vegetation\.shrubEveryVertex: falta/);
     check((c) => (c.vegetation.extra = 1), /vegetation\.extra: clave desconocida/);
+    check((c) => (c.buildings.palette = []), /buildings\.palette: .*lista no vacía/);
+    check((c) => (c.buildings.palette = ['rojo']), /buildings\.palette: .*#rrggbb/);
+    check((c) => delete c.buildings.detailColors.market, /detailColors\.market: falta/);
+    check(
+      (c) => (c.buildings.minimumHeights[0].radius = 0),
+      /minimumHeights\[0\]\.radius: .*positivo/,
+    );
+    check(
+      (c) => (c.buildings.minimumHeights[1].detailType = 'casa'),
+      /detailType: tipo de detalle/,
+    );
+    check((c) => (c.buildings.minimumHeights[1].minimumFloors = 0), /minimumFloors: .*entero/);
+    check((c) => (c.buildings.wallUvWidth = 0), /wallUvWidth: .*positivo/);
   }
   delete globalThis.document;
 }

@@ -113,6 +113,8 @@ for (const f of catalog.fronts) {
     assert(inside(p), `furniture point ${p} inside the world`);
   for (const street of furniture.bollards.streets)
     assert(roadNames.has(street), `bollard street ${street} exists in OSM roads`);
+  for (const m of city.buildings.minimumHeights.filter((x) => x.center))
+    assert(inside(m.center), `minimum height ${m.name} inside the world`);
   // Tipos de vía de city-design.json: existen en OSM y los peatonales no son circulables.
   const roadTypes = new Set(world.roads.map((r) => r.type));
   for (const type of city.pavements.nonDrivableTypes)

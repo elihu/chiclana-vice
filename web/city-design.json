@@ -146,5 +146,43 @@
     "shrubEveryVertex": 3,
     "shrubRoadClearance": 1,
     "shrubBuildingClearance": 0.7
+  },
+  "buildings": {
+    "palette": [
+      "#eee7d7",
+      "#f4ece1",
+      "#f1ead8",
+      "#e8dfd3",
+      "#e7d2b6",
+      "#f3eddf",
+      "#dabdaa"
+    ],
+    "detailColors": {
+      "church": "#e9e1cd",
+      "townhall": "#d8b669",
+      "market": "#cfbfaa",
+      "street": "#eee9db"
+    },
+    "minimumHeights": [
+      {
+        "name": "Arquillo del Reloj",
+        "center": [207.09, 140.89],
+        "radius": 9,
+        "height": 17
+      },
+      {
+        "name": "Iglesia Mayor",
+        "center": [233.29, 174.98],
+        "radius": 24,
+        "height": 12
+      },
+      {
+        "name": "Ayuntamiento",
+        "detailType": "townhall",
+        "minimumFloors": 3,
+        "height": 15.1
+      }
+    ],
+    "wallUvWidth": 4.8
   }
 }

@@ -51,6 +51,7 @@ const ANCHORS = [
   { keys: ['front', 'footprintSha256'], type: 'front' },
   { keys: ['world'], type: 'world' },
 ];
+const DETAIL_TYPES = ['market', 'townhall', 'church', 'street'];
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/,
   IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/,
   HEX = /^#[0-9a-f]{6}$/,
@@ -333,7 +334,7 @@ export function validateFacadeDesigns(
     if (typeof b.name !== 'string') fail(`${path}.name`, 'falta el nombre');
     if ('landmark' in b && (typeof b.landmark !== 'string' || !b.landmark))
       fail(`${path}.landmark`, 'se esperaba texto');
-    if ('detailType' in b && !['market', 'townhall', 'church', 'street'].includes(b.detailType))
+    if ('detailType' in b && !DETAIL_TYPES.includes(b.detailType))
       fail(`${path}.detailType`, 'tipo de detalle desconocido');
     if ('lod' in b && !(typeof b.lod === 'string' && LOD.test(b.lod)))
       fail(`${path}.lod`, 'LoD no válido');
@@ -452,6 +453,28 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
         : fail(p, 'se esperaba una lista de textos sin repetir'),
     opacity: (v, p) =>
       Number.isFinite(v) && v > 0 && v <= 1 ? 0 : fail(p, 'se esperaba un número en (0, 1]'),
+    colors: (v, p) =>
+      Array.isArray(v) && v.length > 0 && v.every((c) => typeof c === 'string' && HEX.test(c))
+        ? 0
+        : fail(p, 'se esperaba una lista no vacía de #rrggbb'),
+    // Reglas de altura mínima: un círculo (center, radius) o un tipo de detalle con plantas mínimas.
+    heightRules: (v, p) => {
+      if (!Array.isArray(v)) return void fail(p, 'se esperaba una lista');
+      v.forEach((m, i) => {
+        const at = `${p}[${i}]`;
+        if (!isObject(m)) return void fail(at, 'se esperaba un objeto');
+        const circle = 'center' in m;
+        check(
+          m,
+          circle
+            ? { name: 'text', center: 'point', radius: 'pos', height: 'pos' }
+            : { name: 'text', detailType: 'detail', minimumFloors: 'int', height: 'pos' },
+          at,
+        );
+      });
+    },
+    text: (v, p) => (typeof v === 'string' && v ? 0 : fail(p, 'se esperaba texto')),
+    detail: (v, p) => (DETAIL_TYPES.includes(v) ? 0 : fail(p, 'tipo de detalle desconocido')),
     // Banco: [x, z, ángulo] o, en plazaLamps, [dx, dz, ángulo].
     bench: (v, p) =>
       Array.isArray(v) && v.length === 3 && v.every(Number.isFinite)
@@ -490,6 +513,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'centerLines',
     'signs',
     'vegetation',
+    'buildings',
   ];
   onlyKeys(json, ['$schema', 'version', 'description', 'license', 'attribution', ...sections], '$');
   if (json.version !== 1) fail('version', 'debe ser 1');
@@ -644,6 +668,16 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       shrubBuildingClearance: 'nonneg',
     },
     'vegetation',
+  );
+  check(
+    json.buildings,
+    {
+      palette: 'colors',
+      detailColors: Object.fromEntries(DETAIL_TYPES.map((t) => [t, 'color'])),
+      minimumHeights: 'heightRules',
+      wallUvWidth: 'pos',
+    },
+    'buildings',
   );
   return errors;
 }

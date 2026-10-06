@@ -24,7 +24,9 @@ export async function buildBuildings() {
       roughness: 0.9,
       side: THREE.DoubleSide,
     });
-  let palette = ['#eee7d7', '#f4ece1', '#f1ead8', '#e8dfd3', '#e7d2b6', '#f3eddf', '#dabdaa'];
+  // Paleta, colores por tipo, alturas mínimas y escala UV en web/city-design.json (`buildings`).
+  const rules = world.cityDesign.buildings,
+    palette = rules.palette;
   function bucket(b) {
     let cx = (b.minX + b.maxX) / 2,
       cz = (b.minZ + b.maxZ) / 2,
@@ -39,21 +41,17 @@ export async function buildBuildings() {
       h = b.visualH ?? b.h,
       cx = (b.minX + b.maxX) / 2,
       cz = (b.minZ + b.maxZ) / 2;
-    if (Math.hypot(cx - 207.09, cz - 140.89) < 9) h = Math.max(h, 17);
-    if (Math.hypot(cx - 233.29, cz - 174.98) < 24) h = Math.max(h, 12);
-    if (b.detailType === 'townhall' && b.floors >= 3) h = Math.max(h, 15.1);
+    for (const m of rules.minimumHeights)
+      if (
+        m.center
+          ? Math.hypot(cx - m.center[0], cz - m.center[1]) < m.radius
+          : b.detailType === m.detailType && b.floors >= m.minimumFloors
+      )
+        h = Math.max(h, m.height);
     b.renderH = h;
     let paletteIndex = !b.detailType || b.newDetailOnly ? Math.floor(rnd() * palette.length) : 0;
     let col = new THREE.Color(
-      b.detailType === 'church'
-        ? '#e9e1cd'
-        : b.detailType === 'townhall'
-          ? '#d8b669'
-          : b.detailType === 'market'
-            ? '#cfbfaa'
-            : b.detailType
-              ? '#eee9db'
-              : palette[paletteIndex],
+      b.detailType ? rules.detailColors[b.detailType] : palette[paletteIndex],
     );
     for (const ring of [b.p, ...b.holes])
       for (let i = 0; i < ring.length; i++) {
@@ -69,8 +67,8 @@ export async function buildBuildings() {
           ],
           uvs = [
             [0, 0],
-            [len / 4.8, 0],
-            [len / 4.8, h / world.facadeProfiles.heightPolicy.floorHeight],
+            [len / rules.wallUvWidth, 0],
+            [len / rules.wallUvWidth, h / world.facadeProfiles.heightPolicy.floorHeight],
             [0, h / world.facadeProfiles.heightPolicy.floorHeight],
           ];
         for (const j of [0, 1, 2, 0, 2, 3]) {
