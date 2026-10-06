@@ -109,7 +109,7 @@ const cars = [],
   graph = [],
   segments = [],
   buildingGrid = new Map();
-let character, sun, hemi, ring, beam, arrow;
+let character, sun, ring, beam, arrow;
 const base = { x: 170, z: -150 };
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
@@ -218,7 +218,7 @@ function buildGraph() {
     return id;
   }
   for (const r of city.roads) {
-    let drive = !['footway', 'pedestrian', 'cycleway', 'path', 'steps'].includes(r.type);
+    let drive = !['footway', 'pedestrian', 'cycleway', 'path'].includes(r.type);
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
         b = r.p[i],
@@ -2670,7 +2670,6 @@ async function loadWorld() {
   return {
     origin: manifest.origin,
     size: manifest.size,
-    meta: manifest.meta,
     buildings: buildings.buildings,
     roads: osm.roads,
     areas: osm.areas,
@@ -2713,7 +2712,7 @@ async function init() {
   scene.background = new THREE.Color('#a5bbc8');
   scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   camera = new THREE.PerspectiveCamera(62, W / H, 0.15, 1800);
-  hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
+  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
   scene.add(hemi);
   sun = new THREE.DirectionalLight('#fff0d6', 3.2);
   sun.position.set(-100, 150, 60);
