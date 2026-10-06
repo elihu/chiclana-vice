@@ -1,2 +1,2 @@
-# Preserve the bundled upstream source without imposing our whitespace checks.
-web/vendor/three.module.js -whitespace
+# Preserve the bundled upstream build without imposing our whitespace checks.
+web/vendor/three.module.min.js -whitespace

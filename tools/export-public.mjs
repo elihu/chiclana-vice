@@ -70,7 +70,7 @@ files.push(
     'LICENSE',
     'licenses/ODbL-1.0.txt',
     'licenses/IGN-conditions.pdf',
-    'vendor/three.module.js',
+    'vendor/three.module.min.js',
     'vendor/LICENSE-three.txt',
     'arcade/index.html',
     'arcade/style.css',

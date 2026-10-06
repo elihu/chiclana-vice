@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import * as Real from '../web/vendor/three.module.js';
+import * as Real from '../web/vendor/three.module.min.js';
 const noop = () => {};
 const context = new Proxy(
   { measureText: (s) => ({ width: s.length * 7 }) },
@@ -76,7 +76,7 @@ globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader }
 let code = fs
   .readFileSync('web/game3d.js', 'utf8')
   .replace(
-    /import \* as THREE from ['"]\.\/vendor\/three\.module\.js['"];?/,
+    /import \* as THREE from ['"]\.\/vendor\/three\.module(?:\.min)?\.js['"];?/,
     'const THREE=globalThis.__THREE;',
   )
   .replace(

@@ -61,6 +61,10 @@ https://creativecommons.org/licenses/by/4.0/
 ## Three.js
 
 Three.js 0.169.0, MIT, Copyright © 2010–2024 three.js authors.
+`vendor/three.module.min.js`: build minificada oficial sin modificar, tomada de
+`build/three.module.min.js` del paquete npm three@0.169.0 (integridad
+sha512-Ed906MA3dR4TS5riErd4QBsRGPcx+HBDX2O5yYE5GqJeFQTPU+M56Va/f/Oph9X7uZo3W3o4l2ZhBZ6f6qUv0w==);
+conserva la cabecera de licencia.
 Mantener `vendor/LICENSE-three.txt` junto a la librería.
 
 ## Fachadas, monumentos y referencias

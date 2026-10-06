@@ -1,4 +1,4 @@
-import * as THREE from './vendor/three.module.js';
+import * as THREE from './vendor/three.module.min.js';
 const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
