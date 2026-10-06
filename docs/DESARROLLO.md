@@ -100,6 +100,12 @@ puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudRea
 que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
 ciclo.
 
+- **Fachadas desde datos**: las fachadas detalladas (Ayuntamiento, Mercado, naves y
+  portadas de iglesia, frentes genéricos de calle) son recetas de `web/facade-designs.json`
+  que ejecuta `world/facade-composer.js` con las piezas de `world/facade-kit.js`
+  (`engine/expr.js` evalúa las expresiones). `web/city-design.json` fija qué calles y zonas
+  reciben frentes y con qué receta. `world/design-validate.js` valida ambos al cargar y en
+  `tests/verify-world.mjs`; el formato está en `docs/plan-modular/KIT-FACHADAS.md`.
 - **Sin efectos de nivel superior**: ningún módulo toca `document`, `window`,
   `localStorage` ni registra oyentes al evaluarse; todo ocurre dentro de funciones que
   llama `startGame()`. Así Node puede importar cualquier módulo sin DOM.

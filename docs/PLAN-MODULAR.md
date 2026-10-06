@@ -1114,6 +1114,23 @@ Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas deci
   el resultado y falla con un error claro si no es un color.
 - **Puntos dentro del mundo**: `|x| ≤ size[0]/2` y `|z| ≤ size[1]/2` (origen centrado).
 
+### 11.2 Notas de ejecución de los pasos 2.5 a 2.8 (6/10/2026)
+
+- `roof` pasa a ser la clave `roof: {y, color}` del edificio (no un nodo de receta); `y` y
+  `color` se evalúan con los parámetros de la receta del único frente `landmarkRing`. El
+  compositor admite colores `=expresión` y por nombre de parámetro o variable; el
+  resultado debe ser `#rrggbb` o `$paleta`. Commit `feat` previo a 2.6, escena idéntica.
+- Las expresiones no tienen cadenas, así que `street` (el nombre) se expone pero no se
+  puede comparar en una expresión: `commercialStreet` lo calcula el juego a partir de
+  `frontages.residentialStreets` y la receta escribe `commercialStreet && hash % 3 != 0`.
+  `hash` y `seed` valen lo mismo.
+- 2.8: `bayWidth` y `streetShades` salen de `facade-profiles.json` y viven en la receta
+  `street-generic` (parámetro y `pick`); el juego aplica la receta con `composeFront`
+  (no hay un edificio por frente). `validateFacadeDesigns` recibe `frontRecipes` para
+  comprobar esa receta con las variables de frente. `outwardOf` está en el kit y la usan
+  `prepareFacades` y el anclaje `front` de un frente no seleccionado (con `street` vacío).
+- `facade-profiles.json` conserva `palette`, `facadeCellSize` y `heightPolicy`.
+
 ## 12. Fuentes consultadas
 
 Consultas del 6/10/2026 salvo que se indique.
