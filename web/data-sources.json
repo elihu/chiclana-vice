@@ -78,7 +78,7 @@
       "conditions": "Original parameters; external reference rights not granted. See notices for photo/architecture references.",
       "transformation": "Building features interpreted as primitives; no photographic textures, plans or photographic composition distributed",
       "sha256": {
-        "facade-profiles.json": "1aeb5aa1422a2f124e5cc0e747e5ed549fcd1becd93c5088d46d89094c10f04a"
+        "facade-profiles.json": "44fa08441eb94a188ffc5b437c7ac741d864be2b2ad632899643885c768dd4cd"
       }
     },
     {
@@ -102,7 +102,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers",
       "sha256": {
-        "facade-designs.json": "c00db865507c4d4011259af2c6311570b24c87774ad3c70a089ce33fc4b1750f"
+        "facade-designs.json": "93daadc81f210daafc31df4177bd4c8f2a9499be50f55cd730832956a88032a9"
       }
     }
   ]

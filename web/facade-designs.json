@@ -147,7 +147,7 @@
           "step": 1.35,
           "body": [
             {
-              "box": ["x", 5.1, 0.13, 0.016, 4.0, 0.018],
+              "box": ["x", 5.1, 0.13, 0.016, 4, 0.018],
               "color": "#b5a78f"
             }
           ]
@@ -184,9 +184,332 @@
           ]
         }
       ]
+    },
+    "ayuntamiento-fachada": {
+      "description": "Mapped west frontage of the town hall; vertical proportions interpreted from the official elevation and section. Equivalent to the first block of buildDetailedFacades in main 5666928.",
+      "params": {},
+      "body": [
+        {
+          "let": {
+            "mid": "len * 0.5"
+          }
+        },
+        {
+          "box": ["len / 2", 4.72, 0.06, "len", 9.44, 0.1],
+          "color": "$ochre"
+        },
+        {
+          "for": "y",
+          "from": 0.3,
+          "while": "y < 3.8",
+          "step": 0.4,
+          "body": [
+            {
+              "box": ["len / 2", "y", 0.12, "len", 0.045, 0.09],
+              "color": "#bea166"
+            }
+          ]
+        },
+        {
+          "box": ["len / 2", 3.9, 0.15, "len + 0.4", 0.24, 0.45],
+          "color": "$cream"
+        },
+        {
+          "box": ["len / 2", 4.12, 0.15, "len + 0.4", 0.13, 0.56],
+          "color": "$cream"
+        },
+        {
+          "box": ["len / 2", 8.76, 0.15, "len + 0.4", 0.2, 0.45],
+          "color": "$cream"
+        },
+        {
+          "box": ["len / 2", 9, 0.15, "len + 0.4", 0.18, 0.62],
+          "color": "$cream"
+        },
+        {
+          "box": ["len / 2", 9.38, 0.15, "len + 0.4", 0.32, 0.45],
+          "color": "$cream"
+        },
+        {
+          "for": "u",
+          "in": [1.2, "len - 1.2", "mid - 6.1", "mid - 2.05", "mid + 2.05", "mid + 6.1"],
+          "body": [
+            {
+              "box": ["u", 6.4, 0.21, 0.58, 4.65, 0.32],
+              "color": "$cream"
+            },
+            {
+              "box": ["u", 8.63, 0.32, 0.92, 0.2, 0.55],
+              "color": "$white"
+            },
+            {
+              "box": ["u", 4.2, 0.32, 0.9, 0.18, 0.5],
+              "color": "$white"
+            }
+          ]
+        },
+        {
+          "for": "j",
+          "from": -1,
+          "while": "j <= 1",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "x": "mid + j * 4.1"
+              }
+            },
+            {
+              "piece": "arch",
+              "args": ["x", 0.2, 2.5, 3.35]
+            },
+            {
+              "piece": "civicPane",
+              "args": ["x", 5.82, 1.92, 2.45, 0.28]
+            },
+            {
+              "piece": "pediment",
+              "args": ["x", 7.18, 2.42]
+            },
+            {
+              "geo": ["TorusGeometry", 0.43, 0.09, 6, 24],
+              "at": ["x", 8.03, 0.29],
+              "color": "$cream"
+            },
+            {
+              "geo": ["CircleGeometry", 0.35, 24],
+              "at": ["x", 8.03, 0.24],
+              "color": "#718080"
+            },
+            {
+              "geo": ["TorusGeometry", 1.45, 0.07, 6, 24, "PI"],
+              "at": ["x", 7.33, 0.22],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "for": "x",
+          "in": [4.25, "len - 4.25"],
+          "body": [
+            {
+              "piece": "civicPane",
+              "args": ["x", 1.7, 1.7, 2.45, 0.19]
+            },
+            {
+              "piece": "civicPane",
+              "args": ["x", 5.85, 1.75, 2.48, 0.22]
+            },
+            {
+              "piece": "pediment",
+              "args": ["x", 7.2, 2.25]
+            },
+            {
+              "piece": "pane",
+              "args": ["x", 8.02, 1.7, 0.62, 0.16]
+            }
+          ]
+        },
+        {
+          "box": ["mid", 4.04, 0.7, 13, 0.28, 1.48],
+          "color": "$cream"
+        },
+        {
+          "box": ["mid", 4.85, 1.35, 13, 0.14, 0.23],
+          "color": "$cream"
+        },
+        {
+          "for": "u",
+          "from": "mid - 6.2",
+          "while": "u < mid + 6.3",
+          "step": 0.35,
+          "body": [
+            {
+              "geo": ["CylinderGeometry", 0.065, 0.09, 0.61, 6],
+              "at": ["u", 4.45, 1.35],
+              "color": "$cream"
+            },
+            {
+              "geo": ["SphereGeometry", 0.105, 6, 5],
+              "at": ["u", 4.5, 1.35],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "for": "x",
+          "in": ["mid - 6.4", "mid - 2.15", "mid + 2.15", "mid + 6.4"],
+          "body": [
+            {
+              "box": ["x", 4.43, 1.32, 0.27, 0.86, 0.3],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "box": ["mid", 10.54, -0.35, 4.9, 2.8, 1.15],
+          "color": "$ochre"
+        },
+        {
+          "for": "x",
+          "in": ["mid - 2.2", "mid + 2.2"],
+          "body": [
+            {
+              "box": ["x", 10.6, 0.26, 0.37, 2.9, 0.38],
+              "color": "$cream"
+            }
+          ]
+        },
+        {
+          "box": ["mid", 11.99, 0.12, 5.25, 0.26, 1.2],
+          "color": "$cream"
+        },
+        {
+          "piece": "pediment",
+          "args": ["mid", 11.28, 2.5]
+        },
+        {
+          "geo": ["CircleGeometry", 0.66, 32],
+          "at": ["mid", 10.55, 0.3],
+          "color": "$cream"
+        },
+        {
+          "geo": ["TorusGeometry", 0.68, 0.045, 6, 32],
+          "at": ["mid", 10.55, 0.32],
+          "color": "#c1ad8c"
+        },
+        {
+          "for": "i",
+          "from": 0,
+          "while": "i < 12",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "a": "(i * TAU) / 12"
+              }
+            },
+            {
+              "box": ["mid + sin(a) * 0.52", "10.55 + cos(a) * 0.52", 0.34, 0.027, 0.09, 0.018],
+              "color": "$iron",
+              "rotation": [0, 0, "-a"]
+            }
+          ]
+        },
+        {
+          "box": ["mid - 0.12", 10.72, 0.36, 0.038, 0.43, 0.02],
+          "color": "$iron",
+          "rotation": [0, 0, 0.62]
+        },
+        {
+          "box": ["mid + 0.15", 10.55, 0.37, 0.35, 0.032, 0.02],
+          "color": "$iron",
+          "rotation": [0, 0, 0.1]
+        },
+        {
+          "for": "j",
+          "from": 0,
+          "while": "j < 3",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "x": "mid + (j - 1) * 3.2"
+              }
+            },
+            {
+              "geo": ["CylinderGeometry", 0.025, 0.025, 2.8, 6],
+              "at": ["x", 6.18, 1.08],
+              "color": "#b1b5ac",
+              "rotation": [0.35, 0, 0]
+            },
+            {
+              "for": "k",
+              "from": 0,
+              "while": "k < 3",
+              "step": 1,
+              "body": [
+                {
+                  "box": ["x + 0.43", "6.97 - k * 0.31", 1.57, 0.84, 0.31, 0.025],
+                  "color": {
+                    "pick": [
+                      "#264177",
+                      "#264177",
+                      "#264177",
+                      "#ab2930",
+                      "#e2b644",
+                      "#ab2930",
+                      "#3c8058",
+                      "#e8ead8",
+                      "#3c8058"
+                    ],
+                    "index": "j * 3 + k"
+                  },
+                  "rotation": [0, 0.12, 0]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "x",
+          "in": ["mid - 6.15", "mid - 2.05", "mid + 2.05", "mid + 6.15"],
+          "body": [
+            {
+              "box": ["x", 3.25, 0.62, 0.035, 0.55, 0.66],
+              "color": "$iron"
+            },
+            {
+              "box": ["x", 2.96, 0.89, 0.31, 0.44, 0.31],
+              "color": "$iron"
+            },
+            {
+              "box": ["x", 2.97, 1.055, 0.2, 0.31, 0.02],
+              "color": "#dbc68f"
+            }
+          ]
+        },
+        {
+          "piece": "sign",
+          "args": [
+            {
+              "text": "AYUNTAMIENTO"
+            },
+            "mid",
+            3.64,
+            5.4,
+            0.3,
+            "$cream",
+            "#a08754"
+          ]
+        }
+      ]
     }
   },
   "buildings": [
+    {
+      "id": "ayuntamiento",
+      "name": "Ayuntamiento de Chiclana",
+      "landmark": "Ayuntamiento de Chiclana de la Frontera",
+      "detailType": "townhall",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": [
+        "THIRD_PARTY_NOTICES.md: Ayuntamiento, Jms1952 (2023), CC BY-SA 4.0, used as reference only",
+        "THIRD_PARTY_NOTICES.md: elevation and section by Suárez Almanzor and Agueda Goyeneche (2006), Junta de Andalucía, vertical proportions only"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "a": [-82.14, -29.4],
+            "b": [-92.99, -2.16],
+            "outward": [-1, -0.3]
+          },
+          "recipe": "ayuntamiento-fachada",
+          "scaleY": 1.6
+        }
+      ]
+    },
     {
       "id": "mercado",
       "name": "Mercado de Abastos",

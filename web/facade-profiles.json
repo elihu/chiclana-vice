@@ -20,21 +20,6 @@
   ],
   "bayWidth": 3.35,
   "facadeCellSize": 170,
-  "townhall": {
-    "a": [
-      -82.14,
-      -29.4
-    ],
-    "b": [
-      -92.99,
-      -2.16
-    ],
-    "outward": [
-      -1,
-      -0.3
-    ],
-    "verticalScale": 1.6
-  },
   "churches": [
     {
       "name": "Jesús Nazareno",

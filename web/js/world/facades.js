@@ -102,110 +102,14 @@ export function buildDetailedFacades() {
     pane,
     balcony,
     archShape,
-    arch,
     pediment,
-    sign,
-    civicPane,
     cross,
     column,
     door,
     belfry,
   } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
-  let civic = wall(
-      world.facadeProfiles.townhall.a,
-      world.facadeProfiles.townhall.b,
-      world.facadeProfiles.townhall.outward,
-    ),
-    cg = civic.g,
-    L = civic.len,
-    mid = L * 0.5;
-  cg.scale.y = world.facadeProfiles.townhall.verticalScale;
-  cube(cg, L / 2, 4.72, 0.06, L, 9.44, 0.1, palette.ochre);
-  for (let y = 0.3; y < 3.8; y += 0.4) cube(cg, L / 2, y, 0.12, L, 0.045, 0.09, '#bea166');
-  for (const [y, h, d] of [
-    [3.9, 0.24, 0.45],
-    [4.12, 0.13, 0.56],
-    [8.76, 0.2, 0.45],
-    [9, 0.18, 0.62],
-    [9.38, 0.32, 0.45],
-  ])
-    cube(cg, L / 2, y, 0.15, L + 0.4, h, d, palette.cream);
-  for (let u of [1.2, L - 1.2, mid - 6.1, mid - 2.05, mid + 2.05, mid + 6.1]) {
-    cube(cg, u, 6.4, 0.21, 0.58, 4.65, 0.32, palette.cream);
-    cube(cg, u, 8.63, 0.32, 0.92, 0.2, 0.55, palette.white);
-    cube(cg, u, 4.2, 0.32, 0.9, 0.18, 0.5, palette.white);
-  }
-  for (let j = -1; j <= 1; j++) {
-    let x = mid + j * 4.1;
-    arch(cg, x, 0.2, 2.5, 3.35);
-    civicPane(cg, x, 5.82, 1.92, 2.45, 0.28);
-    pediment(cg, x, 7.18, 2.42);
-    geo(cg, new THREE.TorusGeometry(0.43, 0.09, 6, 24), x, 8.03, 0.29, palette.cream);
-    geo(cg, new THREE.CircleGeometry(0.35, 24), x, 8.03, 0.24, '#718080');
-    let lun = new THREE.TorusGeometry(1.45, 0.07, 6, 24, Math.PI);
-    geo(cg, lun, x, 7.33, 0.22, palette.cream);
-  }
-  for (const x of [4.25, L - 4.25]) {
-    civicPane(cg, x, 1.7, 1.7, 2.45, 0.19);
-    civicPane(cg, x, 5.85, 1.75, 2.48, 0.22);
-    pediment(cg, x, 7.2, 2.25);
-    pane(cg, x, 8.02, 1.7, 0.62, 0.16);
-  }
-  // Broad projecting civic balcony with pale stone balusters.
-  cube(cg, mid, 4.04, 0.7, 13, 0.28, 1.48, palette.cream);
-  cube(cg, mid, 4.85, 1.35, 13, 0.14, 0.23, palette.cream);
-  for (let u = mid - 6.2; u < mid + 6.3; u += 0.35) {
-    geo(cg, new THREE.CylinderGeometry(0.065, 0.09, 0.61, 6), u, 4.45, 1.35, palette.cream);
-    geo(cg, new THREE.SphereGeometry(0.105, 6, 5), u, 4.5, 1.35, palette.cream);
-  }
-  for (let x of [mid - 6.4, mid - 2.15, mid + 2.15, mid + 6.4])
-    cube(cg, x, 4.43, 1.32, 0.27, 0.86, 0.3, palette.cream);
-  cube(cg, mid, 10.54, -0.35, 4.9, 2.8, 1.15, palette.ochre);
-  for (const x of [mid - 2.2, mid + 2.2]) cube(cg, x, 10.6, 0.26, 0.37, 2.9, 0.38, palette.cream);
-  cube(cg, mid, 11.99, 0.12, 5.25, 0.26, 1.2, palette.cream);
-  pediment(cg, mid, 11.28, 2.5);
-  geo(cg, new THREE.CircleGeometry(0.66, 32), mid, 10.55, 0.3, palette.cream);
-  geo(cg, new THREE.TorusGeometry(0.68, 0.045, 6, 32), mid, 10.55, 0.32, '#c1ad8c');
-  for (let i = 0; i < 12; i++) {
-    let a = (i * TAU) / 12,
-      m = cube(
-        cg,
-        mid + Math.sin(a) * 0.52,
-        10.55 + Math.cos(a) * 0.52,
-        0.34,
-        0.027,
-        0.09,
-        0.018,
-        palette.iron,
-      );
-    m.rotation.z = -a;
-  }
-  let h = cube(cg, mid - 0.12, 10.72, 0.36, 0.038, 0.43, 0.02, palette.iron);
-  h.rotation.z = 0.62;
-  h = cube(cg, mid + 0.15, 10.55, 0.37, 0.35, 0.032, 0.02, palette.iron);
-  h.rotation.z = 0.1;
-  for (let j = 0; j < 3; j++) {
-    let x = mid + (j - 1) * 3.2;
-    let pole = geo(cg, new THREE.CylinderGeometry(0.025, 0.025, 2.8, 6), x, 6.18, 1.08, '#b1b5ac');
-    pole.rotation.x = 0.35;
-    let cols =
-      j === 0
-        ? ['#264177', '#264177', '#264177']
-        : j === 1
-          ? ['#ab2930', '#e2b644', '#ab2930']
-          : ['#3c8058', '#e8ead8', '#3c8058'];
-    for (let k = 0; k < 3; k++) {
-      let f = cube(cg, x + 0.43, 6.97 - k * 0.31, 1.57, 0.84, 0.31, 0.025, cols[k]);
-      f.rotation.y = 0.12;
-    }
-  }
-  for (const x of [mid - 6.15, mid - 2.05, mid + 2.05, mid + 6.15]) {
-    cube(cg, x, 3.25, 0.62, 0.035, 0.55, 0.66, palette.iron);
-    cube(cg, x, 2.96, 0.89, 0.31, 0.44, 0.31, palette.iron);
-    cube(cg, x, 2.97, 1.055, 0.2, 0.31, 0.02, '#dbc68f');
-  }
-  sign(cg, 'AYUNTAMIENTO', mid, 3.64, 5.4, 0.3, palette.cream, '#a08754');
+  composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
   composeBuilding(kit, world.facadeDesigns, 'mercado');
 
