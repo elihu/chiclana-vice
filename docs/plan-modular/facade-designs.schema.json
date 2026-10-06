@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elihu.github.io/chiclana-vice/schemas/facade-designs.schema.json",
+  "title": "Chiclana Vice: composiciones de fachada",
+  "description": "Documentación para el editor. La referencia normativa es web/js/world/design-validate.js (docs/plan-modular/KIT-FACHADAS.md).",
+  "type": "object",
+  "required": ["version", "kit", "recipes", "buildings"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "kit": { "const": 1 },
+    "description": { "type": "string" },
+    "license": { "type": "string" },
+    "attribution": { "type": "string" },
+    "recipes": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+      "additionalProperties": { "$ref": "#/$defs/recipe" }
+    },
+    "buildings": { "type": "array", "items": { "$ref": "#/$defs/building" } }
+  },
+  "$defs": {
+    "expr": {
+      "description": "Expresión (KIT-FACHADAS.md, K2). Las cadenas que empiezan por # o $ son colores.",
+      "type": "string",
+      "pattern": "^[^#$]"
+    },
+    "number": {
+      "oneOf": [{ "type": "number" }, { "$ref": "#/$defs/expr" }, { "$ref": "#/$defs/pick" }]
+    },
+    "color": {
+      "oneOf": [
+        { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+        { "type": "string", "pattern": "^\\$[a-z]+$" },
+        { "$ref": "#/$defs/pick" }
+      ]
+    },
+    "value": {
+      "oneOf": [
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "string" },
+        { "$ref": "#/$defs/pick" },
+        {
+          "type": "object",
+          "required": ["text"],
+          "additionalProperties": false,
+          "properties": { "text": { "type": "string" } }
+        }
+      ]
+    },
+    "pick": {
+      "type": "object",
+      "required": ["pick", "index"],
+      "additionalProperties": false,
+      "properties": {
+        "pick": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/value" } },
+        "index": { "$ref": "#/$defs/expr" }
+      }
+    },
+    "vec3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/number" }
+    },
+    "point": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "type": "number" }
+    },
+    "identifier": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+    "body": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "recipe": {
+      "type": "object",
+      "required": ["body"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "params": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/identifier" },
+          "additionalProperties": { "$ref": "#/$defs/value" }
+        },
+        "body": { "$ref": "#/$defs/body" }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["let"],
+          "additionalProperties": false,
+          "properties": {
+            "let": {
+              "type": "object",
+              "propertyNames": { "$ref": "#/$defs/identifier" },
+              "additionalProperties": { "$ref": "#/$defs/value" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["box", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "box": {
+              "type": "array",
+              "minItems": 6,
+              "maxItems": 6,
+              "items": { "$ref": "#/$defs/number" }
+            },
+            "color": { "$ref": "#/$defs/color" },
+            "rotation": { "$ref": "#/$defs/vec3" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["piece", "args"],
+          "additionalProperties": false,
+          "properties": {
+            "piece": {
+              "enum": [
+                "pane",
+                "balcony",
+                "arch",
+                "pediment",
+                "sign",
+                "civicPane",
+                "cross",
+                "column",
+                "door",
+                "belfry",
+                "statue",
+                "spiralColumn"
+              ]
+            },
+            "args": { "type": "array", "items": { "$ref": "#/$defs/value" } },
+            "rotation": { "$ref": "#/$defs/vec3" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["geo", "at", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "geo": {
+              "type": "array",
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "enum": [
+                    "CircleGeometry",
+                    "TorusGeometry",
+                    "CylinderGeometry",
+                    "SphereGeometry",
+                    "ConeGeometry",
+                    "ArchShape",
+                    "TriangleExtrude"
+                  ]
+                }
+              ],
+              "items": { "$ref": "#/$defs/number" }
+            },
+            "at": { "$ref": "#/$defs/vec3" },
+            "color": { "$ref": "#/$defs/color" },
+            "rotation": { "$ref": "#/$defs/vec3" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["group", "body"],
+          "additionalProperties": false,
+          "properties": {
+            "group": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "at": { "$ref": "#/$defs/vec3" },
+                "rotation": { "$ref": "#/$defs/vec3" }
+              }
+            },
+            "body": { "$ref": "#/$defs/body" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["for", "from", "while", "step", "body"],
+          "additionalProperties": false,
+          "properties": {
+            "for": { "$ref": "#/$defs/identifier" },
+            "from": { "$ref": "#/$defs/number" },
+            "while": { "$ref": "#/$defs/expr" },
+            "step": { "$ref": "#/$defs/number" },
+            "body": { "$ref": "#/$defs/body" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["for", "in", "body"],
+          "additionalProperties": false,
+          "properties": {
+            "for": { "$ref": "#/$defs/identifier" },
+            "in": { "type": "array", "items": { "$ref": "#/$defs/value" } },
+            "body": { "$ref": "#/$defs/body" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["if", "then"],
+          "additionalProperties": false,
+          "properties": {
+            "if": { "$ref": "#/$defs/expr" },
+            "then": { "$ref": "#/$defs/body" },
+            "else": { "$ref": "#/$defs/body" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["use"],
+          "additionalProperties": false,
+          "properties": {
+            "use": { "type": "string" },
+            "with": { "type": "object", "additionalProperties": { "$ref": "#/$defs/value" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["roof"],
+          "additionalProperties": false,
+          "properties": {
+            "roof": {
+              "type": "object",
+              "required": ["y", "color"],
+              "additionalProperties": false,
+              "properties": {
+                "y": { "$ref": "#/$defs/number" },
+                "color": { "$ref": "#/$defs/color" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "anchor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["a", "b", "outward"],
+          "additionalProperties": false,
+          "properties": {
+            "a": { "$ref": "#/$defs/point" },
+            "b": { "$ref": "#/$defs/point" },
+            "outward": { "$ref": "#/$defs/point" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["a", "b", "outwardFrom"],
+          "additionalProperties": false,
+          "properties": {
+            "a": { "$ref": "#/$defs/point" },
+            "b": { "$ref": "#/$defs/point" },
+            "outwardFrom": { "$ref": "#/$defs/point" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["ring", "center"],
+          "additionalProperties": false,
+          "properties": {
+            "ring": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/point" } },
+            "center": { "$ref": "#/$defs/point" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["landmarkRing"],
+          "additionalProperties": false,
+          "properties": { "landmarkRing": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "required": ["front", "footprintSha256"],
+          "additionalProperties": false,
+          "properties": {
+            "front": { "type": "string", "pattern": "^building-[0-9]+-edge-[0-9]+$" },
+            "footprintSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["world"],
+          "additionalProperties": false,
+          "properties": { "world": { "const": true } }
+        }
+      ]
+    },
+    "building": {
+      "type": "object",
+      "required": ["id", "name", "fronts"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "name": { "type": "string" },
+        "landmark": {
+          "type": "string",
+          "description": "Texto contenido en el nombre del hito OSM que marca el edificio."
+        },
+        "detailType": { "enum": ["market", "townhall", "church", "street"] },
+        "lod": { "type": "string", "pattern": "^[0-4](\\.[0-3])?$" },
+        "status": { "enum": ["approximate"] },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "fronts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["anchor", "recipe"],
+            "additionalProperties": false,
+            "properties": {
+              "anchor": { "$ref": "#/$defs/anchor" },
+              "recipe": { "type": "string" },
+              "with": { "type": "object", "additionalProperties": { "$ref": "#/$defs/value" } },
+              "scaleY": { "$ref": "#/$defs/number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

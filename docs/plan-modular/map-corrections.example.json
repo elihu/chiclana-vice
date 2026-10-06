@@ -1,0 +1,67 @@
+{
+  "$schema": "./map-corrections.schema.json",
+  "version": 1,
+  "license": "ODbL-1.0",
+  "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "attribution": "© OpenStreetMap contributors; corrections by the Chiclana Vice project. Building vertices from D.G. del Catastro INSPIRE BU.",
+  "appliesTo": {
+    "osmSha256": "ec7e847431a05856381d00ddca112b85d132e72882604901d6468ea4510302ef",
+    "buildingsSha256": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217"
+  },
+  "corrections": [
+    {
+      "id": "fix-001",
+      "op": "road.set",
+      "road": { "id": "184177554", "occurrence": 0 },
+      "expect": { "name": "Calle de la Vega", "w": 5 },
+      "set": { "w": 5.5 },
+      "reason": "EJEMPLO: anchura de juego para que el tráfico no roce las fachadas",
+      "evidence": "ortofoto PNOA 2022-07",
+      "date": "2026-10-06"
+    },
+    {
+      "id": "fix-002",
+      "op": "road.movePoint",
+      "road": { "id": "53668961", "occurrence": 1 },
+      "index": 0,
+      "expect": [0, 0],
+      "to": [0, 0],
+      "reason": "EJEMPLO: la segunda aparición del ID 53668961 (vía partida); rellenar con el vértice real",
+      "evidence": "modo ?debug, punto copiado",
+      "date": "2026-10-06"
+    },
+    {
+      "id": "fix-003",
+      "op": "road.add",
+      "add": {
+        "id": "fix-003",
+        "name": "",
+        "type": "footway",
+        "w": 2,
+        "oneway": false,
+        "bridge": false,
+        "p": [
+          [-85.78, -33.61],
+          [-84.9, -30.2]
+        ]
+      },
+      "reason": "EJEMPLO: paso peatonal que une dos tramos desconectados",
+      "evidence": "visita",
+      "date": "2026-10-06"
+    },
+    {
+      "id": "fix-004",
+      "op": "building.moveVertex",
+      "building": {
+        "index": 2615,
+        "footprintSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "vertex": 0,
+      "expect": [-263.38, -131.26],
+      "to": [-263.38, -131.26],
+      "reason": "EJEMPLO: esquina que invade la calzada; requiere regenerar frontages.json",
+      "evidence": "ortofoto PNOA 2022-07",
+      "date": "2026-10-06"
+    }
+  ]
+}
