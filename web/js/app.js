@@ -1,61 +1,41 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { $, sleepFrame, ui } from './core/dom.js';
-import { SPAWN_POSITION, JOBS as jobs } from '../game-data.js';
+import { SPAWN_POSITION } from '../game-data.js';
 import {
   actors,
   base,
   camPos,
   camTarget,
   cars,
-  chunks,
-  driveNetwork,
-  facadeWork,
   gfx,
-  graph,
-  input,
-  people,
   player,
-  pois,
-  segments,
   session,
-  state,
-  streetEnvironment,
   traffic,
   vehicles,
-  view,
   world,
 } from './core/state.js';
 import { addGroundPlanes, setupRenderer } from './engine/renderer.js';
 import { addSigns } from './world/signs.js';
-import { applyHeightSamples, loadLayers, loadWorld } from './world/loader.js';
-import { blocked, inBuilding, indexBuildings, nearestRoad, safePoint } from './world/spatial.js';
+import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
 import { buildDetailedFacades, prepareFacades } from './world/facades.js';
 import { buildRoadDetails, buildStreetSurfaces } from './world/streets.js';
-import {
-  buildRoadGraph,
-  connectOpenSpaces,
-  findRoute,
-  nearestNode,
-  orientDriveGraph,
-} from './game/graph.js';
+import { buildRoadGraph, connectOpenSpaces, orientDriveGraph } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
 import { buildUrbanFurniture } from './world/furniture.js';
-import { cameraSweep, cycleCamera, updateCamera } from './engine/camera.js';
-import { carCollision, createCar } from './game/vehicles.js';
-import { clamp, pInside, pointSeg } from './core/math.js';
-import { closeModal, help, pauseMenu } from './ui/dialogs.js';
-import { createMissionMarkers, setupPOIs, target } from './game/jobs.js';
+import { clamp } from './core/math.js';
+import { createCar } from './game/vehicles.js';
+import { createMissionMarkers, setupPOIs } from './game/jobs.js';
 import { createPerson } from './game/people.js';
+import { createPublicApi, createTestApi } from './test-api.js';
 import { drawLabels, updateHUD } from './ui/hud.js';
-import { drawMap, listStreets, openMap, prepareMap } from './ui/map.js';
+import { drawMap, prepareMap } from './ui/map.js';
+import { indexBuildings, safePoint } from './world/spatial.js';
 import { installControls, installTouchDetection } from './ui/controls.js';
-import { interact } from './game/player.js';
 import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
-import { spawnTraffic, stepAgent } from './game/traffic.js';
-import { start } from './game/flow.js';
+import { spawnTraffic } from './game/traffic.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -168,96 +148,6 @@ function showStartupError(err) {
   document.querySelector('.loadingInner').appendChild(btn);
 }
 
-function createPublicApi() {
-  return {
-    get character() {
-      return actors.character;
-    },
-    createCar,
-    createPerson,
-    state,
-    player,
-    get city() {
-      return world.city;
-    },
-    graph,
-    segments,
-    driveNetwork,
-    pois,
-    get scene() {
-      return gfx.scene;
-    },
-    blocked,
-    safePoint,
-    facadeWork,
-    streetEnvironment,
-    get view() {
-      return {
-        position: gfx.camera.position.toArray(),
-        mode: view.mode,
-        pitch: view.lookPitch,
-        yaw: player.a + view.orbit,
-        direction: gfx.camera.getWorldDirection(new THREE.Vector3()).toArray(),
-        obstructed: view.mode === 0 && cameraSweep(gfx.camera.position) < 1,
-      };
-    },
-    get stats() {
-      return gfx.renderer.info.render;
-    },
-  };
-}
-
-function createTestApi() {
-  const extra = {
-    inBuilding,
-    pInside,
-    pointSeg,
-    jobs,
-    input,
-    update,
-    target,
-    interact,
-    updateCamera,
-    cycleCamera,
-    camPos,
-    setOrbit: (v) => {
-      view.orbit = v;
-    },
-    carCollision,
-    findRoute,
-    nearestNode,
-    cars,
-    start,
-    updateHUD,
-    frame,
-    pauseMenu,
-    closeModal,
-    loadWorld,
-    listStreets,
-    openMap,
-    help,
-    nearestRoad,
-    chunks,
-    traffic,
-    stepAgent,
-    vehicles,
-    people,
-    get sun() {
-      return gfx.sun;
-    },
-    get renderer() {
-      return gfx.renderer;
-    },
-    get quality() {
-      return gfx.quality;
-    },
-    get paused() {
-      return session.paused;
-    },
-  };
-  return Object.defineProperties(createPublicApi(), Object.getOwnPropertyDescriptors(extra));
-}
-
 export async function startGame({ version = null, platform: injected = {} } = {}) {
   setAssetVersion(version);
   installTouchDetection();
@@ -274,5 +164,5 @@ export async function startGame({ version = null, platform: injected = {} } = {}
     showStartupError(err);
     return null;
   }
-  return createTestApi();
+  return createTestApi(frame);
 }
