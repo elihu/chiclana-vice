@@ -2641,13 +2641,28 @@ async function loadWorld() {
   };
   const manifest = await read('world.json');
   if (manifest.version !== 1) throw Error('Versión de mapa incompatible');
+  // Validate the layer structure up front: a clear message instead of a TypeError later.
+  const incompatible = () => Error('Capas del mapa incompatibles'),
+    pair = (v) => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite);
+  if (
+    !pair(manifest.origin) ||
+    !pair(manifest.size) ||
+    typeof manifest.files?.buildings !== 'string' ||
+    typeof manifest.files?.osm !== 'string'
+  )
+    throw incompatible();
   const [buildings, osm] = await Promise.all([
     read(manifest.files.buildings),
     read(manifest.files.osm),
   ]);
   for (const layer of [buildings, osm])
-    if (layer.version !== 1 || layer.origin.some((v, i) => v !== manifest.origin[i]))
-      throw Error('Capas del mapa incompatibles');
+    if (
+      layer?.version !== 1 ||
+      !pair(layer.origin) ||
+      layer.origin.some((v, i) => v !== manifest.origin[i])
+    )
+      throw incompatible();
+  if (![buildings.buildings, osm.roads, osm.areas].every(Array.isArray)) throw incompatible();
   return {
     origin: manifest.origin,
     size: manifest.size,
@@ -2655,8 +2670,8 @@ async function loadWorld() {
     buildings: buildings.buildings,
     roads: osm.roads,
     areas: osm.areas,
-    landmarks: osm.landmarks,
-    trees: osm.trees,
+    landmarks: Array.isArray(osm.landmarks) ? osm.landmarks : [],
+    trees: Array.isArray(osm.trees) ? osm.trees : [],
   };
 }
 async function init() {

@@ -108,7 +108,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -677,6 +677,25 @@ console.log('Pedestrians', g.people.length);
     else assert(a.includes('target="_blank"') && a.includes('rel="noopener"'), a);
   g.closeModal();
   console.log('Escape in search and credit links passed');
+}
+// Malformed layers give a clear error instead of a TypeError.
+{
+  const realFetch = globalThis.fetch;
+  for (const broken of [
+    (layer) => delete layer.origin,
+    (layer) => (layer.origin = 'x'),
+    (layer) => delete layer.roads,
+  ]) {
+    globalThis.fetch = async (url) => {
+      const data = JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8'));
+      if (url.startsWith('osm-world.json')) broken(data);
+      return { ok: true, json: async () => data };
+    };
+    await assert.rejects(g.loadWorld(), /Capas del mapa incompatibles/);
+  }
+  globalThis.fetch = realFetch;
+  await g.loadWorld();
+  console.log('Incompatible map layers rejected clearly');
 }
 // After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
 {
