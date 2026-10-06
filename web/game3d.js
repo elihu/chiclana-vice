@@ -3054,6 +3054,9 @@ function stepAgent(c, dt, isCop = false) {
     speed = c.cruise || 9;
   if (!isCop && d(c, player) < 7) speed = 0;
   if (di < Math.max(1, speed * dt)) {
+    // Snap to the node so agents follow the checked segment lines exactly.
+    c.x = n.x;
+    c.z = n.z;
     c.node = c.next;
     let candidates = graph[c.node].adj.filter((e) => e.drive && e.to !== c.prev);
     if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.drive);
