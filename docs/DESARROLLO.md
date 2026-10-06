@@ -38,6 +38,14 @@ navegador real y anotar qué no se ha verificado. El arnés común `tests/runtim
 de frentes, crea y elimina su módulo temporal fuera del repositorio. Engancha el juego con
 sustituciones de texto que fallan con un error claro si dejan de coincidir.
 
+Para refactorizaciones sin cambios visibles hay dos herramientas aparte, que no forman parte
+de `npm test`. `node tools/scene-fingerprint.mjs --out base.json` guarda una huella de la
+escena (objetos, materiales, geometría por bytes, rutas, recursos pedidos y 600 pasos de
+simulación en CPU) y `--compare base.json` la contrasta con la del árbol actual.
+`node tools/browser-smoke.mjs URL` abre el juego en Chrome sin interfaz (SwiftShader), recoge
+errores y cuenta mallas y triángulos. Se comparan en la misma máquina y con la misma versión
+de Node, y no acreditan GPU, rendimiento ni móvil.
+
 Prettier no formatea los datos (`web/*.json`, `source-data/`), las licencias ni
 `web/vendor/`. Las versiones de las herramientas están fijadas en `package-lock.json`, que
 se versiona. El juego no necesita `node_modules`.
