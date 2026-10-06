@@ -20,23 +20,6 @@
   ],
   "bayWidth": 3.35,
   "facadeCellSize": 170,
-  "churches": [
-    {
-      "name": "Jesús Nazareno",
-      "naveHeight": 10.4,
-      "color": "#eee9dc"
-    },
-    {
-      "name": "San Telmo",
-      "naveHeight": 11.2,
-      "color": "#e8e3d2"
-    },
-    {
-      "name": "Iglesia Mayor",
-      "naveHeight": 14.2,
-      "color": "#baa483"
-    }
-  ],
   "heightPolicy": {
     "floorHeight": 3.05,
     "baseOffset": 0.4,

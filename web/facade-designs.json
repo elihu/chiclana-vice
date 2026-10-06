@@ -484,6 +484,23 @@
           ]
         }
       ]
+    },
+    "nave": {
+      "description": "Church nave walls: plain volume with a top moulding. Storey heights are atypical and the dimensions are visual estimates. Equivalent to nave() in main 5666928.",
+      "params": {
+        "h": 10.4,
+        "color": "#eee9dc"
+      },
+      "body": [
+        {
+          "box": ["len / 2", "h / 2", -0.12, "len", "h", 0.28],
+          "color": "color"
+        },
+        {
+          "box": ["len / 2", "h - 0.1", 0.06, "len", 0.22, 0.35],
+          "color": "color"
+        }
+      ]
     }
   },
   "buildings": [
@@ -534,6 +551,87 @@
           "recipe": "mercado-fachada"
         }
       ]
+    },
+    {
+      "id": "nave-jesus-nazareno",
+      "name": "Nave de Jesús Nazareno",
+      "landmark": "Jesús Nazareno",
+      "detailType": "church",
+      "lod": "1.2",
+      "status": "approximate",
+      "references": [
+        "Visual estimate of the nave height from the cadastral outline; no photographic composition"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "landmarkRing": "Jesús Nazareno"
+          },
+          "recipe": "nave",
+          "with": {
+            "h": 10.4,
+            "color": "#eee9dc"
+          }
+        }
+      ],
+      "roof": {
+        "y": "h",
+        "color": "#bca68b"
+      }
+    },
+    {
+      "id": "nave-san-telmo",
+      "name": "Nave de San Telmo",
+      "landmark": "San Telmo",
+      "detailType": "church",
+      "lod": "1.2",
+      "status": "approximate",
+      "references": [
+        "Visual estimate of the nave height from the cadastral outline; no photographic composition"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "landmarkRing": "San Telmo"
+          },
+          "recipe": "nave",
+          "with": {
+            "h": 11.2,
+            "color": "#e8e3d2"
+          }
+        }
+      ],
+      "roof": {
+        "y": "h",
+        "color": "#bca68b"
+      }
+    },
+    {
+      "id": "nave-iglesia-mayor",
+      "name": "Nave de la Iglesia Mayor",
+      "landmark": "Iglesia Mayor",
+      "detailType": "church",
+      "lod": "1.2",
+      "status": "approximate",
+      "references": [
+        "Visual estimate of the nave height from the cadastral outline; no photographic composition"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "landmarkRing": "Iglesia Mayor"
+          },
+          "recipe": "nave",
+          "with": {
+            "h": 14.2,
+            "color": "#baa483"
+          }
+        }
+      ],
+      "roof": {
+        "y": "h",
+        "color": "#bca68b"
+      }
     }
   ]
 }

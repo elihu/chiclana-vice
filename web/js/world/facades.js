@@ -1,7 +1,6 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, pInside } from '../core/math.js';
 import { facadeWork, gfx, world } from '../core/state.js';
-import { flatPolygon } from '../engine/materials.js';
 import { composeBuilding } from './facade-composer.js';
 import { createFacadeKit } from './facade-kit.js';
 import { inBuilding, nearestRoad } from './spatial.js';
@@ -94,43 +93,15 @@ export function buildDetailedFacades() {
   const staging = new THREE.Group(),
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
-  const {
-    material,
-    cube,
-    geo,
-    wall,
-    pane,
-    balcony,
-    archShape,
-    pediment,
-    cross,
-    column,
-    door,
-    belfry,
-  } = kit;
+  const { cube, geo, wall, pane, balcony, archShape, pediment, cross, column, door, belfry } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
   composeBuilding(kit, world.facadeDesigns, 'mercado');
 
-  // Church naves have atypical storey heights; dimensions below are visual estimates.
-  function nave(name, h, color) {
-    const mark = world.city.landmarks.find((p) => p.name.includes(name));
-    if (!mark) return;
-    const ring = mark.outline.slice(0, -1),
-      center = mark.p;
-    for (let i = 0; i < ring.length; i++) {
-      let a = ring[i],
-        b = ring[(i + 1) % ring.length],
-        mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
-        f = wall(a, b, [mid[0] - center[0], mid[1] - center[1]]);
-      cube(f.g, f.len / 2, h / 2, -0.12, f.len, h, 0.28, color);
-      cube(f.g, f.len / 2, h - 0.1, 0.06, f.len, 0.22, 0.35, color);
-    }
-    let roof = flatPolygon(ring, h, material('#bca68b'));
-    staging.add(roof);
-  }
-  for (const c of world.facadeProfiles.churches) nave(c.name, c.naveHeight, c.color);
+  // Church naves have atypical storey heights; dimensions are visual estimates.
+  for (const id of ['nave-jesus-nazareno', 'nave-san-telmo', 'nave-iglesia-mayor'])
+    composeBuilding(kit, world.facadeDesigns, id, { landmarks: world.city.landmarks });
   // Jesús Nazareno: white side facade, ochre bands and sculpted marble portal.
   {
     let { g, len } = wall([-73.04, 73.69], [-50.77, 76.89], [0, -1]),
