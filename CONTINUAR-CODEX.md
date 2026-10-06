@@ -30,3 +30,7 @@ Revisión 6/10/2026: atribuciones fotográficas completadas y fórmula de obra
 derivada IGN en créditos/metadatos. ALTURAS_PILOTO.md detalla las 15 partes;
 auditoría repetida con igual resultado. Figuras Nazareno y alzado Ayuntamiento
 continúan pendientes; ver THIRD_PARTY_NOTICES.md. Servidor público local :8080.
+
+Identidad personal de este repo: elihu, 4126552+elihu@users.noreply.github.com.
+Configurada localmente en .git/config; no heredar la identidad global de la org.
+Copyright del código propio: elihu. Las atribuciones de terceros se conservan.
