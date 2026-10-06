@@ -133,6 +133,7 @@ const base = { x: 170, z: -150 };
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
+  $('loadTrack').setAttribute('aria-valuenow', String(p));
 }
 function sleepFrame() {
   return new Promise((r) => requestAnimationFrame(r));
@@ -3664,6 +3665,7 @@ function openMap() {
   clearInput();
   mute();
   $('mapOverlay').classList.remove('hidden');
+  openDialog($('closeMap')); // not the search field: no on-screen keyboard
   let c = $('map'),
     r = c.getBoundingClientRect();
   c.width = Math.round(r.width * 1.5);
@@ -3673,20 +3675,58 @@ function openMap() {
 function closeMap() {
   if (contextLost) return; // only reloading can bring the image back
   $('mapOverlay').classList.add('hidden');
+  closeDialog();
   paused = false;
   needsRender = true;
   last = performance.now();
+}
+// Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
+// dialog and focus returns to the opener on close.
+let dialogOpener = null;
+function openDialog(target) {
+  if (!dialogOpener) dialogOpener = document.activeElement;
+  $('hud').inert = true;
+  target?.focus?.();
+}
+function closeDialog() {
+  if (!$('modal').classList.contains('hidden') || !$('mapOverlay').classList.contains('hidden'))
+    return;
+  $('hud').inert = false;
+  dialogOpener?.focus?.();
+  dialogOpener = null;
+}
+function trapFocus(e) {
+  const overlay = ['mapOverlay', 'modal'].map($).find((o) => !o.classList.contains('hidden'));
+  if (!overlay) return;
+  const items = [...overlay.querySelectorAll('button, a[href], input')].filter(
+      (el) => !el.closest('.hidden'),
+    ),
+    first = items[0],
+    lastItem = items[items.length - 1];
+  if (!first) return;
+  const inside = overlay.contains(document.activeElement);
+  if (e.shiftKey && (!inside || document.activeElement === first)) {
+    e.preventDefault();
+    lastItem.focus();
+  } else if (!e.shiftKey && (!inside || document.activeElement === lastItem)) {
+    e.preventDefault();
+    first.focus();
+  }
 }
 function modal(html) {
   paused = true;
   clearInput();
   mute();
   $('modalBody').innerHTML = html;
+  const title = $('modalBody').querySelector('h2');
+  if (title) title.id = 'modalTitle';
   $('modal').classList.remove('hidden');
+  openDialog($('modalBody').querySelector('button') || $('closeModal'));
 }
 function closeModal() {
   if (contextLost) return; // only reloading can bring the image back
   $('modal').classList.add('hidden');
+  closeDialog();
   paused = false;
   needsRender = true;
   last = performance.now();
@@ -3881,6 +3921,7 @@ for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
     if (e.pointerId === dragId) dragId = null;
   });
 window.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') return trapFocus(e);
   if (e.target.tagName === 'INPUT') {
     // Typing in the street search: only Escape is handled, to close the map.
     if (e.key === 'Escape' && !$('mapOverlay').classList.contains('hidden')) closeMap();

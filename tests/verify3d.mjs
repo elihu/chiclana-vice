@@ -39,7 +39,9 @@ function el(id) {
       this.children = [];
     },
     querySelector: () => el(id + 'child'),
-    setAttribute: noop,
+    setAttribute(k, v) {
+      (this.attributes ??= {})[k] = v;
+    },
     listeners: {},
     addEventListener(n, f) {
       (this.listeners[n] ??= []).push(f);
@@ -728,6 +730,25 @@ console.log('Pedestrians', g.people.length);
 assert(mediaQueries.includes('(any-pointer: coarse)'), 'touch controls for any coarse pointer');
 assert(!/\(pointer:\s*coarse\)/.test(fs.readFileSync('web/style.css', 'utf8')));
 assert(windowListeners.pointerdown, 'first touch enables touch mode');
+// Accessibility without changing zoom: dialog semantics, labels, progressbar, focus.
+{
+  const html = fs.readFileSync('web/index.html', 'utf8'),
+    css = fs.readFileSync('web/style.css', 'utf8');
+  assert(/user-scalable=no/.test(html), 'zoom policy unchanged');
+  assert.equal(html.match(/role="dialog" aria-modal="true"/g).length, 2);
+  assert(/<canvas id="world" role="img" aria-label=/.test(html));
+  assert(/role="progressbar"[^>]*aria-valuemin="0"[^>]*aria-valuemax="100"/.test(html));
+  for (const id of ['cameraBtn', 'mapBtn', 'pauseBtn'])
+    assert(new RegExp('id="' + id + '"[^>]*aria-label=').test(html), 'label ' + id);
+  for (const size of css.match(/#credits \{[^}]*\}/g).map((r) => r.match(/font-size: (\d+)px/)))
+    if (size) assert(+size[1] >= 11, 'credits at least 11 px');
+  assert.equal(els.loadTrack.attributes?.['aria-valuenow'] ?? '100', '100');
+  g.pauseMenu();
+  assert.equal(els.hud.inert, true, 'HUD inert behind dialog');
+  g.closeModal();
+  assert.equal(els.hud.inert, false);
+  console.log('Dialog semantics, labels, progressbar and credits size passed');
+}
 // After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
 {
   els.world.listeners.webglcontextlost.forEach((f) => f({ preventDefault() {} }));
