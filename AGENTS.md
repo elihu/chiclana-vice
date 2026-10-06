@@ -1,5 +1,7 @@
 # Chiclana Vice
+
 Lee README.md, docs/DESARROLLO.md, docs/CONTINUAR-CODEX.md y docs/MAP_SOURCES.md antes de cambiar el juego.
+
 - Mantén coordenadas reales, edificios, calles y capacidades existentes.
 - JavaScript estático: editar web/game3d.js, web/style.css, web/index.html. No introducir frameworks o un pipeline por rutina.
 - Prioriza controles táctiles y rendimiento móvil; agrupa geometría repetida y conserva modo ligero.

@@ -73,6 +73,7 @@ dimensiones y procedencia de alturas/nombres. No es una reconstrucción fotogram
 Las recetas geométricas siguen en el código; no se ha horneado toda la escena.
 
 Referencias que se mantienen identificadas, con sus condiciones originales:
+
 - Ayuntamiento: Jms1952, 9/10/2023, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg
 - Mercado: Xemenendura, 10/4/2025, CC BY-SA 4.0.

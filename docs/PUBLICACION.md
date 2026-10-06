@@ -19,6 +19,7 @@ La copia estática ocupa unos pocos MB. Si la cuenta tiene pagos activados para
 otros usos, mantener gasto adicional de Actions bloqueado para este proyecto.
 
 Referencias oficiales:
+
 - https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
 - https://docs.github.com/en/billing/concepts/product-billing/github-actions
 - https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits

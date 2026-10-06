@@ -27,11 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+      - name: Instalar herramientas
+        run: npm ci
       - name: Comprobar juego
-        run: |
-          node --check web/game3d.js
-          node tests/verify-world.mjs
-          node tests/verify3d.mjs
+        run: npm run check
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

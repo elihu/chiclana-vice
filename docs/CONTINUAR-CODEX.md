@@ -42,3 +42,7 @@ y THIRD_PARTY_NOTICES.md. El exportador conserva esta organización.
 Estructura: web/ es fuente estática editable y publicable; tests/ contiene los
 verificadores, tools/ los conversores. Arcade conserva su game.js; la copia
 idéntica sin uso en la raíz web se ha eliminado.
+
+ESLint recomendado + Prettier + EditorConfig: npm ci y npm run check.
+Formato aplicado al código propio; datos y Three.js excluidos. El verificador
+y el exportador de fachadas admiten el formato legible nuevo.

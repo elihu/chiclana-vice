@@ -13,6 +13,8 @@ uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web
 
 Abrir http://localhost:8080. No requiere npm, compilación ni backend.
 
+Para comprobar el código: `npm ci` y `npm run check`.
+
 [Documentación](docs/README.md): desarrollo, Git, publicación, fuentes y datos.
 
 El código y la documentación propios tienen [licencia MIT](LICENSE),
