@@ -264,23 +264,74 @@ function nearestNode(x, z, driveOnly = false) {
   }
   return best;
 }
+// Dijkstra with a binary heap keyed by (distance, node). Ties settle the lowest node
+// first and relaxation is strict, as in the previous O(N²) scan: identical routes.
+let routeDist, routePrev, routeUsed, heapDist, heapNode;
 function findRoute(from, to, driveOnly = false) {
   if (from === to) return [from];
-  let ds = new Float64Array(graph.length);
+  const n = graph.length;
+  if (!routeDist || routeDist.length !== n) {
+    routeDist = new Float64Array(n);
+    routePrev = new Int32Array(n);
+    routeUsed = new Uint8Array(n);
+  }
+  let edges = 1;
+  for (const g of graph) edges += g.adj.length;
+  if (!heapDist || heapDist.length < edges) {
+    heapDist = new Float64Array(edges);
+    heapNode = new Int32Array(edges);
+  }
+  const ds = routeDist,
+    prev = routePrev,
+    used = routeUsed,
+    less = (i, j) =>
+      heapDist[i] < heapDist[j] || (heapDist[i] === heapDist[j] && heapNode[i] < heapNode[j]);
   ds.fill(Infinity);
-  ds[from] = 0;
-  let prev = new Int32Array(graph.length);
   prev.fill(-1);
-  let used = new Uint8Array(graph.length);
-  for (let n = 0; n < graph.length; n++) {
-    let u = -1,
-      md = Infinity;
-    for (let i = 0; i < graph.length; i++)
-      if (!used[i] && ds[i] < md) {
-        md = ds[i];
-        u = i;
-      }
-    if (u === -1 || u === to) break;
+  used.fill(0);
+  ds[from] = 0;
+  let size = 0;
+  const swap = (i, j) => {
+    let dv = heapDist[i],
+      nv = heapNode[i];
+    heapDist[i] = heapDist[j];
+    heapNode[i] = heapNode[j];
+    heapDist[j] = dv;
+    heapNode[j] = nv;
+  };
+  const push = (dv, node) => {
+    let i = size++;
+    heapDist[i] = dv;
+    heapNode[i] = node;
+    while (i > 0) {
+      let parent = (i - 1) >> 1;
+      if (!less(i, parent)) break;
+      swap(i, parent);
+      i = parent;
+    }
+  };
+  const pop = () => {
+    let top = heapNode[0];
+    size--;
+    heapDist[0] = heapDist[size];
+    heapNode[0] = heapNode[size];
+    for (let i = 0; ;) {
+      let l = i * 2 + 1,
+        r = l + 1,
+        m = i;
+      if (l < size && less(l, m)) m = l;
+      if (r < size && less(r, m)) m = r;
+      if (m === i) break;
+      swap(i, m);
+      i = m;
+    }
+    return top;
+  };
+  push(0, from);
+  while (size) {
+    let u = pop();
+    if (used[u]) continue;
+    if (u === to) break;
     used[u] = 1;
     for (let e of graph[u].adj) {
       if (driveOnly && !e.drive) continue;
@@ -288,16 +339,17 @@ function findRoute(from, to, driveOnly = false) {
       if (nd < ds[e.to]) {
         ds[e.to] = nd;
         prev[e.to] = u;
+        push(nd, e.to);
       }
     }
   }
   if (prev[to] === -1) return [];
   let out = [to];
-  while (out[0] !== from) {
-    out.unshift(prev[out[0]]);
-    if (out.length > graph.length) return [];
+  while (out[out.length - 1] !== from) {
+    out.push(prev[out[out.length - 1]]);
+    if (out.length > n) return [];
   }
-  return out;
+  return out.reverse();
 }
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });

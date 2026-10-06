@@ -431,3 +431,72 @@ g.frame(1064);
 g.frame(1080);
 assert.equal(g.renderer.renders, renders + 3, 'continuous render after closing');
 console.log('Paused rendering on demand passed');
+
+// findRoute (binary heap) must return exactly the routes of the reference O(N²) Dijkstra.
+function referenceRoute(graph, from, to, driveOnly) {
+  if (from === to) return [from];
+  const ds = new Float64Array(graph.length).fill(Infinity),
+    prev = new Int32Array(graph.length).fill(-1),
+    used = new Uint8Array(graph.length);
+  ds[from] = 0;
+  for (let n = 0; n < graph.length; n++) {
+    let u = -1,
+      md = Infinity;
+    for (let i = 0; i < graph.length; i++)
+      if (!used[i] && ds[i] < md) {
+        md = ds[i];
+        u = i;
+      }
+    if (u === -1 || u === to) break;
+    used[u] = 1;
+    for (const e of graph[u].adj) {
+      if (driveOnly && !e.drive) continue;
+      const nd = ds[u] + e.length;
+      if (nd < ds[e.to]) {
+        ds[e.to] = nd;
+        prev[e.to] = u;
+      }
+    }
+  }
+  if (prev[to] === -1) return [];
+  const out = [to];
+  while (out[0] !== from) out.unshift(prev[out[0]]);
+  return out;
+}
+{
+  let seed = 12345;
+  const rand = () => (seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296,
+    pairs = [];
+  for (let i = 0; i < 60; i++)
+    pairs.push([Math.floor(rand() * g.graph.length), Math.floor(rand() * g.graph.length)]);
+  const start = g.nearestNode(g.player.x, g.player.z);
+  for (const p of g.pois) pairs.push([start, g.nearestNode(p.x, p.z)]);
+  for (const p of g.pois) pairs.push([g.nearestNode(p.x, p.z, true), start]);
+  const time = (fn) => {
+      const t0 = performance.now();
+      for (let k = 0; k < 3; k++) for (const [a, b] of pairs) fn(a, b);
+      return (performance.now() - t0) / (pairs.length * 3);
+    },
+    found = [0, 0];
+  for (const drive of [false, true])
+    for (const [a, b] of pairs) {
+      const got = g.findRoute(a, b, drive);
+      assert.deepEqual(got, referenceRoute(g.graph, a, b, drive), 'same route ' + [a, b, drive]);
+      if (got.length) found[+drive]++;
+    }
+  const timing = {};
+  for (const drive of [false, true]) {
+    timing[drive ? 'drive' : 'walk'] = {
+      reference: +time((a, b) => referenceRoute(g.graph, a, b, drive)).toFixed(3),
+      heap: +time((a, b) => g.findRoute(a, b, drive)).toFixed(3),
+    };
+  }
+  console.log(
+    'findRoute matches reference Dijkstra on',
+    pairs.length * 2,
+    'queries; non-empty walk/drive',
+    found.join('/'),
+    'ms per call',
+    JSON.stringify(timing),
+  );
+}
