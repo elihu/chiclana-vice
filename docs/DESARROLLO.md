@@ -94,9 +94,10 @@ sin bundler ni compilación:
 | `js/app.js`      | `startGame`, `init`, `frame` y `showStartupError`                              |
 | `js/test-api.js` | API de pruebas (`createPublicApi`, `createTestApi`)                            |
 
-Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. La
-excepción es `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
-puede importarse desde cualquier capa. `tests/verify-modules.mjs` falla si aparece un
+Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. Dos
+excepciones: `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
+puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudReadouts`),
+que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
 ciclo.
 
 - **Sin efectos de nivel superior**: ningún módulo toca `document`, `window`,
@@ -151,6 +152,6 @@ sustituye a una prueba en móvil físico.
 - camelCase para variables y funciones; PascalCase para clases.
 - Prettier: dos espacios, comillas simples, punto y coma, 100 columnas. EditorConfig: UTF-8
   y LF; Python con cuatro espacios.
-- Separar módulos ES nuevos por responsabilidad cuando el cambio lo requiera; no dividir
-  el motor entero como parte de otra tarea.
+- Código nuevo en el módulo de su capa (ver «Módulos del juego»); un módulo nuevo solo si
+  la responsabilidad no encaja en uno existente.
 - Guías en `docs/` con nombres descriptivos en mayúsculas.

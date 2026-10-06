@@ -187,7 +187,10 @@ core  ←  engine  ←  world  ←  game  ←  ui  ←  app / test-api / entrada
 
 Un módulo solo importa de su capa o de capas a su izquierda, con una excepción
 deliberada: `ui/feedback.js` (`toast` y `loadProgress`) solo depende de `core/` y lo
-puede importar cualquier capa (la cámara, el audio y los constructores lo usan). El
+puede importar cualquier capa (la cámara, el audio y los constructores lo usan). Segunda
+excepción, comprobada al ejecutar la fase 1: `ui/hud.js` lo importan `game/missions`,
+`player`, `police` y `update` para refrescar el marcador; no crea ciclos. Nota de ejecución:
+`platform` pasó a `gfx.platform` en 1.12 (lo necesita `loadLayers`), no en 1.13. El
 reparto de
 [MAPA-FUNCIONES.md](plan-modular/MAPA-FUNCIONES.md) está calculado para que el grafo sea
 acíclico; `verify-modules.mjs` lo comprueba y falla con la lista del ciclo. Si un paso
