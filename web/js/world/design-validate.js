@@ -489,6 +489,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'crossings',
     'centerLines',
     'signs',
+    'vegetation',
   ];
   onlyKeys(json, ['$schema', 'version', 'description', 'license', 'attribution', ...sections], '$');
   if (json.version !== 1) fail('version', 'debe ser 1');
@@ -621,5 +622,28 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'centerLines',
   );
   check(json.signs, { maximum: 'int', offset: 'nonneg', minimumPoints: 'int' }, 'signs');
+  check(
+    json.vegetation,
+    {
+      parkDensity: 'pos',
+      parkMaximum: 'int',
+      spacing: 'pos',
+      roadClearance: 'nonneg',
+      buildingClearance: 'nonneg',
+      marketTrees: {
+        from: 'point',
+        to: 'point',
+        shift: 'point',
+        count: 'int',
+        roadClearance: 'nonneg',
+        buildingClearance: 'nonneg',
+        colliderClearance: 'nonneg',
+      },
+      shrubEveryVertex: 'int',
+      shrubRoadClearance: 'nonneg',
+      shrubBuildingClearance: 'nonneg',
+    },
+    'vegetation',
+  );
   return errors;
 }

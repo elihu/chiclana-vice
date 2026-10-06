@@ -12,7 +12,8 @@
     "pavements",
     "crossings",
     "centerLines",
-    "signs"
+    "signs",
+    "vegetation"
   ],
   "additionalProperties": false,
   "properties": {
@@ -417,6 +418,91 @@
         "minimumPoints": {
           "type": "integer",
           "minimum": 1
+        }
+      }
+    },
+    "vegetation": {
+      "description": "Plantación de árboles y arbustos. Los modelos y los tonos aleatorios están en el motor.",
+      "type": "object",
+      "required": [
+        "parkDensity",
+        "parkMaximum",
+        "spacing",
+        "roadClearance",
+        "buildingClearance",
+        "marketTrees",
+        "shrubEveryVertex",
+        "shrubRoadClearance",
+        "shrubBuildingClearance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "parkDensity": {
+          "$ref": "#/$defs/positive",
+          "description": "Un intento de árbol por cada parkDensity m² de la caja del parque."
+        },
+        "parkMaximum": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Máximo de intentos por parque."
+        },
+        "spacing": {
+          "$ref": "#/$defs/positive",
+          "description": "Separación mínima entre árboles."
+        },
+        "roadClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "buildingClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "marketTrees": {
+          "description": "Árboles de la plaza del Mercado, repartidos entre from y to y desplazados shift.",
+          "type": "object",
+          "required": [
+            "from",
+            "to",
+            "shift",
+            "count",
+            "roadClearance",
+            "buildingClearance",
+            "colliderClearance"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "$ref": "#/$defs/point"
+            },
+            "to": {
+              "$ref": "#/$defs/point"
+            },
+            "shift": {
+              "$ref": "#/$defs/point"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "roadClearance": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "buildingClearance": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "colliderClearance": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "shrubEveryVertex": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "shrubRoadClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "shrubBuildingClearance": {
+          "$ref": "#/$defs/nonNegative"
         }
       }
     }

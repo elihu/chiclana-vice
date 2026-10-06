@@ -107,6 +107,8 @@ for (const f of catalog.fronts) {
     furniture.plazaLamps.from,
     furniture.plazaLamps.to,
     ...furniture.benches.map((b) => b.slice(0, 2)),
+    city.vegetation.marketTrees.from,
+    city.vegetation.marketTrees.to,
   ])
     assert(inside(p), `furniture point ${p} inside the world`);
   for (const street of furniture.bollards.streets)

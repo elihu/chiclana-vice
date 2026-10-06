@@ -706,6 +706,25 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         opacity: 0.55,
       },
       signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
+      vegetation: {
+        parkDensity: 105,
+        parkMaximum: 100,
+        spacing: 4.2,
+        roadClearance: 2,
+        buildingClearance: 1.8,
+        marketTrees: {
+          from: [0, 0],
+          to: [4, 4],
+          shift: [1, 1],
+          count: 5,
+          roadClearance: 1.2,
+          buildingClearance: 1.8,
+          colliderClearance: 2,
+        },
+        shrubEveryVertex: 3,
+        shrubRoadClearance: 1,
+        shrubBuildingClearance: 0.7,
+      },
     };
     const check = (edit, pattern) => {
       const copy = structuredClone(base);
@@ -744,6 +763,11 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.centerLines.opacity = 2), /centerLines\.opacity: .*\(0, 1\]/);
     check((c) => (c.signs.maximum = 0), /signs\.maximum: .*entero/);
     check((c) => delete c.crossings, /crossings: se esperaba un objeto/);
+    check((c) => (c.vegetation.parkDensity = 0), /vegetation\.parkDensity: .*positivo/);
+    check((c) => (c.vegetation.parkMaximum = 1.5), /vegetation\.parkMaximum: .*entero/);
+    check((c) => (c.vegetation.marketTrees.from = [1]), /marketTrees\.from: se esperaba \[x, z\]/);
+    check((c) => delete c.vegetation.shrubEveryVertex, /vegetation\.shrubEveryVertex: falta/);
+    check((c) => (c.vegetation.extra = 1), /vegetation\.extra: clave desconocida/);
   }
   delete globalThis.document;
 }

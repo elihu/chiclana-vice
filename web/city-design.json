@@ -127,5 +127,24 @@
     "maximum": 91,
     "offset": 0.5,
     "minimumPoints": 3
+  },
+  "vegetation": {
+    "parkDensity": 105,
+    "parkMaximum": 100,
+    "spacing": 4.2,
+    "roadClearance": 2,
+    "buildingClearance": 1.8,
+    "marketTrees": {
+      "from": [-254, -164],
+      "to": [-195, -98],
+      "shift": [9, -8],
+      "count": 5,
+      "roadClearance": 1.2,
+      "buildingClearance": 1.8,
+      "colliderClearance": 2
+    },
+    "shrubEveryVertex": 3,
+    "shrubRoadClearance": 1,
+    "shrubBuildingClearance": 0.7
   }
 }
