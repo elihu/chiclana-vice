@@ -52,7 +52,8 @@ Nunca:
 
 ## Estructura
 
-- `web/`: sitio publicado y fuente editable (`game3d.js`, `style.css`, `index.html`, capas
+- `web/`: sitio publicado y fuente editable (`game3d.js` como entrada y el juego en
+  módulos ES en `js/`, `style.css`, `index.html`, capas
   JSON, `arcade/`, `vendor/`, `licenses/`).
 - `tools/`: conversores y generadores de datos (Node `.mjs`, Python `.py`).
 - `tests/`: verificadores en Node de datos y flujos del juego.

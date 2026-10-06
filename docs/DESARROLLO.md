@@ -23,20 +23,28 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-| Script                 | Qué hace                                                         |
-| ---------------------- | ---------------------------------------------------------------- |
-| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                |
-| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración     |
-| `npm run format`       | Aplica el formato                                                |
-| `npm test`             | `tests/verify-world.mjs` (datos) y `tests/verify3d.mjs` (flujos) |
-| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                     |
+| Script                 | Qué hace                                                          |
+| ---------------------- | ----------------------------------------------------------------- |
+| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                 |
+| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración      |
+| `npm run format`       | Aplica el formato                                                 |
+| `npm test`             | `verify-world.mjs` (datos), `verify-modules.mjs` y `verify3d.mjs` |
+| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                      |
 
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
 móvil físico. Si un cambio afecta a interfaz, cámara, render o controles, probarlo en un
 navegador real y anotar qué no se ha verificado. El arnés común `tests/runtime-harness.mjs`, compartido por el verificador y el exportador
-de frentes, crea y elimina su módulo temporal fuera del repositorio. Engancha el juego con
-sustituciones de texto que fallan con un error claro si dejan de coincidir.
+de frentes, crea los globales simulados e importa el juego con `import()`; no modifica su
+texto. El juego expone su API de pruebas a través de `startGame()`.
+
+Para refactorizaciones sin cambios visibles hay dos herramientas aparte, que no forman parte
+de `npm test`. `node tools/scene-fingerprint.mjs --out base.json` guarda una huella de la
+escena (objetos, materiales, geometría por bytes, rutas, recursos pedidos y 600 pasos de
+simulación en CPU) y `--compare base.json` la contrasta con la del árbol actual.
+`node tools/browser-smoke.mjs URL` abre el juego en Chrome sin interfaz (SwiftShader), recoge
+errores y cuenta mallas y triángulos. Se comparan en la misma máquina y con la misma versión
+de Node, y no acreditan GPU, rendimiento ni móvil.
 
 Prettier no formatea los datos (`web/*.json`, `source-data/`), las licencias ni
 `web/vendor/`. Las versiones de las herramientas están fijadas en `package-lock.json`, que
@@ -47,6 +55,8 @@ se versiona. El juego no necesita `node_modules`.
 | Ruta             | Contenido                                                          |
 | ---------------- | ------------------------------------------------------------------ |
 | `web/`           | Juego, capas de datos y recursos publicados en Pages               |
+| `web/game3d.js`  | Entrada del juego: lee `?v=` y llama a `startGame()`               |
+| `web/js/`        | Módulos ES del juego, por capas (ver «Módulos del juego»)          |
 | `web/arcade/`    | Versión arcade anterior, independiente                             |
 | `web/vendor/`    | Three.js r169 y su licencia; no se reformatea                      |
 | `web/licenses/`  | Textos completos de licencias de datos                             |
@@ -68,6 +78,43 @@ el juego y los tests. `web/progress.js` valida las partidas guardadas antes de u
 
 Los objetos de calle se cargan de `web/street-objects.json` (capa opcional) y
 `web/osm-world.json` es la única copia de las vías.
+
+## Módulos del juego
+
+`web/game3d.js` es solo la entrada; el código está en módulos ES nativos bajo `web/js/`,
+sin bundler ni compilación:
+
+| Carpeta          | Contenido                                                                      |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `js/core/`       | Estado compartido (`state.js`), matemáticas, azar con semilla, DOM y `asset()` |
+| `js/engine/`     | Materiales y cachés de geometría, texturas, renderizador, cámara y audio       |
+| `js/world/`      | Carga de capas, índice espacial y constructores (edificios, fachadas, calles…) |
+| `js/game/`       | Grafo y rutas, vehículos, personas, tráfico, policía, misiones, jugador, bucle |
+| `js/ui/`         | Avisos, HUD, mapa, diálogos, entrada y controles                               |
+| `js/app.js`      | `startGame`, `init`, `frame` y `showStartupError`                              |
+| `js/test-api.js` | API de pruebas (`createPublicApi`, `createTestApi`)                            |
+
+Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. Dos
+excepciones: `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
+puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudReadouts`),
+que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
+ciclo.
+
+- **Sin efectos de nivel superior**: ningún módulo toca `document`, `window`,
+  `localStorage` ni registra oyentes al evaluarse; todo ocurre dentro de funciones que
+  llama `startGame()`. Así Node puede importar cualquier módulo sin DOM.
+- **Estado compartido**: los contenedores (arrays, `Map`, objetos) se exportan de
+  `core/state.js` con su nombre y se mutan, nunca se reasignan; los escalares
+  reasignables son propiedades de `world`, `gfx`, `session`, `view`, `pointer`, `actors`
+  y `audio`. No se desestructuran fuera de una función.
+- **Importmap y versión**: los módulos se importan con rutas relativas sin `?v=`.
+  `index.html` declara un importmap cuyas claves son esas rutas y cuyos valores llevan
+  `?v=VERSION`, más un `modulepreload` por módulo. `game3d.js` pasa su propio `?v=` a
+  `startGame({ version })`, que lo usa para los JSON y la ortofoto. Al añadir un módulo,
+  inclúyelo en el importmap y en los `modulepreload`.
+- **Cambiar la versión**: sustituir todas las apariciones a la vez, por ejemplo
+  `sed -i 's/?v=[^"]*"/?v=NUEVA"/g' web/index.html`; `verify-modules.mjs` detecta
+  cualquier olvido.
 
 ## Modo ligero
 
@@ -105,6 +152,6 @@ sustituye a una prueba en móvil físico.
 - camelCase para variables y funciones; PascalCase para clases.
 - Prettier: dos espacios, comillas simples, punto y coma, 100 columnas. EditorConfig: UTF-8
   y LF; Python con cuatro espacios.
-- Separar módulos ES nuevos por responsabilidad cuando el cambio lo requiera; no dividir
-  el motor entero como parte de otra tarea.
+- Código nuevo en el módulo de su capa (ver «Módulos del juego»); un módulo nuevo solo si
+  la responsabilidad no encaja en uno existente.
 - Guías en `docs/` con nombres descriptivos en mayúsculas.
