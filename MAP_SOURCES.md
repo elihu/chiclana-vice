@@ -18,6 +18,9 @@ Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen
 - © IGN / PNOA / SCNE, ortofoto máxima actualidad, CC BY 4.0 compatible.
   WMS 1.1.1, capa OI.OrthoimageCoverage, EPSG:4326, límites anteriores,
   4096×3072 JPEG para suelo/tejados. Consulta 4/10/2026.
+  Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es).
+  Fecha comprobada el 6/10/2026 con GetFeatureInfo OI.MosaicElement en el centro
+  del sector; GetMap actual coincide por SHA256 con aerial.jpg distribuida.
   https://www.ign.es/wms-inspire/pnoa-ma
 - IGN / PNOA-LiDAR PRIMERA cobertura 2008–2015: MDSnE2,5 WCS, CC BY 4.0
   scne.es declarado por el servicio, consulta 5/10/2026. Recorte local EPSG:3042,
