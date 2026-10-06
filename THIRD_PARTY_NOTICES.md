@@ -1,6 +1,9 @@
 # Licencias, procedencia y alcance
 
-Código propio: MIT, Copyright 2026 elihu, véase LICENSE.
+Código propio y documentación propia: MIT, Copyright 2026 elihu, véase LICENSE.
+Alcance: únicamente código y documentación originales. Librerías, bases de datos,
+imágenes aéreas, mediciones derivadas y material visual de terceros conservan
+sus condiciones; LICENSE no concede sus derechos ni cambia sus licencias.
 MIT no sustituye las condiciones de datos, imágenes, librerías o derechos ajenos.
 La conversión a JSON y la distribución gratuita no extinguen sus obligaciones.
 El juego es independiente, sin afiliación ni recursos de Rockstar Games.

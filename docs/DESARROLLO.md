@@ -15,7 +15,7 @@ usar `--bind 0.0.0.0` y la IP local del PC. El progreso se guarda por navegador.
 
 Datos y conversores: [DATOS_PUBLICOS.md](DATOS_PUBLICOS.md).
 Fuentes: [MAP_SOURCES.md](MAP_SOURCES.md).
-Licencias: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Licencias: [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 Código propio MIT; datos y recursos de terceros mantienen sus condiciones.
 La copia pública no incluye originales Catastro, rásteres ni fotografías de referencia.
 
