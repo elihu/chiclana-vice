@@ -821,8 +821,7 @@ las señales y el ambiente de escena.
 Archivos de diseño: se editan a mano en `web/` (como ya ocurre con
 `facade-profiles.json`), los valida `tests/verify-world.mjs` y, tras editarlos, se ejecuta
 `node tools/export-provenance.mjs`. Es una excepción a «los JSON de `web/` se generan con
-`tools/`» que hay que confirmar (pregunta abierta 1); si el usuario la rechaza, los
-fuentes van a `source-data/design/` y un `tools/export-design.mjs` los valida y copia.
+`tools/`», aprobada por el usuario (sección 11, decisión 1).
 
 En cada paso de migración, la huella debe ser idéntica salvo `resources` cuando el paso
 añade un archivo nuevo a la carga; en ese caso se compara con `--ignore resources`, se
@@ -859,8 +858,8 @@ commit, se regenera la referencia con `--out /tmp/chiclana-fp/base.json`.
 - **Archivos**: `web/facade-designs.json`, `web/js/world/design-validate.js`,
   `web/js/world/facade-composer.js` (nuevos), `web/js/world/loader.js`,
   `tests/verify-world.mjs`, `tests/verify-design.mjs`, `tools/export-provenance.mjs`,
-  `web/data-sources.json`, `web/index.html`, `THIRD_PARTY_NOTICES.md` solo si el usuario
-  aprueba la licencia (pregunta abierta 2).
+  `web/data-sources.json`, `web/index.html`, `THIRD_PARTY_NOTICES.md` (licencia ODbL según
+  la sección 11, decisión 2).
 - **Instrucciones**:
   1. Crea `web/facade-designs.json` copiando `facade-designs.example.json` (sin la clave
      `$schema` si el usuario no quiere esquemas en `web/`; ver K6).
@@ -1059,29 +1058,28 @@ papelera y bolardo siguen en código (son piezas del motor, como las del kit).
 | 3    | 2     | 2       | +60                                                                     | Al final                                               |
 
 Cada paso de la fase 1 cabe en una sesión corta; los pasos 1.4–1.7 y 1.17 son los más
-largos por el número de referencias. La fase 2 depende de las respuestas a las
-preguntas abiertas 1 y 2 para empezar el paso 2.3.
+largos por el número de referencias. Las decisiones que necesita la fase 2
+están en la sección 11.
 
-## 11. Preguntas abiertas para el usuario
+## 11. Decisiones del usuario (6/10/2026)
 
-1. **Archivos de diseño en `web/`**: ¿se permite editar a mano `facade-designs.json`,
-   `city-design.json` y `map-corrections.json` en `web/` (como ya ocurre con
-   `facade-profiles.json`), con validación en `verify-world`? Por defecto el plan lo
-   propone y modifica `AGENTS.md` y `tools/AGENTS.md` en 2.12; la alternativa es
-   `source-data/design/` más un exportador.
-2. **Licencia de los diseños**: `facade-designs.json` y `city-design.json` contienen
-   parámetros propios, coordenadas tomadas de vértices catastrales y nombres de calle de
-   OSM. Propuesta: declararlos como `frontages.json` (ODbL 1.0 en conjunto, con
-   atribución a Catastro); alternativa: parámetros propios con las mismas condiciones que
-   `facade-profiles.json` y sin nombres de calle (selección por ID de vía).
-3. **Correcciones y OSM**: ¿las correcciones de errores reales se suben también a
-   OpenStreetMap? El plan asume que esta capa es para ajustes de juego y
-   provisionales.
-4. **Modo `?debug` en producción**: el plan lo deja disponible en la web publicada (solo
-   lee y muestra datos ya públicos). ¿Prefieres que solo funcione en `localhost`?
-5. **Reanclar el Mercado a aristas catastrales** después del piloto cambiaría
-   ligeramente su geometría (sentido de la arista y el cuarto vértice): ¿se hace en un
-   commit `feat` aparte con revisión visual o se mantiene el contorno actual?
+Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas decisiones.
+
+1. **Archivos de diseño en `web/`**: sí. `facade-designs.json`, `city-design.json` y
+   `map-corrections.json` son ficheros de autor editables a mano en `web/`, validados en
+   `verify-world`. Se aplica lo previsto en 2.12 para `AGENTS.md` y `tools/AGENTS.md`.
+2. **Licencias**: `facade-designs.json`, `city-design.json` y `map-corrections.json` van
+   bajo ODbL 1.0 en conjunto, como `frontages.json`, con atribución a Catastro (vértices de
+   anclaje) y a OSM (identificadores y nombres). Es la propuesta K6: sus anclajes usan
+   vértices catastrales e identificadores de OSM, y declararlos MIT obligaría a rediseñar
+   los anclajes. El código del motor y del compositor sigue bajo MIT. Registrarlos en
+   `export-provenance.mjs`, `data-sources.json` y `THIRD_PARTY_NOTICES.md` tal como indica
+   K6.
+3. **Correcciones y OSM**: no es obligatorio subirlas. La capa es para ajustes de juego;
+   si se detecta un error real, el usuario puede corregirlo en OSM a mano.
+4. **Modo `?debug`**: disponible también en la web publicada.
+5. **Reanclar el Mercado**: sí, en un commit `feat` propio, separado del refactor, con
+   huella nueva documentada y revisión visual del usuario antes de seguir.
 
 ## 12. Fuentes consultadas
 

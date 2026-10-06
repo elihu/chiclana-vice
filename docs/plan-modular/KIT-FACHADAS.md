@@ -209,8 +209,8 @@ Solo en `tests/verify-world.mjs` (cruzadas):
 
 ## K6. Procedencia, licencia y esquemas
 
-Registro propuesto para `tools/export-provenance.mjs` (pendiente de la pregunta abierta
-2; texto en inglés como el resto de registros):
+Registro propuesto para `tools/export-provenance.mjs` (licencia decidida en la sección 11 de
+PLAN-MODULAR.md; texto en inglés como el resto de registros):
 
 ```js
 {

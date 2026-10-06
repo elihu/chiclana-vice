@@ -3,7 +3,7 @@
   "version": 1,
   "kit": 1,
   "description": "Approximate authored facade compositions; parametric primitives interpreted from references, no photographic textures. References and conditions in THIRD_PARTY_NOTICES.md.",
-  "license": "Pendiente de la pregunta abierta 2 de docs/PLAN-MODULAR.md",
+  "license": "ODbL-1.0",
   "attribution": "Anchor vertices from D.G. del Catastro INSPIRE BU; street identifiers © OpenStreetMap contributors",
   "recipes": {
     "mercado-fachada": {
