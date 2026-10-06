@@ -35,8 +35,8 @@ Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisi
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
 móvil físico. Si un cambio afecta a interfaz, cámara, render o controles, probarlo en un
 navegador real y anotar qué no se ha verificado. El arnés común `tests/runtime-harness.mjs`, compartido por el verificador y el exportador
-de frentes, crea y elimina su módulo temporal fuera del repositorio. Engancha el juego con
-sustituciones de texto que fallan con un error claro si dejan de coincidir.
+de frentes, crea los globales simulados e importa el juego con `import()`; no modifica su
+texto. El juego expone su API de pruebas a través de `startGame()`.
 
 Para refactorizaciones sin cambios visibles hay dos herramientas aparte, que no forman parte
 de `npm test`. `node tools/scene-fingerprint.mjs --out base.json` guarda una huella de la

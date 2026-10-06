@@ -384,7 +384,8 @@ node tools/scene-fingerprint.mjs --compare /tmp/chiclana-fp/base.json > /dev/nul
 
 La segunda orden imprime `Huella idéntica a …` y termina con 0, o lista las diferencias y
 termina con 1. Si `/tmp/chiclana-fp/base.json` no existe (reinicio), regenerarlo así, con
-`BASE` igual al commit indicado en el paso 0.2:
+`BASE` = `092318d` (commit del paso 0.1 en `refactor/modulos`: primer commit que incluye
+`tools/scene-fingerprint.mjs`; su escena es idéntica a la de `main`):
 
 ```fish
 rm -rf /tmp/chiclana-fp-base; mkdir -p /tmp/chiclana-fp-base
@@ -396,13 +397,19 @@ cd /tmp/chiclana-fp-base; and node $repo/tools/scene-fingerprint.mjs --out /tmp/
 ### 3.3 Verificación en navegador (VB), cuando el paso lo pida
 
 ```fish
-uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web &
-node tools/browser-smoke.mjs http://127.0.0.1:8080/
+uv run --no-project python -m http.server 8091 --bind 127.0.0.1 --directory web &
+set srv1 $last_pid
+node tools/browser-smoke.mjs http://127.0.0.1:8091/
 mkdir -p /tmp/chiclana-pages; ln -sfn (pwd)/web /tmp/chiclana-pages/chiclana-vice
-uv run --no-project python -m http.server 8081 --bind 127.0.0.1 --directory /tmp/chiclana-pages &
-node tools/browser-smoke.mjs http://127.0.0.1:8081/chiclana-vice/
-pkill -f 'http.server 808'
+uv run --no-project python -m http.server 8092 --bind 127.0.0.1 --directory /tmp/chiclana-pages &
+set srv2 $last_pid
+node tools/browser-smoke.mjs http://127.0.0.1:8092/chiclana-vice/
+kill $srv1 $srv2
 ```
+
+Usa SOLO los puertos 8091 y 8092 y cierra los servidores por su PID, en una orden
+separada. NUNCA uses `pkill` ni mates otros `http.server`: el usuario tiene los suyos en
+8080 y 8081.
 
 Resultado esperado: `"ready": true`, `"errors": []`, `"unversioned": []`, `meshes` 1421 y
 `triangles` 917276 en ambas URL (valores de `main` 5666928; si la referencia del paso 0.2
