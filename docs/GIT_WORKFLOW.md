@@ -1,95 +1,146 @@
-# Flujo local de Git
+# Flujo de Git
 
-## Repositorio de esta copia
+Desarrollo basado en tronco (_trunk-based_) con ramas cortas. `main` es la versión
+integrada y cada push a `main` publica el juego en Pages tras pasar la CI. No hay rama
+`develop` ni ramas de release.
 
-Repositorio convencional en `.git`, rama principal `main` y etiqueta inicial
-`baseline-2026-10-05`. No hay remoto configurado. Los commits y merges son locales
-y no publican la web. Se usa la identidad Git configurada en este equipo.
+Repositorio: https://github.com/elihu/chiclana-vice (remoto `origin`). La identidad de Git
+se configura en el propio repositorio, no se hereda la global:
 
-```bash
-git status
-git log --oneline --graph --all
+```fish
+git config user.name elihu
+git config user.email 4126552+elihu@users.noreply.github.com
 ```
 
-## Una rama por cambio
+## Ramas
 
-Mantener `main` como versión integrada. Crear ramas cortas `feat/tema`,
-`fix/tema`, `perf/tema`, `docs/tema` o `research/tema`. Una rama debe tener
-un objetivo revisable. Para este proyecto no necesitamos una rama `develop`
-permanente ni ramas de releases paralelas.
+- Nombre `tipo/tema-concreto`, con el mismo tipo que los commits: `feat/`, `fix/`,
+  `perf/`, `docs/`, `test/`, `ci/`, `chore/`, `refactor/`.
+- Una rama, un objetivo revisable. Vida corta: horas o pocos días.
+- Las ramas parten de `main` y vuelven a `main` con `merge --no-ff`, que deja un commit de
+  integración por tarea y permite revertirla de una vez.
 
-1. Leer `AGENTS.md`, `docs/DESARROLLO.md`, `docs/CONTINUAR-CODEX.md` y `docs/MAP_SOURCES.md`.
-2. Revisar el estado; si hay cambios pendientes, identificarlos antes de cambiar de rama.
-3. Partir de `main`:
+## Un worktree por agente
 
-```bash
-git status --short --branch
+Cada agente trabaja en su propio worktree y su propia rama, de modo que varios agentes
+pueden avanzar en paralelo sin pisarse el árbol de trabajo. El repositorio principal
+(`chiclana-vice-public`) queda en `main` y es donde se integra.
+
+Crear el worktree (la barra de la rama se sustituye por un guion en la carpeta):
+
+```fish
+cd /home/elihu/GIT/chiclana-vice-public
 git switch main
-git switch -c feat/nombre-concreto
+git worktree add ../chiclana-vice-wt/feat-tema -b feat/tema main
+ln -s /home/elihu/GIT/chiclana-vice-public/node_modules ../chiclana-vice-wt/feat-tema/node_modules
 ```
 
-4. Implementar un cambio acotado. Editar directamente `web`; mantener
-   coordenadas, capacidades, modo ligero, atribuciones y controles táctiles.
-5. Verificar los flujos afectados. Para cambios del juego:
+`node_modules` está ignorado; el enlace evita instalar las herramientas en cada worktree.
+Dentro de un worktree no se ejecuta `npm install`.
 
-```bash
-node --input-type=module --check < web/game3d.js
-node tests/verify3d.mjs
-uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web
+Reglas para el agente:
+
+- Trabajar solo en su worktree y su rama. No tocar `main`, otros worktrees ni el remoto.
+- No hacer merge, rebase ni push salvo petición explícita.
+- Hacer commits pequeños y dejar `npm run check` en verde en el último.
+- Al terminar, informar de la rama, los commits (`git log --oneline main..HEAD`), lo
+  verificado y lo pendiente.
+
+## Commits
+
+[Conventional Commits 1.0](https://www.conventionalcommits.org/es/v1.0.0/) en español:
+
+```text
+tipo(ámbito opcional): descripción breve en minúscula y sin punto final
+
+Cuerpo opcional: por qué se hace el cambio y qué se ha verificado.
 ```
 
-El servidor se termina con Ctrl+C. La prueba CPU no acredita render GPU ni móvil.
-Si se cambia interfaz, cámara o render, comprobarlo en navegador real; si afecta
-controles/rendimiento móvil, registrar también dispositivo, navegador,
-orientaciones y pruebas realizadas, o dejar explícitamente pendiente esa validación.
-Para documentación basta revisar enlaces, contenido y diff; no repetir pruebas
-del juego sin motivo.
+- Tipos: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `ci`, `chore`. Ámbitos útiles:
+  `juego`, `datos`, `movil`, `tests`, `tools`.
+- Un cambio rompe compatibilidad si invalida partidas guardadas, URL públicas o el formato
+  de las capas de datos. Se marca con `!` (`feat(datos)!: …`) y se explica en el cuerpo.
+- Los commits de integración usan `merge: integrar tipo/tema`.
+- Nunca trailers `Co-Authored-By` ni líneas de atribución, tampoco de agentes de IA, en
+  commits, merges o pull requests.
+- Revisar antes de confirmar y añadir rutas concretas:
 
-6. Actualizar `docs/CONTINUAR-CODEX.md` con estado y pendientes; actualizar
-   `docs/MAP_SOURCES.md` cuando cambien datos, referencias o aproximaciones.
-7. Revisar y seleccionar archivos, usando rutas concretas:
-
-```bash
+```fish
+git status --short --branch
 git diff --check
-git diff
-git add web/game3d.js docs/CONTINUAR-CODEX.md
+git add ruta/concreta otra/ruta
 git diff --cached
-git commit -m 'feat: describir el comportamiento añadido'
+git commit -m 'fix(juego): describir el comportamiento corregido'
 ```
 
-Usar `fix:`, `perf:`, `docs:` o `chore:` según el propósito. Cada commit debe
-explicar un cambio coherente. No añadir credenciales ni resultados temporales.
-Las fuentes y recursos actuales quedan versionados; si entran nubes LiDAR grandes,
-guardar procedencia, versión y checksum y decidir su almacenamiento antes de añadirlas.
+## Integrar
 
-8. Integrar una vez revisado y comprobado:
+Lo hace el usuario o un agente al que se le pida expresamente (habilidad `integrar-rama`).
+No hay pull requests obligatorios: la integración es un merge local `--no-ff` tras
+`npm run check`, y la CI vuelve a comprobar `main` antes de desplegar.
 
-```bash
+```fish
+cd /home/elihu/GIT/chiclana-vice-public
 git switch main
-git merge --no-ff feat/nombre-concreto -m 'merge: integrar nombre-concreto'
-git branch -d feat/nombre-concreto
-git status --short --branch
+git merge --no-ff feat/tema -m 'merge: integrar feat/tema'
+npm run check
 ```
 
-Si hay conflictos, resolverlos y volver a comprobar los flujos afectados antes
-de terminar el merge. Para abandonarlo: `git merge --abort`.
-Deshacer un cambio integrado mediante `revert` conserva el historial;
-para un merge se necesita `revert -m 1 HASH_DEL_MERGE`.
-Etiquetar hitos comprobados con `tag -a v0.1.0 -m 'Descripción y validación'`.
-Una etiqueta no significa que se haya publicado ni probado en móvil.
+- Con varias ramas en paralelo, integrar de una en una y repetir `npm run check` tras cada
+  merge. Si hay conflictos, resolverlos, comprobar y terminar el merge; para abandonarlo,
+  `git merge --abort`.
+- `docs/ESTADO.md` se actualiza en `main` tras integrar, no en cada rama.
+- Para cambios grandes, conviene subir antes la rama (`git push -u origin feat/tema`) para
+  que la CI la compruebe también con la versión mínima de Node.
+- Publicar es `git push origin main` y requiere petición explícita: dispara el despliegue.
+- Limpiar después:
 
-Referencia del enfoque de ramas cortas: [Pro Git: Branching Workflows](https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows).
+```fish
+git worktree remove ../chiclana-vice-wt/feat-tema
+git branch -d feat/tema
+```
 
-## Edición pública y despliegue
+Para deshacer una tarea ya integrada sin reescribir historial:
+`git revert -m 1 HASH_DEL_MERGE`.
 
-Esta copia histórica conserva investigación y antiguos originales en commits
-anteriores; no subir su historial como repositorio público. `tools/export-public.mjs`
-crea un snapshot revisado con lista explícita; su Git nuevo conserva un flujo normal
-de ramas/commits. Los originales actuales se guardan en caché externa.
+## Etiquetas y releases
 
-Una vez creado el remoto de la edición pública, trabajar en esa copia, integrar
-features verificadas en main y ejecutar `git push origin main`. Eso publica web
-automáticamente mediante GitHub Actions. Un push de una rama feature no publica.
-`node tests/verify-world.mjs` verifica también fuentes, capas y licencias.
-Las ramas posteriores conservan historial público normal: solo el corte inicial
-excluye el historial local con originales restringidos. Véase PUBLICACION.md.
+- Etiquetas anotadas `vMAYOR.MENOR.PARCHE` sobre commits de `main` ya desplegados.
+  MAYOR: rompe partidas guardadas, URL o formato de datos; MENOR: funcionalidad o datos
+  nuevos; PARCHE: correcciones.
+- Crear la release con notas generadas a partir de los commits:
+
+```fish
+git tag -a v1.0.0 -m 'Descripción y validación realizada'
+git push origin v1.0.0
+gh release create v1.0.0 --verify-tag --generate-notes
+```
+
+- Una etiqueta no despliega nada y no implica una prueba en móvil.
+- Primera etiqueta: `v1.0.0` (coincide con `package.json`), que crea el integrador al
+  final, cuando todas las ramas en curso estén integradas, `npm run check` pase en `main`
+  y el despliegue haya terminado. Ver [ESTADO.md](ESTADO.md).
+- No hay `CHANGELOG.md`: las notas de cada release y el historial de Conventional Commits
+  cumplen esa función sin provocar conflictos entre ramas paralelas.
+
+## Reescritura de historial
+
+`main` publicado no se reescribe. Excepciones: credenciales, datos personales o contenido
+de terceros que deba retirarse. En ese caso:
+
+1. Copia de seguridad: `git bundle create ../chiclana-vice-AAAAMMDD.bundle --all`.
+2. Reescribir con `git filter-repo` en un clon limpio.
+3. Revisar el resultado y que `npm run check` pase.
+4. Publicar desde la cuenta propietaria (la única en la lista de omisión de la regla que
+   bloquea el push forzado; ver [PUBLICACION.md](PUBLICACION.md)), con protección contra
+   pisar cambios ajenos:
+   `git push --force-with-lease=main:SHA_REMOTO_ACTUAL origin main` (obtener el SHA con
+   `git ls-remote origin main`).
+5. Recrear los worktrees y documentarlo en `docs/ESTADO.md`.
+
+GitHub puede conservar un tiempo los commits antiguos accesibles por su SHA; si hace falta
+purgarlos, hay que pedirlo a su soporte.
+
+Situación actual: el historial local se ha reescrito para quitar el nombre «Gerion Dev
+Team» de versiones antiguas de `LICENSE` y `THIRD_PARTY_NOTICES.md`. El push forzado a
+`origin` está pendiente de decisión del usuario (ver [ESTADO.md](ESTADO.md)).

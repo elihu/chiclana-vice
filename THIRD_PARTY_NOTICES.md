@@ -25,10 +25,15 @@ https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf
 © colaboradores de OpenStreetMap, ODbL 1.0, extracto del 4/10/2026.
 `osm-world.json` ofrece la capa usada completa: vías, parques/plazas/agua,
 árboles cartografiados e hitos; `street-objects.json` incluye objetos cartografiados.
-`roads-osm.json` mantiene el extracto descargable anterior de vías.
+`osm-world.json` es la única descarga ODbL de las vías; `roads-osm.json`, idéntico a
+sus vías, se elimina por decisión del 6/10/2026. TODO(integración): quitar esta mención
+cuando se fusione la rama que borra `roads-osm.json`.
 Transformaciones: recorte, coordenadas locales y categorías/ancho inferidos para juego.
-La asociación de nombres de calle con frentes en el catálogo también procede de OSM;
-las huellas Catastro y alturas IGN siguen identificadas con sus condiciones.
+`frontages.json` (catálogo de frentes) asocia nombres de calle de OSM con frentes de
+edificios y se ofrece en conjunto bajo ODbL 1.0 (decisión del 6/10/2026). Sus contornos
+proceden de Catastro y sus alturas de IGN: se mantienen como avisos adicionales de esas
+fuentes, con sus atribuciones. TODO(integración): pendiente de reflejarlo en
+`frontages.json` y `data-sources.json`.
 Los datos OSM y las contribuciones a esa base se ofrecen bajo ODbL, no bajo MIT.
 https://www.openstreetmap.org/copyright
 https://opendatacommons.org/licenses/odbl/1-0/
@@ -120,14 +125,37 @@ No se ofrecen garantías de exactitud geográfica, ausencia de derechos de terce
 ni respaldo de las instituciones citadas. La edición pública excluye originales
 Catastro y los anteriores derivados/auditorías/capturas REDIAM.
 
-## Resultado de la revisión de fachadas — 6/10/2026
+## Versión arcade
 
-Las fachadas genéricas se generan por reglas, sin fotografías de cada vivienda.
-Quedan abiertos dos puntos antes de considerar cerrada la revisión de monumentos:
-las figuras específicas de la portada de Jesús Nazareno y la dependencia del alzado
-moderno del Ayuntamiento para su escala vertical 1,6. No se ha verificado autoría
-y vigencia de derechos de esas figuras ni una licencia de adaptación del alzado.
-Las atribuciones anteriores documentan las consultas, no conceden esos permisos.
-No se han alterado esos modelos ni sus proporciones para aparentar una resolución.
-Para cerrar estos puntos: documentar una medición independiente del Ayuntamiento
-y sustituir las figuras por ornamentación propia o verificar sus derechos.
+`arcade/` es una versión anterior con un mapa ficticio. Su ayuda cita como inspiración el
+portal de Turismo de Chiclana y un plano turístico de la costa, sin redistribuirlos ni
+copiar su cartografía: calles, escalas y edificios están reinventados para el juego.
+
+## Riesgos conocidos asumidos
+
+Revisión de fachadas del 6/10/2026. Las fachadas genéricas se generan por reglas, sin
+fotografías de cada vivienda. Hay dos elementos cuyos derechos no se han verificado y que
+el mantenedor ha decidido conservar tal cual, como riesgo conocido:
+
+- Las figuras específicas de la portada de Jesús Nazareno, modeladas a partir de las
+  referencias citadas arriba (IAPH, CC BY-NC-SA 3.0; Commons, CC BY-SA 3.0).
+- La escala vertical del Ayuntamiento, interpretada del alzado del proyecto de 2006, para
+  el que no se ha identificado una licencia abierta.
+
+Las atribuciones documentan las consultas; no conceden esos permisos. Si un titular de
+derechos lo reclama, se aplicará el procedimiento siguiente.
+
+## Reclamaciones y retirada
+
+1. Contacto: únicamente mediante un issue público en
+   https://github.com/elihu/chiclana-vice/issues, indicando el elemento, la obra y la
+   titularidad. No hay correo de contacto; no incluir datos personales en el issue.
+2. Respuesta: acuse de recibo en un plazo de 7 días.
+3. Medida provisional, si la reclamación es verosímil: retirar el elemento o, si no es
+   posible hacerlo de inmediato, despublicar la web (Settings → Pages) hasta corregirlo.
+4. Corrección: rama `fix/retirada-…` que sustituya el elemento por una versión propia
+   (por ejemplo, ornamentación genérica o una escala medida de forma independiente) o lo
+   elimine; integrar en `main` y publicar. Actualizar estos avisos.
+5. Historial: el contenido retirado puede seguir en commits anteriores. Si el titular lo
+   exige, se reescribirá el historial según `docs/GIT_WORKFLOW.md`.
+6. Registro: anotar la reclamación y la medida en `docs/ESTADO.md`, sin datos personales.

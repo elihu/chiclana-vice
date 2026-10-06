@@ -11,3 +11,8 @@ node_modules/
 *.las
 rebuilt-city.json
 tests/qa3d-runtime.mjs
+# Instrucciones y ajustes personales de agentes
+CLAUDE.local.md
+AGENTS.override.md
+.claude/settings.local.json
+.claude/worktrees/

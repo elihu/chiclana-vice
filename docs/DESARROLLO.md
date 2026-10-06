@@ -1,52 +1,106 @@
-# Chiclana Vice
+# Desarrollo, estructura y convenciones
 
-Juego web estático 3D ambientado en coordenadas reales del centro de Chiclana.
-Incluye conducción, paseo a pie, cuatro encargos, mapa/buscador, cámara libre
-y modo ligero. No requiere npm, compilación ni backend.
+Juego web estático 3D sobre coordenadas reales del centro de Chiclana. `web/` es a la vez
+la fuente editable y lo que se publica: no hay compilación ni directorio `dist/`.
 
-Desde la raíz del repositorio:
+## Ejecutar
 
 ```fish
 uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web
 ```
 
-Abrir http://localhost:8080; Ctrl+C termina el servidor. Para acceso LAN de confianza,
-usar `--bind 0.0.0.0` y la IP local del PC. El progreso se guarda por navegador.
+Abrir http://localhost:8080; Ctrl+C detiene el servidor. Para probar desde otro equipo de
+una red de confianza, usar `--bind 0.0.0.0` y la IP local. El progreso se guarda en el
+navegador (`localStorage`), por origen.
 
-Datos y conversores: [DATOS_PUBLICOS.md](DATOS_PUBLICOS.md).
-Fuentes: [MAP_SOURCES.md](MAP_SOURCES.md).
-Licencias: [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
-Código propio MIT; datos y recursos de terceros mantienen sus condiciones.
-La copia pública no incluye originales Catastro, rásteres ni fotografías de referencia.
+Para reproducir las rutas de GitHub Pages, servir una carpeta que contenga `web/` con el
+nombre `chiclana-vice/` y abrir http://localhost:8080/chiclana-vice/.
 
-```fish
-node tests/verify-world.mjs
-node tests/verify3d.mjs
-```
-
-El verificador utiliza DOM/WebGL simulados; no mide GPU. Chrome desktop con GPU
-Intel Iris Xe ha sido comprobado; móvil físico pendiente. Alturas LiDAR de primera
-cobertura 2008–2015 aproximadas, fachadas interpretativas, terreno plano; sin
-precisión fotogramétrica ni validez catastral.
-
-Publicación: [PUBLICACION.md](PUBLICACION.md). El workflow despliega dist al hacer
-push a main tras pasar comprobaciones. Trabajar en ramas y hacer commits antes
-de integrar; [GIT_WORKFLOW.md](GIT_WORKFLOW.md). No se incluyen sesiones ni tokens.
-
-## Calidad del código
-
-Para desarrollo, instalar Node.js compatible con package.json y las herramientas:
+## Comprobar
 
 ```fish
-npm ci
+npm ci --ignore-scripts
 npm run check
 ```
 
-`npm run lint` comprueba JavaScript con ESLint; `npm run format:check` verifica
-formato de JS, HTML, CSS, Markdown y configuración con Prettier.
-`npm run format` aplica el formato. No se formatean datos geográficos, archivos
-generados, licencias empaquetadas ni código de terceros. ESLint no analiza Python
-ni CSS; los verificadores prueban el juego con DOM/WebGL simulados.
+| Script                 | Qué hace                                                         |
+| ---------------------- | ---------------------------------------------------------------- |
+| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                |
+| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración     |
+| `npm run format`       | Aplica el formato                                                |
+| `npm test`             | `tests/verify-world.mjs` (datos) y `tests/verify3d.mjs` (flujos) |
+| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                     |
 
-Las versiones están fijadas y package-lock.json debe mantenerse versionado.
-El juego se sirve directamente desde web/ sin instalar las herramientas.
+Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
+controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
+móvil físico. Si un cambio afecta a interfaz, cámara, render o controles, probarlo en un
+navegador real y anotar qué no se ha verificado. TODO(integración): revisar esta
+descripción cuando se fusione el arnés común de pruebas.
+
+Prettier no formatea los datos (`web/*.json`, `source-data/`), las licencias ni
+`web/vendor/`. Las versiones de las herramientas están fijadas en `package-lock.json`, que
+se versiona. El juego no necesita `node_modules`.
+
+## Estructura
+
+| Ruta             | Contenido                                                          |
+| ---------------- | ------------------------------------------------------------------ |
+| `web/`           | Juego, capas de datos y recursos publicados en Pages               |
+| `web/arcade/`    | Versión arcade anterior, independiente                             |
+| `web/vendor/`    | Three.js r169 y su licencia; no se reformatea                      |
+| `web/licenses/`  | Textos completos de licencias de datos                             |
+| `web/measure.js` | Medición opcional en el navegador; el juego no la importa          |
+| `tools/`         | Conversores y generadores de datos (ver `tools/AGENTS.md`)         |
+| `tests/`         | Verificadores en Node                                              |
+| `source-data/`   | Catálogo de frentes y auditoría IGN que usan los conversores       |
+| `docs/`          | Guías                                                              |
+| `.github/`       | CI, despliegue en Pages y Dependabot                               |
+| `.agents/`       | Habilidades compartidas por agentes (`.claude/skills/` las enlaza) |
+
+Copias intencionadas, que no se editan a mano: `web/LICENSE` y `web/THIRD_PARTY_NOTICES.md`
+(copias de la raíz) y `web/frontages.json` (copia de `source-data/facade-catalog.json`). Se
+regeneran con `node tools/export-provenance.mjs` y `tests/verify-world.mjs` comprueba que
+coinciden.
+
+Duplicados que no son intencionados y están pendientes (ver [ESTADO.md](ESTADO.md)): el
+array `mappedStreetObjects` de `web/game3d.js` repite `web/street-objects.json`, y
+`web/roads-osm.json` repite las vías de `web/osm-world.json`. TODO(integración): quitar
+esta frase cuando se fusionen las ramas que los eliminan.
+
+## Modo ligero
+
+Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
+
+- Fija la resolución de render a 1 píxel por píxel CSS (sin escalar por la densidad de
+  pantalla).
+- Acerca el final de la niebla para dibujar menos a lo lejos.
+- Desactiva el mapa de sombras del renderizador.
+
+Limitaciones conocidas (auditoría F1 y F9): las luces siguen marcadas para proyectar
+sombras, la elección no se guarda entre sesiones y la distancia de carga de las celdas de
+fachadas no se ajusta a la niebla. TODO(integración): actualizar esta sección con las
+ramas de rendimiento y móvil (sombras, persistencia, ortofoto reducida).
+
+## Medir en el navegador
+
+`web/measure.js` se publica pero no se carga con el juego. Con el juego en marcha y sin
+menús abiertos, en la consola:
+
+```js
+(await import('./measure.js')).measure({ label: 'normal' });
+```
+
+Registra durante unos segundos los intervalos entre frames (mediana, percentil 95) y el
+identificador de la GPU que expone el navegador, y descarga un JSON. Sirve para comparar antes y después en el mismo navegador y equipo; no
+sustituye a una prueba en móvil físico.
+
+## Convenciones de código
+
+- JavaScript de navegador `.js`; herramientas Node `.mjs`; Python `.py`. Archivos nuevos
+  en kebab-case.
+- camelCase para variables y funciones; PascalCase para clases.
+- Prettier: dos espacios, comillas simples, punto y coma, 100 columnas. EditorConfig: UTF-8
+  y LF; Python con cuatro espacios.
+- Separar módulos ES nuevos por responsabilidad cuando el cambio lo requiera; no dividir
+  el motor entero como parte de otra tarea.
+- Guías en `docs/` con nombres descriptivos en mayúsculas.
