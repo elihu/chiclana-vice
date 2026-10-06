@@ -42,6 +42,9 @@
       "conditions": "CC-BY-4.0 compatible IGN terms",
       "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
       "sourceUrl": "https://www.ign.es/wms-inspire/pnoa-ma",
+      "attribution": "Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)",
+      "acquisitionDate": "2022-07",
+      "acquisitionDateEvidence": "WMS OI.MosaicElement GetFeatureInfo at playable-area centre on 2026-10-06; current GetMap SHA256 equals distributed aerial.jpg",
       "transformation": "4096x3072 playable-area orthophoto crop used for ground and roofs",
       "sha256": {
         "aerial.jpg": "98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af"
@@ -53,6 +56,8 @@
       ],
       "source": "IGN / PNOA-LiDAR first coverage, normalized building heights MDSnE2.5",
       "date": "2026-10-05",
+      "attribution": "Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es",
+      "sourcePeriod": "2008–2015; local flight date not confirmed",
       "conditions": "CC BY 4.0 scne.es",
       "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
       "sourceUrls": {
@@ -62,7 +67,7 @@
       "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
       "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
       "sha256": {
-        "height-samples.json": "61e666ae001819c91b697103ab54b1f8c8f0c9f3d286f71949666d9a8b987521"
+        "height-samples.json": "ddc96f070bd1f7f53dfa642a32133f818c7285fabf5a7635931d07d9bf8a7e99"
       }
     },
     {

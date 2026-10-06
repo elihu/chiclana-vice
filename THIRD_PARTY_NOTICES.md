@@ -32,7 +32,13 @@ https://opendatacommons.org/licenses/odbl/1-0/
 
 ## IGN / PNOA / SCNE: imagen y alturas
 
-© IGN / PNOA / SCNE. Condiciones compatibles con CC BY 4.0.
+Obra derivada de PNOA 2022-07,
+CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 4/10/2026.
+Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es.
+La fecha de consulta no sustituye a la fecha de adquisición del producto.
+Ortofoto: GetFeatureInfo OI.MosaicElement indica 2022-07 en el centro del sector;
+GetMap comprobado el 6/10/2026 coincide por SHA256 con aerial.jpg distribuida
+(98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af).
 `aerial.jpg`: ortofoto PNOA máxima actualidad consultada 4/10/2026,
 WMS IGN, recorte 4096 × 3072 de la zona jugable; usado en suelo y tejados.
 `height-samples.json` y auditoría IGN: derivados independientes del producto
@@ -64,20 +70,26 @@ dimensiones y procedencia de alturas/nombres. No es una reconstrucción fotogram
 Las recetas geométricas siguen en el código; no se ha horneado toda la escena.
 
 Referencias que se mantienen identificadas, con sus condiciones originales:
-- Ayuntamiento: Jms1952 (2023), CC BY-SA 4.0.
+- Ayuntamiento: Jms1952, 9/10/2023, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg
-- Mercado: Xemenendura (2025), CC BY-SA 4.0.
+- Mercado: Xemenendura, 10/4/2025, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg
-- Jesús Nazareno: IAPH / Isabel Dugo Cobacho, referencia CC BY-NC-SA 3.0.
+- Jesús Nazareno: «Fachadas lateral y principal del Convento de Jesús Nazareno»,
+  Isabel Dugo Cobacho, 23/8/2012, © Instituto Andaluz del Patrimonio Histórico,
+  CC BY-NC-SA 3.0.
   https://repositorio.iaph.es/handle/11532/331929
   https://guiadigital.iaph.es/sys/productos/ClausurasCadiz/chiclana/jesusnazareno/conventoJesusNazarenoPortada.html
-- Otras referencias del edificio real:
+- Portada Jesús Nazareno: Xemenendura, 29/12/2015, CC BY-SA 3.0 Unported.
   https://commons.wikimedia.org/wiki/File:Portada_Jes%C3%BAs_Nazareno.jpeg
+  https://creativecommons.org/licenses/by-sa/3.0/
+- San Telmo: Xemenendura, 5/12/2021, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Iglesia_San_Telmo_Chiclana.jpg
+- Turismo municipal: referencias documentales; licencia abierta no verificada.
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-telmo/
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-juan-bautista/
 - Ayuntamiento: alzado/sección de Rafael Suárez Almanzor y Victorín Agueda Goyeneche,
-  consultado para interpretar escala vertical; originales no redistribuidos.
+  proyecto de 2006, consultado para interpretar escala vertical; originales no
+  redistribuidos. No se ha identificado una licencia abierta para estos planos.
   https://www.juntadeandalucia.es/fomentoyvivienda/portal-web/web/areas/arquitectura/ArquitecturaObras/8d49721f-0e54-11e4-b2a9-5d6b642921e7
 
 Consultar una foto para identificar hechos/rasgos arquitectónicos no impone
@@ -95,3 +107,15 @@ https://www.boe.es/buscar/act.php?id=BOE-A-1996-8930#a35
 No se ofrecen garantías de exactitud geográfica, ausencia de derechos de terceros
 ni respaldo de las instituciones citadas. La edición pública excluye originales
 Catastro y los anteriores derivados/auditorías/capturas REDIAM.
+
+## Resultado de la revisión de fachadas — 6/10/2026
+
+Las fachadas genéricas se generan por reglas, sin fotografías de cada vivienda.
+Quedan abiertos dos puntos antes de considerar cerrada la revisión de monumentos:
+las figuras específicas de la portada de Jesús Nazareno y la dependencia del alzado
+moderno del Ayuntamiento para su escala vertical 1,6. No se ha verificado autoría
+y vigencia de derechos de esas figuras ni una licencia de adaptación del alzado.
+Las atribuciones anteriores documentan las consultas, no conceden esos permisos.
+No se han alterado esos modelos ni sus proporciones para aparentar una resolución.
+Para cerrar estos puntos: documentar una medición independiente del Ayuntamiento
+y sustituir las figuras por ornamentación propia o verificar sus derechos.
