@@ -127,8 +127,9 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   const fs = await import('node:fs');
   const THREE = await import('../web/vendor/three.module.min.js');
   const { createFacadeKit, KIT_PIECES } = await import('../web/js/world/facade-kit.js');
-  const { composeBuilding } = await import('../web/js/world/facade-composer.js');
-  const { validateFacadeDesigns } = await import('../web/js/world/design-validate.js');
+  const { composeBuilding, composeFront } = await import('../web/js/world/facade-composer.js');
+  const { validateCityDesign, validateFacadeDesigns } =
+    await import('../web/js/world/design-validate.js');
   const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
   const palette = read('web/facade-profiles.json').palette,
     designs = read('web/facade-designs.json');
@@ -139,7 +140,17 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   const newKit = () => createFacadeKit({ staging: new THREE.Group(), palette });
   const options = { kitPieces: KIT_PIECES, palette };
 
-  assert.deepEqual(validateFacadeDesigns(designs, options), [], 'web/facade-designs.json válido');
+  const city = read('web/city-design.json');
+  assert.deepEqual(
+    validateFacadeDesigns(designs, { ...options, frontRecipes: [city.frontages.recipe] }),
+    [],
+    'web/facade-designs.json válido',
+  );
+  assert.deepEqual(
+    validateCityDesign(city, { recipes: Object.keys(designs.recipes) }),
+    [],
+    'web/city-design.json válido',
+  );
 
   // Copia literal del bucle del Mercado de buildDetailedFacades en main 5666928; se borra al cerrar la fase 2.
   function referenceMarket(kit, mp, center) {
@@ -469,6 +480,178 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     ),
     [],
   );
+
+  // outwardOf y el anclaje `front` de un frente que prepareFacades no ha seleccionado.
+  {
+    const { buildingGrid } = await import('../web/js/core/state.js');
+    const { outwardOf } = await import('../web/js/world/facade-kit.js');
+    const square = {
+      p: [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10],
+      ],
+      holes: [],
+      minX: 0,
+      maxX: 10,
+      minZ: 0,
+      maxZ: 10,
+      h: 9,
+      floors: 3,
+    };
+    buildingGrid.set('0,0', [square]);
+    assert.deepEqual(outwardOf(square, 0), [0, -1], 'la normal sale por el lado sin edificio');
+    assert.deepEqual(outwardOf(square, 1), [1, -0]);
+    const lone = {
+      ...square,
+      p: [
+        [50, 50],
+        [60, 50],
+        [60, 60],
+        [50, 60],
+      ],
+    };
+    assert.equal(outwardOf(lone, 0), null, 'sin edificio a ningún lado no hay normal');
+    const probe = {
+      version: 1,
+      kit: 1,
+      recipes: {
+        r: {
+          body: [
+            { box: ['len / 2', 0, 'h', 1, 1, 1], color: '$stone' },
+            { box: ['len / 2', 0, 'floors', 1, 1, 1], color: '$stone' },
+            { box: ['len / 2', 0, 'seed - hash', 1, 1, 1], color: '$stone' },
+          ],
+        },
+      },
+      buildings: [
+        {
+          id: 'f',
+          name: 'f',
+          fronts: [
+            {
+              anchor: { front: 'building-0-edge-0', footprintSha256: 'a'.repeat(64) },
+              recipe: 'r',
+            },
+          ],
+        },
+      ],
+    };
+    assert.deepEqual(validateFacadeDesigns(probe, options), []);
+    const k = newKit(),
+      [g] = composeBuilding(k, probe, 'f', { fronts: [], buildings: [square] });
+    assert.deepEqual(
+      g.children.map((c) => c.position.z),
+      [9, 3, 0],
+      'h, floors y hash=seed del frente no seleccionado',
+    );
+    assert.throws(
+      () => composeBuilding(k, probe, 'f', { fronts: [], buildings: [lone] }),
+      /Frente no seleccionado/,
+    );
+    buildingGrid.clear();
+  }
+
+  // composeFront: variables del frente y regla `commercialStreet` desde la lista de calles residenciales.
+  {
+    const generic = {
+      version: 1,
+      kit: 1,
+      recipes: {
+        g: {
+          body: [
+            { let: { c: 'commercialStreet && hash % 3 != 0' } },
+            {
+              if: 'c',
+              then: [{ box: ['len', 0, 1, 1, 1, 1], color: '#111111' }],
+              else: [{ box: ['len', 0, 2, 1, 1, 1], color: '#222222' }],
+            },
+            { box: [0, 0, 'seed % 5', 1, 1, 1], color: '$stone' },
+          ],
+        },
+      },
+      buildings: [],
+    };
+    assert.deepEqual(validateFacadeDesigns(generic, { ...options, frontRecipes: ['g'] }), []);
+    assert.notDeepEqual(
+      validateFacadeDesigns(generic, options),
+      [],
+      'sin frontRecipes `commercialStreet` no existe',
+    );
+    const front = (street, seed) => ({
+      id: `building-1-edge-1`,
+      a: [0, 0],
+      q: [3, 4],
+      nx: 0,
+      nz: 1,
+      h: 9,
+      floors: 3,
+      street,
+      seed,
+    });
+    const ctx = { residentialStreets: ['Calle A'] };
+    const colorOf = (street, seed) => {
+      const g = composeFront(newKit(), generic, 'g', front(street, seed), ctx);
+      return g.children[0].material.color.getHexString();
+    };
+    assert.equal(colorOf('Calle B', 1), '111111', 'calle comercial');
+    assert.equal(colorOf('Calle B', 3), '222222', 'hash % 3 == 0 descarta el comercio');
+    assert.equal(colorOf('Calle A', 1), '222222', 'calle residencial');
+    assert.throws(
+      () => composeFront(newKit(), generic, 'nada', front('Calle A', 1)),
+      /desconocida/,
+    );
+    assert.throws(
+      () =>
+        composeFront(
+          newKit(),
+          {
+            ...generic,
+            recipes: { g: { body: [{ box: ['zz', 0, 0, 1, 1, 1], color: '#111111' }] } },
+          },
+          'g',
+          front('Calle A', 1),
+        ),
+      /Variable desconocida: zz/,
+    );
+  }
+
+  // Reglas de ciudad: estructura y calles.
+  {
+    const base = {
+      version: 1,
+      zones: { frontagePilot: [-10, 10, -10, 10], frontageOriginal: [-5, 5, -5, 5] },
+      frontages: {
+        streets: ['A', 'B'],
+        originalStreets: ['A'],
+        residentialStreets: ['B'],
+        minimumEdge: 3.3,
+        sideProbe: 0.45,
+        maximumRoadDistance: 17,
+        minimumSetback: 1,
+        recipe: 'g',
+      },
+    };
+    const check = (edit, pattern) => {
+      const copy = structuredClone(base);
+      edit(copy);
+      const errors = validateCityDesign(copy, { recipes: ['g'] });
+      assert(
+        errors.some((e) => pattern.test(e)),
+        `se esperaba ${pattern}: ${errors.join(' | ')}`,
+      );
+    };
+    assert.deepEqual(validateCityDesign(base, { recipes: ['g'] }), []);
+    check((c) => (c.version = 2), /^version/);
+    check((c) => (c.extra = 1), /extra: clave desconocida/);
+    check((c) => (c.zones.frontagePilot = [10, -10, 0, 1]), /el mínimo debe ser menor/);
+    check((c) => delete c.zones.frontageOriginal, /zones\.frontageOriginal: falta/);
+    check((c) => (c.frontages.originalStreets = ['Z']), /«Z» no está en streets/);
+    check((c) => (c.frontages.streets = ['A', 'A']), /nombres repetidos/);
+    check((c) => (c.frontages.minimumEdge = 0), /número positivo/);
+    check((c) => (c.frontages.recipe = 'nada'), /receta desconocida/);
+  }
   delete globalThis.document;
 }
 

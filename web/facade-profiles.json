@@ -12,13 +12,6 @@
     "green": "#506355",
     "white": "#f1ede2"
   },
-  "streetShades": [
-    "#e9e5db",
-    "#f4eee0",
-    "#e4d8c4",
-    "#e8e8df"
-  ],
-  "bayWidth": 3.35,
   "facadeCellSize": 170,
   "heightPolicy": {
     "floorHeight": 3.05,

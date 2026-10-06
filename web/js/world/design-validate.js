@@ -30,7 +30,7 @@ export const GEOMETRY_ARITY = {
 };
 // Variables predefinidas en cada frente según el tipo de anclaje.
 export const PREDEFINED = ['len'];
-export const FRONT_PREDEFINED = ['h', 'floors', 'seed', 'commercialStreet'];
+export const FRONT_PREDEFINED = ['h', 'floors', 'seed', 'hash', 'street', 'commercialStreet'];
 
 const NODE_TYPES = ['let', 'box', 'piece', 'geo', 'group', 'for', 'if', 'use'];
 const NODE_EXTRA = {
@@ -61,7 +61,11 @@ const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/,
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isPoint = (v) => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite);
 
-export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {}) {
+// `frontRecipes`: recetas que el juego aplica a cada frente seleccionado (city-design.json).
+export function validateFacadeDesigns(
+  json,
+  { kitPieces = [], palette = {}, frontRecipes = [] } = {},
+) {
   const errors = new Set();
   const fail = (path, message) => errors.add(`${path}: ${message}`);
   if (!isObject(json)) return ['$: se esperaba un objeto'];
@@ -305,6 +309,12 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
   for (const b of json.buildings)
     for (const f of Array.isArray(b?.fronts) ? b.fronts : [])
       if (typeof f?.recipe === 'string') referenced.add(f.recipe);
+  for (const name of frontRecipes)
+    if (!isObject(json.recipes[name])) fail('recipes', `falta la receta de frentes «${name}»`);
+    else {
+      referenced.add(name);
+      checkRecipe(name, null, [...PREDEFINED, ...FRONT_PREDEFINED], 'front', `recipes.${name}`);
+    }
   for (const name of Object.keys(json.recipes))
     if (!referenced.has(name)) checkRecipe(name, null, PREDEFINED, 'any', `recipes.${name}`);
 
@@ -400,4 +410,77 @@ export function validateFacadeDesigns(json, { kitPieces = [], palette = {} } = {
   }
 
   return [...errors];
+}
+
+// Validador de web/city-design.json (reglas de calle y zonas). De momento: `zones` y `frontages`;
+// el paso 2.9 añade el resto de secciones. `recipes`: nombres de las recetas de facade-designs.json.
+export function validateCityDesign(json, { recipes = [] } = {}) {
+  const errors = [];
+  const fail = (path, message) => errors.push(`${path}: ${message}`);
+  if (!isObject(json)) return ['$: se esperaba un objeto'];
+  const onlyKeys = (obj, allowed, path) => {
+    for (const k of Object.keys(obj))
+      if (!allowed.includes(k)) fail(`${path}.${k}`, 'clave desconocida');
+  };
+  onlyKeys(
+    json,
+    ['$schema', 'version', 'description', 'license', 'attribution', 'zones', 'frontages'],
+    '$',
+  );
+  if (json.version !== 1) fail('version', 'debe ser 1');
+  for (const k of ['description', 'license', 'attribution'])
+    if (k in json && typeof json[k] !== 'string') fail(k, 'se esperaba texto');
+
+  // Rectángulo [minX, maxX, minZ, maxZ] en metros locales.
+  const rect = (v, path) => {
+    if (!Array.isArray(v) || v.length !== 4 || !v.every(Number.isFinite))
+      return fail(path, 'se esperaba [minX, maxX, minZ, maxZ]');
+    if (v[0] >= v[1] || v[2] >= v[3]) fail(path, 'el mínimo debe ser menor que el máximo');
+  };
+  if (!isObject(json.zones)) fail('zones', 'se esperaba un objeto');
+  else {
+    onlyKeys(json.zones, ['frontagePilot', 'frontageOriginal'], 'zones');
+    for (const k of ['frontagePilot', 'frontageOriginal'])
+      if (!(k in json.zones)) fail(`zones.${k}`, 'falta');
+      else rect(json.zones[k], `zones.${k}`);
+  }
+
+  const f = json.frontages;
+  if (!isObject(f)) fail('frontages', 'se esperaba un objeto');
+  else {
+    onlyKeys(
+      f,
+      [
+        'streets',
+        'originalStreets',
+        'residentialStreets',
+        'minimumEdge',
+        'sideProbe',
+        'maximumRoadDistance',
+        'minimumSetback',
+        'recipe',
+      ],
+      'frontages',
+    );
+    const names = (k) => {
+      const v = f[k];
+      if (!Array.isArray(v) || !v.every((n) => typeof n === 'string' && n))
+        return void fail(`frontages.${k}`, 'se esperaba una lista de nombres de calle');
+      if (new Set(v).size !== v.length) fail(`frontages.${k}`, 'nombres repetidos');
+      return v;
+    };
+    const streets = names('streets');
+    for (const k of ['originalStreets', 'residentialStreets']) {
+      const list = names(k);
+      if (streets && list)
+        for (const n of list)
+          if (!streets.includes(n)) fail(`frontages.${k}`, `«${n}» no está en streets`);
+    }
+    for (const k of ['minimumEdge', 'sideProbe', 'maximumRoadDistance', 'minimumSetback'])
+      if (!(Number.isFinite(f[k]) && f[k] > 0))
+        fail(`frontages.${k}`, 'se esperaba un número positivo');
+    if (typeof f.recipe !== 'string' || !recipes.includes(f.recipe))
+      fail('frontages.recipe', `receta desconocida «${f.recipe}»`);
+  }
+  return errors;
 }

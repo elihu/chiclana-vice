@@ -3,7 +3,6 @@ import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/sta
 import { inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
-import { originalFacadeStreets } from './facades.js';
 
 export function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -108,7 +107,7 @@ export function buildUrbanFurniture() {
   }
   const lampPoints = [];
   for (const s of segments) {
-    if (!originalFacadeStreets.includes(s.name) || s.length < 10) continue;
+    if (!world.cityDesign.frontages.originalStreets.includes(s.name) || s.length < 10) continue;
     for (let at = 7; at < s.length; at += 22) {
       let u = at / s.length,
         x = lerp(s.a[0], s.b[0], u),

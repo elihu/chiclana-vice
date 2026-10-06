@@ -8,13 +8,16 @@ regenerar los datos.
 
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
 `buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Carga además la
-ortofoto `aerial.jpg`, `facade-profiles.json` (parámetros de fachadas propios,
-obligatorio) y `height-samples.json` (alturas IGN; si falta, el juego usa la altura por
+ortofoto `aerial.jpg`, `facade-profiles.json` (paleta y política de alturas propias,
+obligatorio), `facade-designs.json` (recetas y composiciones de fachada, obligatorio),
+`city-design.json` (zonas y reglas de calle, obligatorio) y `height-samples.json` (alturas IGN; si falta, el juego usa la altura por
 plantas). `web/data-sources.json` registra fuente, condiciones y SHA-256 de
 cada archivo de datos publicado.
 
-Las recetas de geometría siguen en `web/js/world/facades.js`: separar parámetros en JSON no equivale
-a hornear la escena.
+Las recetas de geometría de fachada están en `web/facade-designs.json` y las ejecuta el
+compositor (`web/js/world/facade-composer.js`) con las piezas del kit
+(`web/js/world/facade-kit.js`): describir la geometría en JSON no equivale a hornear la
+escena.
 
 ## Reglas
 

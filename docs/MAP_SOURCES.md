@@ -45,8 +45,8 @@ se sustituye.
   edificio real a partir de las referencias citadas en los avisos de terceros. No se
   distribuyen fotos ni planos como texturas.
 - Las alturas de iglesias y Ayuntamiento son aproximaciones visuales, no mediciones LiDAR.
-- Parámetros principales en `web/facade-profiles.json`; recetas de geometría en
-  `web/js/world/facades.js`.
+- Paleta y política de alturas en `web/facade-profiles.json`; recetas de geometría en
+  `web/facade-designs.json` y reglas de selección de calles en `web/city-design.json`.
 
 ## Aproximaciones
 

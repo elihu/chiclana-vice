@@ -969,6 +969,212 @@
           ]
         }
       ]
+    },
+    "street-generic": {
+      "description": "Generic street frontage: plastered wall with plinth and cornice, shopfronts or doors and framed openings with shutters or balconies per storey. Variants depend on `hash`. Equivalent to the street frontage loop of buildDetailedFacades in main 5666928.",
+      "params": {
+        "bayWidth": 3.35
+      },
+      "body": [
+        {
+          "let": {
+            "floors": "max(1, floors)",
+            "storey": "(h - 0.4) / floors",
+            "shade": {
+              "pick": ["#e9e5db", "#f4eee0", "#e4d8c4", "#e8e8df"],
+              "index": "hash % 4"
+            },
+            "trim": {
+              "pick": ["$cream", "#c9b78e"],
+              "index": "hash % 3 == 0 ? 1 : 0"
+            }
+          }
+        },
+        {
+          "box": ["len / 2", "h / 2", 0.055, "len", "h", 0.08],
+          "color": "shade"
+        },
+        {
+          "box": ["len / 2", 0.37, 0.15, "len", 0.74, 0.19],
+          "color": {
+            "pick": ["#b7ab96", "#aaa59b"],
+            "index": "hash % 2"
+          }
+        },
+        {
+          "box": ["len / 2", "h - 0.15", 0.18, "len + 0.08", 0.17, 0.35],
+          "color": "trim"
+        },
+        {
+          "if": "floors > 1",
+          "then": [
+            {
+              "box": ["len / 2", "storey + 0.03", 0.16, "len", 0.13, 0.24],
+              "color": "trim"
+            }
+          ]
+        },
+        {
+          "let": {
+            "bays": "max(1, floor(len / bayWidth))",
+            "step": "len / bays"
+          }
+        },
+        {
+          "for": "j",
+          "from": 0,
+          "while": "j < bays",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "x": "(j + 0.5) * step",
+                "w": "min(1.32, step * 0.52)",
+                "commercial": "commercialStreet && hash % 3 != 0"
+              }
+            },
+            {
+              "if": "commercial",
+              "then": [
+                {
+                  "let": {
+                    "width": "step * 0.8"
+                  }
+                },
+                {
+                  "box": ["x", 1.43, 0.145, "width + 0.2", 2.65, 0.14],
+                  "color": "#b5ada0"
+                },
+                {
+                  "box": ["x", 1.44, 0.235, "width", 2.42, 0.04],
+                  "color": {
+                    "pick": ["#8d9590", "$glass"],
+                    "index": "hash % 4 == 0 ? 0 : 1"
+                  }
+                },
+                {
+                  "if": "hash % 4 == 0",
+                  "then": [
+                    {
+                      "for": "y",
+                      "from": 0.35,
+                      "while": "y < 2.65",
+                      "step": 0.12,
+                      "body": [
+                        {
+                          "box": ["x", "y", 0.268, "width", 0.022, 0.025],
+                          "color": "#b3b7ad"
+                        }
+                      ]
+                    }
+                  ],
+                  "else": [
+                    {
+                      "box": ["x", 1.45, 0.28, 0.06, 2.4, 0.06],
+                      "color": "#5f6763"
+                    },
+                    {
+                      "box": ["x", 2.87, 0.25, "width + 0.12", 0.32, 0.15],
+                      "color": {
+                        "pick": ["#586d63", "#94765a", "#5e6b79"],
+                        "index": "hash % 3"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "if": "j == 0 && hash % 3 == 1",
+                  "then": [
+                    {
+                      "box": ["x", 2.7, 0.66, "width + 0.25", 0.08, 1.12],
+                      "color": "#d0c4a7",
+                      "rotation": [0.16, 0, 0]
+                    },
+                    {
+                      "box": ["x", 2.58, 1.19, "width + 0.25", 0.22, 0.045],
+                      "color": "#c6b895"
+                    }
+                  ]
+                }
+              ],
+              "else": [
+                {
+                  "if": "j == 0",
+                  "then": [
+                    {
+                      "box": ["x", 1.36, 0.2, "w + 0.22", 2.7, 0.15],
+                      "color": "trim"
+                    },
+                    {
+                      "box": ["x", 1.32, 0.3, "w", 2.54, 0.05],
+                      "color": "$wood"
+                    },
+                    {
+                      "for": "k",
+                      "from": 0,
+                      "while": "k < 3",
+                      "step": 1,
+                      "body": [
+                        {
+                          "box": ["x", "0.5 + k * 0.72", 0.34, "w * 0.72", 0.51, 0.024],
+                          "color": "#6e6050"
+                        }
+                      ]
+                    }
+                  ],
+                  "else": [
+                    {
+                      "piece": "pane",
+                      "args": ["x", 1.75, "w", 1.63, 0.13, true]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "for": "level",
+              "from": 1,
+              "while": "level < floors",
+              "step": 1,
+              "body": [
+                {
+                  "let": {
+                    "y": "level * storey + storey * 0.465",
+                    "openingH": "min(1.87, storey * 0.64)"
+                  }
+                },
+                {
+                  "piece": "pane",
+                  "args": ["x", "y", "w", "openingH", 0.12, "hash % 3 == 0"]
+                },
+                {
+                  "if": "hash % 3 != 2",
+                  "then": [
+                    {
+                      "piece": "balcony",
+                      "args": ["x", "y - openingH / 2 - 0.085", "w + 0.32", "$iron", 0.42]
+                    }
+                  ],
+                  "else": [
+                    {
+                      "for": "k",
+                      "from": -2,
+                      "while": "k <= 2",
+                      "step": 1,
+                      "body": [
+                        {
+                          "box": ["x + (k * w) / 5", "y - 0.43", 0.26, 0.024, 0.9, 0.035],
+                          "color": "$iron"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   },
   "buildings": [

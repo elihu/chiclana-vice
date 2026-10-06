@@ -79,28 +79,34 @@ export async function loadWorld() {
 }
 
 export async function loadLayers() {
-  const [res, tex, heightSamples, profiles, streetObjects, designs] = await Promise.all([
-    loadWorld(),
-    // Light mode and touch devices start with the 2048×1536 derivative (same extent).
-    // Toggling quality later does not reload it. Without the orthophoto, plain colours.
-    new gfx.platform.TextureLoader()
-      .loadAsync(asset(gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
-      .catch(() => null),
-    fetch(asset('height-samples.json'))
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null),
-    fetch(asset('facade-profiles.json')).then((r) => {
-      if (!r.ok) throw Error('No se han podido cargar los perfiles');
-      return r.json();
-    }),
-    // Optional layer: without it there are no mapped crossings or street furniture.
-    fetch(asset('street-objects.json'))
-      .then((r) => (r.ok ? r.json() : []))
-      .catch(() => []),
-    fetch(asset('facade-designs.json')).then((r) => {
-      if (!r.ok) throw Error('No se han podido cargar los diseños de fachada');
-      return r.json();
-    }),
-  ]);
-  return { res, tex, heightSamples, profiles, streetObjects, designs };
+  const [res, tex, heightSamples, profiles, streetObjects, designs, cityDesign] = await Promise.all(
+    [
+      loadWorld(),
+      // Light mode and touch devices start with the 2048×1536 derivative (same extent).
+      // Toggling quality later does not reload it. Without the orthophoto, plain colours.
+      new gfx.platform.TextureLoader()
+        .loadAsync(asset(gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
+        .catch(() => null),
+      fetch(asset('height-samples.json'))
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch(asset('facade-profiles.json')).then((r) => {
+        if (!r.ok) throw Error('No se han podido cargar los perfiles');
+        return r.json();
+      }),
+      // Optional layer: without it there are no mapped crossings or street furniture.
+      fetch(asset('street-objects.json'))
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => []),
+      fetch(asset('facade-designs.json')).then((r) => {
+        if (!r.ok) throw Error('No se han podido cargar los diseños de fachada');
+        return r.json();
+      }),
+      fetch(asset('city-design.json')).then((r) => {
+        if (!r.ok) throw Error('No se ha podido cargar el diseño de la ciudad');
+        return r.json();
+      }),
+    ],
+  );
+  return { res, tex, heightSamples, profiles, streetObjects, designs, cityDesign };
 }

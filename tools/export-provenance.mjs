@@ -72,13 +72,13 @@ const records = [
       'Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped',
   },
   {
-    files: ['facade-designs.json'],
-    source: 'Authored procedural facade compositions',
+    files: ['facade-designs.json', 'city-design.json'],
+    source: 'Authored procedural facade compositions and street design rules',
     conditions:
       'ODbL-1.0 as a whole (street names and identifiers derived from OSM); also attribute Catastro (anchor vertices). Original parameters; external reference rights not granted.',
     licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
     transformation:
-      'Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers',
+      'Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names',
   },
 ];
 for (const record of records)

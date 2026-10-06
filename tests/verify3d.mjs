@@ -24,6 +24,7 @@ assert.equal(
     'height-samples.json',
     'facade-profiles.json',
     'facade-designs.json',
+    'city-design.json',
     'street-objects.json',
   ])
     assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);

@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU } from '../core/math.js';
+import { inBuilding } from './spatial.js';
 
 // Piezas que las recetas JSON pueden llamar con `piece`.
 export const KIT_PIECES = [
@@ -16,6 +17,22 @@ export const KIT_PIECES = [
   'statue',
   'spiralColumn',
 ];
+
+// Normal exterior de la arista `edge` de un contorno catastral, o null si no hay un solo lado
+// dentro de un edificio. Es la prueba de lado de prepareFacades; `probe` es la distancia (m).
+export function outwardOf(building, edge, probe = 0.45) {
+  const a = building.p[edge],
+    q = building.p[(edge + 1) % building.p.length],
+    len = Math.hypot(q[0] - a[0], q[1] - a[1]),
+    mx = (a[0] + q[0]) / 2,
+    mz = (a[1] + q[1]) / 2,
+    nx = -(q[1] - a[1]) / len,
+    nz = (q[0] - a[0]) / len,
+    left = inBuilding(mx + nx * probe, mz + nz * probe, 0.02),
+    right = inBuilding(mx - nx * probe, mz - nz * probe, 0.02);
+  if (left === right) return null;
+  return left ? [-nx, -nz] : [nx, nz];
+}
 
 // Parametric facade pieces in a wall's local frame (x along the wall from `a`, y up, z outward).
 // They create staging meshes only; buildDetailedFacades bakes them into batches.

@@ -5,7 +5,7 @@ import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
 import { KIT_PIECES } from '../web/js/world/facade-kit.js';
-import { validateFacadeDesigns } from '../web/js/world/design-validate.js';
+import { validateCityDesign, validateFacadeDesigns } from '../web/js/world/design-validate.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -78,11 +78,28 @@ for (const f of catalog.fronts) {
 {
   const designs = read('web/facade-designs.json'),
     palette = read('web/facade-profiles.json').palette,
-    errors = validateFacadeDesigns(designs, { kitPieces: KIT_PIECES, palette });
+    city = read('web/city-design.json'),
+    cityErrors = validateCityDesign(city, { recipes: Object.keys(designs.recipes) }),
+    errors = validateFacadeDesigns(designs, {
+      kitPieces: KIT_PIECES,
+      palette,
+      frontRecipes: [city.frontages.recipe],
+    });
+  assert.deepEqual(cityErrors, [], 'city design valid:\n' + cityErrors.join('\n'));
   assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
   const inside = (p) =>
     Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;
   const landmarks = world.landmarks || [];
+  // Zonas y calles de city-design.json: dentro del mundo y con vías reales en OSM.
+  for (const [name, [x0, x1, z0, z1]] of Object.entries(city.zones))
+    for (const p of [
+      [x0, z0],
+      [x1, z1],
+    ])
+      assert(inside(p), `zone ${name} corner inside the world`);
+  const roadNames = new Set(world.roads.map((r) => r.name));
+  for (const street of city.frontages.streets)
+    assert(roadNames.has(street), `frontage street ${street} exists in OSM roads`);
   const claimed = new Map();
   for (const b of designs.buildings) {
     if (b.landmark)
@@ -119,6 +136,7 @@ for (const file of [
   'world.json',
   'facade-profiles.json',
   'facade-designs.json',
+  'city-design.json',
 ]) {
   assert(
     !/REDIAM|portalrediam/i.test(fs.readFileSync(`web/${file}`, 'utf8')),

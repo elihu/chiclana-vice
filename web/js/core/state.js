@@ -50,16 +50,8 @@ export const driveNetwork = { oneway: 0, relaxed: 0, blocked: 0, components: 0, 
 export const facadeWork = {
   fronts: [],
   parts: 0,
-  streetNames: [
-    'Calle Constitución',
-    'Calle de la Vega',
-    'Calle de la Plaza',
-    'Calle Caraza',
-    'Calle Jesús Nazareno',
-    'Calle Álamo',
-    'Calle Garcia Gutierrez',
-    'Calle Corredera Baja',
-  ],
+  // Calles con frentes mejorados: las rellena prepareFacades desde city-design.json.
+  streetNames: [],
 };
 export const streetEnvironment = {
   colliders: [],
@@ -78,6 +70,7 @@ export const world = {
   city: null,
   facadeProfiles: null,
   facadeDesigns: null,
+  cityDesign: null,
   groundTexture: null,
   worldW: 0,
   worldH: 0,

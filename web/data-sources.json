@@ -78,7 +78,7 @@
       "conditions": "Original parameters; external reference rights not granted. See notices for photo/architecture references.",
       "transformation": "Building features interpreted as primitives; no photographic textures, plans or photographic composition distributed",
       "sha256": {
-        "facade-profiles.json": "b645a2a48c4567c9c9eb3ac2bfa70e6490b406e26d6f394c258effe83903c52a"
+        "facade-profiles.json": "dc11db126e6e26d79949c097c2c6c74f3d49b20d0bccb501545c04808386183f"
       }
     },
     {
@@ -95,14 +95,16 @@
     },
     {
       "files": [
-        "facade-designs.json"
+        "facade-designs.json",
+        "city-design.json"
       ],
-      "source": "Authored procedural facade compositions",
+      "source": "Authored procedural facade compositions and street design rules",
       "conditions": "ODbL-1.0 as a whole (street names and identifiers derived from OSM); also attribute Catastro (anchor vertices). Original parameters; external reference rights not granted.",
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
-      "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers",
+      "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
-        "facade-designs.json": "8b3fbfa87fce14c0c116ec2c98c010a08ecf3489157d5451b4e258489c158d80"
+        "facade-designs.json": "c8cc32fe9f65ae849ead1daead9711009db93d233fa25875c8eab4e3fee34c7d",
+        "city-design.json": "d1a50f69b971c7e890868fa02abf48f19413cec7e773c76cfc0365b2bfa7a24f"
       }
     }
   ]

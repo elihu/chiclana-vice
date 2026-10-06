@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "description": "Authored street design rules. Rectangles are [minX, maxX, minZ, maxZ] in local metres. Values equal those of main 5666928 (web/game3d.js); recipes live in facade-designs.json.",
+  "license": "ODbL-1.0",
+  "attribution": "Street names © OpenStreetMap contributors; building anchors from D.G. del Catastro INSPIRE BU",
+  "zones": {
+    "frontagePilot": [-410, 110, -270, 125],
+    "frontageOriginal": [-365, 90, -230, 125]
+  },
+  "frontages": {
+    "streets": [
+      "Calle Constitución",
+      "Calle de la Vega",
+      "Calle de la Plaza",
+      "Calle Caraza",
+      "Calle Jesús Nazareno",
+      "Calle Álamo",
+      "Calle Garcia Gutierrez",
+      "Calle Corredera Baja"
+    ],
+    "originalStreets": [
+      "Calle Constitución",
+      "Calle de la Vega",
+      "Calle de la Plaza",
+      "Calle Caraza",
+      "Calle Jesús Nazareno"
+    ],
+    "residentialStreets": ["Calle Constitución"],
+    "minimumEdge": 3.3,
+    "sideProbe": 0.45,
+    "maximumRoadDistance": 17,
+    "minimumSetback": 1,
+    "recipe": "street-generic"
+  }
+}

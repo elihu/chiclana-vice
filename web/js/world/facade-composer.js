@@ -4,6 +4,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { evaluate } from '../engine/expr.js';
 import { flatPolygon } from '../engine/materials.js';
+import { outwardOf } from './facade-kit.js';
 
 const MAX_ITERATIONS = 10000,
   HEX = /^#[0-9a-f]{6}$/;
@@ -106,6 +107,23 @@ function run(body, scope, g, env) {
   }
 }
 
+// Muro de un frente catastral y variables predefinidas de su receta: `hash` y `seed` son el
+// mismo hash determinista por frente, `street` el nombre de la calle y `commercialStreet` que
+// esa calle no figura en `context.residentialStreets` (city-design.json, frontages).
+function frontWall(kit, f, context) {
+  return {
+    ...kit.wall(f.a, f.q, [f.nx, f.nz]),
+    extra: {
+      h: f.h,
+      floors: f.floors,
+      seed: f.seed,
+      hash: f.seed,
+      street: f.street,
+      commercialStreet: !(context.residentialStreets || []).includes(f.street),
+    },
+  };
+}
+
 // Muros del anclaje, creados de uno en uno para conservar el orden de creación.
 function* walls(anchor, kit, context, env) {
   const outwardFrom = (a, b, center) => [
@@ -127,16 +145,31 @@ function* walls(anchor, kit, context, env) {
     yield* ringWalls(env.ring, mark.p);
   } else if (anchor.front) {
     const f = (context.fronts || []).find((x) => x.id === anchor.front);
-    if (!f) throw new Error(`Frente no seleccionado: ${anchor.front}`);
-    yield {
-      ...kit.wall(f.a, f.q, [f.nx, f.nz]),
-      extra: {
-        h: f.h,
-        floors: f.floors,
-        seed: f.seed,
-        commercialStreet: f.street !== 'Calle Constitución',
-      },
-    };
+    if (f) yield frontWall(kit, f, context);
+    else {
+      // Frente que prepareFacades no ha seleccionado: la normal sale de outwardOf.
+      const [, bi, ei] = /^building-(\d+)-edge-(\d+)$/.exec(anchor.front),
+        b = (context.buildings || [])[Number(bi)],
+        out = b && outwardOf(b, Number(ei), context.sideProbe);
+      if (!out) throw new Error(`Frente no seleccionado: ${anchor.front}`);
+      const edge = Number(ei),
+        cx = (b.minX + b.maxX) / 2,
+        cz = (b.minZ + b.maxZ) / 2;
+      yield frontWall(
+        kit,
+        {
+          a: b.p[edge],
+          q: b.p[(edge + 1) % b.p.length],
+          nx: out[0],
+          nz: out[1],
+          h: b.visualH ?? b.h,
+          floors: b.floors,
+          seed: Math.abs(Math.round(cx * 7 + cz * 13)),
+          street: '',
+        },
+        context,
+      );
+    }
   } else if (anchor.world) {
     const g = new THREE.Group();
     kit.staging.add(g);
@@ -190,4 +223,23 @@ export function composeBuilding(kit, designs, id, context = {}) {
     throw new Error(`Diseño de fachada «${id}»: ${e.message}`, { cause: e });
   }
   return groups;
+}
+
+// Aplica una receta a un frente seleccionado por prepareFacades (frentes genéricos de calle),
+// sin que haya un edificio en el diseño. Devuelve el grupo del muro.
+export function composeFront(kit, designs, recipeName, front, context = {}) {
+  const recipe = designs.recipes[recipeName];
+  if (!recipe) throw new Error(`Receta de frente desconocida: ${recipeName}`);
+  try {
+    const w = frontWall(kit, front, context),
+      scope = Object.create(null);
+    scope.len = w.len;
+    Object.assign(scope, w.extra);
+    for (const [k, v] of Object.entries(recipe.params || {}))
+      scope[k] = value(v, scope, kit.palette);
+    run(recipe.body, scope, w.g, { kit, designs, palette: kit.palette, ring: null });
+    return w.g;
+  } catch (e) {
+    throw new Error(`Receta «${recipeName}» en el frente ${front.id}: ${e.message}`, { cause: e });
+  }
 }
