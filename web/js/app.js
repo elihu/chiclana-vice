@@ -180,5 +180,9 @@ export async function startGame({ version = null, platform: injected = {} } = {}
     showStartupError(err);
     return null;
   }
-  return createTestApi(frame);
+  const api = createTestApi(frame);
+  // Modo de depuración opcional: sin `?debug` el módulo ni se pide.
+  if (new URLSearchParams(globalThis.location?.search ?? '').has('debug'))
+    (await import('./debug/inspector.js')).installInspector(api);
+  return api;
 }
