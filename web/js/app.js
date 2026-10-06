@@ -45,6 +45,20 @@ import {
   world,
 } from './core/state.js';
 import { asset, setAssetVersion } from './core/assets.js';
+import {
+  bevelGeometry,
+  flatGeometry,
+  flatPolygon,
+  mat,
+  mergeParts,
+  modelBox,
+  modelCylinder,
+  modelGeometry,
+  modelMaterial,
+  modelParts,
+  sculptedBox,
+} from './engine/materials.js';
+import { facadeTexture, surfaceTexture } from './engine/textures.js';
 import { readProgress } from '../progress.js';
 import { rnd } from './core/random.js';
 
@@ -496,25 +510,6 @@ function findRoute(from, to, driveOnly = false) {
     if (out.length > n) return [];
   }
   return out.reverse();
-}
-
-function mat(color, extra = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
-}
-
-function flatGeometry(p, holes = []) {
-  let shape = new THREE.Shape(p.map((v) => new THREE.Vector2(v[0], -v[1])));
-  shape.holes = holes.map((h) => new THREE.Path(h.map((v) => new THREE.Vector2(v[0], -v[1]))));
-  let geo = new THREE.ShapeGeometry(shape);
-  geo.rotateX(-Math.PI / 2);
-  return geo;
-}
-
-function flatPolygon(p, y, material, holes = []) {
-  let mesh = new THREE.Mesh(flatGeometry(p, holes), material);
-  mesh.position.y = y;
-  mesh.receiveShadow = true;
-  return mesh;
 }
 
 // Reference-led facade upgrade: civic landmarks and their four surrounding streets.
@@ -1347,43 +1342,6 @@ function buildDetailedFacades() {
   facadeWork.meshes = root.children.length;
 }
 
-function facadeTexture() {
-  let c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
-  let a = c.getContext('2d');
-  a.fillStyle = '#dedbcf';
-  a.fillRect(0, 0, 128, 128);
-  let seed = 31;
-  for (let i = 0; i < 2000; i++) {
-    seed = (seed * 16807) % 2147483647;
-    a.fillStyle = seed % 2 ? '#ffffff0a' : '#3e372b09';
-    a.fillRect(seed % 128, Math.floor(seed / 128) % 128, 1, 1);
-  }
-  a.fillStyle = '#c2bcae';
-  a.fillRect(30, 22, 70, 83);
-  a.fillStyle = '#faf3df';
-  a.fillRect(26, 18, 70, 82);
-  a.fillStyle = '#4c6766';
-  a.fillRect(32, 24, 58, 69);
-  a.fillStyle = '#26484f';
-  a.fillRect(39, 27, 21, 59);
-  a.fillStyle = '#88a1a0';
-  a.fillRect(42, 28, 17, 25);
-  a.fillStyle = '#566b5b';
-  a.fillRect(64, 26, 21, 62);
-  a.fillStyle = '#e8dbc2';
-  a.fillRect(25, 94, 74, 8);
-  a.fillStyle = '#303b37';
-  a.fillRect(25, 80, 75, 3);
-  for (let x = 28; x < 99; x += 11) a.fillRect(x, 79, 2, 18);
-  let tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
-}
-
 async function buildBuildings() {
   let groups = new Map(),
     facade = facadeTexture(),
@@ -1498,153 +1456,6 @@ async function buildBuildings() {
     gfx.scene.add(group);
     chunks.push(group);
   }
-}
-
-// Model geometry/materials are immutable and shared; transforms stay on each mesh.
-const modelGeometryCache = new Map(),
-  modelMaterialCache = new Map();
-
-function modelGeometry(key, create) {
-  if (!modelGeometryCache.has(key)) modelGeometryCache.set(key, create());
-  return modelGeometryCache.get(key);
-}
-
-function modelMaterial(color, extra = {}) {
-  let key = JSON.stringify([color, extra]);
-  if (!modelMaterialCache.has(key)) modelMaterialCache.set(key, mat(color, extra));
-  return modelMaterialCache.get(key);
-}
-
-function modelCylinder(top, bottom, height, segments) {
-  return modelGeometry(
-    'cylinder:' + top + ',' + bottom + ',' + height + ',' + segments,
-    () => new THREE.CylinderGeometry(top, bottom, height, segments),
-  );
-}
-
-function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
-  let g = modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
-    m = new THREE.Mesh(g, material);
-  m.position.set(x, y, z);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
-
-function bevelGeometry(w, h, l, bevel) {
-  return modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
-    let shape = new THREE.Shape();
-    shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
-    shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
-    shape.lineTo(w / 2 - bevel, l / 2 - bevel);
-    shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
-    shape.closePath();
-    let g = new THREE.ExtrudeGeometry(shape, {
-      depth: h - 2 * bevel,
-      bevelEnabled: true,
-      bevelThickness: bevel,
-      bevelSize: bevel,
-      bevelSegments: 2,
-      steps: 1,
-      curveSegments: 1,
-    });
-    g.rotateX(-Math.PI / 2);
-    g.translate(0, -h / 2 + bevel, 0);
-    return g;
-  });
-}
-
-function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
-  let mesh = new THREE.Mesh(bevelGeometry(w, h, l, bevel), material);
-  mesh.position.set(x, y, z);
-  mesh.castShadow = true;
-  return mesh;
-}
-
-// Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
-function mergeParts(parts) {
-  let vertices = 0,
-    indices = 0;
-  for (const { geometry } of parts) {
-    vertices += geometry.attributes.position.count;
-    indices += geometry.index ? geometry.index.count : geometry.attributes.position.count;
-  }
-  const position = new Float32Array(vertices * 3),
-    normal = new Float32Array(vertices * 3),
-    index = vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
-    v = new THREE.Vector3(),
-    normalMatrix = new THREE.Matrix3();
-  let base = 0,
-    at = 0;
-  for (const { geometry, matrix } of parts) {
-    const pos = geometry.attributes.position,
-      nor = geometry.attributes.normal,
-      source = geometry.index,
-      count = source ? source.count : pos.count,
-      order = matrix.determinant() < 0 ? [0, 2, 1] : [0, 1, 2];
-    normalMatrix.getNormalMatrix(matrix);
-    for (let i = 0; i < pos.count; i++) {
-      v.fromBufferAttribute(pos, i)
-        .applyMatrix4(matrix)
-        .toArray(position, (base + i) * 3);
-      v.fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize();
-      v.toArray(normal, (base + i) * 3);
-    }
-    for (let i = 0; i < count; i += 3)
-      for (let j = 0; j < 3; j++) {
-        let k = i + order[j];
-        index[at + i + j] = base + (source ? source.getX(k) : k);
-      }
-    base += pos.count;
-    at += count;
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(position, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
-  g.setIndex(new THREE.BufferAttribute(index, 1));
-  g.computeBoundingBox();
-  g.computeBoundingSphere();
-  return g;
-}
-
-// Static pieces of a model are grouped by slot (one material each) and merged once per key;
-// all instances share the cached geometry, keeping one draw call per material.
-function modelParts() {
-  const slots = new Map(),
-    euler = new THREE.Euler(),
-    quaternion = new THREE.Quaternion(),
-    offset = new THREE.Vector3(),
-    size = new THREE.Vector3();
-  return {
-    add(slot, material, geometry, x = 0, y = 0, z = 0, rotation = [0, 0, 0], scale = [1, 1, 1]) {
-      if (!slots.has(slot)) slots.set(slot, { material, parts: [] });
-      quaternion.setFromEuler(euler.set(...rotation));
-      slots.get(slot).parts.push({
-        geometry,
-        matrix: new THREE.Matrix4().compose(offset.set(x, y, z), quaternion, size.set(...scale)),
-      });
-    },
-    box(slot, material, w, h, l, x, y, z) {
-      this.add(
-        slot,
-        material,
-        modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
-        x,
-        y,
-        z,
-      );
-    },
-    attach(parent, key, receive = []) {
-      for (const [slot, { material, parts }] of slots) {
-        const m = new THREE.Mesh(
-          modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
-          material,
-        );
-        m.castShadow = true;
-        m.receiveShadow = receive.includes(slot);
-        parent.add(m);
-      }
-    },
-  };
 }
 
 function carCabin(material) {
@@ -1894,50 +1705,6 @@ function buildRoadDetails() {
     gfx.scene.add(mesh);
     for (const p of parts) p.geometry.dispose();
   }
-}
-
-// Street-level materials and lightweight instanced urban detail.
-function surfaceTexture(kind) {
-  let c = document.createElement('canvas');
-  c.width = c.height = 256;
-  let a = c.getContext('2d'),
-    seed = 711;
-  const r = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  a.fillStyle = kind === 'asphalt' ? '#727775' : '#a5a294';
-  a.fillRect(0, 0, 256, 256);
-  if (kind === 'asphalt') {
-    for (let i = 0; i < 19000; i++) {
-      let v = Math.floor(92 + r() * 59);
-      a.fillStyle = `rgb(${v},${v + 3},${v + 1})`;
-      let x = r() * 256,
-        y = r() * 256;
-      a.fillRect(x, y, r() > 0.85 ? 2 : 1, 1);
-    }
-  } else {
-    let step = kind === 'stone' ? 32 : 64;
-    for (let y = 0; y < 256; y += step)
-      for (let x = -step; x < 256; x += step) {
-        let xx = x + ((Math.floor(y / step) % 2) * step) / 2,
-          v = Math.floor(165 + r() * 25);
-        a.fillStyle =
-          kind === 'stone' ? `rgb(${v},${v - 2},${v - 10})` : `rgb(${v + 11},${v + 7},${v - 6})`;
-        a.fillRect(xx + 1, y + 1, step - 2, step - 2);
-        a.fillStyle = '#ffffff1b';
-        a.fillRect(xx + 2, y + 2, step - 4, 1);
-      }
-    for (let i = 0; i < 5000; i++) {
-      a.fillStyle = r() > 0.5 ? '#ffffff08' : '#403c340c';
-      a.fillRect(r() * 256, r() * 256, 1, 1);
-    }
-  }
-  let tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
 }
 
 function buildStreetSurfaces() {
