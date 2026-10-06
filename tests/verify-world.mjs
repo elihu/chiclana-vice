@@ -100,6 +100,17 @@ for (const f of catalog.fronts) {
   const roadNames = new Set(world.roads.map((r) => r.name));
   for (const street of city.frontages.streets)
     assert(roadNames.has(street), `frontage street ${street} exists in OSM roads`);
+  // Mobiliario: puntos dentro del mundo y calles de los pivotes con vías reales.
+  const furniture = city.furniture;
+  for (const p of [
+    ...furniture.protectedPoints,
+    furniture.plazaLamps.from,
+    furniture.plazaLamps.to,
+    ...furniture.benches.map((b) => b.slice(0, 2)),
+  ])
+    assert(inside(p), `furniture point ${p} inside the world`);
+  for (const street of furniture.bollards.streets)
+    assert(roadNames.has(street), `bollard street ${street} exists in OSM roads`);
   const claimed = new Map();
   for (const b of designs.buildings) {
     if (b.landmark)

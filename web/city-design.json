@@ -6,7 +6,8 @@
   "attribution": "Street names © OpenStreetMap contributors; building anchors from D.G. del Catastro INSPIRE BU",
   "zones": {
     "frontagePilot": [-410, 110, -270, 125],
-    "frontageOriginal": [-365, 90, -230, 125]
+    "frontageOriginal": [-365, 90, -230, 125],
+    "streetLamps": [-355, 90, -230, 100]
   },
   "frontages": {
     "streets": [
@@ -32,5 +33,56 @@
     "maximumRoadDistance": 17,
     "minimumSetback": 1,
     "recipe": "street-generic"
+  },
+  "furniture": {
+    "protectedPoints": [
+      [186, -156],
+      [-279, -95],
+      [133, -229],
+      [188, 185],
+      [207, 141],
+      [-95, -12],
+      [-35, -174],
+      [-99, -15],
+      [-215, -145]
+    ],
+    "protectedRadius": 5,
+    "streetLamps": {
+      "minimumSegment": 10,
+      "start": 7,
+      "spacing": 22,
+      "offset": 0.48,
+      "minimumSeparation": 14
+    },
+    "plazaLamps": {
+      "from": [-258, -167],
+      "to": [-192, -93],
+      "shift": [7, -6],
+      "count": 5,
+      "benchEvery": 2,
+      "bench": [2.5, -2, -0.7],
+      "bin": [4.4, -1.2]
+    },
+    "benches": [
+      [-107, -33, 1.4],
+      [-105, 20, 1.4],
+      [-118, 45, 1.4],
+      [-48, -45, -0.7],
+      [-173, -87, -0.7],
+      [-299, -120, -0.6]
+    ],
+    "binOffset": 2.3,
+    "bollards": {
+      "streets": ["Calle Constitución", "Calle de la Plaza"],
+      "minimumSegment": 12,
+      "start": 3,
+      "endMargin": 3,
+      "spacing": 9,
+      "offset": 0.2
+    },
+    "fromOsm": {
+      "highway=street_lamp": "lamp",
+      "amenity=bench": "bench"
+    }
   }
 }

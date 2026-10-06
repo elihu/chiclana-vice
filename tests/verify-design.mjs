@@ -621,7 +621,11 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   {
     const base = {
       version: 1,
-      zones: { frontagePilot: [-10, 10, -10, 10], frontageOriginal: [-5, 5, -5, 5] },
+      zones: {
+        frontagePilot: [-10, 10, -10, 10],
+        frontageOriginal: [-5, 5, -5, 5],
+        streetLamps: [-5, 5, -5, 5],
+      },
       frontages: {
         streets: ['A', 'B'],
         originalStreets: ['A'],
@@ -631,6 +635,37 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         maximumRoadDistance: 17,
         minimumSetback: 1,
         recipe: 'g',
+      },
+      furniture: {
+        protectedPoints: [[1, 2]],
+        protectedRadius: 5,
+        streetLamps: {
+          minimumSegment: 10,
+          start: 7,
+          spacing: 22,
+          offset: 0.48,
+          minimumSeparation: 14,
+        },
+        plazaLamps: {
+          from: [0, 0],
+          to: [4, 4],
+          shift: [1, 1],
+          count: 5,
+          benchEvery: 2,
+          bench: [2.5, -2, -0.7],
+          bin: [4.4, -1.2],
+        },
+        benches: [[1, 2, 0.5]],
+        binOffset: 2.3,
+        bollards: {
+          streets: ['A'],
+          minimumSegment: 12,
+          start: 3,
+          endMargin: 3,
+          spacing: 9,
+          offset: 0.2,
+        },
+        fromOsm: { 'highway=street_lamp': 'lamp' },
       },
     };
     const check = (edit, pattern) => {
@@ -651,6 +686,16 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.frontages.streets = ['A', 'A']), /nombres repetidos/);
     check((c) => (c.frontages.minimumEdge = 0), /número positivo/);
     check((c) => (c.frontages.recipe = 'nada'), /receta desconocida/);
+    check((c) => delete c.zones.streetLamps, /zones\.streetLamps: falta/);
+    check((c) => delete c.furniture, /furniture: se esperaba un objeto/);
+    check((c) => (c.furniture.extra = 1), /furniture\.extra: clave desconocida/);
+    check((c) => (c.furniture.protectedPoints = [[1]]), /protectedPoints: se esperaba una lista/);
+    check((c) => (c.furniture.streetLamps.spacing = 0), /streetLamps\.spacing: .*positivo/);
+    check((c) => (c.furniture.plazaLamps.count = 2.5), /plazaLamps\.count: .*entero/);
+    check((c) => (c.furniture.benches = [[1, 2]]), /benches\[0\]: se esperaba \[x, z, ángulo\]/);
+    check((c) => delete c.furniture.bollards.endMargin, /bollards\.endMargin: falta/);
+    check((c) => (c.furniture.fromOsm['amenity=bench'] = 'sofa'), /debe ser lamp o bench/);
+    check((c) => (c.furniture.fromOsm.lamp = 'lamp'), /etiqueta no válida/);
   }
   delete globalThis.document;
 }

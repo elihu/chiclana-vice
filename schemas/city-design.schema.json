@@ -4,22 +4,40 @@
   "title": "Chiclana Vice: reglas de diseño de la ciudad",
   "description": "Documentación para el editor. La referencia normativa es validateCityDesign en web/js/world/design-validate.js. Rectángulos como [minX, maxX, minZ, maxZ] en metros locales (x este, z sur).",
   "type": "object",
-  "required": ["version", "zones", "frontages"],
+  "required": ["version", "zones", "frontages", "furniture"],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "const": 1 },
-    "description": { "type": "string" },
-    "license": { "type": "string" },
-    "attribution": { "type": "string" },
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "attribution": {
+      "type": "string"
+    },
     "zones": {
       "description": "Rectángulos con nombre que usan los constructores del mundo.",
       "type": "object",
-      "required": ["frontagePilot", "frontageOriginal"],
+      "required": ["frontagePilot", "frontageOriginal", "streetLamps"],
       "additionalProperties": false,
       "properties": {
-        "frontagePilot": { "$ref": "#/$defs/rect" },
-        "frontageOriginal": { "$ref": "#/$defs/rect" }
+        "frontagePilot": {
+          "$ref": "#/$defs/rect"
+        },
+        "frontageOriginal": {
+          "$ref": "#/$defs/rect"
+        },
+        "streetLamps": {
+          "$ref": "#/$defs/rect",
+          "description": "Zona donde se colocan las farolas de calle."
+        }
       }
     },
     "frontages": {
@@ -37,40 +55,211 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "streets": { "$ref": "#/$defs/names" },
-        "originalStreets": { "$ref": "#/$defs/names" },
-        "residentialStreets": { "$ref": "#/$defs/names" },
-        "minimumEdge": { "$ref": "#/$defs/positive" },
-        "sideProbe": { "$ref": "#/$defs/positive" },
-        "maximumRoadDistance": { "$ref": "#/$defs/positive" },
-        "minimumSetback": { "$ref": "#/$defs/positive" },
-        "recipe": { "type": "string" }
+        "streets": {
+          "$ref": "#/$defs/names"
+        },
+        "originalStreets": {
+          "$ref": "#/$defs/names"
+        },
+        "residentialStreets": {
+          "$ref": "#/$defs/names"
+        },
+        "minimumEdge": {
+          "$ref": "#/$defs/positive"
+        },
+        "sideProbe": {
+          "$ref": "#/$defs/positive"
+        },
+        "maximumRoadDistance": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumSetback": {
+          "$ref": "#/$defs/positive"
+        },
+        "recipe": {
+          "type": "string"
+        }
+      }
+    },
+    "furniture": {
+      "description": "Mobiliario fijo (farolas, bancos, papeleras y bolardos). Los modelos están en el motor.",
+      "type": "object",
+      "required": [
+        "protectedPoints",
+        "protectedRadius",
+        "streetLamps",
+        "plazaLamps",
+        "benches",
+        "binOffset",
+        "bollards",
+        "fromOsm"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "protectedPoints": {
+          "description": "Puntos sin mobiliario (misiones, miradores, entradas) en un radio protectedRadius.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "protectedRadius": {
+          "$ref": "#/$defs/positive"
+        },
+        "streetLamps": {
+          "description": "Farolas clásicas a ambos lados de las calles de frontages.originalStreets, dentro de zones.streetLamps.",
+          "type": "object",
+          "required": ["minimumSegment", "start", "spacing", "offset", "minimumSeparation"],
+          "additionalProperties": false,
+          "properties": {
+            "minimumSegment": {
+              "$ref": "#/$defs/positive"
+            },
+            "start": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "spacing": {
+              "$ref": "#/$defs/positive"
+            },
+            "offset": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "minimumSeparation": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "plazaLamps": {
+          "description": "Farolas modernas de la plaza del Mercado, repartidas entre from y to y desplazadas shift; un banco y una papelera cada benchEvery.",
+          "type": "object",
+          "required": ["from", "to", "shift", "count", "benchEvery", "bench", "bin"],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "$ref": "#/$defs/point"
+            },
+            "to": {
+              "$ref": "#/$defs/point"
+            },
+            "shift": {
+              "$ref": "#/$defs/point"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "benchEvery": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "bench": {
+              "description": "[x, z, ángulo] en radianes; en plazaLamps, [dx, dz, ángulo] respecto a la farola.",
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "bin": {
+              "$ref": "#/$defs/point"
+            }
+          }
+        },
+        "benches": {
+          "description": "Bancos fijos con su papelera a binOffset metros en x.",
+          "type": "array",
+          "items": {
+            "description": "[x, z, ángulo] en radianes; en plazaLamps, [dx, dz, ángulo] respecto a la farola.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "binOffset": {
+          "type": "number"
+        },
+        "bollards": {
+          "description": "Bolardos a ambos lados de las calles indicadas.",
+          "type": "object",
+          "required": ["streets", "minimumSegment", "start", "endMargin", "spacing", "offset"],
+          "additionalProperties": false,
+          "properties": {
+            "streets": {
+              "$ref": "#/$defs/names"
+            },
+            "minimumSegment": {
+              "$ref": "#/$defs/positive"
+            },
+            "start": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "endMargin": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "spacing": {
+              "$ref": "#/$defs/positive"
+            },
+            "offset": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "fromOsm": {
+          "description": "Etiqueta OSM «clave=valor» del archivo street-objects.json → tipo de mobiliario.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z_]+=[a-z_]+$"
+          },
+          "additionalProperties": {
+            "enum": ["lamp", "bench"]
+          }
+        }
       }
     }
   },
   "$defs": {
-    "positive": { "type": "number", "exclusiveMinimum": 0 },
-    "nonNegative": { "type": "number", "minimum": 0 },
+    "positive": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "nonNegative": {
+      "type": "number",
+      "minimum": 0
+    },
     "point": {
       "description": "[x, z] en metros locales.",
       "type": "array",
-      "items": { "type": "number" },
+      "items": {
+        "type": "number"
+      },
       "minItems": 2,
       "maxItems": 2
     },
     "rect": {
       "description": "[minX, maxX, minZ, maxZ]; el mínimo es menor que el máximo.",
       "type": "array",
-      "items": { "type": "number" },
+      "items": {
+        "type": "number"
+      },
       "minItems": 4,
       "maxItems": 4
     },
     "names": {
       "description": "Nombres de calle tal como aparecen en osm-world.json, sin repetir.",
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
-    "color": { "type": "string", "pattern": "^#[0-9a-f]{6}$" }
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    }
   }
 }

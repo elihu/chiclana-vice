@@ -412,8 +412,9 @@ export function validateFacadeDesigns(
   return [...errors];
 }
 
-// Validador de web/city-design.json (reglas de calle y zonas). De momento: `zones` y `frontages`;
-// el paso 2.9 añade el resto de secciones. `recipes`: nombres de las recetas de facade-designs.json.
+// Validador de web/city-design.json (reglas de calle, zonas, mobiliario y edificios genéricos).
+// `recipes`: nombres de las recetas de facade-designs.json. Referencia para el editor:
+// schemas/city-design.schema.json.
 export function validateCityDesign(json, { recipes = [] } = {}) {
   const errors = [];
   const fail = (path, message) => errors.push(`${path}: ${message}`);
@@ -422,28 +423,69 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     for (const k of Object.keys(obj))
       if (!allowed.includes(k)) fail(`${path}.${k}`, 'clave desconocida');
   };
-  onlyKeys(
-    json,
-    ['$schema', 'version', 'description', 'license', 'attribution', 'zones', 'frontages'],
-    '$',
-  );
-  if (json.version !== 1) fail('version', 'debe ser 1');
-  for (const k of ['description', 'license', 'attribution'])
-    if (k in json && typeof json[k] !== 'string') fail(k, 'se esperaba texto');
-
   // Rectángulo [minX, maxX, minZ, maxZ] en metros locales.
   const rect = (v, path) => {
     if (!Array.isArray(v) || v.length !== 4 || !v.every(Number.isFinite))
       return fail(path, 'se esperaba [minX, maxX, minZ, maxZ]');
     if (v[0] >= v[1] || v[2] >= v[3]) fail(path, 'el mínimo debe ser menor que el máximo');
   };
-  if (!isObject(json.zones)) fail('zones', 'se esperaba un objeto');
-  else {
-    onlyKeys(json.zones, ['frontagePilot', 'frontageOriginal'], 'zones');
-    for (const k of ['frontagePilot', 'frontageOriginal'])
-      if (!(k in json.zones)) fail(`zones.${k}`, 'falta');
-      else rect(json.zones[k], `zones.${k}`);
+  const names = (v, path) => {
+    if (!Array.isArray(v) || !v.every((n) => typeof n === 'string' && n))
+      return void fail(path, 'se esperaba una lista de nombres de calle');
+    if (new Set(v).size !== v.length) fail(path, 'nombres repetidos');
+    return v;
+  };
+  // Tipos: pos (> 0), nonneg (>= 0), num, int (entero >= 1), point, rect, color, names,
+  // points ([x, z]…) y objetos anidados como especificación. Todas las claves son obligatorias.
+  const TYPES = {
+    pos: (v, p) => (Number.isFinite(v) && v > 0 ? 0 : fail(p, 'se esperaba un número positivo')),
+    nonneg: (v, p) => (Number.isFinite(v) && v >= 0 ? 0 : fail(p, 'se esperaba un número >= 0')),
+    num: (v, p) => (Number.isFinite(v) ? 0 : fail(p, 'se esperaba un número')),
+    int: (v, p) => (Number.isInteger(v) && v >= 1 ? 0 : fail(p, 'se esperaba un entero >= 1')),
+    point: (v, p) => (isPoint(v) ? 0 : fail(p, 'se esperaba [x, z]')),
+    rect,
+    color: (v, p) => (typeof v === 'string' && HEX.test(v) ? 0 : fail(p, 'se esperaba #rrggbb')),
+    names,
+    // Banco: [x, z, ángulo] o, en plazaLamps, [dx, dz, ángulo].
+    bench: (v, p) =>
+      Array.isArray(v) && v.length === 3 && v.every(Number.isFinite)
+        ? 0
+        : fail(p, 'se esperaba [x, z, ángulo]'),
+    benches: (v, p) => {
+      if (!Array.isArray(v)) return void fail(p, 'se esperaba una lista');
+      v.forEach((b, i) => TYPES.bench(b, `${p}[${i}]`));
+    },
+    // Etiqueta OSM «clave=valor» → tipo de mobiliario.
+    fromOsm: (v, p) => {
+      if (!isObject(v)) return void fail(p, 'se esperaba un objeto');
+      for (const [tag, kind] of Object.entries(v)) {
+        if (!/^[a-z_]+=[a-z_]+$/.test(tag)) fail(`${p}.${tag}`, 'etiqueta no válida (clave=valor)');
+        if (!['lamp', 'bench'].includes(kind)) fail(`${p}.${tag}`, 'debe ser lamp o bench');
+      }
+    },
+    points: (v, p) =>
+      Array.isArray(v) && v.every(isPoint) ? 0 : fail(p, 'se esperaba una lista de [x, z]'),
+  };
+  function check(obj, spec, path) {
+    if (!isObject(obj)) return void fail(path, 'se esperaba un objeto');
+    onlyKeys(obj, Object.keys(spec), path);
+    for (const [k, type] of Object.entries(spec)) {
+      if (!(k in obj)) fail(`${path}.${k}`, 'falta');
+      else if (isObject(type)) check(obj[k], type, `${path}.${k}`);
+      else TYPES[type](obj[k], `${path}.${k}`);
+    }
   }
+  const sections = ['zones', 'frontages', 'furniture'];
+  onlyKeys(json, ['$schema', 'version', 'description', 'license', 'attribution', ...sections], '$');
+  if (json.version !== 1) fail('version', 'debe ser 1');
+  for (const k of ['description', 'license', 'attribution'])
+    if (k in json && typeof json[k] !== 'string') fail(k, 'se esperaba texto');
+
+  check(
+    json.zones,
+    { frontagePilot: 'rect', frontageOriginal: 'rect', streetLamps: 'rect' },
+    'zones',
+  );
 
   const f = json.frontages;
   if (!isObject(f)) fail('frontages', 'se esperaba un objeto');
@@ -462,25 +504,53 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       ],
       'frontages',
     );
-    const names = (k) => {
-      const v = f[k];
-      if (!Array.isArray(v) || !v.every((n) => typeof n === 'string' && n))
-        return void fail(`frontages.${k}`, 'se esperaba una lista de nombres de calle');
-      if (new Set(v).size !== v.length) fail(`frontages.${k}`, 'nombres repetidos');
-      return v;
-    };
-    const streets = names('streets');
+    const streets = names(f.streets, 'frontages.streets');
     for (const k of ['originalStreets', 'residentialStreets']) {
-      const list = names(k);
+      const list = names(f[k], `frontages.${k}`);
       if (streets && list)
         for (const n of list)
           if (!streets.includes(n)) fail(`frontages.${k}`, `«${n}» no está en streets`);
     }
     for (const k of ['minimumEdge', 'sideProbe', 'maximumRoadDistance', 'minimumSetback'])
-      if (!(Number.isFinite(f[k]) && f[k] > 0))
-        fail(`frontages.${k}`, 'se esperaba un número positivo');
+      TYPES.pos(f[k], `frontages.${k}`);
     if (typeof f.recipe !== 'string' || !recipes.includes(f.recipe))
       fail('frontages.recipe', `receta desconocida «${f.recipe}»`);
   }
+
+  check(
+    json.furniture,
+    {
+      protectedPoints: 'points',
+      protectedRadius: 'pos',
+      streetLamps: {
+        minimumSegment: 'pos',
+        start: 'nonneg',
+        spacing: 'pos',
+        offset: 'nonneg',
+        minimumSeparation: 'nonneg',
+      },
+      plazaLamps: {
+        from: 'point',
+        to: 'point',
+        shift: 'point',
+        count: 'int',
+        benchEvery: 'int',
+        bench: 'bench',
+        bin: 'point',
+      },
+      benches: 'benches',
+      binOffset: 'num',
+      bollards: {
+        streets: 'names',
+        minimumSegment: 'pos',
+        start: 'nonneg',
+        endMargin: 'nonneg',
+        spacing: 'pos',
+        offset: 'nonneg',
+      },
+      fromOsm: 'fromOsm',
+    },
+    'furniture',
+  );
   return errors;
 }
