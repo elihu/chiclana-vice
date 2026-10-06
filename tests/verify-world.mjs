@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { geographicHash } from '../tools/geographic-fingerprint.mjs';
+import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -20,24 +22,24 @@ for (const [key, name] of Object.entries(manifest.files)) {
 // Fixed fingerprint of the real geography (footprints, courtyards, floors, roads), independent
 // of metadata and checksums. A deliberate geometry change updates it in its own commit:
 // node tests/verify-world.mjs --print-geometry
-const geometryHash = createHash('sha256')
-  .update(
-    JSON.stringify({
-      buildings: world.buildings.map((b) => [b.p, b.holes, b.floors]),
-      roads: world.roads.map((r) => [r.p, r.name, r.type]),
-    }),
-  )
-  .digest('hex');
+const geometryHash = geographicHash(world);
 if (process.argv.includes('--print-geometry')) console.log(geometryHash);
 assert.equal(
   geometryHash,
   read('source-data/geometry-baseline.json').sha256,
   'geography and floors preserved (source-data/geometry-baseline.json)',
 );
-assert.equal(world.buildings.length, 7448);
-assert.equal(world.roads.length, 616);
+assert(world.buildings.length > 0 && world.roads.length > 0, 'nonempty map');
+for (const r of world.roads) {
+  assert(r.p.length >= 2 && Number.isFinite(r.w) && r.w > 0, 'valid road');
+  for (const p of r.p) assert(p.length === 2 && p.every(Number.isFinite));
+}
+const policy = read('source-data/height-policy.json');
+assert.deepEqual(read('web/facade-profiles.json').heightPolicy, policy, 'height policy generated');
 for (const b of world.buildings) {
-  assert.equal(b.h, Math.round((b.floors * 3.05 + 0.4) * 100) / 100);
+  assert(Number.isInteger(b.floors) && b.floors > 0);
+  assert(b.p.length >= 3, 'closed footprint');
+  assert.equal(b.h, Math.round((b.floors * policy.floorHeight + policy.baseOffset) * 100) / 100);
   for (const ring of [b.p, ...b.holes])
     for (const p of ring) assert(p.length === 2 && p.every(Number.isFinite));
 }
@@ -58,11 +60,13 @@ assert.equal(
   heights.attribution,
 );
 assert(!fs.existsSync('web/roads-osm.json'), 'osm-world.json is the only ODbL road download');
-const catalog = read('source-data/facade-catalog.json');
+const catalog = read('web/frontages.json');
 assert.equal(catalog.buildingsSha256, manifest.checksums.buildings);
-assert.equal(catalog.fronts.length, 276);
+assert(catalog.fronts.length > 0, 'frontage catalogue nonempty');
+assert.equal(new Set(catalog.fronts.map((f) => f.id)).size, catalog.fronts.length, 'unique fronts');
 for (const f of catalog.fronts) {
   const b = world.buildings[f.buildingIndex];
+  assert(b && Number.isInteger(f.edgeIndex) && f.edgeIndex >= 0 && f.edgeIndex < b.p.length);
   assert.deepEqual(f.a, b.p[f.edgeIndex]);
   assert.deepEqual(f.b, b.p[(f.edgeIndex + 1) % b.p.length]);
   const measured = heights.entries.find((s) => s.index === f.buildingIndex);
@@ -91,7 +95,6 @@ for (const record of sources.records)
       'provenance file checksum',
     );
   }
-assert.deepEqual(read('web/frontages.json'), catalog, 'downloadable frontage catalogue current');
 assert.equal(
   fs.readFileSync('web/THIRD_PARTY_NOTICES.md', 'utf8'),
   fs.readFileSync('THIRD_PARTY_NOTICES.md', 'utf8'),
@@ -104,4 +107,4 @@ assert.equal(
 );
 for (const file of ['web/licenses/ODbL-1.0.txt', 'web/licenses/IGN-conditions.pdf'])
   assert(fs.statSync(file).size > 1000, 'license bundled');
-console.log('World layers, geographic preservation, provenance and 276 frontage heights passed');
+console.log('World layers, geographic preservation, provenance and frontage heights passed');

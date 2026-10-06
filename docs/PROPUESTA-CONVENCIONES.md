@@ -196,7 +196,7 @@ Correcciones de la auditoría:
 - P1: riesgo conocido y asumido, con procedimiento «Reclamaciones y retirada» en
   `THIRD_PARTY_NOTICES.md`, enlazado desde README, CONTRIBUTING, PUBLICACION y ESTADO.
 - P2: historial reescrito en local; falta el push forzado (comando abajo).
-- P3 y `roads-osm.json`: decididos y descritos como tales, con `TODO(integración)`
+- P3 y `roads-osm.json`: decididos y descritos como tales, con `marca temporal de integración`
   hasta que la rama de datos los aplique.
 
 ## Cambios aplicados en la rama
@@ -215,8 +215,8 @@ Correcciones de la auditoría:
   arcade.
 - `npm run check` pasa en la rama.
 
-Las frases que dependen de otras ramas llevan `TODO(integración)`. Buscarlas tras cada
-merge con `git grep -n 'TODO(integración)'`. La copia `web/THIRD_PARTY_NOTICES.md` se
+Las frases que dependen de otras ramas llevan `marca temporal de integración`. Buscarlas tras cada
+merge con `git grep -n 'marca temporal de integración'`. La copia `web/THIRD_PARTY_NOTICES.md` se
 publica, así que esas marcas serían visibles en la web si esta rama se publica antes que
 las demás.
 

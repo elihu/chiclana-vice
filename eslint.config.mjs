@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['web/vendor/**', 'tests/qa3d-runtime.mjs', 'node_modules/**'] },
+  { ignores: ['web/vendor/**', 'node_modules/**'] },
   js.configs.recommended,
   {
     files: ['web/**/*.js'],

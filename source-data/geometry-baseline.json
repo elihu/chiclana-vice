@@ -1,5 +1,5 @@
 {
-  "sha256": "7b1812be46b01fd6c5eb67019cb2d1bd3dd57f3977963f157d8845be9f65fc55",
-  "covers": "buildings[].p/holes/floors and roads[].p/name/type",
-  "origin": "Equal to the private city.json snapshot (commit 3ee59e2) on 2026-10-06"
+  "sha256": "91d27cada6e00e2578d302b1660ecac0cf045738cb2141300ea8d9abc1ab7e8a",
+  "covers": "origin, size, buildings[].p/holes/floors, roads[].p/name/type/w/bridge/oneway, areas, landmarks, trees",
+  "origin": "Geografía de main 13f212e; alcance ampliado sin modificar las capas"
 }

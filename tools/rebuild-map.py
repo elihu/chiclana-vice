@@ -1,14 +1,17 @@
 import argparse, sys, json, math, xml.etree.ElementTree as E
 from pathlib import Path
 import zipfile
+import runpy
 from pyproj import Transformer
 from shapely.geometry import Polygon,box,LineString
 from shapely.ops import transform
 ROOT=str(Path(__file__).resolve().parent.parent)+'/'
+directed_road=runpy.run_path(str(Path(__file__).with_name('osm-direction.py')))['directed_road']
 parser=argparse.ArgumentParser(description='Transform locally downloaded Catastro/OSM originals; never publish the original Catastro archive.')
 parser.add_argument('--catastro',required=True,help='Original ZIP outside the public repository')
 parser.add_argument('--osm',required=True,help='Locally downloaded OSM XML')
 args=parser.parse_args()
+height_policy=json.loads((Path(ROOT)/'source-data/height-policy.json').read_text())
 LAT,LON=36.4195,-6.1485
 SX=111320*math.cos(math.radians(LAT));SZ=111320
 W=.015*SX;H=.009*SZ
@@ -31,9 +34,10 @@ for w in r.findall('way'):
    kind=t['highway'];width={'primary':9,'secondary':8,'tertiary':7,'residential':5.5,'service':4,'unclassified':6,'living_street':5,'pedestrian':5,'footway':2,'path':2,'cycleway':2.2}.get(kind,5)
    try:width=float(t.get('width',width))
    except:pass
-   parts=bounds.intersection(LineString(p));parts=list(parts.geoms) if parts.geom_type=='MultiLineString' else [parts]
+   road_points,oneway=directed_road(p,t)
+   parts=bounds.intersection(LineString(road_points));parts=list(parts.geoms) if parts.geom_type=='MultiLineString' else [parts]
    for part in parts:
-    if part.geom_type=='LineString' and part.length>1:data['roads'].append({'id':w.attrib['id'],'name':t.get('name',''),'type':kind,'w':width,'oneway':t.get('oneway')=='yes','bridge':t.get('bridge')=='yes','p':[rounded(v) for v in part.coords]})
+    if part.geom_type=='LineString' and part.length>1:data['roads'].append({'id':w.attrib['id'],'name':t.get('name',''),'type':kind,'w':width,'oneway':oneway,'bridge':t.get('bridge')=='yes','p':[rounded(v) for v in part.coords]})
  if p[0]==p[-1] and len(p)>3:
   kind='water' if t.get('natural')=='water' or t.get('water') else 'park' if t.get('leisure') in ['park','garden'] or t.get('landuse') in ['grass','forest'] else None
   if kind:data['areas'].append({'kind':kind,'p':[rounded(v) for v in p]})
@@ -72,7 +76,7 @@ for event,e in E.iterparse(source,events=['end']):
   parts=list(poly.geoms) if poly.geom_type=='MultiPolygon' else [poly]
   for part in parts:
    if part.geom_type!='Polygon' or part.area<1.5:continue
-   data['buildings'].append({'p':[rounded(v) for v in list(part.exterior.coords)[:-1]],'holes':[[rounded(v) for v in list(r.coords)[:-1]] for r in part.interiors],'h':round(min(35,floors*3.05+.4),2),'floors':floors})
+   data['buildings'].append({'p':[rounded(v) for v in list(part.exterior.coords)[:-1]],'holes':[[rounded(v) for v in list(r.coords)[:-1]] for r in part.interiors],'h':round(floors*height_policy['floorHeight']+height_policy['baseOffset'],2),'floors':floors})
   features+=1
  e.clear()
 data['meta']={'roads':'© OpenStreetMap contributors — ODbL 1.0','buildings':'Volúmenes de juego transformados a partir de D.G. del Catastro, INSPIRE BU, descarga 2026-10-04. Alturas estimadas: plantas × 3,05 m + 0,4 m; piloto con alturas IGN/PNOA-LiDAR (height-samples.json).','aerial':'Obra derivada de PNOA 2022-07 © IGN / PNOA / SCNE — CC BY 4.0','date':'2026-10-04','terrain':'Plano. No incluye elevación real ni fachadas fotogramétricas.'}

@@ -38,7 +38,7 @@ se sustituye.
 
 ## Fachadas y monumentos
 
-- 276 frentes en 243 partes catalogados en `source-data/facade-catalog.json` (Constitución,
+- 276 frentes en 243 partes catalogados en `web/frontages.json` (Constitución,
   La Vega, La Plaza, Caraza, Jesús Nazareno, Álamo, García Gutiérrez, Corredera Baja…).
   Son fachadas genéricas generadas por reglas, no cada vivienda fotografiada.
 - Ayuntamiento, Mercado e iglesias se modelan con primitivas que interpretan rasgos del
@@ -56,4 +56,8 @@ se sustituye.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
   El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
   que dejarían zonas sin salida; a pie no hay restricción.
+- Al reconstruir desde OSM, el conversor reconoce `oneway=yes/1/true`, invierte
+  los puntos para `oneway=-1` y contempla el sentido implícito de rotondas y autopistas;
+  `no/0/false` lo desactiva. No se han regenerado las vías publicadas en esta revisión.
+  Semántica: https://wiki.openstreetmap.org/wiki/Key:oneway
 - Sin precisión fotogramétrica ni validez catastral; no son medidas arquitectónicas.

@@ -3,6 +3,17 @@
 const ASSET_VERSION = new URL(import.meta.url).searchParams.get('v'),
   asset = (path) => (ASSET_VERSION ? path + '?v=' + encodeURIComponent(ASSET_VERSION) : path);
 const THREE = await import(asset('./vendor/three.module.min.js'));
+const {
+  SAVE_KEY,
+  INITIAL_POSITION,
+  SPAWN_POSITION,
+  POPULATION,
+  PLACES,
+  VIEWPOINTS,
+  PROGRESS_LIMITS,
+  JOBS: jobs,
+} = await import(asset('./game-data.js'));
+const { readProgress } = await import(asset('./progress.js'));
 const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
@@ -95,23 +106,20 @@ let joyId = null,
   lookPitch = 0,
   orbitAge = 0,
   firstPersonCar = null;
-let stored = {};
-try {
-  stored = JSON.parse(localStorage.getItem('chiclana-real-v2') || '{}');
-} catch {}
+const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
 if (stored.quality === 'low') quality = 'low';
 const state = {
-  cash: Number.isFinite(stored.cash) ? stored.cash : 250,
-  job: clamp(Number(stored.job) || 0, 0, 4),
+  cash: stored.cash,
+  job: stored.job,
   stage: 0,
   timer: 0,
   wanted: 0,
   heat: 0,
   arrest: 0,
-  found: new Set(stored.found || []),
+  found: new Set(stored.found),
   health: 100,
 };
-const player = { x: 170, z: -150, a: 0, speed: 0, car: null };
+const player = { ...INITIAL_POSITION, a: 0, speed: 0, car: null };
 const camPos = new THREE.Vector3(),
   camTarget = new THREE.Vector3(),
   camDesired = new THREE.Vector3(),
@@ -129,7 +137,7 @@ const cars = [],
   segments = [],
   buildingGrid = new Map();
 let character, sun, ring, beam, arrow;
-const base = { x: 170, z: -150 };
+const base = { ...INITIAL_POSITION };
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
@@ -147,7 +155,7 @@ function toast(message, duration = 4) {
 function save() {
   try {
     localStorage.setItem(
-      'chiclana-real-v2',
+      SAVE_KEY,
       JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found], quality }),
     );
   } catch {}
@@ -177,17 +185,20 @@ function pointSeg(x, z, a, b) {
   };
 }
 function inBuilding(x, z, pad = 0.3) {
-  const cell = buildingGrid.get(Math.floor(x / 25) + ',' + Math.floor(z / 25));
-  if (!cell) return false;
-  for (const b of cell) {
-    if (x < b.minX - pad || x > b.maxX + pad || z < b.minZ - pad || z > b.maxZ + pad) continue;
-    let inside = pInside(x, z, b.p) && !b.holes.some((h) => pInside(x, z, h));
-    if (inside) return true;
-    if (pad > 0) {
-      for (let i = 0; i < b.p.length; i++)
-        if (pointSeg(x, z, b.p[i], b.p[(i + 1) % b.p.length]).d < pad) return true;
-    }
-  }
+  const seen = new Set();
+  for (let gx = Math.floor((x - pad) / 25); gx <= Math.floor((x + pad) / 25); gx++)
+    for (let gz = Math.floor((z - pad) / 25); gz <= Math.floor((z + pad) / 25); gz++)
+      for (const b of buildingGrid.get(gx + ',' + gz) || []) {
+        if (seen.has(b)) continue;
+        seen.add(b);
+        if (x < b.minX - pad || x > b.maxX + pad || z < b.minZ - pad || z > b.maxZ + pad) continue;
+        let inside = pInside(x, z, b.p) && !b.holes.some((h) => pInside(x, z, h));
+        if (inside) return true;
+        if (pad > 0) {
+          for (let i = 0; i < b.p.length; i++)
+            if (pointSeg(x, z, b.p[i], b.p[(i + 1) % b.p.length]).d < pad) return true;
+        }
+      }
   return false;
 }
 function nearestRoad(x, z, driveOnly = false) {
@@ -601,6 +612,8 @@ function applyHeightSamples(samples) {
     samples.origin.some((v, i) => v !== city.origin[i])
   )
     return;
+  const policy = facadeProfiles.heightPolicy,
+    acceptance = policy.acceptance;
   for (const s of samples.entries || []) {
     let b = city.buildings[s.index];
     if (
@@ -610,13 +623,14 @@ function applyHeightSamples(samples) {
       b.p.length !== s.vertices ||
       b.p[0].some((v, i) => v !== s.p0?.[i]) ||
       !Number.isFinite(s.height) ||
-      s.height < 2.5 ||
-      Math.abs(s.height - b.h) > 2 ||
+      s.height < policy.minimumHeight ||
+      Math.abs(s.height - b.h) > acceptance.absoluteCorrectionRange[1] ||
       !Number.isFinite(s.coverage) ||
       !Number.isFinite(s.spread) ||
-      s.samples < 12 ||
-      s.coverage < 0.95 ||
-      s.spread > 1.5
+      !Number.isFinite(s.samples) ||
+      s.samples < acceptance.minimumSamples ||
+      s.coverage < acceptance.minimumCoverage ||
+      s.spread > acceptance.maximumP90P10Spread
     )
       continue;
     b.visualH = s.height;
@@ -1508,8 +1522,8 @@ async function buildBuildings() {
           uvs = [
             [0, 0],
             [len / 4.8, 0],
-            [len / 4.8, h / 3.05],
-            [0, h / 3.05],
+            [len / 4.8, h / facadeProfiles.heightPolicy.floorHeight],
+            [0, h / facadeProfiles.heightPolicy.floorHeight],
           ];
         for (const j of [0, 1, 2, 0, 2, 3]) {
           (b.detailType ? g.dw : g.w).push(...vertices[j]);
@@ -2568,15 +2582,7 @@ function addSigns() {
   streetEnvironment.signs = signs.length;
 }
 function setupPOIs() {
-  const spec = [
-    ['Mercado de Abastos', -235.67, -125.92],
-    ['Puente Chico', 132, -230],
-    ['Plaza Mayor', 188, 185],
-    ['Arquillo del Reloj', 207.09, 140.89],
-    ['Ayuntamiento', -76.2, -9.74],
-    ['San Telmo', -27.11, -182.41],
-  ];
-  for (const [name, x, z] of spec) {
+  for (const [name, x, z] of PLACES) {
     let safe = safePoint(x, z);
     let el = document.createElement('span');
     el.className = 'poi';
@@ -2585,46 +2591,6 @@ function setupPOIs() {
     pois.push({ name, x: safe.x, z: safe.z, labelX: x, labelZ: z, el });
   }
 }
-const jobs = [
-  {
-    name: 'EL ENCARGO DEL MERCADO',
-    reward: 450,
-    limit: 150,
-    stages: [
-      { poi: 0, text: 'Recoge el pedido junto al Mercado' },
-      { poi: 4, text: 'Entrega el pedido en el Ayuntamiento' },
-    ],
-  },
-  {
-    name: 'AL OTRO LADO DEL IRO',
-    reward: 600,
-    limit: 150,
-    stages: [
-      { poi: 1, text: 'Acércate a Puente Chico' },
-      { poi: 5, text: 'Lleva el sobre hasta San Telmo' },
-    ],
-  },
-  {
-    name: 'LA VUELTA POR EL CENTRO',
-    reward: 850,
-    limit: 200,
-    stages: [
-      { poi: 2, text: 'Recoge a tu colega en Plaza Mayor' },
-      { poi: 0, text: 'Haz una parada en el Mercado' },
-      { poi: 3, text: 'Termina junto al Arquillo del Reloj' },
-    ],
-  },
-  {
-    name: 'QUE NO TE SIGAN',
-    reward: 1100,
-    limit: 180,
-    stages: [
-      { poi: 5, text: 'Recoge el paquete de San Telmo' },
-      { poi: 4, text: 'Lleva el paquete al Ayuntamiento' },
-      { poi: 4, text: 'Despista a la policía para cobrar', escape: true },
-    ],
-  },
-];
 function target() {
   let j = jobs[state.job];
   if (!j) return null;
@@ -2648,8 +2614,8 @@ function updateHUD() {
   updateCameraVisibility();
 }
 function spawnTraffic() {
-  let eligible = segments.filter((s) => s.drive && s.length > 18);
-  for (let i = 0; i < 24; i++) {
+  let eligible = segments.filter((s) => s.forward.drive && s.length > 18);
+  for (let i = 0; i < POPULATION.traffic; i++) {
     let s = eligible[Math.floor(rnd() * eligible.length)],
       n = graph[s.ai];
     if (blocked(n.x, n.z, 1)) continue;
@@ -2664,7 +2630,7 @@ function spawnTraffic() {
     });
     traffic.push(car);
   }
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < POPULATION.parked; i++) {
     let s = eligible[Math.floor(rnd() * eligible.length)],
       p = safePoint((s.a[0] + s.b[0]) / 2, (s.a[1] + s.b[1]) / 2, true),
       car = createCar(['#dcc394', '#69747b', '#becec1'][i % 3]);
@@ -2672,7 +2638,11 @@ function spawnTraffic() {
     cars.push(car);
   }
   // 28 pedestrians on segments of at least 8 m; bounded attempts keep start-up predictable.
-  for (let i = 0, attempts = 0; i < 28 && attempts < 600; attempts++) {
+  for (
+    let i = 0, attempts = 0;
+    i < POPULATION.pedestrians && attempts < POPULATION.pedestrianAttempts;
+    attempts++
+  ) {
     let s = segments[Math.floor(rnd() * segments.length)];
     if (s.length < 8) continue;
     let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
@@ -2812,7 +2782,7 @@ async function init() {
   buildTrees();
   addSigns();
   setupPOIs();
-  let spawn = safePoint(178, -146, true);
+  let spawn = safePoint(SPAWN_POSITION.x, SPAWN_POSITION.z, true);
   Object.assign(base, spawn);
   let car = createCar('#bba979');
   Object.assign(car, spawn);
@@ -2925,7 +2895,7 @@ function advanceStage() {
   if (!j) return;
   if (state.stage === 0) {
     state.timer = j.limit;
-    if (state.job === 3) {
+    if (j.stages.some((s) => s.escape)) {
       setHeat(2);
       toast('Te han visto. Entrega el paquete y despista a las patrullas.', 5);
     } else toast('Recogida completada. Sigue la ruta del minimapa.', 3);
@@ -3637,13 +3607,7 @@ function listStreets() {
     names = streetNames.filter((n) => fold(n).includes(q));
   let list = $('streetList');
   list.replaceChildren();
-  for (const view of [
-    { name: 'Ayuntamiento · ver fachada', x: -99, z: -15, tx: -87, tz: -16 },
-    { name: 'Mercado · ver fachada', x: -215, z: -145, tx: -238, tz: -137 },
-    { name: 'Jesús Nazareno · ver fachada', x: -81, z: 69, tx: -62, tz: 76 },
-    { name: 'San Telmo · ver fachada', x: -10, z: -155, tx: -12, tz: -167 },
-    { name: 'Iglesia Mayor · ver fachada', x: 191, z: 163, tx: 212, tz: 167 },
-  ]) {
+  for (const view of VIEWPOINTS) {
     if (q && !fold(view.name).includes(q)) continue;
     let b = document.createElement('button');
     b.textContent = view.name;
@@ -3842,7 +3806,7 @@ function pauseMenu() {
     );
     $('yesReset').onclick = () => {
       try {
-        localStorage.removeItem('chiclana-real-v2');
+        localStorage.removeItem(SAVE_KEY);
       } catch {}
       location.reload();
     };
@@ -3958,9 +3922,15 @@ for (const n of ['pointerup', 'pointercancel', 'lostpointercapture'])
   });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') return trapFocus(e);
-  if (e.target.tagName === 'INPUT') {
-    // Typing in the street search: only Escape is handled, to close the map.
-    if (e.key === 'Escape' && !$('mapOverlay').classList.contains('hidden')) closeMap();
+  const editable =
+    ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
+  const control = ['BUTTON', 'A'].includes(e.target.tagName);
+  if (editable || (control && (paused || !started || e.key === ' ' || e.key === 'Enter'))) {
+    // Edición y activación nativas; los atajos de conducción siguen tras pulsar Cámara.
+    if (e.key === 'Escape') {
+      if (!$('mapOverlay').classList.contains('hidden')) closeMap();
+      else if (!$('modal').classList.contains('hidden')) closeModal();
+    }
     return;
   }
   let k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
