@@ -143,9 +143,9 @@ derechos lo reclama, se aplicará el procedimiento siguiente.
 
 ## Reclamaciones y retirada
 
-1. Contacto: abrir un issue en https://github.com/elihu/chiclana-vice/issues indicando el
-   elemento, la obra y la titularidad, o pedir en él un canal privado si la reclamación
-   contiene datos personales.
+1. Contacto: únicamente mediante un issue público en
+   https://github.com/elihu/chiclana-vice/issues, indicando el elemento, la obra y la
+   titularidad. No hay correo de contacto; no incluir datos personales en el issue.
 2. Respuesta: acuse de recibo en un plazo de 7 días.
 3. Medida provisional, si la reclamación es verosímil: retirar el elemento o, si no es
    posible hacerlo de inmediato, despublicar la web (Settings → Pages) hasta corregirlo.
