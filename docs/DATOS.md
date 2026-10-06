@@ -23,7 +23,7 @@ a hornear la escena.
   licencia y checksum, nunca credenciales.
 - Python siempre con `uv`.
 - Cualquier generador va seguido de `node tools/export-provenance.mjs` y de `npm test`.
-  `export-provenance` copia el catálogo de frentes, `LICENSE` y `THIRD_PARTY_NOTICES.md` a
+  `export-provenance` copia `LICENSE` y `THIRD_PARTY_NOTICES.md` a
   `web/` y recalcula los checksums de `data-sources.json`; sin él, `verify-world` falla.
 
 ## 1. Contornos y vías (opcional)
@@ -56,7 +56,7 @@ uv run --no-project --with rasterio --with pyproj --with shapely python tools/au
 ```
 
 Escribe la auditoría completa en `source-data/height-audit-ign.json` y las entradas
-aceptadas en el overlay. Los filtros de aceptación están en el propio script y en el
+aceptadas en el overlay. Los filtros de aceptación proceden de `source-data/height-policy.json` y quedan en el
 campo `acceptance` del overlay; no relajarlos para obtener más alturas. Detalle de las
 partes aceptadas: [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
 
@@ -69,7 +69,11 @@ comprueba que llega igual a `data-sources.json`.
 node tools/export-facades.mjs
 ```
 
-Actualiza `source-data/facade-catalog.json` a partir de las capas y del juego.
+Actualiza directamente `web/frontages.json` a partir de las capas y del juego; no hay
+una segunda copia.
+
+La política común de alturas se publica en los perfiles con
+`node tools/export-height-policy.mjs`; la consumen también los conversores Python.
 
 ## 4. Procedencia y comprobación (siempre)
 
@@ -81,9 +85,13 @@ npm test
 `verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
 overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
 `web/` coinciden y que las licencias están incluidas. Además compara una huella fija de
-la geometría (contornos, patios, plantas y vías) con `source-data/geometry-baseline.json`;
+la geografía (origen, tamaño, contornos, patios, plantas, vías con anchura y sentido,
+áreas, monumentos y árboles) con `source-data/geometry-baseline.json`;
 un cambio deliberado de geometría actualiza esa huella en su propio commit
-(`node tests/verify-world.mjs --print-geometry`).
+(`node tools/export-geometry-baseline.mjs`, solo después de revisar el cambio).
+
+Los casos de conversión de sentidos OSM se comprueban además con
+`uv run --no-project python tests/verify-tools.py`.
 
 Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
 probar el juego en un navegador.

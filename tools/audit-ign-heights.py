@@ -31,6 +31,8 @@ parser.add_argument('--output', default='source-data/height-audit-ign.json')
 parser.add_argument('--overlay', help='Optional runtime overlay, without audit rows')
 parser.add_argument('--bounds', nargs=4, type=float, default=[-410, 110, -270, 125])
 args = parser.parse_args()
+policy = json.loads(Path('source-data/height-policy.json').read_text())
+acceptance = policy['acceptance']
 endpoint = 'https://wcs-mds.idee.es/mds'
 url = endpoint + '?' + urlencode([
     ('service', 'WCS'), ('version', '2.0.1'), ('request', 'GetCoverage'),
@@ -91,16 +93,16 @@ with rasterio.open(path) as raster:
         valid = sampled[np.isfinite(sampled) & (sampled > 2) & (sampled < 40)]
         coverage = len(valid)/len(sampled) if len(sampled) else 0
         report.update(samples=len(valid), interiorPixels=len(sampled), coverage=round(coverage, 3))
-        if len(valid) < 12:
+        if len(valid) < acceptance['minimumSamples']:
             report['reasons'] = ['insufficient-valid-samples']
             continue
         q10, median, q80, q90 = map(float, np.percentile(valid, [10, 50, 80, 90]))
         special = any(p.covers(Point(cx, cz)) for p in protected)
-        checks = {'protected-landmark': special, 'low-coverage': coverage < .95,
-                  'heterogeneous-roof': q90-q10 > 1.5,
-                  'floor-height-conflict': not 2.5 <= q80/building['floors'] <= 4.5,
-                  'small-correction': abs(q80-building['h']) < .6,
-                  'large-correction': abs(q80-building['h']) > 2}
+        checks = {'protected-landmark': special, 'low-coverage': coverage < acceptance['minimumCoverage'],
+                  'heterogeneous-roof': q90-q10 > acceptance['maximumP90P10Spread'],
+                  'floor-height-conflict': not acceptance['heightPerFloorRange'][0] <= q80/building['floors'] <= acceptance['heightPerFloorRange'][1],
+                  'small-correction': abs(q80-building['h']) < acceptance['absoluteCorrectionRange'][0],
+                  'large-correction': abs(q80-building['h']) > acceptance['absoluteCorrectionRange'][1]}
         report.update(p10=round(q10, 2), median=round(median, 2), p80=round(q80, 2),
                       p90=round(q90, 2), protected=special,
                       reasons=[reason for reason, failed in checks.items() if failed])
@@ -122,8 +124,7 @@ with rasterio.open(path) as raster:
               'rasterCrs': str(raster.crs), 'rasterResolution': list(raster.res),
               'rasterValueResolutionMetres': 1,
               'method': 'P80 of normalized building-class heights at pixel centres in cadastral footprint eroded 1m; no terrain subtraction',
-              'acceptance': {'minimumSamples': 12, 'minimumCoverage': .95, 'maximumP90P10Spread': 1.5,
-                             'heightPerFloorRange': [2.5, 4.5], 'absoluteCorrectionRange': [.6, 2]},
+              'acceptance': acceptance,
               'limits': 'First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.',
               'versions': {'rasterio': rasterio.__version__, 'pyproj': pyproj.__version__, 'shapely': shapely.__version__},
               'entries': entries,
@@ -133,6 +134,6 @@ for destination, payload in [(args.output, output), (args.overlay, {k:v for k,v 
     if destination:
         Path(destination).parent.mkdir(parents=True, exist_ok=True)
         Path(destination).write_text(json.dumps(payload, ensure_ascii=False, indent=2)+'\n')
-print(json.dumps({'audited': len(rows), 'sampled': sum(r.get('samples', 0) >= 12 for r in rows),
+print(json.dumps({'audited': len(rows), 'sampled': sum(r.get('samples', 0) >= acceptance['minimumSamples'] for r in rows),
                   'accepted': len(entries), 'rejections': dict(Counter(reason for r in rows for reason in r['reasons'])),
                   'output': args.output, 'overlay': args.overlay, 'examples': entries[:5]}, ensure_ascii=False))

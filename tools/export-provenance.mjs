@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const heights = JSON.parse(fs.readFileSync('web/height-samples.json', 'utf8'));
-fs.copyFileSync('source-data/facade-catalog.json', 'web/frontages.json');
 fs.copyFileSync('THIRD_PARTY_NOTICES.md', 'web/THIRD_PARTY_NOTICES.md');
 fs.copyFileSync('LICENSE', 'web/LICENSE');
 const hash = (file) =>

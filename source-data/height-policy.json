@@ -1,0 +1,12 @@
+{
+  "floorHeight": 3.05,
+  "baseOffset": 0.4,
+  "minimumHeight": 2.5,
+  "acceptance": {
+    "minimumSamples": 12,
+    "minimumCoverage": 0.95,
+    "maximumP90P10Spread": 1.5,
+    "heightPerFloorRange": [2.5, 4.5],
+    "absoluteCorrectionRange": [0.6, 2]
+  }
+}

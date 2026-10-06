@@ -34,7 +34,8 @@ npm run check
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
 móvil físico. Si un cambio afecta a interfaz, cámara, render o controles, probarlo en un
-navegador real y anotar qué no se ha verificado. `verify3d` engancha el juego con
+navegador real y anotar qué no se ha verificado. El arnés común `tests/runtime-harness.mjs`, compartido por el verificador y el exportador
+de frentes, crea y elimina su módulo temporal fuera del repositorio. Engancha el juego con
 sustituciones de texto que fallan con un error claro si dejan de coincidir.
 
 Prettier no formatea los datos (`web/*.json`, `source-data/`), las licencias ni
@@ -58,9 +59,12 @@ se versiona. El juego no necesita `node_modules`.
 | `.agents/`       | Habilidades compartidas por agentes (`.claude/skills/` las enlaza) |
 
 Copias intencionadas, que no se editan a mano: `web/LICENSE` y `web/THIRD_PARTY_NOTICES.md`
-(copias de la raíz) y `web/frontages.json` (copia de `source-data/facade-catalog.json`). Se
-regeneran con `node tools/export-provenance.mjs` y `tests/verify-world.mjs` comprueba que
-coinciden.
+(copias de la raíz). Se regeneran con `node tools/export-provenance.mjs` y
+`tests/verify-world.mjs` comprueba que coinciden. El catálogo de frentes tiene una sola
+copia, `web/frontages.json`, generada con `node tools/export-facades.mjs`.
+
+`web/game-data.js` centraliza lugares, miradores, encargos y constantes compartidas por
+el juego y los tests. `web/progress.js` valida las partidas guardadas antes de usarlas.
 
 Los objetos de calle se cargan de `web/street-objects.json` (capa opcional) y
 `web/osm-world.json` es la única copia de las vías.

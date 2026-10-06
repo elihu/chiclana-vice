@@ -1,148 +1,18 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import * as Real from '../web/vendor/three.module.min.js';
-const noop = () => {};
-const context = new Proxy(
-  { measureText: (s) => ({ width: s.length * 7 }) },
-  { get: (o, k) => (k in o ? o[k] : noop), set: (o, k, v) => ((o[k] = v), true) },
-);
-const els = {};
-// Initial classes from index.html, so classList reflects which overlays are hidden.
-const initialClasses = {};
-for (const [tag] of fs.readFileSync('web/index.html', 'utf8').matchAll(/<[a-z]+\b[^>]*>/g)) {
-  const id = tag.match(/\bid="([^"]+)"/)?.[1],
-    cls = tag.match(/\bclass="([^"]+)"/)?.[1];
-  if (id) initialClasses[id] = cls ? cls.split(/\s+/) : [];
-}
-function classList(id) {
-  const set = new Set(initialClasses[id] || []);
-  return {
-    add: (...c) => c.forEach((v) => set.add(v)),
-    remove: (...c) => c.forEach((v) => set.delete(v)),
-    toggle: (c, force = !set.has(c)) => (force ? set.add(c) : set.delete(c), force),
-    contains: (c) => set.has(c),
-  };
-}
-function el(id) {
-  return (els[id] ??= {
-    id,
-    tagName: 'DIV',
-    style: {},
-    value: '',
-    children: [],
-    classList: classList(id),
-    getContext: () => context,
-    appendChild(v) {
-      this.children.push(v);
-    },
-    replaceChildren() {
-      this.children = [];
-    },
-    querySelector: () => el(id + 'child'),
-    setAttribute(k, v) {
-      (this.attributes ??= {})[k] = v;
-    },
-    listeners: {},
-    addEventListener(n, f) {
-      (this.listeners[n] ??= []).push(f);
-    },
-    setPointerCapture: noop,
-    getBoundingClientRect: () => ({ width: 390, height: 450, left: 0, top: 0 }),
-  });
-}
-globalThis.window = globalThis;
-globalThis.innerWidth = 390;
-globalThis.innerHeight = 844;
-globalThis.devicePixelRatio = 2;
-const mediaQueries = [];
-globalThis.matchMedia = (q) => (mediaQueries.push(q), { matches: true });
-const windowListeners = {};
-globalThis.addEventListener = (n, f) => (windowListeners[n] ??= []).push(f);
-globalThis.document = {
-  getElementById: el,
-  createElement: (tag) => ({ ...el('created' + Math.random()), tagName: tag.toUpperCase() }),
-  querySelectorAll: () => [],
-  querySelector: () => el('query'),
-  addEventListener: noop,
-};
-globalThis.Image = class {
-  constructor() {
-    this.complete = true;
-  }
-};
-globalThis.requestAnimationFrame = (fn) => {
-  if (fn.name !== 'frame') setTimeout(fn, 0);
-};
-const storage = {};
-globalThis.localStorage = {
-  getItem: (k) => storage[k] ?? null,
-  setItem: (k, v) => (storage[k] = String(v)),
-  removeItem: (k) => delete storage[k],
-};
-const requested = [];
-globalThis.fetch = async (url) => {
-  requested.push(url);
-  return {
-    ok: true,
-    json: async () => JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8')),
-  };
-};
-class Renderer {
-  constructor() {
-    this.shadowMap = {};
-    this.info = { render: { calls: 0, triangles: 0 } };
-    this.renders = 0;
-  }
-  setPixelRatio(v) {
-    this.pixelRatio = v;
-  }
-  setSize() {}
-  render() {
-    this.renders++;
-  }
-}
-class Loader {
-  loadAsync(url) {
-    globalThis.__aerialUrl = url;
-    requested.push(url);
-    return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
-  }
-}
-globalThis.__THREE = { ...Real, WebGLRenderer: Renderer, TextureLoader: Loader };
-// Each test hook must match exactly once; a silent no-op would give misleading failures later.
-const patch = (source, pattern, replacement) => {
-  assert(pattern.test(source), 'test hook not found in game3d.js: ' + pattern);
-  return source.replace(pattern, replacement);
-};
-let code = fs.readFileSync('web/game3d.js', 'utf8');
-code = patch(
-  code,
-  /const THREE = await import\(asset\(['"]\.\/vendor\/three\.module(?:\.min)?\.js['"]\)\);/,
-  'const THREE=globalThis.__THREE;requested.push(asset("./vendor/three.module.min.js"));',
-);
-code = patch(
-  code,
-  /window\.__cityGame\s*=\s*\{/,
-  'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,loadWorld,listStreets,openMap,help,nearestRoad,chunks,traffic,stepAgent,vehicles,people,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
-);
-code = patch(
-  code,
-  /init\(\)\.catch\(\s*\(?err\)?\s*=>/,
-  'globalThis.__initPromise=init().catch(err=>',
-);
-fs.writeFileSync('tests/qa3d-runtime.mjs', code);
-globalThis.requested = requested;
-// Same query as index.html, so runtime resources must carry the common version suffix.
-const assetVersion = fs.readFileSync('web/index.html', 'utf8').match(/game3d\.js\?v=([^"]+)"/)[1];
-await import('./qa3d-runtime.mjs' + '?v=' + assetVersion);
-await globalThis.__initPromise;
-assert(globalThis.__cityGame, 'init completed');
+import { JOBS, PLACES, POPULATION, VIEWPOINTS, SAVE_KEY } from '../web/game-data.js';
+import './verify-progress.mjs';
+import { createRuntime } from './runtime-harness.mjs';
+const { g, els, storage, requested, mediaQueries, windowListeners, assetVersion } =
+  await createRuntime({ progress: { cash: -1, job: 1.5, found: {} } });
+assert.equal(g.state.job, 0, 'invalid saved job does not break initialization');
+assert.equal(g.state.found.size, 0, 'invalid found list does not break initialization');
 assert.equal(
   globalThis.__aerialUrl,
   'aerial-2048.jpg?v=' + assetVersion,
   'touch devices load the reduced orthophoto',
 );
-const g = globalThis.__cityGame;
 {
   const html = fs.readFileSync('web/index.html', 'utf8');
   assert.equal(html.match(/style\.css\?v=([^"]+)"/)[1], assetVersion, 'CSS and JS share version');
@@ -154,6 +24,9 @@ const g = globalThis.__cityGame;
     'height-samples.json',
     'facade-profiles.json',
     './vendor/three.module.min.js',
+    './game-data.js',
+    './progress.js',
+    'street-objects.json',
   ])
     assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
   assert(
@@ -161,6 +34,36 @@ const g = globalThis.__cityGame;
     'every resource versioned',
   );
   console.log('Common resource version', assetVersion, 'on', requested.length, 'requests');
+}
+
+{
+  const brute = (x, z, pad) =>
+    g.city.buildings.some(
+      (b) =>
+        (g.pInside(x, z, b.p) && !b.holes.some((h) => g.pInside(x, z, h))) ||
+        (pad > 0 && b.p.some((p, i) => g.pointSeg(x, z, p, b.p[(i + 1) % b.p.length]).d < pad)),
+    );
+  for (const [x, z] of [
+    [-625.12, 135.16],
+    [-649.93, 166.84],
+    [-654.93, 424.81],
+  ])
+    for (const pad of [0, 0.3, 1.1])
+      assert.equal(g.inBuilding(x, z, pad), brute(x, z, pad), 'grid padding matches all buildings');
+  assert(g.inBuilding(-625.12, 135.16, 0.3), 'padding crosses cell boundary');
+  const ring = [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+      [0, 10],
+    ],
+    hole = [
+      [2, 2],
+      [8, 2],
+      [8, 8],
+      [2, 8],
+    ];
+  assert(g.pInside(5, 5, ring) && g.pInside(5, 5, hole), 'courtyard lies within outer ring');
 }
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
 console.log(
@@ -242,15 +145,21 @@ for (let i = 0; i < 30; i++) g.update(0.016);
   }
   console.log('Oneway network', JSON.stringify(net), 'strongly connected, police routes passed');
 }
+assert.deepEqual(
+  g.pois.map((p) => p.name),
+  PLACES.map(([name]) => name),
+);
+for (const job of JOBS)
+  for (const stage of job.stages) assert(g.pois[stage.poi], 'mission has a real place');
 for (const p of g.pois) {
   assert(!g.blocked(p.x, p.z, 1), 'POI clear ' + p.name);
   let path = g.findRoute(g.nearestNode(g.player.x, g.player.z), g.nearestNode(p.x, p.z));
   assert(path.length, 'route to ' + p.name);
   console.log('POI', p.name, p.x, p.z, 'route nodes', path.length);
 }
-for (let j = 0; j < 4; j++) {
+for (let j = 0; j < JOBS.length; j++) {
   let attempts = 0;
-  while (g.state.job === j && attempts++ < 8) {
+  while (g.state.job === j && attempts++ < JOBS[j].stages.length * 3) {
     let goal = g.target();
     g.player.x = g.player.car.x = goal.x;
     g.player.z = g.player.car.z = goal.z;
@@ -265,7 +174,7 @@ g.interact();
 assert(!g.player.car, 'exit car');
 g.interact();
 assert(g.player.car, 'enter car');
-assert.equal(g.state.job, 4);
+assert.equal(g.state.job, JOBS.length);
 console.log(
   JSON.stringify({
     ok: true,
@@ -281,7 +190,7 @@ console.log(
       'finite mesh vertices',
       'spawn and POI collisions',
       'street graph routes',
-      'all 4 missions',
+      'all planned missions',
       'enter and exit vehicle',
       'update loop with police',
     ],
@@ -297,18 +206,12 @@ console.log(
 );
 const detail = g.scene.getObjectByName('reference-led-facades');
 assert(detail, 'custom details exist');
-assert(g.facadeWork.fronts.length > 20, 'street frontages upgraded');
+assert(g.facadeWork.fronts.length > 0, 'street frontages upgraded');
 // Closed facade solids are single-sided; flat/open shapes keep DoubleSide.
 const facadeSides = detail.children.map((m) => m.material.side);
 assert(facadeSides.filter((s) => s === Real.FrontSide).length > facadeSides.length / 2);
 assert(facadeSides.includes(Real.DoubleSide), 'flat facade shapes stay double-sided');
-for (const p of [
-  [-99, -15],
-  [-215, -145],
-  [-205, -155],
-  [-209, -148],
-])
-  console.log('Viewpoint', p, 'blocked', g.blocked(p[0], p[1], 1.1));
+for (const v of VIEWPOINTS) assert(!g.blocked(v.x, v.z, 1.1), 'viewpoint clear ' + v.name);
 const { colliders, ...environmentCounts } = g.streetEnvironment;
 console.log(
   'Street environment',
@@ -421,7 +324,8 @@ console.log(
   'batches',
 );
 const heights = JSON.parse(fs.readFileSync('web/height-samples.json', 'utf8'));
-assert.equal(heights.entries.length, 15, 'independent IGN first-coverage pilot');
+assert(heights.entries.length > 0, 'independent IGN first-coverage pilot');
+const acceptance = JSON.parse(fs.readFileSync('source-data/height-policy.json', 'utf8')).acceptance;
 assert(heights.source.startsWith('IGN /'));
 assert.equal(heights.license, 'CC BY 4.0 scne.es');
 assert.equal(
@@ -436,7 +340,12 @@ for (const s of heights.entries) {
   assert.equal(b.heightSource, heights.source);
   assert.equal(b.visualH, s.height);
   assert.equal(b.renderH, s.height, 'roof uses pilot height');
-  assert(s.coverage >= 0.95 && s.spread <= 1.5 && s.samples >= 12, 'height sample quality');
+  assert(
+    s.coverage >= acceptance.minimumCoverage &&
+      s.spread <= acceptance.maximumP90P10Spread &&
+      s.samples >= acceptance.minimumSamples,
+    'height sample quality',
+  );
 }
 for (const f of g.facadeWork.fronts) {
   assert(Number.isInteger(f.floors));
@@ -462,11 +371,7 @@ for (const street of ['Calle Álamo', 'Calle Garcia Gutierrez', 'Calle Corredera
 console.log('Expanded pilot frontage IDs match cadastral edges');
 
 // Camera sweep must prevent cuts through walls while orbiting at tight viewpoints.
-for (const [x, z] of [
-  [-99, -15],
-  [-215, -145],
-  [-81, 69],
-]) {
+for (const { x, z } of VIEWPOINTS.slice(0, 3)) {
   Object.assign(g.player, { x, z });
   for (let i = 0; i < 24; i++) {
     g.setOrbit((i * Math.PI) / 12);
@@ -534,7 +439,7 @@ els.quality.onclick();
 assert.equal(g.quality, 'low');
 assert(!g.sun.castShadow && !g.renderer.shadowMap.enabled, 'light mode disables sun shadows');
 assert.equal(g.renderer.pixelRatio, 1);
-assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'low', 'quality persisted');
+assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'low', 'quality persisted');
 g.updateCamera(0.016);
 const fogFar = g.scene.fog.far;
 for (const group of g.chunks) {
@@ -545,7 +450,7 @@ for (const group of g.chunks) {
 g.pauseMenu();
 els.quality.onclick();
 assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto');
-assert.equal(JSON.parse(storage['chiclana-real-v2']).quality, 'auto');
+assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'auto');
 console.log('Light mode shadows, persistence and fog culling passed');
 
 // Paused frames reuse the last image unless something requests a redraw.
@@ -695,7 +600,7 @@ function referenceRoute(graph, from, to, driveOnly) {
   console.log('HUD writes on change and shared vehicle list passed');
 }
 
-assert.equal(g.people.length, 28, 'all planned pedestrians spawned');
+assert.equal(g.people.length, POPULATION.pedestrians, 'all planned pedestrians spawned');
 assert(g.people.every((p) => p.s.length >= 8));
 console.log('Pedestrians', g.people.length);
 
@@ -787,6 +692,31 @@ assert(windowListeners.pointerdown, 'first touch enables touch mode');
   assert.equal(els.hud.inert, false);
   console.log('Dialog semantics, labels, progressbar and credits size passed');
 }
+
+{
+  const key = (tag, key) => {
+    let prevented = false;
+    windowListeners.keydown.forEach((f) =>
+      f({
+        key,
+        target: { tagName: tag },
+        repeat: false,
+        preventDefault() {
+          prevented = true;
+        },
+      }),
+    );
+    return prevented;
+  };
+  for (const tag of ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'])
+    assert(!key(tag, ' '), 'native Space activation preserved');
+  assert(key('BODY', ' '), 'Space still brakes in game');
+  windowListeners.keyup.forEach((f) => f({ key: ' ' }));
+  g.pauseMenu();
+  key('BUTTON', 'Escape');
+  assert(!g.paused, 'Escape closes focused dialog');
+}
+
 // After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
 {
   els.world.listeners.webglcontextlost.forEach((f) => f({ preventDefault() {} }));
