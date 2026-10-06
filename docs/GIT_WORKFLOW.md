@@ -18,7 +18,7 @@ Mantener `main` como versión integrada. Crear ramas cortas `feat/tema`,
 un objetivo revisable. Para este proyecto no necesitamos una rama `develop`
 permanente ni ramas de releases paralelas.
 
-1. Leer `AGENTS.md`, `README-PC.md`, `CONTINUAR-CODEX.md` y `MAP_SOURCES.md`.
+1. Leer `AGENTS.md`, `docs/DESARROLLO.md`, `docs/CONTINUAR-CODEX.md` y `docs/MAP_SOURCES.md`.
 2. Revisar el estado; si hay cambios pendientes, identificarlos antes de cambiar de rama.
 3. Partir de `main`:
 
@@ -45,14 +45,14 @@ orientaciones y pruebas realizadas, o dejar explícitamente pendiente esa valida
 Para documentación basta revisar enlaces, contenido y diff; no repetir pruebas
 del juego sin motivo.
 
-6. Actualizar `CONTINUAR-CODEX.md` con estado y pendientes; actualizar
-   `MAP_SOURCES.md` cuando cambien datos, referencias o aproximaciones.
+6. Actualizar `docs/CONTINUAR-CODEX.md` con estado y pendientes; actualizar
+   `docs/MAP_SOURCES.md` cuando cambien datos, referencias o aproximaciones.
 7. Revisar y seleccionar archivos, usando rutas concretas:
 
 ```bash
 git diff --check
 git diff
-git add dist/game3d.js CONTINUAR-CODEX.md
+git add dist/game3d.js docs/CONTINUAR-CODEX.md
 git diff --cached
 git commit -m 'feat: describir el comportamiento añadido'
 ```

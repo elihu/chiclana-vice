@@ -13,8 +13,10 @@ execFileSync(process.execPath, ['tools/verify-world.mjs'], {stdio: 'inherit'});
 execFileSync(process.execPath, ['tools/verify3d.mjs'], {stdio: 'inherit'});
 
 const files = [
-  'LICENSE', 'THIRD_PARTY_NOTICES.md', 'DATOS_PUBLICOS.md', 'MAP_SOURCES.md',
-  'PUBLICACION.md', 'AGENTS.md', 'GIT_WORKFLOW.md',
+  'LICENSE', 'THIRD_PARTY_NOTICES.md', 'README.md', 'AGENTS.md',
+  'docs/README.md', 'docs/DESARROLLO.md', 'docs/CONTINUAR-CODEX.md',
+  'docs/MAP_SOURCES.md', 'docs/DATOS_PUBLICOS.md', 'docs/PUBLICACION.md',
+  'docs/GIT_WORKFLOW.md', 'docs/ALTURAS_PILOTO.md',
   '.gitattributes', '.github/workflows/pages.yml',
   'tools/verify3d.mjs', 'tools/verify-world.mjs', 'tools/world-files.mjs',
   'tools/prepare-world.mjs', 'tools/export-provenance.mjs', 'tools/audit-ign-heights.py', 'tools/export-facades.mjs',
@@ -40,8 +42,5 @@ for (const file of files) {
   fs.mkdirSync(path.dirname(output), {recursive: true});
   fs.copyFileSync(file, output, fs.constants.COPYFILE_EXCL);
 }
-for (const [source,target] of [['docs/public/README.md','README.md'],['docs/public/README.md','README-PC.md'],['docs/public/CONTINUAR-CODEX.md','CONTINUAR-CODEX.md']]) fs.copyFileSync(source,path.join(destination,target),fs.constants.COPYFILE_EXCL);
-fs.mkdirSync(path.join(destination,'docs/public'),{recursive:true});
-for(const file of ['README.md','CONTINUAR-CODEX.md'])fs.copyFileSync('docs/public/'+file,path.join(destination,'docs/public',file),fs.constants.COPYFILE_EXCL);
 fs.writeFileSync(path.join(destination, '.gitignore'), '.env\n.env.*\n.venv/\n__pycache__/\nnode_modules/\n*.log\n*.zip\n*.tif\n*.tiff\n*.laz\n*.las\nrebuilt-city.json\ntools/qa3d-runtime.mjs\n');
 console.log(JSON.stringify({destination, files: files.length, historyCopied: false, published: false}));

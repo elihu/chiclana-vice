@@ -75,7 +75,7 @@ El destino debe ser nuevo y estar fuera del repositorio local. Se copia una list
 explícita de archivos; no .git, originales ZIP/GML/ráster, configuración del hosting
 anterior, credenciales, mediciones históricas ni auditorías REDIAM. No se sobrescribe
 una carpeta existente. Se conserva el historial local completo para investigación.
-El exportador copia guías actuales de `docs/public/`, sin estados históricos obsoletos.
+El exportador copia README.md y las guías actuales de docs/, sin plantillas duplicadas.
 
 En la copia nueva se puede inicializar un Git convencional con rama main y un
 commit inicial. Publicar requiere remoto/cuenta GitHub y seleccionar Pages →
