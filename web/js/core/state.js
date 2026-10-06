@@ -84,3 +84,17 @@ export const world = {
   mappedStreetObjects: [],
   streetNames: [],
 };
+export const gfx = {
+  renderer: null,
+  scene: null,
+  camera: null,
+  sun: null,
+  quality: 'auto',
+  needsRender: true,
+  contextLost: false,
+  W: 0,
+  H: 0,
+  coarse: false,
+  // Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
+  touchSeen: false,
+};

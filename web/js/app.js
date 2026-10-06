@@ -36,6 +36,7 @@ import {
   facadeWork,
   streetEnvironment,
   world,
+  gfx,
 } from './core/state.js';
 
 // Cache-busting suffix shared by every runtime resource, passed by the entry module.
@@ -69,10 +70,7 @@ function setStyle(target, prop, value) {
     c = domCache(e);
   if (c[prop] !== value) e.style[prop] = c[prop] = value;
 }
-let renderer,
-  scene,
-  camera,
-  started = false,
+let started = false,
   paused = false,
   t = 0,
   last = 0,
@@ -82,9 +80,6 @@ let renderer,
   collisionClock = 0,
   hold = 0,
   saveClock = 0,
-  quality = 'auto',
-  needsRender = true,
-  contextLost = false,
   mapAerial = false,
   route = [],
   routeClock = 0;
@@ -92,28 +87,23 @@ let audioOn = false,
   audioCtx,
   engineOsc,
   engineGain;
-let W = 0,
-  H = 0,
-  coarse = false;
-// Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
-let touchSeen = false;
 function installTouchDetection() {
-  W = innerWidth;
-  H = innerHeight;
-  coarse = matchMedia('(any-pointer: coarse)').matches;
+  gfx.W = innerWidth;
+  gfx.H = innerHeight;
+  gfx.coarse = matchMedia('(any-pointer: coarse)').matches;
   const coarseQuery = matchMedia('(any-pointer: coarse)');
   coarseQuery.addEventListener?.('change', (e) => {
-    coarse = e.matches || touchSeen;
-    if (renderer) applyQuality();
+    gfx.coarse = e.matches || gfx.touchSeen;
+    if (gfx.renderer) applyQuality();
   });
   addEventListener(
     'pointerdown',
     (e) => {
-      if (e.pointerType !== 'touch' || touchSeen) return;
-      touchSeen = true;
-      if (!coarse) {
-        coarse = true;
-        if (renderer) applyQuality();
+      if (e.pointerType !== 'touch' || gfx.touchSeen) return;
+      gfx.touchSeen = true;
+      if (!gfx.coarse) {
+        gfx.coarse = true;
+        if (gfx.renderer) applyQuality();
       }
     },
     { capture: true, passive: true },
@@ -134,12 +124,12 @@ let joyId = null,
   firstPersonCar = null;
 function loadSavedProgress() {
   const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
-  if (stored.quality === 'low') quality = 'low';
+  if (stored.quality === 'low') gfx.quality = 'low';
   state.cash = stored.cash;
   state.job = stored.job;
   state.found = new Set(stored.found);
 }
-let character, sun, ring, beam, arrow;
+let character, ring, beam, arrow;
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
@@ -158,7 +148,12 @@ function save() {
   try {
     localStorage.setItem(
       SAVE_KEY,
-      JSON.stringify({ cash: state.cash, job: state.job, found: [...state.found], quality }),
+      JSON.stringify({
+        cash: state.cash,
+        job: state.job,
+        found: [...state.found],
+        quality: gfx.quality,
+      }),
     );
   } catch {}
 }
@@ -1404,7 +1399,7 @@ function buildDetailedFacades() {
     m.matrix.copy(o.matrixWorld);
     root.add(m);
   }
-  scene.add(root);
+  gfx.scene.add(root);
   facadeWork.meshes = root.children.length;
 }
 
@@ -1555,7 +1550,7 @@ async function buildBuildings() {
       mesh.receiveShadow = true;
       group.add(mesh);
     }
-    scene.add(group);
+    gfx.scene.add(group);
     chunks.push(group);
   }
 }
@@ -1800,7 +1795,7 @@ function createCar(color = '#b9b8aa', cop = false) {
     );
     group.add(siren);
   }
-  scene.add(group);
+  gfx.scene.add(group);
   return {
     mesh: group,
     firstPersonOccluders: [cabin, roof],
@@ -1863,7 +1858,7 @@ function createPerson(color = '#78805a') {
     limbs.push(arm);
   }
   g.userData.heightMeters = 1.744;
-  scene.add(g);
+  gfx.scene.add(g);
   return { mesh: g, limbs };
 }
 function buildRoadDetails() {
@@ -1893,7 +1888,7 @@ function buildRoadDetails() {
   let geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geom.computeVertexNormals();
-  scene.add(
+  gfx.scene.add(
     new THREE.Mesh(
       geom,
       mat('#e8dfbb', { side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
@@ -1938,7 +1933,7 @@ function buildRoadDetails() {
     let mesh = new THREE.Mesh(mergeParts(parts), material);
     mesh.castShadow = cast;
     mesh.receiveShadow = true;
-    scene.add(mesh);
+    gfx.scene.add(mesh);
     for (const p of parts) p.geometry.dispose();
   }
 }
@@ -2070,7 +2065,7 @@ function buildStreetSurfaces() {
       }),
     );
     mesh.receiveShadow = true;
-    scene.add(mesh);
+    gfx.scene.add(mesh);
   }
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
   const mark = [];
@@ -2100,7 +2095,7 @@ function buildStreetSurfaces() {
   let mg = new THREE.BufferGeometry();
   mg.setAttribute('position', new THREE.Float32BufferAttribute(mark, 3));
   mg.computeVertexNormals();
-  scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
+  gfx.scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }
 function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -2288,7 +2283,7 @@ function buildUrbanFurniture() {
     m.castShadow = m.receiveShadow = true;
     root.add(m);
   }
-  scene.add(root);
+  gfx.scene.add(root);
 }
 // Partition static vegetation without changing any instance transform or color.
 function addVegetationCells(root, source, kind, cellSize = 255) {
@@ -2325,7 +2320,7 @@ function addVegetationCells(root, source, kind, cellSize = 255) {
 function buildTrees() {
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
-  scene.add(vegetation);
+  gfx.scene.add(vegetation);
   let points = [...world.city.trees];
   for (const a of world.city.areas) {
     if (a.kind !== 'park' || a.p.length < 3) continue;
@@ -2552,7 +2547,7 @@ function addSigns() {
   posts.name = 'street-sign-posts';
   posts.castShadow = posts.receiveShadow = true;
   posts.computeBoundingSphere();
-  scene.add(plates, posts);
+  gfx.scene.add(plates, posts);
   streetEnvironment.signs = signs.length;
 }
 function setupPOIs() {
@@ -2671,7 +2666,7 @@ async function init() {
     // Light mode and touch devices start with the 2048×1536 derivative (same extent).
     // Toggling quality later does not reload it. Without the orthophoto, plain colours.
     new platform.TextureLoader()
-      .loadAsync(asset(quality === 'low' || coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
+      .loadAsync(asset(gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
       .catch(() => null),
     fetch(asset('height-samples.json'))
       .then((r) => (r.ok ? r.json() : null))
@@ -2696,26 +2691,26 @@ async function init() {
   } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
   [world.worldW, world.worldH] = world.city.size;
   loadProgress('Preparando el mundo 3D…', 25);
-  renderer = new platform.WebGLRenderer({
+  gfx.renderer = new platform.WebGLRenderer({
     canvas: $('world'),
     antialias: true,
     powerPreference: 'high-performance',
   });
-  renderer.setSize(W, H);
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color('#a5bbc8');
-  scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
-  camera = new THREE.PerspectiveCamera(62, W / H, 0.15, 1800);
+  gfx.renderer.setSize(gfx.W, gfx.H);
+  gfx.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  gfx.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  gfx.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  gfx.renderer.toneMappingExposure = 1.2;
+  gfx.scene = new THREE.Scene();
+  gfx.scene.background = new THREE.Color('#a5bbc8');
+  gfx.scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
+  gfx.camera = new THREE.PerspectiveCamera(62, gfx.W / gfx.H, 0.15, 1800);
   const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
-  scene.add(hemi);
-  sun = new THREE.DirectionalLight('#fff0d6', 3.2);
-  sun.position.set(-100, 150, 60);
-  sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, {
+  gfx.scene.add(hemi);
+  gfx.sun = new THREE.DirectionalLight('#fff0d6', 3.2);
+  gfx.sun.position.set(-100, 150, 60);
+  gfx.sun.shadow.mapSize.set(1024, 1024);
+  Object.assign(gfx.sun.shadow.camera, {
     left: -75,
     right: 75,
     top: 75,
@@ -2723,10 +2718,10 @@ async function init() {
     near: 1,
     far: 350,
   });
-  sun.shadow.camera.updateProjectionMatrix();
-  sun.shadow.bias = -0.0002;
-  sun.shadow.normalBias = 0.09;
-  scene.add(sun, sun.target);
+  gfx.sun.shadow.camera.updateProjectionMatrix();
+  gfx.sun.shadow.bias = -0.0002;
+  gfx.sun.shadow.normalBias = 0.09;
+  gfx.scene.add(gfx.sun, gfx.sun.target);
   applyQuality();
   let g = new THREE.Mesh(
     new THREE.PlaneGeometry(world.worldW, world.worldH),
@@ -2738,11 +2733,11 @@ async function init() {
   );
   g.rotation.x = -Math.PI / 2;
   g.receiveShadow = true;
-  scene.add(g);
+  gfx.scene.add(g);
   let outer = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), mat('#9a9b86'));
   outer.rotation.x = -Math.PI / 2;
   outer.position.y = -0.1;
-  scene.add(outer);
+  gfx.scene.add(outer);
   buildGraph();
   connectOpenSpaces();
   orientDriveGraph();
@@ -2780,7 +2775,7 @@ async function init() {
   );
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.15;
-  scene.add(ring);
+  gfx.scene.add(ring);
   beam = new THREE.Mesh(
     new THREE.CylinderGeometry(5.6, 5.6, 4, 32, 1, true),
     new THREE.MeshBasicMaterial({
@@ -2791,14 +2786,14 @@ async function init() {
       depthWrite: false,
     }),
   );
-  scene.add(beam);
+  gfx.scene.add(beam);
   let arrowGeo = new THREE.ConeGeometry(0.55, 1.5, 4);
   arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: '#edfa88' }));
-  scene.add(arrow);
+  gfx.scene.add(arrow);
   camPos.set(player.x - 15, 12, player.z - 15);
   camTarget.set(player.x, 1, player.z);
-  camera.position.copy(camPos);
-  camera.lookAt(camTarget);
+  gfx.camera.position.copy(camPos);
+  gfx.camera.lookAt(camTarget);
   $('streetCount').textContent =
     new Set(world.city.roads.filter((r) => r.name).map((r) => r.name)).size + ' calles con nombre';
   loadProgress('Centro de Chiclana listo.', 100);
@@ -2862,7 +2857,7 @@ function advanceStage() {
 }
 function dropPolice() {
   for (const p of police) {
-    scene.remove(p.mesh);
+    gfx.scene.remove(p.mesh);
   }
   police.length = 0;
   state.wanted = 0;
@@ -3133,7 +3128,7 @@ function updatePolice(dt) {
       close = true;
       if (Math.abs(player.speed) < 3) state.arrest += dt;
     } else if (d(p, player) > 400) {
-      scene.remove(p.mesh);
+      gfx.scene.remove(p.mesh);
       police.splice(police.indexOf(p), 1);
       break;
     }
@@ -3255,7 +3250,7 @@ function update(dt) {
   setText('street', near?.s.name || 'Centro de Chiclana');
   let hint = '';
   if (!player.car && nearestCar())
-    hint = 'Coche disponible · ' + (coarse ? 'SUBIR' : 'E para subir');
+    hint = 'Coche disponible · ' + (gfx.coarse ? 'SUBIR' : 'E para subir');
   else if (goal && !goal.escape && d(player, goal) < 12 && Math.abs(player.speed) > 1.8)
     hint = 'Detente en el círculo dorado para entregar';
   else if (state.wanted)
@@ -3369,16 +3364,16 @@ function updateCamera(dt) {
     if (mode === 0) constrainCamera(camPos);
   }
   updateCameraVisibility();
-  camera.position.copy(camPos);
-  camera.lookAt(camTarget);
-  sun.position.set(player.x - 85, 125, player.z + 60);
-  sun.target.position.set(player.x, 0, player.z);
-  sun.target.updateMatrixWorld();
+  gfx.camera.position.copy(camPos);
+  gfx.camera.lookAt(camTarget);
+  gfx.sun.position.set(player.x - 85, 125, player.z + 60);
+  gfx.sun.target.position.set(player.x, 0, player.z);
+  gfx.sun.target.updateMatrixWorld();
   // In light mode, chunks beyond the fog end are culled (measured from the camera).
-  const low = quality === 'low',
-    reach = low ? scene.fog.far : mode === 2 ? 650 : 520,
-    ox = low ? camera.position.x : player.x,
-    oz = low ? camera.position.z : player.z;
+  const low = gfx.quality === 'low',
+    reach = low ? gfx.scene.fog.far : mode === 2 ? 650 : 520,
+    ox = low ? gfx.camera.position.x : player.x,
+    oz = low ? gfx.camera.position.z : player.z;
   for (const group of chunks) {
     let m = group.children[0],
       c = m.geometry.boundingSphere;
@@ -3392,14 +3387,14 @@ function drawLabels() {
       setStyle(p.el, 'display', 'none');
       continue;
     }
-    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(camera);
+    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(gfx.camera);
     if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) {
       setStyle(p.el, 'display', 'none');
       continue;
     }
     setStyle(p.el, 'display', 'block');
-    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * W + 'px');
-    setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * H + 'px');
+    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * gfx.W + 'px');
+    setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * gfx.H + 'px');
   }
   let goal = target(),
     el = ui('direction');
@@ -3407,14 +3402,14 @@ function drawLabels() {
     setStyle(el, 'display', 'none');
     return;
   }
-  let v = labelPoint.set(goal.x, 2, goal.z).project(camera);
+  let v = labelPoint.set(goal.x, 2, goal.z).project(gfx.camera);
   if (v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.65) {
     setStyle(el, 'display', 'none');
     return;
   }
   let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + orbit);
-  let x = W / 2 - Math.sin(angle) * Math.min(W * 0.33, 180),
-    y = H * 0.47 - Math.cos(angle) * Math.min(H * 0.18, 90);
+  let x = gfx.W / 2 - Math.sin(angle) * Math.min(gfx.W * 0.33, 180),
+    y = gfx.H * 0.47 - Math.cos(angle) * Math.min(gfx.H * 0.18, 90);
   setStyle(el, 'display', 'grid');
   setStyle(el, 'left', x - 19 + 'px');
   setStyle(el, 'top', y - 19 + 'px');
@@ -3611,7 +3606,7 @@ function mute() {
   if (engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
 }
 function openMap() {
-  if (!started || contextLost) return;
+  if (!started || gfx.contextLost) return;
   paused = true;
   clearInput();
   mute();
@@ -3624,11 +3619,11 @@ function openMap() {
   drawMap(c);
 }
 function closeMap() {
-  if (contextLost) return; // only reloading can bring the image back
+  if (gfx.contextLost) return; // only reloading can bring the image back
   $('mapOverlay').classList.add('hidden');
   closeDialog();
   paused = false;
-  needsRender = true;
+  gfx.needsRender = true;
   last = performance.now();
 }
 // Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
@@ -3675,15 +3670,15 @@ function modal(html) {
   openDialog($('modalBody').querySelector('button') || $('closeModal'));
 }
 function closeModal() {
-  if (contextLost) return; // only reloading can bring the image back
+  if (gfx.contextLost) return; // only reloading can bring the image back
   $('modal').classList.add('hidden');
   closeDialog();
   paused = false;
-  needsRender = true;
+  gfx.needsRender = true;
   last = performance.now();
 }
 function help() {
-  if (contextLost) return;
+  if (gfx.contextLost) return;
   modal(
     `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${world.streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa ${jobs.length} encargos y descubre ${pois.length} lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${world.city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${world.city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección de Rafael Suárez Almanzor y Victorín Agueda Goyeneche (proyecto de 2006), publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. San Telmo y San Juan Bautista: fichas de turismo.chiclana.es como referencia. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
   );
@@ -3710,17 +3705,17 @@ function toggleAudio() {
 }
 // Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
 function applyQuality() {
-  const low = quality === 'low';
-  renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, coarse ? 1.35 : 1.75));
-  renderer.shadowMap.enabled = !low;
-  sun.castShadow = !low;
-  scene.fog.far = low ? 380 : 620;
-  needsRender = true;
+  const low = gfx.quality === 'low';
+  gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
+  gfx.renderer.shadowMap.enabled = !low;
+  gfx.sun.castShadow = !low;
+  gfx.scene.fog.far = low ? 380 : 620;
+  gfx.needsRender = true;
 }
 function pauseMenu() {
-  if (contextLost) return;
+  if (gfx.contextLost) return;
   modal(
-    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/${jobs.length} encargos · ${state.found.size}/${pois.length} lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
+    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/${jobs.length} encargos · ${state.found.size}/${pois.length} lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${gfx.quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
   );
   $('resume').onclick = closeModal;
   $('help').onclick = help;
@@ -3729,11 +3724,11 @@ function pauseMenu() {
     closeModal();
   };
   $('quality').onclick = () => {
-    quality = quality === 'low' ? 'auto' : 'low';
+    gfx.quality = gfx.quality === 'low' ? 'auto' : 'low';
     applyQuality();
     save();
     closeModal();
-    toast(quality === 'low' ? 'Modo ligero activado' : 'Calidad normal', 2);
+    toast(gfx.quality === 'low' ? 'Modo ligero activado' : 'Calidad normal', 2);
   };
   $('rescue').onclick = () => {
     rescue();
@@ -3918,13 +3913,13 @@ function installControls() {
   });
   window.addEventListener('pagehide', save);
   window.addEventListener('resize', () => {
-    W = innerWidth;
-    H = innerHeight;
-    if (!renderer) return;
-    renderer.setSize(W, H);
-    camera.aspect = W / H;
-    camera.updateProjectionMatrix();
-    needsRender = true;
+    gfx.W = innerWidth;
+    gfx.H = innerHeight;
+    if (!gfx.renderer) return;
+    gfx.renderer.setSize(gfx.W, gfx.H);
+    gfx.camera.aspect = gfx.W / gfx.H;
+    gfx.camera.updateProjectionMatrix();
+    gfx.needsRender = true;
     if (!$('mapOverlay').classList.contains('hidden')) openMap();
   });
   $('world').addEventListener('webglcontextlost', (e) => {
@@ -3934,7 +3929,7 @@ function installControls() {
     modal(
       '<h2>Se ha interrumpido la imagen.</h2><p>Tu progreso está guardado. Recarga la página y activa el modo móvil ligero en Pausa.</p><button class="primary" id="reload">RECARGAR</button>',
     );
-    contextLost = true;
+    gfx.contextLost = true;
     $('closeModal').classList.add('hidden');
     save();
     $('reload').onclick = () => location.reload();
@@ -3947,23 +3942,23 @@ function frame(now) {
   if (started && !paused) update(dt);
   else if (!started) {
     t += dt;
-    camera.position.set(
+    gfx.camera.position.set(
       player.x + Math.sin(t * 0.075) * 36,
       22,
       player.z + Math.cos(t * 0.075) * 36,
     );
-    camera.lookAt(player.x, 0, player.z);
-    sun.target.position.set(player.x, 0, player.z);
-    sun.position.set(player.x - 85, 125, player.z + 60);
+    gfx.camera.lookAt(player.x, 0, player.z);
+    gfx.sun.target.position.set(player.x, 0, player.z);
+    gfx.sun.position.set(player.x - 85, 125, player.z + 60);
     for (let c of vehicles) {
       c.mesh.position.set(c.x, 0, c.z);
       c.mesh.rotation.y = c.a;
     }
   }
   // While paused (map, modal), the last frame stays on screen; redraw only on demand.
-  if (!contextLost && (!started || !paused || needsRender)) {
-    renderer.render(scene, camera);
-    needsRender = false;
+  if (!gfx.contextLost && (!started || !paused || gfx.needsRender)) {
+    gfx.renderer.render(gfx.scene, gfx.camera);
+    gfx.needsRender = false;
   }
   if (started && !paused && frameCount++ % 3 === 0) {
     let mini = ui('mini');
@@ -4004,7 +3999,7 @@ function createPublicApi() {
     driveNetwork,
     pois,
     get scene() {
-      return scene;
+      return gfx.scene;
     },
     blocked,
     safePoint,
@@ -4012,16 +4007,16 @@ function createPublicApi() {
     streetEnvironment,
     get view() {
       return {
-        position: camera.position.toArray(),
+        position: gfx.camera.position.toArray(),
         mode,
         pitch: lookPitch,
         yaw: player.a + orbit,
-        direction: camera.getWorldDirection(new THREE.Vector3()).toArray(),
-        obstructed: mode === 0 && cameraSweep(camera.position) < 1,
+        direction: gfx.camera.getWorldDirection(new THREE.Vector3()).toArray(),
+        obstructed: mode === 0 && cameraSweep(gfx.camera.position) < 1,
       };
     },
     get stats() {
-      return renderer.info.render;
+      return gfx.renderer.info.render;
     },
   };
 }
@@ -4061,13 +4056,13 @@ function createTestApi() {
     vehicles,
     people,
     get sun() {
-      return sun;
+      return gfx.sun;
     },
     get renderer() {
-      return renderer;
+      return gfx.renderer;
     },
     get quality() {
-      return quality;
+      return gfx.quality;
     },
     get paused() {
       return paused;
