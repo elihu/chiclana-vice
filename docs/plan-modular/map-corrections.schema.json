@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elihu.github.io/chiclana-vice/schemas/map-corrections.schema.json",
+  "title": "Chiclana Vice: correcciones manuales sobre OSM y Catastro",
+  "description": "Documentación para el editor. La referencia normativa es web/js/world/design-validate.js (validateCorrections) y web/js/world/corrections.js.",
+  "type": "object",
+  "required": ["version", "license", "attribution", "corrections"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "license": { "const": "ODbL-1.0" },
+    "licenseUrl": { "type": "string" },
+    "attribution": { "type": "string", "minLength": 1 },
+    "appliesTo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "osmSha256": { "$ref": "#/$defs/sha" },
+        "buildingsSha256": { "$ref": "#/$defs/sha" }
+      }
+    },
+    "corrections": { "type": "array", "items": { "$ref": "#/$defs/correction" } }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "point": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+    "roadRef": {
+      "type": "object",
+      "required": ["id", "occurrence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "occurrence": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "roadFields": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "oneway": { "type": "boolean" },
+        "bridge": { "type": "boolean" }
+      }
+    },
+    "common": {
+      "type": "object",
+      "required": ["id", "op", "reason", "evidence", "date"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^fix-[0-9]{3,}$" },
+        "reason": { "type": "string", "minLength": 3 },
+        "evidence": { "type": "string", "minLength": 3 },
+        "date": { "type": "string", "format": "date" }
+      }
+    },
+    "correction": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "op": { "const": "road.set" },
+                "road": { "$ref": "#/$defs/roadRef" },
+                "expect": { "$ref": "#/$defs/roadFields" },
+                "set": { "$ref": "#/$defs/roadFields" }
+              },
+              "required": ["road", "expect", "set"]
+            },
+            {
+              "properties": {
+                "op": { "const": "road.movePoint" },
+                "road": { "$ref": "#/$defs/roadRef" },
+                "index": { "type": "integer", "minimum": 0 },
+                "expect": { "$ref": "#/$defs/point" },
+                "to": { "$ref": "#/$defs/point" }
+              },
+              "required": ["road", "index", "expect", "to"]
+            },
+            {
+              "properties": {
+                "op": { "const": "road.insertPoint" },
+                "road": { "$ref": "#/$defs/roadRef" },
+                "after": { "type": "integer", "minimum": 0 },
+                "expectAfter": { "$ref": "#/$defs/point" },
+                "at": { "$ref": "#/$defs/point" }
+              },
+              "required": ["road", "after", "expectAfter", "at"]
+            },
+            {
+              "properties": {
+                "op": { "const": "road.add" },
+                "add": {
+                  "type": "object",
+                  "required": ["id", "name", "type", "w", "oneway", "bridge", "p"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": { "type": "string", "pattern": "^fix-[0-9]{3,}$" },
+                    "name": { "type": "string" },
+                    "type": { "type": "string" },
+                    "w": { "type": "number", "exclusiveMinimum": 0 },
+                    "oneway": { "type": "boolean" },
+                    "bridge": { "type": "boolean" },
+                    "p": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/point" } }
+                  }
+                }
+              },
+              "required": ["add"]
+            },
+            {
+              "properties": {
+                "op": { "const": "road.remove" },
+                "road": { "$ref": "#/$defs/roadRef" },
+                "expect": {
+                  "type": "object",
+                  "required": ["name"],
+                  "properties": { "name": { "type": "string" } }
+                }
+              },
+              "required": ["road", "expect"]
+            },
+            {
+              "properties": {
+                "op": { "const": "area.movePoint" },
+                "area": {
+                  "type": "object",
+                  "required": ["index", "expectFirst"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "index": { "type": "integer", "minimum": 0 },
+                    "expectFirst": { "$ref": "#/$defs/point" }
+                  }
+                },
+                "index": { "type": "integer", "minimum": 0 },
+                "expect": { "$ref": "#/$defs/point" },
+                "to": { "$ref": "#/$defs/point" }
+              },
+              "required": ["area", "index", "expect", "to"]
+            },
+            {
+              "properties": {
+                "op": { "const": "building.moveVertex" },
+                "building": {
+                  "type": "object",
+                  "required": ["index", "footprintSha256"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "index": { "type": "integer", "minimum": 0 },
+                    "footprintSha256": { "$ref": "#/$defs/sha" }
+                  }
+                },
+                "vertex": { "type": "integer", "minimum": 0 },
+                "expect": { "$ref": "#/$defs/point" },
+                "to": { "$ref": "#/$defs/point" }
+              },
+              "required": ["building", "vertex", "expect", "to"]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

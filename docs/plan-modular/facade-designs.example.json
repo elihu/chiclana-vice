@@ -1,0 +1,216 @@
+{
+  "$schema": "./facade-designs.schema.json",
+  "version": 1,
+  "kit": 1,
+  "description": "Approximate authored facade compositions; parametric primitives interpreted from references, no photographic textures. References and conditions in THIRD_PARTY_NOTICES.md.",
+  "license": "ODbL-1.0",
+  "attribution": "Anchor vertices from D.G. del Catastro INSPIRE BU; street identifiers © OpenStreetMap contributors",
+  "recipes": {
+    "mercado-fachada": {
+      "description": "Long modern stone facade, upper louvers, dark shopfronts and cafe awnings. Equivalent to the market loop of buildDetailedFacades in main 5666928.",
+      "params": {},
+      "body": [
+        {
+          "box": ["len / 2", 4.77, 0.055, "len", 9.5, 0.09],
+          "color": "$stone"
+        },
+        {
+          "box": ["len / 2", 1.46, 0.115, "len", 2.92, 0.15],
+          "color": "$base"
+        },
+        {
+          "box": ["len / 2", 9.3, 0.37, "len + 0.5", 0.24, 0.85],
+          "color": "#ded9c9"
+        },
+        {
+          "box": ["len / 2", 9.62, 0.1, "len + 0.2", 0.3, 0.3],
+          "color": "#d9d1bf"
+        },
+        {
+          "let": {
+            "bays": "max(3, round(len / 5.15))",
+            "step": "len / bays"
+          }
+        },
+        {
+          "for": "j",
+          "from": 0,
+          "while": "j < bays",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "x": "(j + 0.5) * step",
+                "ww": "min(2.8, step * 0.65)"
+              }
+            },
+            {
+              "box": ["x", 5.32, 0.135, "ww + 0.23", 2.48, 0.12],
+              "color": "#a79782"
+            },
+            {
+              "piece": "pane",
+              "args": ["x", 5.32, "ww", 2.23, 0.14]
+            },
+            {
+              "box": ["x", 5.88, 0.28, "ww", 0.075, 0.045],
+              "color": "$iron"
+            },
+            {
+              "box": ["x - ww * 0.25", 5.32, 0.28, 0.045, 2.23, 0.04],
+              "color": "$iron"
+            },
+            {
+              "box": ["x + ww * 0.25", 5.32, 0.28, 0.045, 2.23, 0.04],
+              "color": "$iron"
+            },
+            {
+              "box": ["x", 8.08, 0.15, "step - 0.42", 1.7, 0.08],
+              "color": "#768580"
+            },
+            {
+              "for": "q",
+              "from": "-step / 2 + 0.35",
+              "while": "q < step / 2 - 0.25",
+              "step": 0.17,
+              "body": [
+                {
+                  "box": ["x + q", 8.08, 0.28, 0.057, 1.75, 0.23],
+                  "color": "#e6dfcb"
+                }
+              ]
+            },
+            {
+              "box": ["x", 1.36, 0.2, "step - 0.63", 2.57, 0.055],
+              "color": "#303b3c"
+            },
+            {
+              "for": "k",
+              "from": 0,
+              "while": "k < 3",
+              "step": 1,
+              "body": [
+                {
+                  "box": ["x - step * 0.3 + k * step * 0.3", 1.38, 0.25, 0.055, 2.55, 0.05],
+                  "color": "#9a9485"
+                }
+              ]
+            },
+            {
+              "if": "len > 60 && j % 5 != 2",
+              "then": [
+                {
+                  "box": ["x", 2.94, 0.93, "step - 0.19", 0.1, 1.72],
+                  "color": "#d8bf83",
+                  "rotation": [0.13, 0, 0]
+                },
+                {
+                  "box": ["x", 2.8, 1.77, "step - 0.16", 0.3, 0.055],
+                  "color": "#d8bf83"
+                },
+                {
+                  "box": ["x", 3.06, 0.34, "step - 0.1", 0.085, 0.12],
+                  "color": "#645949"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "y",
+          "from": 0.45,
+          "while": "y < 2.8",
+          "step": 0.46,
+          "body": [
+            {
+              "box": ["len / 2", "y", 0.198, "len", 0.018, 0.02],
+              "color": "#a78770"
+            },
+            {
+              "for": "x",
+              "from": "(round(y / 0.46) % 2) * 0.57",
+              "while": "x < len",
+              "step": 1.14,
+              "body": [
+                {
+                  "box": ["x", "y - 0.23", 0.198, 0.018, 0.44, 0.02],
+                  "color": "#a78770"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "x",
+          "from": 0,
+          "while": "x < len",
+          "step": 1.35,
+          "body": [
+            {
+              "box": ["x", 5.1, 0.13, 0.016, 4.0, 0.018],
+              "color": "#b5a78f"
+            }
+          ]
+        },
+        {
+          "for": "y",
+          "from": 3.35,
+          "while": "y < 7.1",
+          "step": 0.76,
+          "body": [
+            {
+              "box": ["len / 2", "y", 0.131, "len", 0.015, 0.02],
+              "color": "#b5a78f"
+            }
+          ]
+        },
+        {
+          "if": "len > 60",
+          "then": [
+            {
+              "piece": "sign",
+              "args": [
+                {
+                  "text": "MERCADO DE ABASTOS"
+                },
+                "len / 2",
+                3.42,
+                13,
+                0.46,
+                "#e7deca",
+                "#988571"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "buildings": [
+    {
+      "id": "mercado",
+      "name": "Mercado de Abastos",
+      "landmark": "Mercado Municipal",
+      "detailType": "market",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": [
+        "THIRD_PARTY_NOTICES.md: Mercado, Xemenendura (2025), CC BY-SA 4.0, used as reference only"
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "ring": [
+              [-262.93, -174.43],
+              [-191.66, -94.14],
+              [-210.7, -77.63],
+              [-280.47, -156.93]
+            ],
+            "center": [-235.67, -125.92]
+          },
+          "recipe": "mercado-fachada"
+        }
+      ]
+    }
+  ]
+}

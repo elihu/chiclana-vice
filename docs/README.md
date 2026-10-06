@@ -23,3 +23,5 @@ documento; los demás enlazan a él.
 - [Estado actual y pendientes](ESTADO.md).
 - [Propuesta de convenciones](PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
   documentación, Git y CI.
+- [Plan de modularización y diseño desde datos](PLAN-MODULAR.md): plan por fases, aún
+  sin ejecutar.

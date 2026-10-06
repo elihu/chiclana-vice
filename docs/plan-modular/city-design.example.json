@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "description": "Reglas de diseño de calle y edificios genéricos. Valores de main 5666928 (web/game3d.js); el paso 2.9 los traslada sin cambios. Rectángulos como [minX, maxX, minZ, maxZ] en metros locales.",
+  "zones": {
+    "frontagePilot": [-410, 110, -270, 125],
+    "frontageOriginal": [-365, 90, -230, 125],
+    "pavedRoads": [-370, 100, -250, 110],
+    "pavedSquares": [-360, 100, -240, 100],
+    "streetLamps": [-355, 90, -230, 100]
+  },
+  "frontages": {
+    "streets": [
+      "Calle Constitución",
+      "Calle de la Vega",
+      "Calle de la Plaza",
+      "Calle Caraza",
+      "Calle Jesús Nazareno",
+      "Calle Álamo",
+      "Calle Garcia Gutierrez",
+      "Calle Corredera Baja"
+    ],
+    "originalStreets": [
+      "Calle Constitución",
+      "Calle de la Vega",
+      "Calle de la Plaza",
+      "Calle Caraza",
+      "Calle Jesús Nazareno"
+    ],
+    "residentialStreets": ["Calle Constitución"],
+    "minimumEdge": 3.3,
+    "sideProbe": 0.45,
+    "maximumRoadDistance": 17,
+    "minimumSetback": 1,
+    "recipe": "street-generic"
+  },
+  "buildings": {
+    "palette": ["#eee7d7", "#f4ece1", "#f1ead8", "#e8dfd3", "#e7d2b6", "#f3eddf", "#dabdaa"],
+    "detailColors": {
+      "church": "#e9e1cd",
+      "townhall": "#d8b669",
+      "market": "#cfbfaa",
+      "street": "#eee9db"
+    },
+    "minimumHeights": [
+      { "name": "Arquillo del Reloj", "center": [207.09, 140.89], "radius": 9, "height": 17 },
+      { "name": "Iglesia Mayor", "center": [233.29, 174.98], "radius": 24, "height": 12 },
+      { "name": "Ayuntamiento", "detailType": "townhall", "minimumFloors": 3, "height": 15.1 }
+    ],
+    "wallUvWidth": 4.8
+  },
+  "pavements": {
+    "pedestrianTypes": ["pedestrian", "footway", "path"],
+    "nonDrivableTypes": ["footway", "pedestrian", "cycleway", "path"],
+    "minimumHalfWidth": 0.65,
+    "layerHeights": {
+      "asphalt": 0.028,
+      "stone": 0.05,
+      "slabs": 0.036,
+      "centerLine": 0.065,
+      "crossing": 0.082
+    }
+  },
+  "crossings": {
+    "maximumDistance": 8,
+    "minimumRoadWidth": 4,
+    "halfWidthFactor": 0.43,
+    "stripeSpacing": 0.85,
+    "stripeWidth": 0.43,
+    "stripeHalfLength": 2
+  },
+  "centerLines": {
+    "minimumWidth": 7,
+    "minimumLength": 9,
+    "spacing": 9,
+    "dash": 3,
+    "color": "#e8dfbb",
+    "opacity": 0.55
+  },
+  "furniture": {
+    "protectedPoints": [
+      [186, -156],
+      [-279, -95],
+      [133, -229],
+      [188, 185],
+      [207, 141],
+      [-95, -12],
+      [-35, -174],
+      [-99, -15],
+      [-215, -145]
+    ],
+    "protectedRadius": 5,
+    "streetLamps": {
+      "minimumSegment": 10,
+      "start": 7,
+      "spacing": 22,
+      "offset": 0.48,
+      "minimumSeparation": 14
+    },
+    "plazaLamps": {
+      "from": [-258, -167],
+      "to": [-192, -93],
+      "shift": [7, -6],
+      "count": 5,
+      "benchEvery": 2
+    },
+    "benches": [
+      [-107, -33, 1.4],
+      [-105, 20, 1.4],
+      [-118, 45, 1.4],
+      [-48, -45, -0.7],
+      [-173, -87, -0.7],
+      [-299, -120, -0.6]
+    ],
+    "binOffset": 2.3,
+    "bollards": {
+      "streets": ["Calle Constitución", "Calle de la Plaza"],
+      "minimumSegment": 12,
+      "start": 3,
+      "spacing": 9,
+      "offset": 0.2
+    },
+    "fromOsm": { "highway=street_lamp": "lamp", "amenity=bench": "bench" }
+  },
+  "vegetation": {
+    "parkDensity": 105,
+    "parkMaximum": 100,
+    "spacing": 4.2,
+    "roadClearance": 2,
+    "buildingClearance": 1.8,
+    "marketTrees": { "from": [-254, -164], "to": [-195, -98], "shift": [9, -8], "count": 5 },
+    "shrubEveryVertex": 3,
+    "shrubRoadClearance": 1
+  },
+  "signs": { "maximum": 91, "offset": 0.5, "minimumPoints": 3 }
+}
