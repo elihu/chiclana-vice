@@ -3,6 +3,29 @@ const $ = (id) => document.getElementById(id),
   clamp = (v, a, b) => Math.max(a, Math.min(b, v)),
   lerp = (a, b, t) => a + (b - a) * t,
   TAU = Math.PI * 2;
+// Cached element references; per-frame HUD writes touch the DOM only when values change.
+const domRefs = new Map(),
+  domValues = new WeakMap();
+function ui(id) {
+  let e = domRefs.get(id);
+  if (!e) domRefs.set(id, (e = $(id)));
+  return e;
+}
+function domCache(e) {
+  let c = domValues.get(e);
+  if (!c) domValues.set(e, (c = {}));
+  return c;
+}
+function setText(target, value) {
+  const e = typeof target === 'string' ? ui(target) : target,
+    c = domCache(e);
+  if (c.text !== value) e.textContent = c.text = value;
+}
+function setStyle(target, prop, value) {
+  const e = typeof target === 'string' ? ui(target) : target,
+    c = domCache(e);
+  if (c[prop] !== value) e.style[prop] = c[prop] = value;
+}
 let city,
   facadeProfiles,
   renderer,
@@ -17,6 +40,7 @@ let city,
   last = 0,
   mode = 0,
   toastClock = 0,
+  toastShown = false,
   collisionClock = 0,
   hold = 0,
   saveClock = 0,
@@ -65,10 +89,14 @@ const state = {
 };
 const player = { x: 170, z: -150, a: 0, speed: 0, car: null };
 const camPos = new THREE.Vector3(),
-  camTarget = new THREE.Vector3();
+  camTarget = new THREE.Vector3(),
+  camDesired = new THREE.Vector3(),
+  camLook = new THREE.Vector3(),
+  labelPoint = new THREE.Vector3();
 const cars = [],
   police = [],
   traffic = [],
+  vehicles = [], // cars + traffic, kept in sync instead of spreading both every frame
   people = [],
   chunks = [],
   waterAreas = [],
@@ -86,9 +114,10 @@ function sleepFrame() {
   return new Promise((r) => requestAnimationFrame(r));
 }
 function toast(message, duration = 4) {
-  $('toast').textContent = message;
-  $('toast').classList.add('show');
+  setText('toast', message);
+  ui('toast').classList.add('show');
   toastClock = duration;
+  toastShown = true;
 }
 function save() {
   try {
@@ -2557,16 +2586,17 @@ function target() {
 function updateHUD() {
   const j = jobs[state.job],
     p = target();
-  $('money').textContent = Math.floor(state.cash).toLocaleString('es-ES') + ' €';
-  $('stars').textContent = '★'.repeat(state.wanted) + '☆'.repeat(5 - state.wanted);
-  $('jobTag').textContent = j
-    ? String(state.job + 1).padStart(2, '0') + ' / ' + j.name
-    : 'EXPLORACIÓN LIBRE';
-  $('jobTitle').textContent = p ? p.text : 'Recorre las calles reales del centro';
-  $('interactText').textContent = player.car ? 'BAJAR' : 'SUBIR';
-  $('boostText').textContent = player.car ? 'TURBO' : 'CORRER';
-  $('joy').classList.toggle('hidden', !!player.car);
-  $('driveControls').classList.toggle('hidden', !player.car);
+  setText('money', Math.floor(state.cash).toLocaleString('es-ES') + ' €');
+  setText('stars', '★'.repeat(state.wanted) + '☆'.repeat(5 - state.wanted));
+  setText(
+    'jobTag',
+    j ? String(state.job + 1).padStart(2, '0') + ' / ' + j.name : 'EXPLORACIÓN LIBRE',
+  );
+  setText('jobTitle', p ? p.text : 'Recorre las calles reales del centro');
+  setText('interactText', player.car ? 'BAJAR' : 'SUBIR');
+  setText('boostText', player.car ? 'TURBO' : 'CORRER');
+  ui('joy').classList.toggle('hidden', !!player.car);
+  ui('driveControls').classList.toggle('hidden', !player.car);
   updateCameraVisibility();
 }
 function spawnTraffic() {
@@ -2716,6 +2746,7 @@ async function init() {
   character = createPerson('#d7d5b0');
   character.mesh.visible = false;
   spawnTraffic();
+  vehicles.push(...cars, ...traffic);
   ring = new THREE.Mesh(
     new THREE.RingGeometry(5.5, 6.2, 48),
     new THREE.MeshBasicMaterial({
@@ -2864,7 +2895,7 @@ function rescue() {
 function nearestCar() {
   let best = null,
     md = 5.5;
-  for (const c of [...cars, ...traffic]) {
+  for (const c of vehicles) {
     let di = d(c, player);
     if (di < md && Math.abs(c.speed) < 3) {
       md = di;
@@ -2964,7 +2995,8 @@ function updatePlayer(dt) {
       c.x = nx;
       c.z = nz;
     }
-    for (const other of [...cars, ...traffic, ...police]) {
+    for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
+      const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
       if (other === c || d(c, other) > 3.1) continue;
       if (collisionClock <= 0 && Math.abs(c.speed) > 3) {
         c.health -= 5;
@@ -3128,10 +3160,13 @@ function update(dt) {
   t += dt;
   collisionClock = Math.max(0, collisionClock - dt);
   toastClock -= dt;
-  if (toastClock <= 0) $('toast').classList.remove('show');
+  if (toastShown && toastClock <= 0) {
+    toastShown = false;
+    ui('toast').classList.remove('show');
+  }
   updatePlayer(dt);
   for (const c of traffic) stepAgent(c, dt);
-  for (const c of [...cars, ...traffic]) {
+  for (const c of vehicles) {
     c.mesh.position.set(c.x, 0, c.z);
     c.mesh.rotation.y = c.a;
   }
@@ -3202,25 +3237,26 @@ function update(dt) {
   if (orbitAge > 0) orbitAge -= dt;
   else if (player.car && mode !== 1) orbit = lerp(orbit, 0, dt * 2);
   updateCamera(dt);
-  $('speed').textContent = Math.round(Math.abs(player.speed) * 3.6);
-  $('modeName').textContent = player.car
-    ? 'COSTA GT'
-    : input.boost || keys.Shift
-      ? 'CORRIENDO'
-      : 'A PIE';
-  $('conditionFill').style.width = state.health + '%';
-  $('conditionFill').style.background = state.health < 30 ? '#ff9473' : '#e7fa8a';
-  $('jobDistance').textContent = goal
-    ? goal.escape
-      ? 'Evita a las patrullas'
-      : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
-    : state.found.size + '/6 lugares descubiertos';
-  $('jobTime').textContent =
+  setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
+  setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
+  setStyle('conditionFill', 'width', state.health + '%');
+  setStyle('conditionFill', 'background', state.health < 30 ? '#ff9473' : '#e7fa8a');
+  setText(
+    'jobDistance',
+    goal
+      ? goal.escape
+        ? 'Evita a las patrullas'
+        : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
+      : state.found.size + '/6 lugares descubiertos',
+  );
+  setText(
+    'jobTime',
     state.timer > 0
       ? Math.floor(state.timer / 60) + ':' + String(Math.floor(state.timer % 60)).padStart(2, '0')
-      : '';
+      : '',
+  );
   let near = nearestRoad(player.x, player.z);
-  $('street').textContent = near?.s.name || 'Centro de Chiclana';
+  setText('street', near?.s.name || 'Centro de Chiclana');
   let hint = '';
   if (!player.car && nearestCar())
     hint = 'Coche disponible · ' + (coarse ? 'SUBIR' : 'E para subir');
@@ -3230,7 +3266,7 @@ function update(dt) {
     hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
   else if (Math.abs(player.x) > worldW / 2 - 30 || Math.abs(player.z) > worldH / 2 - 30)
     hint = 'Fin de la zona recreada · Abre el mapa para volver';
-  $('hint').textContent = hint;
+  setText('hint', hint);
   saveClock += dt;
   if (saveClock > 10) {
     saveClock = 0;
@@ -3303,12 +3339,12 @@ function updateCamera(dt) {
   if (mode === 1) {
     let ahead = player.car ? -0.15 : 0,
       side = player.car ? 0.38 : 0;
-    desired = new THREE.Vector3(
+    desired = camDesired.set(
       player.x + Math.sin(player.a) * ahead + Math.cos(player.a) * side,
       player.car ? 1.2 : 1.61,
       player.z + Math.cos(player.a) * ahead - Math.sin(player.a) * side,
     );
-    target = new THREE.Vector3(
+    target = camLook.set(
       desired.x + Math.sin(heading) * Math.cos(lookPitch) * 18,
       desired.y + Math.sin(lookPitch) * 18,
       desired.z + Math.cos(heading) * Math.cos(lookPitch) * 18,
@@ -3321,12 +3357,12 @@ function updateCamera(dt) {
       y = 45;
       look = 0;
     }
-    desired = new THREE.Vector3(
+    desired = camDesired.set(
       player.x - Math.sin(heading) * follow,
       y,
       player.z - Math.cos(heading) * follow,
     );
-    target = new THREE.Vector3(
+    target = camLook.set(
       player.x + Math.sin(heading) * look,
       mode === 2 ? 0 : 1.1 + Math.tan(lookPitch) * look,
       player.z + Math.cos(heading) * look,
@@ -3357,36 +3393,36 @@ function drawLabels() {
   for (const p of pois) {
     let di = Math.hypot(p.labelX - player.x, p.labelZ - player.z);
     if (di > 125 || mode === 1) {
-      p.el.style.display = 'none';
+      setStyle(p.el, 'display', 'none');
       continue;
     }
-    let v = new THREE.Vector3(p.labelX, 14, p.labelZ).project(camera);
+    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(camera);
     if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) {
-      p.el.style.display = 'none';
+      setStyle(p.el, 'display', 'none');
       continue;
     }
-    p.el.style.display = 'block';
-    p.el.style.left = (v.x * 0.5 + 0.5) * W + 'px';
-    p.el.style.top = (-v.y * 0.5 + 0.5) * H + 'px';
+    setStyle(p.el, 'display', 'block');
+    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * W + 'px');
+    setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * H + 'px');
   }
   let goal = target(),
-    el = $('direction');
+    el = ui('direction');
   if (!goal || goal.escape) {
-    el.style.display = 'none';
+    setStyle(el, 'display', 'none');
     return;
   }
-  let v = new THREE.Vector3(goal.x, 2, goal.z).project(camera);
+  let v = labelPoint.set(goal.x, 2, goal.z).project(camera);
   if (v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.65) {
-    el.style.display = 'none';
+    setStyle(el, 'display', 'none');
     return;
   }
   let angle = Math.atan2(goal.x - player.x, goal.z - player.z) - (player.a + orbit);
   let x = W / 2 - Math.sin(angle) * Math.min(W * 0.33, 180),
     y = H * 0.47 - Math.cos(angle) * Math.min(H * 0.18, 90);
-  el.style.display = 'grid';
-  el.style.left = x - 19 + 'px';
-  el.style.top = y - 19 + 'px';
-  el.textContent = Math.abs(angle % TAU) > Math.PI * 0.65 ? '↶' : '◆';
+  setStyle(el, 'display', 'grid');
+  setStyle(el, 'left', x - 19 + 'px');
+  setStyle(el, 'top', y - 19 + 'px');
+  setText(el, Math.abs(angle % TAU) > Math.PI * 0.65 ? '↶' : '◆');
 }
 const aerialImage = new Image();
 aerialImage.src = 'aerial.jpg';
@@ -3866,7 +3902,7 @@ function frame(now) {
     camera.lookAt(player.x, 0, player.z);
     sun.target.position.set(player.x, 0, player.z);
     sun.position.set(player.x - 85, 125, player.z + 60);
-    for (let c of [...cars, ...traffic]) {
+    for (let c of vehicles) {
       c.mesh.position.set(c.x, 0, c.z);
       c.mesh.rotation.y = c.a;
     }
@@ -3877,7 +3913,7 @@ function frame(now) {
     needsRender = false;
   }
   if (started && !paused && frameCount++ % 3 === 0) {
-    let mini = $('mini');
+    let mini = ui('mini');
     if (mini.width !== 280) {
       mini.width = 280;
       mini.height = 200;

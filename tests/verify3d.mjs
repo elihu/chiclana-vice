@@ -92,7 +92,7 @@ let code = fs
   )
   .replace(
     /window\.__cityGame\s*=\s*\{/,
-    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
+    'window.__cityGame={input,update,target,interact,updateCamera,cycleCamera,camPos,setOrbit:v=>{orbit=v},carCollision,findRoute,nearestNode,cars,start,updateHUD,frame,pauseMenu,closeModal,chunks,traffic,stepAgent,vehicles,get sun(){return sun},get renderer(){return renderer},get quality(){return quality},get paused(){return paused},',
   )
   .replace(/init\(\)\.catch\(\s*\(?err\)?\s*=>/, 'globalThis.__initPromise=init().catch(err=>');
 fs.writeFileSync('tests/qa3d-runtime.mjs', code);
@@ -587,4 +587,26 @@ function referenceRoute(graph, from, to, driveOnly) {
   const moving = arrivals.filter((n) => n >= 5).length;
   assert.equal(moving, vehicles.length, 'all traffic keeps moving through the network');
   console.log('Traffic simulation', { vehicles: vehicles.length, moving, swaps, alleyExits });
+}
+
+// HUD writes only on change; vehicles list mirrors cars + traffic without per-frame copies.
+{
+  assert.equal(g.vehicles.length, g.cars.length + g.traffic.length);
+  assert.equal(new Set(g.vehicles).size, g.vehicles.length);
+  for (const c of [...g.cars, ...g.traffic]) assert(g.vehicles.includes(c));
+  Object.assign(g.player, { x: g.player.car?.x ?? 0, z: g.player.car?.z ?? 0 });
+  let writes = 0,
+    text = els.street.textContent;
+  Object.defineProperty(els.street, 'textContent', {
+    get: () => text,
+    set: (v) => {
+      text = v;
+      writes++;
+    },
+  });
+  g.update(0.016);
+  const first = writes;
+  for (let i = 0; i < 5; i++) g.update(0.016);
+  assert.equal(writes, first, 'street name not rewritten while unchanged');
+  console.log('HUD writes on change and shared vehicle list passed');
 }
