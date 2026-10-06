@@ -20,7 +20,7 @@ const records = [
       'Clipping, 0.12m topology-preserving simplification, local coordinates, game volume reconstruction and floor-based heights',
   },
   {
-    files: ['osm-world.json', 'roads-osm.json', 'street-objects.json'],
+    files: ['osm-world.json', 'street-objects.json'],
     source: '© OpenStreetMap contributors',
     date: '2026-10-04',
     conditions: 'ODbL-1.0',
@@ -67,7 +67,8 @@ const records = [
     files: ['frontages.json'],
     source: 'Catastro contours + OSM street associations + IGN or floor-based heights',
     conditions:
-      'Mixed provenance; Catastro terms, ODbL for OSM associations, IGN CC BY for measurements; not blanket MIT/CC0',
+      'ODbL-1.0 as a whole (derived database with OSM street associations); also attribute Catastro (contours) and IGN CC BY 4.0 (heights)',
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
     transformation:
       'Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped',
   },
