@@ -10,4 +10,4 @@ node_modules/
 *.laz
 *.las
 rebuilt-city.json
-tools/qa3d-runtime.mjs
+tests/qa3d-runtime.mjs

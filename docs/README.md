@@ -1,5 +1,6 @@
 # Documentación
 
+- [Estructura y convenciones](ESTRUCTURA.md)
 - [Desarrollo y ejecución local](DESARROLLO.md)
 - [Flujo de Git](GIT_WORKFLOW.md)
 - [Publicación con GitHub Pages](PUBLICACION.md)

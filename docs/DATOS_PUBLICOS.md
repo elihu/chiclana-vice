@@ -2,7 +2,7 @@
 
 ## Separación actual
 
-El navegador carga `dist/world.json`, seguido de dos capas independientes:
+El navegador carga `web/world.json`, seguido de dos capas independientes:
 `buildings.json` (7.448 partes transformadas de Catastro) y `osm-world.json`
 (616 vías, 69 áreas, 20 hitos y 14 árboles cartografiados). El motor las compone
 sin cambiar coordenadas, plantas, patios ni capacidades. La población completa
@@ -18,7 +18,7 @@ agrupamiento por celdas se conservan.
 `source-data/facade-catalog.json` identifica los 276 frentes mediante edificio/arista,
 huella, normal, dimensión, plantas y fuente de altura. Nombres de calle: OSM;
 contornos: Catastro; estimaciones LiDAR: IGN. La licencia MIT del motor no cambia
-esas condiciones. `dist/data-sources.json` y THIRD_PARTY_NOTICES.md delimitan fuentes.
+esas condiciones. `web/data-sources.json` y THIRD_PARTY_NOTICES.md delimitan fuentes.
 Cada ID está ligado a esta instantánea; hashes permiten detectar cambios.
 
 ## Reproducir sin originales en el repositorio público
@@ -41,7 +41,7 @@ Para regenerar las capas actuales sin originales: `node tools/prepare-world.mjs`
    nacional. Caché predeterminada `/tmp/chiclana-ign`, fuera del repositorio:
 
 ```fish
-uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay dist/height-samples.json
+uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay web/height-samples.json
 ```
 
 MDSnE2,5 está ya normalizado al terreno. P80 dentro de huella erosionada 1 m,
@@ -57,8 +57,8 @@ el proceso actual no la utiliza. No copia alturas ni auditorías REDIAM anterior
 
 ```fish
 node tools/export-facades.mjs
-node tools/verify-world.mjs
-node tools/verify3d.mjs
+node tests/verify-world.mjs
+node tests/verify3d.mjs
 ```
 
 Actualizar también checksums de `data-sources.json` si se modifican sus archivos:
@@ -79,7 +79,7 @@ El exportador copia README.md y las guías actuales de docs/, sin plantillas dup
 
 En la copia nueva se puede inicializar un Git convencional con rama main y un
 commit inicial. Publicar requiere remoto/cuenta GitHub y seleccionar Pages →
-GitHub Actions. El workflow verifica el juego antes de publicar solo dist;
+GitHub Actions. El workflow verifica el juego antes de publicar solo web;
 las ramas de features no despliegan. No hay pagos ni dominio de pago necesarios.
 
 ## Validación de esta conversión

@@ -13,5 +13,5 @@ Lee BuildingPart sin extraer los 240 MB del ZIP, conserva plantas y transforma
 recortando/simplificando contornos a coordenadas de juego. Escribe rebuilt-city.json,
 no sustituye automáticamente el mapa. Revisar y usar tools/prepare-world.mjs para
 una actualización deliberada. Alturas IGN: tools/audit-ign-heights.py.
-Fachadas: parámetros en dist/facade-profiles.json y recetas en dist/game3d.js.
+Fachadas: parámetros en web/facade-profiles.json y recetas en web/game3d.js.
 Fuentes, permisos y aproximaciones en THIRD_PARTY_NOTICES.md.

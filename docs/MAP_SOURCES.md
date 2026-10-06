@@ -12,7 +12,7 @@ Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen
 - © colaboradores OpenStreetMap, ODbL 1.0, extracto 4/10/2026. 616 vías,
   69 áreas, 20 hitos, 14 árboles cartografiados; objetos de calle extraídos aparte.
   Anchuras/categorías de juego inferidas donde no constan. Capas y objetos usados
-  disponibles en dist/osm-world.json y dist/street-objects.json.
+  disponibles en web/osm-world.json y web/street-objects.json.
   https://www.openstreetmap.org/api/0.6/map?bbox=-6.156,36.415,-6.141,36.424
   https://www.openstreetmap.org/copyright
 - © IGN / PNOA / SCNE, ortofoto máxima actualidad, CC BY 4.0 compatible.
@@ -32,7 +32,7 @@ Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
   https://pnoa.ign.es/pnoa-lidar/productos-a-descarga
   https://www.ign.es/web/ign/portal/politica-datos
-- Three.js 0.169.0 local, MIT; licencia en dist/vendor/LICENSE-three.txt.
+- Three.js 0.169.0 local, MIT; licencia en web/vendor/LICENSE-three.txt.
 
 ## Fachadas y aproximaciones
 
@@ -49,7 +49,7 @@ Terreno plano; monumentos simplificados, cubiertas/interiores incompletos.
 Árboles: puntos OSM más plantación aproximada determinista (310 en total).
 Mobiliario/pavimentos recreados; pasos de peatones toman posiciones OSM.
 Puentes, agua, rutas, policía, circulación, cuatro encargos y paseo conservados.
-La versión arcade anterior permanece en dist/arcade/.
+La versión arcade anterior permanece en web/arcade/.
 
 ## Distribución y verificación
 

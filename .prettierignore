@@ -1,0 +1,10 @@
+node_modules/
+web/vendor/
+web/licenses/
+web/*.json
+source-data/
+package-lock.json
+tests/qa3d-runtime.mjs
+web/LICENSE
+web/THIRD_PARTY_NOTICES.md
+LICENSE

@@ -1,0 +1,30 @@
+{
+  "name": "chiclana-vice",
+  "version": "1.0.0",
+  "description": "Juego web est\u00e1tico 3D ambientado en el centro de Chiclana: conducci\u00f3n, paseo, cuatro encargos, mapa de calles, c\u00e1mara libre y modo ligero.",
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node tests/verify-world.mjs && node tests/verify3d.mjs",
+    "check": "npm run lint && npm run format:check && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elihu/chiclana-vice.git"
+  },
+  "type": "module",
+  "homepage": "https://elihu.github.io/chiclana-vice/",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.9"
+  },
+  "private": true,
+  "license": "MIT",
+  "author": "elihu",
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

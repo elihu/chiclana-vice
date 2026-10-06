@@ -1,2 +1,2 @@
 # Preserve the bundled upstream source without imposing our whitespace checks.
-dist/vendor/three.module.js -whitespace
+web/vendor/three.module.js -whitespace
