@@ -1059,7 +1059,36 @@ function buildDetailedFacades() {
       }
     }
   }
-  // Batch by material and 170 m cell, so off-screen frontage groups can be culled.
+  // Closed solids only show their outside, so they can use FrontSide; flat shapes and
+  // open surfaces (half tori, tubes, the dome) keep DoubleSide.
+  function closedSolid(geometry) {
+    const p = geometry.parameters || {},
+      full = (v) => v === undefined || v >= TAU - 1e-9;
+    switch (geometry.type) {
+      case 'BoxGeometry':
+      case 'ExtrudeGeometry':
+        return true;
+      case 'CylinderGeometry':
+      case 'ConeGeometry':
+        return !p.openEnded && full(p.thetaLength);
+      case 'SphereGeometry':
+        return full(p.phiLength) && !p.thetaStart && p.thetaLength >= Math.PI - 1e-9;
+      case 'TorusGeometry':
+        return full(p.arc);
+      default:
+        return false;
+    }
+  }
+  const frontMaterials = new Map();
+  function frontSide(m) {
+    if (!frontMaterials.has(m)) {
+      let front = m.clone();
+      front.side = THREE.FrontSide;
+      frontMaterials.set(m, front);
+    }
+    return frontMaterials.get(m);
+  }
+  // Batch by material, side and 170 m cell, so off-screen frontage groups can be culled.
   staging.updateMatrixWorld(true);
   let batches = new Map(),
     textMeshes = [];
@@ -1069,8 +1098,19 @@ function buildDetailedFacades() {
       textMeshes.push(o);
       return;
     }
-    let geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    let geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(),
+      closed = closedSolid(o.geometry);
     geom.applyMatrix4(o.matrixWorld);
+    if (o.matrixWorld.determinant() < 0) {
+      // A mirrored transform reverses triangle winding; restore it for FrontSide culling.
+      for (const attr of [geom.getAttribute('position'), geom.getAttribute('normal')])
+        for (let i = 0; i < attr.count; i += 3)
+          for (let c = 0; c < 3; c++) {
+            let t = attr.array[(i + 1) * 3 + c];
+            attr.array[(i + 1) * 3 + c] = attr.array[(i + 2) * 3 + c];
+            attr.array[(i + 2) * 3 + c] = t;
+          }
+    }
     geom.computeBoundingSphere();
     let cell =
       Math.floor(geom.boundingSphere.center.x / facadeProfiles.facadeCellSize) +
@@ -1078,10 +1118,10 @@ function buildDetailedFacades() {
       Math.floor(geom.boundingSphere.center.z / facadeProfiles.facadeCellSize);
     let p = geom.getAttribute('position'),
       n = geom.getAttribute('normal'),
-      key = o.material.color.getHexString() + '@' + cell,
+      key = o.material.color.getHexString() + (closed ? '-front' : '') + '@' + cell,
       bucket = batches.get(key);
     if (!bucket) {
-      bucket = { p: [], n: [], material: o.material };
+      bucket = { p: [], n: [], material: closed ? frontSide(o.material) : o.material };
       batches.set(key, bucket);
     }
     for (let i = 0; i < p.array.length; i++) bucket.p.push(p.array[i]);

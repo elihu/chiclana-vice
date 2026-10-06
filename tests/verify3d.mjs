@@ -175,6 +175,10 @@ console.log(
 const detail = g.scene.getObjectByName('reference-led-facades');
 assert(detail, 'custom details exist');
 assert(g.facadeWork.fronts.length > 20, 'street frontages upgraded');
+// Closed facade solids are single-sided; flat/open shapes keep DoubleSide.
+const facadeSides = detail.children.map((m) => m.material.side);
+assert(facadeSides.filter((s) => s === Real.FrontSide).length > facadeSides.length / 2);
+assert(facadeSides.includes(Real.DoubleSide), 'flat facade shapes stay double-sided');
 for (const p of [
   [-99, -15],
   [-215, -145],
