@@ -5,7 +5,12 @@ import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
 import { KIT_PIECES } from '../web/js/world/facade-kit.js';
-import { validateCityDesign, validateFacadeDesigns } from '../web/js/world/design-validate.js';
+import {
+  validateCityDesign,
+  validateCorrections,
+  validateFacadeDesigns,
+} from '../web/js/world/design-validate.js';
+import { applyCorrections } from '../web/js/world/corrections.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -150,6 +155,46 @@ for (const f of catalog.fronts) {
     }
   }
 }
+// Correcciones manuales: archivo válido y aplicable sobre las capas de base, sin tocarlas.
+{
+  const file = read('web/map-corrections.json'),
+    errors = validateCorrections(file);
+  assert.deepEqual(errors, [], 'map corrections valid:\n' + errors.join('\n'));
+  const layers = structuredClone({
+      roads: world.roads,
+      areas: world.areas,
+      buildings: world.buildings,
+    }),
+    applied = applyCorrections(layers, file);
+  assert.equal(applied.length, file.corrections.length, 'every published correction applies');
+  for (const r of layers.roads) {
+    assert(r.p.length >= 2 && Number.isFinite(r.w) && r.w > 0, 'valid road after corrections');
+    for (const p of r.p) assert(p.length === 2 && p.every(Number.isFinite));
+  }
+  for (const c of file.corrections)
+    if (c.add) assert.equal(c.add.id, c.id, 'road.add id equals the correction id');
+  // Un contorno corregido cambia su huella: frontages.json se regenera en el mismo commit.
+  for (const front of catalog.fronts)
+    assert.equal(
+      createHash('sha256')
+        .update(JSON.stringify(layers.buildings[front.buildingIndex].p))
+        .digest('hex'),
+      front.footprintSha256,
+      `frontages.json matches the corrected footprint of ${front.id}`,
+    );
+  if (file.appliesTo?.osmSha256)
+    assert.equal(
+      createHash('sha256').update(fs.readFileSync('web/osm-world.json')).digest('hex'),
+      file.appliesTo.osmSha256,
+      'corrections apply to the current osm-world.json',
+    );
+  if (file.appliesTo?.buildingsSha256)
+    assert.equal(
+      createHash('sha256').update(fs.readFileSync('web/buildings.json')).digest('hex'),
+      file.appliesTo.buildingsSha256,
+      'corrections apply to the current buildings.json',
+    );
+}
 for (const file of [
   'game3d.js',
   'index.html',
@@ -158,6 +203,7 @@ for (const file of [
   'facade-profiles.json',
   'facade-designs.json',
   'city-design.json',
+  'map-corrections.json',
 ]) {
   assert(
     !/REDIAM|portalrediam/i.test(fs.readFileSync(`web/${file}`, 'utf8')),

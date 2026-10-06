@@ -1,5 +1,7 @@
 import { asset } from '../core/assets.js';
+import { applyCorrections } from './corrections.js';
 import { gfx, world } from '../core/state.js';
+import { validateCorrections } from './design-validate.js';
 
 // Optional LiDAR pilot: preserve cadastral floor counts/heights and footprint data.
 export function applyHeightSamples(samples) {
@@ -55,9 +57,12 @@ export async function loadWorld() {
     typeof manifest.files?.osm !== 'string'
   )
     throw incompatible();
-  const [buildings, osm] = await Promise.all([
+  const [buildings, osm, corrections] = await Promise.all([
     read(manifest.files.buildings),
     read(manifest.files.osm),
+    read('map-corrections.json').catch(() => {
+      throw Error('No se han podido cargar las correcciones del mapa');
+    }),
   ]);
   for (const layer of [buildings, osm])
     if (
@@ -67,6 +72,14 @@ export async function loadWorld() {
     )
       throw incompatible();
   if (![buildings.buildings, osm.roads, osm.areas].every(Array.isArray)) throw incompatible();
+  // Correcciones manuales sobre la base, solo en memoria; una guarda que falla lanza un error.
+  const correctionErrors = validateCorrections(corrections);
+  if (correctionErrors.length)
+    throw Error('Correcciones del mapa incompatibles: ' + correctionErrors.join('; '));
+  applyCorrections(
+    { roads: osm.roads, areas: osm.areas, buildings: buildings.buildings },
+    corrections,
+  );
   return {
     origin: manifest.origin,
     size: manifest.size,

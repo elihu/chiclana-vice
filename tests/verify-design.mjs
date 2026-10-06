@@ -799,4 +799,295 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   delete globalThis.document;
 }
 
-console.log('Facade kit, validator and composer: Mercado matches the original loop mesh by mesh');
+// Correcciones manuales: operaciones, guardas y ejemplo del anexo.
+{
+  const fs = await import('node:fs');
+  const { createHash } = await import('node:crypto');
+  const { applyCorrections, sha256Hex } = await import('../web/js/world/corrections.js');
+  const { validateCorrections } = await import('../web/js/world/design-validate.js');
+  const { readWorld } = await import('../tools/world-files.mjs');
+  const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+  // SHA-256 propio frente al de Node, con longitudes que cruzan los límites de bloque.
+  for (const n of [0, 1, 55, 56, 63, 64, 65, 119, 1000])
+    assert.equal(
+      sha256Hex('a'.repeat(n)),
+      createHash('sha256').update('a'.repeat(n)).digest('hex'),
+      `sha256 de ${n} caracteres`,
+    );
+
+  const sample = () => ({
+    roads: [
+      {
+        id: '1',
+        name: 'Calle A',
+        type: 'residential',
+        w: 5,
+        oneway: false,
+        bridge: false,
+        p: [
+          [0, 0],
+          [10, 0],
+        ],
+      },
+      {
+        id: '2',
+        name: 'Calle B',
+        type: 'residential',
+        w: 4,
+        oneway: false,
+        bridge: false,
+        p: [
+          [0, 5],
+          [4, 5],
+        ],
+      },
+      {
+        id: '2',
+        name: 'Calle B',
+        type: 'residential',
+        w: 4,
+        oneway: false,
+        bridge: false,
+        p: [
+          [4, 5],
+          [9, 5],
+        ],
+      },
+    ],
+    areas: [
+      {
+        kind: 'park',
+        p: [
+          [0, 0],
+          [5, 0],
+          [5, 5],
+        ],
+      },
+    ],
+    buildings: [
+      {
+        p: [
+          [0, 0],
+          [3, 0],
+          [3, 3],
+          [0, 3],
+        ],
+        holes: [],
+        h: 6,
+        floors: 2,
+      },
+    ],
+  });
+  const meta = { reason: 'prueba', evidence: 'prueba', date: '2026-10-06' };
+  let n = 0;
+  const fix = (op, fields) => ({
+    id: 'fix-' + String(++n).padStart(3, '0'),
+    op,
+    ...fields,
+    ...meta,
+  });
+  const file = (...corrections) => ({
+    version: 1,
+    license: 'ODbL-1.0',
+    attribution: 'x',
+    corrections,
+  });
+  const ref = (id, occurrence = 0) => ({ id, occurrence });
+  const ring = sample().buildings[0].p;
+  const sha = sha256Hex(JSON.stringify(ring));
+  const run = (...corrections) => {
+    const layers = sample(),
+      f = file(...corrections);
+    assert.deepEqual(validateCorrections(f), [], 'corrección válida');
+    return { layers, ids: applyCorrections(layers, f) };
+  };
+  const rejects = (pattern, ...corrections) =>
+    assert.throws(() => applyCorrections(sample(), file(...corrections)), pattern);
+
+  // Cada operación sobre el mundo sintético.
+  let r = run(
+    fix('road.set', {
+      road: ref('1'),
+      expect: { name: 'Calle A', w: 5 },
+      set: { w: 5.5, oneway: true },
+    }),
+  );
+  assert.equal(r.layers.roads[0].w, 5.5);
+  assert.equal(r.layers.roads[0].oneway, true);
+  r = run(fix('road.movePoint', { road: ref('1'), index: 1, expect: [10, 0], to: [11, 1] }));
+  assert.deepEqual(r.layers.roads[0].p, [
+    [0, 0],
+    [11, 1],
+  ]);
+  r = run(fix('road.insertPoint', { road: ref('1'), after: 0, expectAfter: [0, 0], at: [5, 1] }));
+  assert.deepEqual(r.layers.roads[0].p, [
+    [0, 0],
+    [5, 1],
+    [10, 0],
+  ]);
+  r = run(
+    fix('road.add', {
+      add: {
+        id: 'fix-004',
+        name: '',
+        type: 'footway',
+        w: 2,
+        oneway: false,
+        bridge: false,
+        p: [
+          [1, 1],
+          [2, 2],
+        ],
+      },
+    }),
+  );
+  assert.equal(r.layers.roads.at(-1).id, 'fix-004');
+  r = run(fix('road.remove', { road: ref('1'), expect: { name: 'Calle A' } }));
+  assert.deepEqual(
+    r.layers.roads.map((x) => x.id),
+    ['2', '2'],
+  );
+  r = run(
+    fix('area.movePoint', {
+      area: { index: 0, expectFirst: [0, 0] },
+      index: 2,
+      expect: [5, 5],
+      to: [6, 6],
+    }),
+  );
+  assert.deepEqual(r.layers.areas[0].p[2], [6, 6]);
+  r = run(
+    fix('building.moveVertex', {
+      building: { index: 0, footprintSha256: sha },
+      vertex: 2,
+      expect: [3, 3],
+      to: [3.5, 3.5],
+    }),
+  );
+  assert.deepEqual(r.layers.buildings[0].p[2], [3.5, 3.5]);
+
+  // IDs repetidos: la ocurrencia elige el tramo.
+  r = run(fix('road.movePoint', { road: ref('2', 1), index: 0, expect: [4, 5], to: [4, 6] }));
+  assert.deepEqual(r.layers.roads[1].p[0], [0, 5], 'la primera aparición no cambia');
+  assert.deepEqual(r.layers.roads[2].p[0], [4, 6], 'la segunda aparición cambia');
+  rejects(
+    /no existe la vía 2 \(aparición 2\)/,
+    fix('road.remove', { road: ref('2', 2), expect: { name: 'Calle B' } }),
+  );
+
+  // Guardas que fallan, con el id de la corrección en el mensaje.
+  rejects(
+    /Corrección fix-\d+ no aplicable: «w» vale 5/,
+    fix('road.set', { road: ref('1'), expect: { w: 9 }, set: { w: 6 } }),
+  );
+  rejects(
+    /el vértice 1 vale \[10,0\]/,
+    fix('road.movePoint', { road: ref('1'), index: 1, expect: [9, 9], to: [1, 1] }),
+  );
+  rejects(
+    /fuera de rango/,
+    fix('road.movePoint', { road: ref('1'), index: 5, expect: [9, 9], to: [1, 1] }),
+  );
+  rejects(
+    /el primer punto del área/,
+    fix('area.movePoint', {
+      area: { index: 0, expectFirst: [1, 1] },
+      index: 0,
+      expect: [0, 0],
+      to: [1, 1],
+    }),
+  );
+  rejects(
+    /el contorno ha cambiado/,
+    fix('building.moveVertex', {
+      building: { index: 0, footprintSha256: '0'.repeat(64) },
+      vertex: 0,
+      expect: [0, 0],
+      to: [1, 1],
+    }),
+  );
+  rejects(
+    /ya existe una vía con el id 1/,
+    fix('road.add', {
+      add: {
+        id: '1',
+        name: '',
+        type: 'path',
+        w: 1,
+        oneway: false,
+        bridge: false,
+        p: [
+          [0, 0],
+          [1, 1],
+        ],
+      },
+    }),
+  );
+
+  // Aplicar dos veces la misma corrección falla por guarda: el valor de partida ya no está.
+  const move = fix('road.movePoint', { road: ref('1'), index: 1, expect: [10, 0], to: [11, 1] });
+  const layers = sample();
+  applyCorrections(layers, file(move));
+  assert.throws(() => applyCorrections(layers, file(move)), /no aplicable/);
+  // Y una corrección posterior ve el resultado de la anterior.
+  assert.deepEqual(
+    run(move, fix('road.movePoint', { road: ref('1'), index: 1, expect: [11, 1], to: [12, 2] }))
+      .layers.roads[0].p[1],
+    [12, 2],
+  );
+
+  // Validación estructural.
+  const invalid = (edit, pattern) => {
+    const f = file(fix('road.set', { road: ref('1'), expect: { w: 5 }, set: { w: 6 } }));
+    edit(f);
+    const errors = validateCorrections(f);
+    assert(
+      errors.some((e) => pattern.test(e)),
+      `se esperaba ${pattern}: ${errors.join(' | ')}`,
+    );
+  };
+  invalid((f) => (f.license = 'MIT'), /^license/);
+  invalid((f) => (f.corrections[0].id = 'x'), /id: debe ser fix-NNN/);
+  invalid((f) => f.corrections.push({ ...f.corrections[0] }), /duplicado/);
+  invalid((f) => (f.corrections[0].op = 'road.hide'), /operación desconocida/);
+  invalid((f) => (f.corrections[0].date = '10/10/2026'), /fecha AAAA-MM-DD/);
+  invalid((f) => delete f.corrections[0].reason, /reason: se esperaba un texto/);
+  invalid((f) => (f.corrections[0].extra = 1), /extra: clave desconocida/);
+  invalid((f) => delete f.corrections[0].set, /set: falta/);
+  invalid((f) => (f.corrections[0].set = { color: 'rojo' }), /set\.color: campo no permitido/);
+  invalid((f) => (f.corrections[0].road = { id: 1, occurrence: 0 }), /road\.id: se esperaba el id/);
+  invalid((f) => (f.appliesTo = { osmSha256: 'abc' }), /appliesTo\.osmSha256/);
+
+  // Ejemplo del anexo: válido; sobre los datos reales, fix-001 y fix-003 se aplican y
+  // fix-002 y fix-004 fallan por guarda (sus valores son marcadores).
+  const example = read('docs/plan-modular/map-corrections.example.json');
+  assert.deepEqual(validateCorrections(example), [], 'ejemplo del anexo válido');
+  const real = () => {
+    const w = readWorld();
+    return { roads: w.roads, areas: w.areas, buildings: w.buildings };
+  };
+  const byId = (id) => ({
+    ...example,
+    corrections: example.corrections.filter((c) => c.id === id),
+  });
+  for (const id of ['fix-001', 'fix-003']) {
+    const l = real();
+    assert.deepEqual(applyCorrections(l, byId(id)), [id], `${id} se aplica sobre los datos reales`);
+  }
+  for (const id of ['fix-002', 'fix-004'])
+    assert.throws(
+      () => applyCorrections(real(), byId(id)),
+      new RegExp(`Corrección ${id} no aplicable`),
+    );
+
+  // El archivo publicado no cambia las capas de base cuando está vacío.
+  const published = read('web/map-corrections.json');
+  assert.deepEqual(validateCorrections(published), [], 'web/map-corrections.json válido');
+  const before = JSON.stringify(real());
+  const l = real();
+  applyCorrections(l, published);
+  assert.equal(JSON.stringify(l), before, 'sin correcciones, las capas no cambian');
+}
+
+console.log('Facade kit, validator, composer and map corrections passed');

@@ -106,6 +106,18 @@
         "facade-designs.json": "c8cc32fe9f65ae849ead1daead9711009db93d233fa25875c8eab4e3fee34c7d",
         "city-design.json": "811283d865106d9c2b0c3da25cbb0cc427973d4504471f583c8ae72fa50798eb"
       }
+    },
+    {
+      "files": [
+        "map-corrections.json"
+      ],
+      "source": "Manual corrections applied at load time over the OSM and Catastro layers",
+      "conditions": "ODbL-1.0 (corrections to OpenStreetMap data form a derivative database)",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "transformation": "Guarded edits of road attributes and vertices; base layers unchanged",
+      "sha256": {
+        "map-corrections.json": "92092b3d9d57d1aaae2904d3ee74f34de6c366c5050e59bda25112a55c68224b"
+      }
     }
   ]
 }

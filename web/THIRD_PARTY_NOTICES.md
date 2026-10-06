@@ -35,6 +35,9 @@ fuentes, con sus atribuciones (así figura también en `data-sources.json`).
 escritas a mano) se ofrecen también en conjunto bajo ODbL 1.0 (decisión del 6/10/2026): sus
 anclajes usan vértices catastrales (atribuidos a Catastro) y nombres e identificadores de
 OSM. El código del motor y del compositor sigue bajo MIT.
+`map-corrections.json` (correcciones manuales sobre las capas de OSM y Catastro, aplicadas al
+cargar) se ofrece bajo ODbL 1.0 porque corregir datos de OSM produce una base de datos
+derivada; lleva la atribución de OSM y de Catastro.
 Los datos OSM y las contribuciones a esa base se ofrecen bajo ODbL, no bajo MIT.
 https://www.openstreetmap.org/copyright
 https://opendatacommons.org/licenses/odbl/1-0/

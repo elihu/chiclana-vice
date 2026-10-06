@@ -80,6 +80,13 @@ const records = [
     transformation:
       'Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names',
   },
+  {
+    files: ['map-corrections.json'],
+    source: 'Manual corrections applied at load time over the OSM and Catastro layers',
+    conditions: 'ODbL-1.0 (corrections to OpenStreetMap data form a derivative database)',
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
+    transformation: 'Guarded edits of road attributes and vertices; base layers unchanged',
+  },
 ];
 for (const record of records)
   record.sha256 = Object.fromEntries(record.files.map((file) => [file, hash(file)]));

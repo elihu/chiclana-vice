@@ -681,3 +681,160 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
   );
   return errors;
 }
+
+const FIX_ID = /^fix-[0-9]{3,}$/,
+  DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+const ROAD_FIELDS = {
+  name: (v) => typeof v === 'string',
+  type: (v) => typeof v === 'string' && v !== '',
+  w: (v) => Number.isFinite(v) && v > 0,
+  oneway: (v) => typeof v === 'boolean',
+  bridge: (v) => typeof v === 'boolean',
+};
+const integer = (v) => Number.isInteger(v) && v >= 0;
+
+// Validador de web/map-corrections.json: solo estructura. Las guardas (`expect`…) se comprueban
+// al aplicar cada corrección (world/corrections.js). Referencia para el editor:
+// schemas/map-corrections.schema.json.
+export function validateCorrections(json) {
+  const errors = [];
+  const fail = (path, message) => errors.push(`${path}: ${message}`);
+  if (!isObject(json)) return ['$: se esperaba un objeto'];
+  const onlyKeys = (obj, allowed, path) => {
+    for (const k of Object.keys(obj))
+      if (!allowed.includes(k)) fail(`${path}.${k}`, 'clave desconocida');
+  };
+  const required = (obj, keys, path) => {
+    for (const k of keys) if (!(k in obj)) fail(`${path}.${k}`, 'falta');
+  };
+  onlyKeys(
+    json,
+    ['$schema', 'version', 'license', 'licenseUrl', 'attribution', 'appliesTo', 'corrections'],
+    '$',
+  );
+  if (json.version !== 1) fail('version', 'debe ser 1');
+  if (json.license !== 'ODbL-1.0') fail('license', 'debe ser ODbL-1.0');
+  if ('licenseUrl' in json && typeof json.licenseUrl !== 'string')
+    fail('licenseUrl', 'se esperaba texto');
+  if (typeof json.attribution !== 'string' || !json.attribution)
+    fail('attribution', 'se esperaba la atribución');
+  if ('appliesTo' in json) {
+    if (!isObject(json.appliesTo)) fail('appliesTo', 'se esperaba un objeto');
+    else {
+      onlyKeys(json.appliesTo, ['osmSha256', 'buildingsSha256'], 'appliesTo');
+      for (const [k, v] of Object.entries(json.appliesTo))
+        if (typeof v !== 'string' || !SHA.test(v)) fail(`appliesTo.${k}`, 'se esperaba un SHA-256');
+    }
+  }
+  if (!Array.isArray(json.corrections)) {
+    fail('corrections', 'se esperaba una lista');
+    return errors;
+  }
+
+  const point = (v, path) => isPoint(v) || fail(path, 'se esperaba [x, z]');
+  const roadRef = (v, path) => {
+    if (!isObject(v)) return fail(path, 'se esperaba {id, occurrence}');
+    onlyKeys(v, ['id', 'occurrence'], path);
+    if (typeof v.id !== 'string' || !v.id)
+      fail(`${path}.id`, 'se esperaba el id de la vía (texto)');
+    if (!integer(v.occurrence)) fail(`${path}.occurrence`, 'se esperaba un entero >= 0');
+  };
+  const roadFields = (v, path) => {
+    if (!isObject(v) || Object.keys(v).length === 0)
+      return fail(path, 'se esperaba un objeto con algún campo');
+    for (const [k, value] of Object.entries(v))
+      if (!ROAD_FIELDS[k])
+        fail(`${path}.${k}`, 'campo no permitido (name, type, w, oneway, bridge)');
+      else if (!ROAD_FIELDS[k](value)) fail(`${path}.${k}`, 'valor no válido');
+  };
+  const index = (v, path) => integer(v) || fail(path, 'se esperaba un entero >= 0');
+
+  // Campos propios de cada operación.
+  const OPS = {
+    'road.set': (c, p) => {
+      roadRef(c.road, `${p}.road`);
+      roadFields(c.expect, `${p}.expect`);
+      roadFields(c.set, `${p}.set`);
+    },
+    'road.movePoint': (c, p) => {
+      roadRef(c.road, `${p}.road`);
+      index(c.index, `${p}.index`);
+      point(c.expect, `${p}.expect`);
+      point(c.to, `${p}.to`);
+    },
+    'road.insertPoint': (c, p) => {
+      roadRef(c.road, `${p}.road`);
+      index(c.after, `${p}.after`);
+      point(c.expectAfter, `${p}.expectAfter`);
+      point(c.at, `${p}.at`);
+    },
+    'road.add': (c, p) => {
+      const a = c.add;
+      if (!isObject(a)) return fail(`${p}.add`, 'se esperaba un objeto');
+      onlyKeys(a, ['id', 'name', 'type', 'w', 'oneway', 'bridge', 'p'], `${p}.add`);
+      required(a, ['id', 'name', 'type', 'w', 'oneway', 'bridge', 'p'], `${p}.add`);
+      if ('id' in a && !(typeof a.id === 'string' && FIX_ID.test(a.id)))
+        fail(`${p}.add.id`, 'debe ser fix-NNN');
+      for (const k of ['name', 'type', 'w', 'oneway', 'bridge'])
+        if (k in a && !ROAD_FIELDS[k](a[k])) fail(`${p}.add.${k}`, 'valor no válido');
+      if ('p' in a && !(Array.isArray(a.p) && a.p.length >= 2 && a.p.every(isPoint)))
+        fail(`${p}.add.p`, 'se esperaban al menos 2 puntos [x, z]');
+    },
+    'road.remove': (c, p) => {
+      roadRef(c.road, `${p}.road`);
+      if (!isObject(c.expect) || typeof c.expect.name !== 'string')
+        fail(`${p}.expect`, 'se esperaba {name}');
+      else onlyKeys(c.expect, ['name'], `${p}.expect`);
+    },
+    'area.movePoint': (c, p) => {
+      if (!isObject(c.area)) fail(`${p}.area`, 'se esperaba {index, expectFirst}');
+      else {
+        onlyKeys(c.area, ['index', 'expectFirst'], `${p}.area`);
+        index(c.area.index, `${p}.area.index`);
+        point(c.area.expectFirst, `${p}.area.expectFirst`);
+      }
+      index(c.index, `${p}.index`);
+      point(c.expect, `${p}.expect`);
+      point(c.to, `${p}.to`);
+    },
+    'building.moveVertex': (c, p) => {
+      if (!isObject(c.building)) fail(`${p}.building`, 'se esperaba {index, footprintSha256}');
+      else {
+        onlyKeys(c.building, ['index', 'footprintSha256'], `${p}.building`);
+        index(c.building.index, `${p}.building.index`);
+        if (typeof c.building.footprintSha256 !== 'string' || !SHA.test(c.building.footprintSha256))
+          fail(`${p}.building.footprintSha256`, 'se esperaba un SHA-256');
+      }
+      index(c.vertex, `${p}.vertex`);
+      point(c.expect, `${p}.expect`);
+      point(c.to, `${p}.to`);
+    },
+  };
+  // Claves de cada operación además de las comunes.
+  const OP_KEYS = {
+    'road.set': ['road', 'expect', 'set'],
+    'road.movePoint': ['road', 'index', 'expect', 'to'],
+    'road.insertPoint': ['road', 'after', 'expectAfter', 'at'],
+    'road.add': ['add'],
+    'road.remove': ['road', 'expect'],
+    'area.movePoint': ['area', 'index', 'expect', 'to'],
+    'building.moveVertex': ['building', 'vertex', 'expect', 'to'],
+  };
+  const ids = new Set();
+  json.corrections.forEach((c, i) => {
+    const p = `corrections[${i}]`;
+    if (!isObject(c)) return fail(p, 'se esperaba un objeto');
+    if (typeof c.id !== 'string' || !FIX_ID.test(c.id)) fail(`${p}.id`, 'debe ser fix-NNN');
+    else if (ids.has(c.id)) fail(`${p}.id`, `duplicado «${c.id}»`);
+    else ids.add(c.id);
+    for (const k of ['reason', 'evidence'])
+      if (typeof c[k] !== 'string' || c[k].length < 3) fail(`${p}.${k}`, 'se esperaba un texto');
+    if (typeof c.date !== 'string' || !DATE.test(c.date) || Number.isNaN(Date.parse(c.date)))
+      fail(`${p}.date`, 'se esperaba una fecha AAAA-MM-DD');
+    if (!OPS[c.op]) return fail(`${p}.op`, `operación desconocida «${c.op}»`);
+    onlyKeys(c, ['id', 'op', 'reason', 'evidence', 'date', ...OP_KEYS[c.op]], p);
+    required(c, OP_KEYS[c.op], p);
+    OPS[c.op](c, p);
+  });
+  return errors;
+}
