@@ -1941,150 +1941,8 @@ function buildRoadDetails() {
     for (const p of parts) p.geometry.dispose();
   }
 }
-const mappedStreetObjects = [
-  { x: 347.9, z: -59.14, tags: { highway: 'crossing' } },
-  { x: 309.25, z: -46.9, tags: { highway: 'crossing' } },
-  { x: -509.83, z: 98.14, tags: { highway: 'crossing' } },
-  { x: 428.73, z: 204.92, tags: { highway: 'crossing' } },
-  { x: 344.82, z: -162.04, tags: { crossing: 'traffic_signals', highway: 'crossing' } },
-  { x: 263.52, z: -95.84, tags: { highway: 'crossing' } },
-  { x: 431.74, z: 274.59, tags: { highway: 'crossing' } },
-  {
-    x: -320.47,
-    z: 382.82,
-    tags: {
-      crossing: 'uncontrolled',
-      'crossing:markings': 'zebra',
-      highway: 'crossing',
-      name: 'Millán',
-    },
-  },
-  { x: 371.41, z: -218.53, tags: { highway: 'crossing' } },
-  { x: 368.77, z: 30.75, tags: { highway: 'crossing' } },
-  { x: 260.32, z: -92.35, tags: { highway: 'crossing' } },
-  { x: 306.66, z: -44.0, tags: { highway: 'crossing' } },
-  {
-    x: 334.97,
-    z: -497.12,
-    tags: { crossing: 'traffic_signals', highway: 'crossing', tactile_paving: 'yes' },
-  },
-  {
-    x: 342.48,
-    z: -244.38,
-    tags: {
-      button_operated: 'yes',
-      crossing: 'traffic_signals',
-      highway: 'crossing',
-      tactile_paving: 'yes',
-      'traffic_signals:sound': 'no',
-      'traffic_signals:vibration': 'no',
-    },
-  },
-  { x: -548.3, z: -338.13, tags: { highway: 'crossing' } },
-  { x: -540.97, z: -333.93, tags: { highway: 'crossing' } },
-  { x: -552.75, z: -439.88, tags: { highway: 'crossing' } },
-  { x: 384.83, z: -202.58, tags: { highway: 'crossing' } },
-  { x: 352.82, z: 35.27, tags: { highway: 'crossing' } },
-  {
-    x: 330.51,
-    z: -236.02,
-    tags: {
-      button_operated: 'yes',
-      crossing: 'traffic_signals',
-      highway: 'crossing',
-      tactile_paving: 'yes',
-      'traffic_signals:sound': 'no',
-      'traffic_signals:vibration': 'no',
-    },
-  },
-  { x: 402.22, z: -400.53, tags: { highway: 'crossing' } },
-  {
-    x: 435.76,
-    z: -412.4,
-    tags: { crossing: 'uncontrolled', 'crossing:markings': 'zebra', highway: 'crossing' },
-  },
-  { x: -656.73, z: -500.74, tags: { natural: 'tree' } },
-  { x: 441.77, z: 273.44, tags: { highway: 'crossing' } },
-  {
-    x: 334.78,
-    z: -317.24,
-    tags: {
-      button_operated: 'yes',
-      crossing: 'traffic_signals',
-      highway: 'crossing',
-      tactile_paving: 'no',
-      'traffic_signals:sound': 'no',
-      'traffic_signals:vibration': 'no',
-    },
-  },
-  { x: 332.66, z: -422.56, tags: { crossing: 'traffic_signals', highway: 'crossing' } },
-  { x: 338.95, z: -422.95, tags: { highway: 'crossing' } },
-  {
-    x: 348.43,
-    z: -497.68,
-    tags: {
-      button_operated: 'no',
-      crossing: 'traffic_signals',
-      highway: 'crossing',
-      tactile_paving: 'yes',
-      'traffic_signals:sound': 'no',
-      'traffic_signals:vibration': 'no',
-    },
-  },
-  {
-    x: 329.14,
-    z: -498.0,
-    tags: { crossing: 'traffic_signals', highway: 'crossing', railway: 'crossing' },
-  },
-  { x: 323.83, z: -498.46, tags: { highway: 'crossing' } },
-  { x: 462.2, z: 412.02, tags: { highway: 'crossing' } },
-  { x: 451.77, z: 413.78, tags: { highway: 'crossing' } },
-  { x: 359.94, z: 36.42, tags: { highway: 'crossing' } },
-  { x: 350.9, z: -59.23, tags: { highway: 'crossing' } },
-  { x: 344.89, z: -59.04, tags: { highway: 'crossing' } },
-  { x: 418.25, z: 207.09, tags: { highway: 'crossing' } },
-  { x: -479.34, z: -441.58, tags: { highway: 'crossing' } },
-  { x: -555.27, z: -434.47, tags: { highway: 'crossing' } },
-  { x: -578.7, z: -63.84, tags: { highway: 'crossing' } },
-  { x: -597.33, z: -193.92, tags: { highway: 'crossing' } },
-  { x: -640.85, z: 106.61, tags: { highway: 'crossing' } },
-  { x: -668.42, z: 351.66, tags: { highway: 'crossing' } },
-  { x: -632.84, z: 332.71, tags: { highway: 'crossing' } },
-  { x: -443.33, z: -445.02, tags: { highway: 'crossing' } },
-  {
-    x: -323.85,
-    z: 264.49,
-    tags: {
-      access: 'yes',
-      amenity: 'drinking_water',
-      bottle: 'yes',
-      fee: 'no',
-      wheelchair: 'limited',
-    },
-  },
-  { x: 196.86, z: 358.02, tags: { natural: 'tree' } },
-  {
-    x: -602.46,
-    z: 129.5,
-    tags: { crossing: 'uncontrolled', 'crossing:markings': 'zebra', highway: 'crossing' },
-  },
-  { x: 96.8, z: -205.36, tags: { amenity: 'drinking_water', name: 'Agua' } },
-  { x: 196.34, z: 361.91, tags: { natural: 'tree' } },
-  { x: -234.22, z: -154.31, tags: { natural: 'tree' } },
-  { x: -228.33, z: -148.96, tags: { natural: 'tree' } },
-  { x: -222.26, z: -141.99, tags: { natural: 'tree' } },
-  { x: -216.64, z: -136.19, tags: { natural: 'tree' } },
-  { x: -211.63, z: -129.04, tags: { natural: 'tree' } },
-  { x: -206.09, z: -122.52, tags: { natural: 'tree' } },
-  { x: -201.63, z: -115.29, tags: { natural: 'tree' } },
-  { x: -197.43, z: -108.77, tags: { natural: 'tree' } },
-  { x: -240.56, z: -160.38, tags: { natural: 'tree' } },
-  { x: -246.64, z: -166.01, tags: { natural: 'tree' } },
-  { x: -254.49, z: -171.28, tags: { natural: 'tree' } },
-  { x: 325.78, z: -241.53, tags: { amenity: 'bench' } },
-  { x: 207.63, z: 334.65, tags: { highway: 'street_lamp' } },
-  { x: -95.34, z: 73.4, tags: { amenity: 'drinking_water' } },
-];
+// Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
+let mappedStreetObjects = [];
 // Street-level materials and lightweight instanced urban detail.
 let streetEnvironment = {
   colliders: [],
@@ -2864,7 +2722,7 @@ async function loadWorld() {
 }
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
-  const [res, tex, heightSamples, profiles] = await Promise.all([
+  const [res, tex, heightSamples, profiles, streetObjects] = await Promise.all([
     loadWorld(),
     // Light mode and touch devices start with the 2048×1536 derivative (same extent).
     // Toggling quality later does not reload it. Without the orthophoto, plain colours.
@@ -2878,8 +2736,13 @@ async function init() {
       if (!r.ok) throw Error('No se han podido cargar los perfiles');
       return r.json();
     }),
+    // Optional layer: without it there are no mapped crossings or street furniture.
+    fetch(asset('street-objects.json'))
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => []),
   ]);
   city = res;
+  mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   facadeProfiles = profiles;
   groundTexture = tex;
@@ -3463,7 +3326,7 @@ function update(dt) {
       ? goal.escape
         ? 'Evita a las patrullas'
         : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
-      : state.found.size + '/6 lugares descubiertos',
+      : state.found.size + '/' + pois.length + ' lugares descubiertos',
   );
   setText(
     'jobTime',
@@ -3907,7 +3770,7 @@ function closeModal() {
 function help() {
   if (contextLost) return;
   modal(
-    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa cuatro encargos y descubre seis lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07, CC-BY 4.0 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
+    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa ${jobs.length} encargos y descubre ${pois.length} lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección de Rafael Suárez Almanzor y Victorín Agueda Goyeneche (proyecto de 2006), publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. San Telmo y San Juan Bautista: fichas de turismo.chiclana.es como referencia. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
   );
   $('understood').onclick = closeModal;
 }
@@ -3942,7 +3805,7 @@ function applyQuality() {
 function pauseMenu() {
   if (contextLost) return;
   modal(
-    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/4 encargos · ${state.found.size}/6 lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
+    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/${jobs.length} encargos · ${state.found.size}/${pois.length} lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
   );
   $('resume').onclick = closeModal;
   $('help').onclick = help;
