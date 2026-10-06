@@ -92,8 +92,11 @@ workflow, Dependabot y `.claude/settings.json`. El workflow no se ha ejecutado e
 - **Una habilidad, `integrar-rama`**, porque es el procedimiento de varios pasos que se
   repite con cada agente. Vive en `.agents/skills/` (Codex) y `.claude/skills/` es un
   enlace a esa carpeta (Claude Code no lee `.agents/`). Solo usa campos del estándar Agent
-  Skills (`name`, `description`). No se ha comprobado que Claude Code cargue habilidades
-  a través de un enlace simbólico; si no lo hace, copiar el archivo.
+  Skills (`name`, `description`). La documentación oficial de Claude Code confirma que una
+  entrada `<skill-name>` de la ubicación de proyecto puede ser un enlace simbólico a un
+  directorio y que se lee el `SKILL.md` del destino
+  (https://code.claude.com/docs/en/skills, consulta del 6/10/2026), así que se mantiene el
+  enlace y no hace falta una copia ni una comprobación en las pruebas.
 - **`.claude/settings.json`** con permisos compartidos: permite `npm run check` y
   lecturas de Git; pide confirmación para push, etiquetas, releases, `filter-repo` y
   `npm install`; deniega leer `.env`. Lo personal va en `settings.local.json`, ignorado.
@@ -154,16 +157,19 @@ Correcciones de la auditoría:
 - **Trunk-based con ramas cortas y `merge --no-ff` local**: encaja con un solo
   desarrollador que lanza varios agentes en paralelo; cada tarea queda como un merge
   revertible. Descartado: Git Flow (`develop`, ramas de release) por sobrecarga.
-- **PR no obligatorios por ahora** (opción A): los agentes integran en local y el push a
-  `main` lo decide el usuario. La regla de GitHub solo bloquea el push forzado y el
-  borrado de `main`. La protección real contra publicar algo roto es `needs: check`.
-  - Opción B, descrita para el futuro: PR obligatorio con 0 aprobaciones y el job `check`
-    requerido, integrando con `gh pr merge --merge`. Da CI antes de integrar en `main`,
-    pero cambia el flujo local actual. Un check requerido es incompatible con hacer push
-    de merges locales a `main`, porque el commit de merge no ha pasado la CI.
+- **Sin PR obligatorios** (opción A, decidida por el usuario): los agentes integran en
+  local con `merge --no-ff` tras `npm run check` y el push a `main` lo decide el usuario.
+  La regla de GitHub solo bloquea el push forzado y el borrado de `main`, con el
+  propietario en la lista de omisión. La protección contra publicar algo roto es
+  `needs: check`.
+  - Descartada (opción B): PR obligatorio con 0 aprobaciones y `check` requerido. Un
+    check requerido es incompatible con hacer push de merges locales a `main`.
 - **Conventional Commits en español** con ámbitos opcionales y `!` para cambios que rompen
   partidas guardadas, URL o formato de datos; `merge: integrar …` para los merges.
-- **Etiquetas anotadas `vX.Y.Z` y releases de GitHub** con notas generadas.
+- **Etiquetas anotadas `vX.Y.Z` y releases de GitHub** con notas generadas. La primera,
+  `v1.0.0`, la crea el integrador al final, con todas las ramas en curso integradas.
+- **Sin trailers `Co-Authored-By` ni líneas de atribución**, tampoco de agentes, en
+  commits, merges o PR: norma en `AGENTS.md`, `CONTRIBUTING.md` y `GIT_WORKFLOW.md`.
 - **Historial**: `main` publicado no se reescribe salvo por credenciales, datos personales
   o retirada de contenido de terceros; procedimiento con `bundle`, `filter-repo` y
   `--force-with-lease` en `GIT_WORKFLOW.md`.
@@ -260,8 +266,16 @@ nueva, y terminar siempre con `node tools/export-provenance.mjs` y `npm run chec
     git branch -d chore/estructura-estatica chore/lint-y-formato docs/orden-y-licencia docs/publicacion-personal fix/atribuciones-y-procedencia fix/autoria-personal
     ```
 
-12. **Push forzado del historial reescrito (P2)**, cuando el usuario lo decida, con la
-    regla de push forzado aún desactivada:
+12. **Renombrar `docs/DATOS_PUBLICOS.md` a `docs/DATOS.md`** (decidido): lo hace el
+    integrador al final, ya anotado en `docs/ESTADO.md`:
+
+    ```fish
+    git mv docs/DATOS_PUBLICOS.md docs/DATOS.md
+    git grep -n DATOS_PUBLICOS
+    ```
+
+13. **Push forzado del historial reescrito (P2)**, cuando el usuario lo decida, desde la
+    cuenta propietaria (en la lista de omisión de la regla):
 
     ```fish
     git -C /home/elihu/GIT/chiclana-vice-public ls-remote origin main
@@ -276,22 +290,26 @@ nueva, y terminar siempre con `node tools/export-provenance.mjs` y `npm run chec
 2. Settings → Environments → `github-pages`: ramas de despliegue, solo `main`.
 3. Settings → Actions → General: permisos de workflow de solo lectura; no permitir que
    Actions cree o apruebe PR; permitir solo acciones de GitHub y exigir SHA completo.
-4. Tras el push forzado (P2): Settings → Rules → Rulesets → regla para `main` con
-   «Restrict deletions» y «Block force pushes». Con la opción B, añadir «Require a pull
-   request» (0 aprobaciones) y el check requerido `check (Node 22.13.0)`.
+4. Settings → Rules → Rulesets → regla para `main` con solo «Restrict deletions» y
+   «Block force pushes», y el rol «Repository admin» en la lista de omisión para que el
+   propietario pueda hacer el push forzado de P2. Sin «Require a pull request» ni checks
+   requeridos.
 5. Settings → Advanced Security: alertas y actualizaciones de versión de Dependabot.
 6. Primera ejecución: comprobar en Actions que `check` pasa en una rama y que `deploy`
    publica desde `main`; el nombre del workflow cambia de «Publicar Chiclana Vice» a
    «CI y Pages».
 
-## Preguntas abiertas
+## Preguntas resueltas
 
-1. ¿Basta un issue público como canal de reclamaciones o se añade un correo de contacto?
-2. ¿Opción A (merge local, sin PR) u opción B (PR obligatorio con check requerido)?
-3. ¿Se etiqueta `v1.0.0` tras integrar las ramas en curso, coincidiendo con
-   `package.json`?
-4. ¿Se acepta como norma del proyecto no añadir trailers de coautoría en los commits?
-5. ¿Matriz de Node con dos versiones, o solo `lts/*` subiendo `engines`?
-6. ¿Se conserva `.claude/skills` como enlace simbólico o se prefiere una copia?
-7. ¿Renombrar `DATOS_PUBLICOS.md` a `DATOS.md` cuando no haya ramas abiertas que lo
-   editen?
+Respuestas del usuario del 6/10/2026, ya aplicadas en la rama:
+
+1. Reclamaciones: solo mediante un issue público de GitHub, sin correo de contacto.
+2. Opción A: merge local `--no-ff` tras `npm run check`, sin PR obligatorio; la regla de
+   `main` solo bloquea el push forzado y el borrado, salvo para el propietario.
+3. `v1.0.0` se etiqueta tras integrar todas las ramas en curso; lo hace el integrador.
+4. Nunca trailers `Co-Authored-By` ni líneas de atribución en commits ni PR, tampoco de
+   agentes.
+5. Matriz de Node con dos versiones: 22.13.0 (mínimo de `engines`) y la LTS vigente.
+6. `.claude/skills` se mantiene como enlace simbólico: la documentación oficial confirma
+   que Claude Code los sigue.
+7. `DATOS_PUBLICOS.md` se renombrará a `DATOS.md` al final, por el integrador.

@@ -34,3 +34,14 @@ Los identificadores remiten a la auditoría del 6/10/2026.
 - Atribución reproducible de las alturas IGN (N1) y huella geométrica fija (N2).
 - Metadatos desfasados de `web/world.json` (N8) y textos fijos de la ayuda del juego.
 - Verificación en móvil físico (iOS y Android) y medición en GPU real con `measure.js`.
+
+## Al terminar de integrar las ramas en curso
+
+Tareas del integrador, en este orden y en `main`:
+
+1. Renombrar la guía de datos (decidido; no antes, para no chocar con ramas abiertas):
+   `git mv docs/DATOS_PUBLICOS.md docs/DATOS.md` y actualizar los enlaces
+   (`git grep -n DATOS_PUBLICOS`).
+2. Revisar los `TODO(integración)` (`git grep -n 'TODO(integración)'`).
+3. `npm run check`, publicar y, tras el despliegue, crear la etiqueta `v1.0.0` y su
+   release ([GIT_WORKFLOW.md](GIT_WORKFLOW.md#etiquetas-y-releases)).
