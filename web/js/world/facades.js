@@ -94,6 +94,7 @@ export function buildDetailedFacades() {
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
   const { cube, geo, wall, pane, balcony, archShape, pediment, cross, column, door, belfry } = kit;
+  const { statue, spiralColumn } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
@@ -119,25 +120,7 @@ export function buildDetailedFacades() {
       for (let delta of [1.8, 2.7]) {
         let xx = x + side * delta;
         cube(g, xx, 0.56, 0.55, 0.7, 1.1, 0.65, palette.cream);
-        let points = [];
-        for (let j = 0; j <= 52; j++) {
-          let a = (j / 52) * TAU * 3;
-          points.push(
-            new THREE.Vector3(
-              xx + Math.sin(a) * 0.1,
-              1.15 + (j / 52) * 3.75,
-              0.55 + Math.cos(a) * 0.1,
-            ),
-          );
-        }
-        geo(
-          g,
-          new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 52, 0.18, 8, false),
-          0,
-          0,
-          0,
-          palette.cream,
-        );
+        spiralColumn(g, xx);
         cube(g, xx, 5, 0.55, 0.75, 0.3, 0.72, palette.cream);
       }
     for (let y of [5.22, 5.6, 5.88]) cube(g, x, y, 0.48, 6.4, 0.16, 0.85, palette.cream);
@@ -154,27 +137,8 @@ export function buildDetailedFacades() {
       );
       scroll.rotation.z = side < 0 ? 0 : Math.PI;
     }
-    function statue(xx, yy, scale = 1) {
-      geo(
-        g,
-        new THREE.ConeGeometry(0.23 * scale, 0.9 * scale, 9),
-        xx,
-        yy + 0.46 * scale,
-        0.5,
-        palette.cream,
-      );
-      geo(
-        g,
-        new THREE.SphereGeometry(0.115 * scale, 8, 6),
-        xx,
-        yy + 1.04 * scale,
-        0.5,
-        palette.cream,
-      );
-      cube(g, xx, yy, 0.5, 0.55 * scale, 0.13, 0.55, palette.cream);
-    }
-    statue(x, 6.15, 1.25);
-    for (let side of [-1, 1]) statue(x + side * 2.24, 1.2, 0.85);
+    statue(g, x, 6.15, 1.25);
+    for (let side of [-1, 1]) statue(g, x + side * 2.24, 1.2, 0.85);
     let crossbar = cube(g, x + 0.2, 7.3, 0.66, 0.12, 1.9, 0.12, palette.cream);
     crossbar.rotation.z = 0.65;
     crossbar = cube(g, x + 0.15, 7.62, 0.67, 0.75, 0.12, 0.12, palette.cream);

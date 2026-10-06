@@ -224,6 +224,18 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   assert.deepEqual(byColor(a), byColor(b), 'mismas mallas por color');
   for (let i = 0; i < a.length; i++) assert.equal(a[i], b[i], 'malla ' + i + ' idéntica');
 
+  // Piezas añadidas con las portadas: statue (cono, esfera y base) y spiralColumn (un tubo).
+  {
+    const k = newKit(),
+      g = new THREE.Group();
+    k.statue(g, 1, 2);
+    assert.deepEqual(
+      g.children.map((c) => c.geometry.type),
+      ['ConeGeometry', 'SphereGeometry', 'BoxGeometry'],
+    );
+    assert.equal(k.spiralColumn(g, 3).geometry.type, 'TubeGeometry');
+  }
+
   // El compositor ejecuta todos los tipos de nodo (los usarán las recetas siguientes).
   const synthetic = {
     version: 1,
@@ -396,7 +408,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   expectError(mini([{ box: box.slice(1), color: '#000000' }]), /se esperaban 6 valores/);
   expectError(mini([{ box: ['1 +', 0, 0, 1, 1, 1], color: '#000000' }]), /Expresión no válida/);
   expectError(mini([{ box, color: '#000000', let: {} }]), /exactamente una clave de tipo/);
-  expectError(mini([{ piece: 'statue', args: [1, 1] }]), /pieza desconocida/);
+  expectError(mini([{ piece: 'fantasma', args: [1, 1] }]), /pieza desconocida/);
   expectError(mini([{ piece: 'pane', args: [1] }]), /admite de 4 a 7 argumentos/);
   expectError(
     mini([{ geo: ['BoxGeometry', 1], at: [0, 0, 0], color: '#000000' }]),

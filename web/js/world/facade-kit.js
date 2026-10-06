@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
+import { TAU } from '../core/math.js';
 
-// Piezas que las recetas JSON pueden llamar con `piece` (statue y spiralColumn llegarán con el paso 2.7).
+// Piezas que las recetas JSON pueden llamar con `piece`.
 export const KIT_PIECES = [
   'pane',
   'balcony',
@@ -12,6 +13,8 @@ export const KIT_PIECES = [
   'column',
   'door',
   'belfry',
+  'statue',
+  'spiralColumn',
 ];
 
 // Parametric facade pieces in a wall's local frame (x along the wall from `a`, y up, z outward).
@@ -219,6 +222,36 @@ export function createFacadeKit({ staging, palette }) {
     geo(g, new THREE.CylinderGeometry(0.15, 0.36, 0.52, 12), x, y + 0.85, 0.1, '#6a6554');
     cube(g, x, y + 1.3, 0.1, 0.06, 0.5, 0.08, palette.iron);
   }
+  function statue(g, x, y, scale = 1) {
+    geo(
+      g,
+      new THREE.ConeGeometry(0.23 * scale, 0.9 * scale, 9),
+      x,
+      y + 0.46 * scale,
+      0.5,
+      palette.cream,
+    );
+    geo(g, new THREE.SphereGeometry(0.115 * scale, 8, 6), x, y + 1.04 * scale, 0.5, palette.cream);
+    cube(g, x, y, 0.5, 0.55 * scale, 0.13, 0.55, palette.cream);
+  }
+  // Tubo helicoidal de una columna salomónica (52 tramos, tres vueltas) en x.
+  function spiralColumn(g, x) {
+    const points = [];
+    for (let j = 0; j <= 52; j++) {
+      const a = (j / 52) * TAU * 3;
+      points.push(
+        new THREE.Vector3(x + Math.sin(a) * 0.1, 1.15 + (j / 52) * 3.75, 0.55 + Math.cos(a) * 0.1),
+      );
+    }
+    return geo(
+      g,
+      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 52, 0.18, 8, false),
+      0,
+      0,
+      0,
+      palette.cream,
+    );
+  }
   return {
     staging,
     palette,
@@ -238,5 +271,7 @@ export function createFacadeKit({ staging, palette }) {
     column,
     door,
     belfry,
+    statue,
+    spiralColumn,
   };
 }
