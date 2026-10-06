@@ -72,3 +72,15 @@ export const streetEnvironment = {
   surfaces: 0,
   signs: 0,
 };
+
+// --- Grupos de escalares (pasos 1.4 a 1.7) ---
+export const world = {
+  city: null,
+  facadeProfiles: null,
+  groundTexture: null,
+  worldW: 0,
+  worldH: 0,
+  // Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
+  mappedStreetObjects: [],
+  streetNames: [],
+};

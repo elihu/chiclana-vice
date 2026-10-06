@@ -35,6 +35,7 @@ import {
   driveNetwork,
   facadeWork,
   streetEnvironment,
+  world,
 } from './core/state.js';
 
 // Cache-busting suffix shared by every runtime resource, passed by the entry module.
@@ -68,14 +69,9 @@ function setStyle(target, prop, value) {
     c = domCache(e);
   if (c[prop] !== value) e.style[prop] = c[prop] = value;
 }
-let city,
-  facadeProfiles,
-  renderer,
+let renderer,
   scene,
   camera,
-  groundTexture,
-  worldW,
-  worldH,
   started = false,
   paused = false,
   t = 0,
@@ -221,7 +217,7 @@ function nearestRoad(x, z, driveOnly = false) {
   return best;
 }
 function blocked(x, z, r = 0.3) {
-  if (Math.abs(x) > worldW / 2 - 5 || Math.abs(z) > worldH / 2 - 5) return true;
+  if (Math.abs(x) > world.worldW / 2 - 5 || Math.abs(z) > world.worldH / 2 - 5) return true;
   if (inBuilding(x, z, r)) return true;
   if (streetEnvironment.colliders.some((p) => Math.hypot(x - p.x, z - p.z) < p.r + r)) return true;
   if (waterAreas.some((a) => pInside(x, z, a.p))) {
@@ -254,7 +250,7 @@ function buildGraph() {
     ids.set(k, id);
     return id;
   }
-  for (const r of city.roads) {
+  for (const r of world.city.roads) {
     let drive = !['footway', 'pedestrian', 'cycleway', 'path'].includes(r.type);
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
@@ -273,7 +269,7 @@ function buildGraph() {
       graph[bi].adj.push(s.reverse);
     }
   }
-  for (const b of city.buildings) {
+  for (const b of world.city.buildings) {
     b.minX = Math.min(...b.p.map((p) => p[0]));
     b.maxX = Math.max(...b.p.map((p) => p[0]));
     b.minZ = Math.min(...b.p.map((p) => p[1]));
@@ -285,7 +281,7 @@ function buildGraph() {
         buildingGrid.get(k).push(b);
       }
   }
-  waterAreas.push(...city.areas.filter((a) => a.kind === 'water'));
+  waterAreas.push(...world.city.areas.filter((a) => a.kind === 'water'));
 }
 function connectOpenSpaces() {
   const parent = graph.map((_, i) => i);
@@ -597,16 +593,16 @@ const originalFacadeStreets = [
 function applyHeightSamples(samples) {
   if (
     samples?.version !== 1 ||
-    samples.buildingCount !== city.buildings.length ||
+    samples.buildingCount !== world.city.buildings.length ||
     !Array.isArray(samples.origin) ||
     samples.origin.length !== 2 ||
-    samples.origin.some((v, i) => v !== city.origin[i])
+    samples.origin.some((v, i) => v !== world.city.origin[i])
   )
     return;
-  const policy = facadeProfiles.heightPolicy,
+  const policy = world.facadeProfiles.heightPolicy,
     acceptance = policy.acceptance;
   for (const s of samples.entries || []) {
-    let b = city.buildings[s.index];
+    let b = world.city.buildings[s.index];
     if (
       !b ||
       b.floors !== s.floors ||
@@ -629,10 +625,10 @@ function applyHeightSamples(samples) {
   }
 }
 function prepareFacades() {
-  const special = city.landmarks.filter((p) =>
+  const special = world.city.landmarks.filter((p) =>
     /Ayuntamiento de Chiclana|Mercado Municipal/.test(p.name),
   );
-  for (const [buildingIndex, b] of city.buildings.entries()) {
+  for (const [buildingIndex, b] of world.city.buildings.entries()) {
     const cx = (b.minX + b.maxX) / 2,
       cz = (b.minZ + b.maxZ) / 2;
     let hit = special.find((p) => pInside(cx, cz, p.outline));
@@ -641,7 +637,7 @@ function prepareFacades() {
       continue;
     }
     if (
-      city.landmarks.some(
+      world.city.landmarks.some(
         (p) =>
           /Iglesia de Jesús Nazareno|San Telmo|Iglesia Mayor/.test(p.name) &&
           pInside(cx, cz, p.outline),
@@ -700,12 +696,12 @@ function prepareFacades() {
       });
     }
   }
-  facadeWork.parts = city.buildings.filter((b) => b.detailType).length;
+  facadeWork.parts = world.city.buildings.filter((b) => b.detailType).length;
 }
 function buildDetailedFacades() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
     staging = new THREE.Group(),
-    palette = facadeProfiles.palette;
+    palette = world.facadeProfiles.palette;
   const materials = new Map();
   function material(color) {
     if (!materials.has(color))
@@ -867,14 +863,14 @@ function buildDetailedFacades() {
   }
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   let civic = wall(
-      facadeProfiles.townhall.a,
-      facadeProfiles.townhall.b,
-      facadeProfiles.townhall.outward,
+      world.facadeProfiles.townhall.a,
+      world.facadeProfiles.townhall.b,
+      world.facadeProfiles.townhall.outward,
     ),
     cg = civic.g,
     L = civic.len,
     mid = L * 0.5;
-  cg.scale.y = facadeProfiles.townhall.verticalScale;
+  cg.scale.y = world.facadeProfiles.townhall.verticalScale;
   cube(cg, L / 2, 4.72, 0.06, L, 9.44, 0.1, palette.ochre);
   for (let y = 0.3; y < 3.8; y += 0.4) cube(cg, L / 2, y, 0.12, L, 0.045, 0.09, '#bea166');
   for (const [y, h, d] of [
@@ -961,8 +957,8 @@ function buildDetailedFacades() {
   }
   sign(cg, 'AYUNTAMIENTO', mid, 3.64, 5.4, 0.3, palette.cream, '#a08754');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
-  const mp = facadeProfiles.market.outline;
-  const center = facadeProfiles.market.center;
+  const mp = world.facadeProfiles.market.outline;
+  const center = world.facadeProfiles.market.center;
   for (let i = 0; i < 4; i++) {
     let a = mp[i],
       b = mp[(i + 1) % 4],
@@ -1008,7 +1004,7 @@ function buildDetailedFacades() {
 
   // Church naves have atypical storey heights; dimensions below are visual estimates.
   function nave(name, h, color) {
-    const mark = city.landmarks.find((p) => p.name.includes(name));
+    const mark = world.city.landmarks.find((p) => p.name.includes(name));
     if (!mark) return;
     const ring = mark.outline.slice(0, -1),
       center = mark.p;
@@ -1023,7 +1019,7 @@ function buildDetailedFacades() {
     let roof = flatPolygon(ring, h, material('#bca68b'));
     staging.add(roof);
   }
-  for (const c of facadeProfiles.churches) nave(c.name, c.naveHeight, c.color);
+  for (const c of world.facadeProfiles.churches) nave(c.name, c.naveHeight, c.color);
   function cross(g, x, y, z = 0.2) {
     cube(g, x, y, z, 0.13, 1.5, 0.16, palette.iron);
     cube(g, x, y + 0.19, z, 0.78, 0.13, 0.16, palette.iron);
@@ -1265,13 +1261,13 @@ function buildDetailedFacades() {
       floors = Math.max(1, f.floors),
       storey = (f.h - 0.4) / floors,
       hash = f.seed,
-      shade = facadeProfiles.streetShades[hash % facadeProfiles.streetShades.length],
+      shade = world.facadeProfiles.streetShades[hash % world.facadeProfiles.streetShades.length],
       trim = hash % 3 === 0 ? '#c9b78e' : palette.cream;
     cube(g, len / 2, f.h / 2, 0.055, len, f.h, 0.08, shade);
     cube(g, len / 2, 0.37, 0.15, len, 0.74, 0.19, hash % 2 ? '#aaa59b' : '#b7ab96');
     cube(g, len / 2, f.h - 0.15, 0.18, len + 0.08, 0.17, 0.35, trim);
     if (floors > 1) cube(g, len / 2, storey + 0.03, 0.16, len, 0.13, 0.24, trim);
-    let bays = Math.max(1, Math.floor(len / facadeProfiles.bayWidth)),
+    let bays = Math.max(1, Math.floor(len / world.facadeProfiles.bayWidth)),
       step = len / bays;
     for (let j = 0; j < bays; j++) {
       let x = (j + 0.5) * step,
@@ -1374,9 +1370,9 @@ function buildDetailedFacades() {
     }
     geom.computeBoundingSphere();
     let cell =
-      Math.floor(geom.boundingSphere.center.x / facadeProfiles.facadeCellSize) +
+      Math.floor(geom.boundingSphere.center.x / world.facadeProfiles.facadeCellSize) +
       ',' +
-      Math.floor(geom.boundingSphere.center.z / facadeProfiles.facadeCellSize);
+      Math.floor(geom.boundingSphere.center.z / world.facadeProfiles.facadeCellSize);
     let p = geom.getAttribute('position'),
       n = geom.getAttribute('normal'),
       key = o.material.color.getHexString() + (closed ? '-front' : '') + '@' + cell,
@@ -1458,7 +1454,7 @@ async function buildBuildings() {
       side: THREE.DoubleSide,
     }),
     roofMat = new THREE.MeshStandardMaterial({
-      ...(groundTexture ? { map: groundTexture } : { color: '#b4a58f' }),
+      ...(world.groundTexture ? { map: world.groundTexture } : { color: '#b4a58f' }),
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
@@ -1477,7 +1473,7 @@ async function buildBuildings() {
     return groups.get(k);
   }
   let count = 0;
-  for (const b of city.buildings) {
+  for (const b of world.city.buildings) {
     let g = bucket(b),
       h = b.visualH ?? b.h,
       cx = (b.minX + b.maxX) / 2,
@@ -1513,8 +1509,8 @@ async function buildBuildings() {
           uvs = [
             [0, 0],
             [len / 4.8, 0],
-            [len / 4.8, h / facadeProfiles.heightPolicy.floorHeight],
-            [0, h / facadeProfiles.heightPolicy.floorHeight],
+            [len / 4.8, h / world.facadeProfiles.heightPolicy.floorHeight],
+            [0, h / world.facadeProfiles.heightPolicy.floorHeight],
           ];
         for (const j of [0, 1, 2, 0, 2, 3]) {
           (b.detailType ? g.dw : g.w).push(...vertices[j]);
@@ -1530,12 +1526,12 @@ async function buildBuildings() {
       for (const i of tr) {
         let p = all[i];
         g.r.push(p.x, h + 0.02, p.y);
-        g.ru.push(p.x / worldW + 0.5, 0.5 - p.y / worldH);
+        g.ru.push(p.x / world.worldW + 0.5, 0.5 - p.y / world.worldH);
       }
     if (++count % 900 === 0) {
       loadProgress(
         'Reconstruyendo las manzanas y los patios…',
-        30 + (count / city.buildings.length) * 25,
+        30 + (count / world.city.buildings.length) * 25,
       );
       await sleepFrame();
     }
@@ -1910,7 +1906,7 @@ function buildRoadDetails() {
     rails = [],
     at = (x, y, z, angle = 0) => new THREE.Matrix4().makeRotationY(angle).setPosition(x, y, z);
   for (const a of waterAreas) water.push({ geometry: flatGeometry(a.p), matrix: at(0, 0.025, 0) });
-  for (const r of city.roads) {
+  for (const r of world.city.roads) {
     if (!r.bridge) continue;
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
@@ -1946,8 +1942,6 @@ function buildRoadDetails() {
     for (const p of parts) p.geometry.dispose();
   }
 }
-// Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
-let mappedStreetObjects = [];
 // Street-level materials and lightweight instanced urban detail.
 function surfaceTexture(kind) {
   let c = document.createElement('canvas');
@@ -2006,7 +2000,7 @@ function buildStreetSurfaces() {
       g.uv.push(...uv[i]);
     }
   }
-  for (const road of city.roads) {
+  for (const road of world.city.roads) {
     if (road.bridge) continue;
     let pedestrian = ['pedestrian', 'footway', 'path'].includes(road.type),
       local = road.p.some((p) => p[0] > -370 && p[0] < 100 && p[1] > -250 && p[1] < 110);
@@ -2041,7 +2035,7 @@ function buildStreetSurfaces() {
     }
   }
   // Mapped pedestrian squares retain their real polygon outlines.
-  for (const a of city.areas) {
+  for (const a of world.city.areas) {
     if (
       a.kind !== 'square' ||
       !a.p.some((p) => p[0] > -360 && p[0] < 100 && p[1] > -240 && p[1] < 100)
@@ -2080,7 +2074,7 @@ function buildStreetSurfaces() {
   }
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
   const mark = [];
-  for (const p of mappedStreetObjects) {
+  for (const p of world.mappedStreetObjects) {
     if (p.tags.highway !== 'crossing') continue;
     let near = nearestRoad(p.x, p.z, true);
     if (!near || near.d > 8 || near.s.bridge || near.s.width < 4) continue;
@@ -2142,8 +2136,8 @@ function buildUrbanFurniture() {
   ];
   function clear(x, z, r = 0.35) {
     return (
-      Math.abs(x) < worldW / 2 - 3 &&
-      Math.abs(z) < worldH / 2 - 3 &&
+      Math.abs(x) < world.worldW / 2 - 3 &&
+      Math.abs(z) < world.worldH / 2 - 3 &&
       !inBuilding(x, z, r) &&
       !waterAreas.some((p) => pInside(x, z, p.p)) &&
       !protectedPoints.some((p) => Math.hypot(x - p[0], z - p[1]) < 5) &&
@@ -2265,7 +2259,7 @@ function buildUrbanFurniture() {
         bollard(x + nx * (s.width / 2 + 0.2) * side, z + nz * (s.width / 2 + 0.2) * side);
     }
   }
-  for (const p of mappedStreetObjects) {
+  for (const p of world.mappedStreetObjects) {
     if (p.tags.highway === 'street_lamp') lamp(p.x, p.z);
     if (p.tags.amenity === 'bench') bench(p.x, p.z);
   }
@@ -2332,8 +2326,8 @@ function buildTrees() {
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
   scene.add(vegetation);
-  let points = [...city.trees];
-  for (const a of city.areas) {
+  let points = [...world.city.trees];
+  for (const a of world.city.areas) {
     if (a.kind !== 'park' || a.p.length < 3) continue;
     let xs = a.p.map((p) => p[0]),
       zs = a.p.map((p) => p[1]),
@@ -2346,8 +2340,8 @@ function buildTrees() {
         z = lerp(mnz, mxz, rnd()),
         near = nearestRoad(x, z);
       if (
-        Math.abs(x) > worldW / 2 ||
-        Math.abs(z) > worldH / 2 ||
+        Math.abs(x) > world.worldW / 2 ||
+        Math.abs(z) > world.worldH / 2 ||
         !pInside(x, z, a.p) ||
         inBuilding(x, z, 1.8) ||
         !near ||
@@ -2440,14 +2434,14 @@ function buildTrees() {
   streetEnvironment.trees = points.length;
   // Low shrubs use the same compact instancing approach in mapped green areas.
   const shrubs = [];
-  for (const a of city.areas) {
+  for (const a of world.city.areas) {
     if (a.kind !== 'park') continue;
     for (let i = 0; i < a.p.length; i += 3) {
       let p = a.p[i],
         near = nearestRoad(...p);
       if (
-        Math.abs(p[0]) > worldW / 2 ||
-        Math.abs(p[1]) > worldH / 2 ||
+        Math.abs(p[0]) > world.worldW / 2 ||
+        Math.abs(p[1]) > world.worldH / 2 ||
         inBuilding(...p, 0.7) ||
         !near ||
         near.d < near.s.width / 2 + 1
@@ -2474,7 +2468,7 @@ function buildTrees() {
 
 // Street signs: one canvas atlas, one material and one merged mesh; posts are instanced.
 function addSigns() {
-  let selected = city.roads.filter((r) => r.name && r.p.length > 2),
+  let selected = world.city.roads.filter((r) => r.name && r.p.length > 2),
     seen = new Set(),
     signs = [];
   for (const r of selected) {
@@ -2691,16 +2685,16 @@ async function init() {
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => []),
   ]);
-  city = res;
-  mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
+  world.city = res;
+  world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
-  facadeProfiles = profiles;
-  groundTexture = tex;
-  if (groundTexture) {
-    groundTexture.colorSpace = THREE.SRGBColorSpace;
-    groundTexture.anisotropy = 4;
+  world.facadeProfiles = profiles;
+  world.groundTexture = tex;
+  if (world.groundTexture) {
+    world.groundTexture.colorSpace = THREE.SRGBColorSpace;
+    world.groundTexture.anisotropy = 4;
   } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
-  [worldW, worldH] = city.size;
+  [world.worldW, world.worldH] = world.city.size;
   loadProgress('Preparando el mundo 3D…', 25);
   renderer = new platform.WebGLRenderer({
     canvas: $('world'),
@@ -2735,9 +2729,11 @@ async function init() {
   scene.add(sun, sun.target);
   applyQuality();
   let g = new THREE.Mesh(
-    new THREE.PlaneGeometry(worldW, worldH),
+    new THREE.PlaneGeometry(world.worldW, world.worldH),
     new THREE.MeshStandardMaterial(
-      groundTexture ? { map: groundTexture, roughness: 1 } : { color: '#9a9b86', roughness: 1 },
+      world.groundTexture
+        ? { map: world.groundTexture, roughness: 1 }
+        : { color: '#9a9b86', roughness: 1 },
     ),
   );
   g.rotation.x = -Math.PI / 2;
@@ -2804,7 +2800,7 @@ async function init() {
   camera.position.copy(camPos);
   camera.lookAt(camTarget);
   $('streetCount').textContent =
-    new Set(city.roads.filter((r) => r.name).map((r) => r.name)).size + ' calles con nombre';
+    new Set(world.city.roads.filter((r) => r.name).map((r) => r.name)).size + ' calles con nombre';
   loadProgress('Centro de Chiclana listo.', 100);
   updateHUD();
   prepareMap();
@@ -3264,7 +3260,7 @@ function update(dt) {
     hint = 'Detente en el círculo dorado para entregar';
   else if (state.wanted)
     hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
-  else if (Math.abs(player.x) > worldW / 2 - 30 || Math.abs(player.z) > worldH / 2 - 30)
+  else if (Math.abs(player.x) > world.worldW / 2 - 30 || Math.abs(player.z) > world.worldH / 2 - 30)
     hint = 'Fin de la zona recreada · Abre el mapa para volver';
   setText('hint', hint);
   saveClock += dt;
@@ -3425,14 +3421,13 @@ function drawLabels() {
   const relative = Math.atan2(Math.sin(angle), Math.cos(angle)); // normalised to [-π, π]
   setText(el, Math.abs(relative) > Math.PI * 0.65 ? '↶' : '◆');
 }
-let streetNames = [];
 let chart, chartCtx;
 function trace(c, poly) {
   c.beginPath();
   poly.forEach((p, i) =>
     i
-      ? c.lineTo(p[0] + worldW / 2, p[1] + worldH / 2)
-      : c.moveTo(p[0] + worldW / 2, p[1] + worldH / 2),
+      ? c.lineTo(p[0] + world.worldW / 2, p[1] + world.worldH / 2)
+      : c.moveTo(p[0] + world.worldW / 2, p[1] + world.worldH / 2),
   );
 }
 function prepareMap() {
@@ -3442,12 +3437,12 @@ function prepareMap() {
   chartCtx = chart.getContext('2d');
   chartCtx.fillStyle = '#6c806f';
   chartCtx.fillRect(0, 0, chart.width, chart.height);
-  for (let a of city.areas) {
+  for (let a of world.city.areas) {
     trace(chartCtx, a.p);
     chartCtx.fillStyle = a.kind === 'water' ? '#234f62' : a.kind === 'park' ? '#57734f' : '#a8aa91';
     chartCtx.fill();
   }
-  for (let b of city.buildings) {
+  for (let b of world.city.buildings) {
     trace(chartCtx, b.p);
     chartCtx.fillStyle = '#bfc2aa';
     chartCtx.fill();
@@ -3458,14 +3453,14 @@ function prepareMap() {
     }
   }
   chartCtx.lineJoin = chartCtx.lineCap = 'round';
-  for (let r of city.roads) {
+  for (let r of world.city.roads) {
     trace(chartCtx, r.p);
     chartCtx.strokeStyle = '#d6d7b7';
     chartCtx.lineWidth = r.w;
     chartCtx.stroke();
   }
-  streetNames = [...new Set(city.roads.map((r) => r.name).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, 'es'),
+  world.streetNames = [...new Set(world.city.roads.map((r) => r.name).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, 'es'),
   );
   listStreets();
 }
@@ -3473,19 +3468,23 @@ function drawMap(canvas, mini = false) {
   let cw = canvas.width,
     ch = canvas.height,
     c = canvas.getContext('2d'),
-    scale = mini ? 1.1 : Math.min(cw / worldW, ch / worldH) * 0.92;
-  let ox = mini ? cw / 2 - player.x * scale : (cw - worldW * scale) / 2 + (worldW / 2) * scale,
-    oy = mini ? ch / 2 - player.z * scale : (ch - worldH * scale) / 2 + (worldH / 2) * scale;
+    scale = mini ? 1.1 : Math.min(cw / world.worldW, ch / world.worldH) * 0.92;
+  let ox = mini
+      ? cw / 2 - player.x * scale
+      : (cw - world.worldW * scale) / 2 + (world.worldW / 2) * scale,
+    oy = mini
+      ? ch / 2 - player.z * scale
+      : (ch - world.worldH * scale) / 2 + (world.worldH / 2) * scale;
   c.fillStyle = '#1a343d';
   c.fillRect(0, 0, cw, ch);
   c.save();
-  c.translate(ox - (worldW / 2) * scale, oy - (worldH / 2) * scale);
+  c.translate(ox - (world.worldW / 2) * scale, oy - (world.worldH / 2) * scale);
   c.scale(scale, scale);
   // The 2D orthophoto reuses the image already loaded for the ground texture.
-  if (mapAerial && !mini && groundTexture?.image)
-    c.drawImage(groundTexture.image, 0, 0, worldW, worldH);
-  else c.drawImage(chart, 0, 0, worldW, worldH);
-  c.translate(worldW / 2, worldH / 2);
+  if (mapAerial && !mini && world.groundTexture?.image)
+    c.drawImage(world.groundTexture.image, 0, 0, world.worldW, world.worldH);
+  else c.drawImage(chart, 0, 0, world.worldW, world.worldH);
+  c.translate(world.worldW / 2, world.worldH / 2);
   if (route.length) {
     c.strokeStyle = '#ddf98a';
     c.lineWidth = mini ? 4 : 5 / scale;
@@ -3556,7 +3555,7 @@ const fold = (text) =>
     .replace(/[\u0300-\u036f]/g, '');
 function listStreets() {
   let q = fold($('streetSearch').value),
-    names = streetNames.filter((n) => fold(n).includes(q));
+    names = world.streetNames.filter((n) => fold(n).includes(q));
   let list = $('streetList');
   list.replaceChildren();
   for (const view of VIEWPOINTS) {
@@ -3584,7 +3583,7 @@ function listStreets() {
     let b = document.createElement('button');
     b.textContent = n;
     b.onclick = () => {
-      let rs = city.roads.filter((r) => r.name === n),
+      let rs = world.city.roads.filter((r) => r.name === n),
         r = rs.reduce((a, b) => (a.p.length > b.p.length ? a : b)),
         pt = r.p[Math.floor(r.p.length / 2)],
         safe = safePoint(pt[0], pt[1], !!player.car);
@@ -3686,7 +3685,7 @@ function closeModal() {
 function help() {
   if (contextLost) return;
   modal(
-    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa ${jobs.length} encargos y descubre ${pois.length} lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección de Rafael Suárez Almanzor y Victorín Agueda Goyeneche (proyecto de 2006), publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. San Telmo y San Juan Bautista: fichas de turismo.chiclana.es como referencia. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
+    `<span class="eyebrow">CHICLANA VICE / CALLES REALES</span><h2>El centro, de verdad.</h2><div class="controlTable"><b>Conducir</b><span>Móvil: GAS para avanzar, flechas para girar, FRENO para detenerte y marcha atrás si lo mantienes. TURBO en las rectas.<br>Teclado: WASD o flechas, espacio freno de mano.</span><b>A pie</b><span>BAJAR junto a una zona libre. Joystick para andar; CORRER para ir más rápido. Acércate a un coche detenido para SUBIR. Teclado: E.</span><b>Cámara</b><span>Arrastra la escena horizontal y verticalmente para mirar. En primera persona, la mirada se mantiene hasta que la cambies. El botón Cámara alterna seguimiento, primera persona y vista aérea. Tecla C.</span><b>Mapa</b><span>Busca cualquiera de las ${world.streetNames.length} calles con nombre del sector y selecciónala para trasladarte. Tecla M.</span><b>Encargos</b><span>Detente dentro del círculo dorado durante un segundo. Completa ${jobs.length} encargos y descubre ${pois.length} lugares.</span></div><h3>Qué es real y qué se aproxima</h3><p>Las calles y sus conexiones conservan coordenadas geográficas. Los ${world.city.buildings.length.toLocaleString('es-ES')} volúmenes de edificios y sus patios proceden de contornos oficiales. Los tejados y el suelo usan fotografía aérea PNOA.</p><p>El Ayuntamiento y el Mercado tienen fachadas modeladas a partir de fotografías; Constitución, La Vega, La Plaza y el tramo cercano de Caraza incorporan fachadas de mayor detalle, aproximadas; el piloto continúa por Álamo, García Gutiérrez y Corredera Baja. El resto son genéricas. Los pavimentos del entorno mejorado y el mobiliario son recreaciones; los pasos peatonales usan posiciones cartografiadas. Los árboles combinan puntos de OSM con distribución aproximada dentro de parques y de la plaza del Mercado. Las naves de Jesús Nazareno, San Telmo y San Juan Bautista tienen volúmenes y fachadas específicos, con alturas aproximadas a partir de referencias. La calle Jesús Nazareno incorpora fachadas interpretativas. ${world.city.buildings.filter((b) => b.heightSource).length} partes del piloto tienen alturas de cubierta estimadas de IGN / PNOA-LiDAR, primera cobertura 2008–2015; píxeles de unos 2,5 m y valores en pasos de 1 m. Se mantienen sus plantas catastrales. En los demás, la altura se estima con el número de plantas. Las proporciones verticales del Ayuntamiento se han interpretado del alzado y la sección de Rafael Suárez Almanzor y Victorín Agueda Goyeneche (proyecto de 2006), publicados por la Junta de Andalucía. El terreno es plano. Los monumentos tienen volúmenes simplificados. No es una reconstrucción fotogramétrica ni reproduce el nivel de detalle de GTA V.</p><h3>Fachadas: referencias fotográficas</h3><p>Modelado interpretativo a partir de <a href="https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Chiclana_de_la_Frontera.jpg" target="_blank" rel="noopener">Ayuntamiento, Jms1952 (2023)</a> y <a href="https://commons.wikimedia.org/wiki/File:Mercado_municioal_Chiclana.jpg" target="_blank" rel="noopener">Mercado, Xemenendura (2025)</a>, ambas CC BY-SA 4.0. Las fotos sirven de referencia: los detalles son geometría de juego, no una captura fotogramétrica.</p><p>Portada Jesús Nazareno: Xemenendura (29/12/2015), <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>. San Telmo: Xemenendura (5/12/2021), CC BY-SA 4.0. San Telmo y San Juan Bautista: fichas de turismo.chiclana.es como referencia. IAPH: «Fachadas lateral y principal del Convento de Jesús Nazareno», Isabel Dugo Cobacho (23/8/2012), © Instituto Andaluz del Patrimonio Histórico, <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Referencias, enlaces originales y revisión pendiente de figuras/alzado en los avisos detallados.</p><h3>Fuentes y créditos</h3><p>Calles: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores de OpenStreetMap · ODbL 1.0</a>. <a href="osm-world.json" download target="_blank" rel="noopener">Descargar capa OSM utilizada</a> · <a href="street-objects.json" download target="_blank" rel="noopener">Objetos de calle</a> · <a href="licenses/ODbL-1.0.txt" target="_blank" rel="noopener">Licencia ODbL</a>.<br>Ortofoto: obra derivada de PNOA 2022-07 © <a href="https://pnoa.ign.es/" target="_blank" rel="noopener">IGN / PNOA / SCNE</a>, CC BY 4.0.<br>Edificios: obra de juego transformada a partir de <a href="https://www.catastro.hacienda.gob.es/webinspire/" target="_blank" rel="noopener">D.G. del Catastro · INSPIRE BU</a>, descargada el 4/10/2026. Sin validez catastral.<br>Piloto de alturas: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es; consultado el 5/10/2026. Alturas derivadas aproximadas; fecha del vuelo local sin confirmar. <a href="https://pnoa.ign.es/pnoa-lidar/productos-a-descarga" target="_blank" rel="noopener">Datos y procedencia</a>.<br>Motor: Three.js, licencia MIT. Juego independiente, sin afiliación con Rockstar Games.</p><p>El progreso se guarda en este navegador; los encargos en curso vuelven a su inicio al recargar.</p><p><a href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Licencias y procedencia detalladas</a> · <a href="data-sources.json" target="_blank" rel="noopener">Manifiesto de datos</a></p><p><a href="arcade/">Abrir la versión arcade anterior</a></p><button class="primary" id="understood">VOLVER</button>`,
   );
   $('understood').onclick = closeModal;
 }
@@ -3998,7 +3997,7 @@ function createPublicApi() {
     state,
     player,
     get city() {
-      return city;
+      return world.city;
     },
     graph,
     segments,
