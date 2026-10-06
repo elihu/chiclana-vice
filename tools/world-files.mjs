@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-export function readWorld(directory = 'dist') {
+export function readWorld(directory = 'web') {
   const manifest = JSON.parse(fs.readFileSync(`${directory}/world.json`, 'utf8'));
   const buildings = JSON.parse(fs.readFileSync(`${directory}/${manifest.files.buildings}`, 'utf8'));
   const osm = JSON.parse(fs.readFileSync(`${directory}/${manifest.files.osm}`, 'utf8'));

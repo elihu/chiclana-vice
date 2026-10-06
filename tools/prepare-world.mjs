@@ -6,7 +6,7 @@ import {readWorld} from './world-files.mjs';
 
 const input = process.argv[2];
 const city = input ? JSON.parse(fs.readFileSync(input, 'utf8')) : readWorld();
-const write = (name, data) => fs.writeFileSync(`dist/${name}`, JSON.stringify(data) + '\n');
+const write = (name, data) => fs.writeFileSync(`web/${name}`, JSON.stringify(data) + '\n');
 write('buildings.json', {version: 1, origin: city.origin,
   source: 'D.G. del Catastro INSPIRE BU, transformed game volumes, 2026-10-04',
   license: 'Catastro INSPIRE terms; see THIRD_PARTY_NOTICES.md',
@@ -17,7 +17,7 @@ write('osm-world.json', {version: 1, origin: city.origin,
   licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
   transformation: 'Playable-area extraction, local coordinates, inferred widths and game categories; snapshot 2026-10-04.',
   roads: city.roads, areas: city.areas, landmarks: city.landmarks, trees: city.trees});
-const sha = name => createHash('sha256').update(fs.readFileSync(`dist/${name}`)).digest('hex');
+const sha = name => createHash('sha256').update(fs.readFileSync(`web/${name}`)).digest('hex');
 write('world.json', {version: 1, origin: city.origin, size: city.size, meta: city.meta,
   files: {buildings: 'buildings.json', osm: 'osm-world.json'},
   checksums: {buildings: sha('buildings.json'), osm: sha('osm-world.json')},

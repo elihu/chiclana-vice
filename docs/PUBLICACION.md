@@ -5,7 +5,7 @@ Remoto origin: https://github.com/elihu/chiclana-vice.git
 GitHub Pages configurado con GitHub Actions: https://elihu.github.io/chiclana-vice/
 Configuración realizada el 6/10/2026 en la cuenta personal elihu, fuera de organizaciones.
 El workflow .github/workflows/pages.yml verifica capas y juego, publica únicamente
-`dist/` al hacer push a `main` y permite ejecución manual desde main. Las ramas de
+`web/` al hacer push a `main` y permite ejecución manual desde main. Las ramas de
 features no publican; integrarlas tras revisar y probar. Sin compilación/frameworks.
 
 ## Coste

@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 
-const heights = JSON.parse(fs.readFileSync('dist/height-samples.json', 'utf8'));
-fs.copyFileSync('source-data/facade-catalog.json', 'dist/frontages.json');
-fs.copyFileSync('THIRD_PARTY_NOTICES.md', 'dist/THIRD_PARTY_NOTICES.md');
-fs.copyFileSync('LICENSE', 'dist/LICENSE');
-const hash = file => createHash('sha256').update(fs.readFileSync('dist/'+file)).digest('hex');
+const heights = JSON.parse(fs.readFileSync('web/height-samples.json', 'utf8'));
+fs.copyFileSync('source-data/facade-catalog.json', 'web/frontages.json');
+fs.copyFileSync('THIRD_PARTY_NOTICES.md', 'web/THIRD_PARTY_NOTICES.md');
+fs.copyFileSync('LICENSE', 'web/LICENSE');
+const hash = file => createHash('sha256').update(fs.readFileSync('web/'+file)).digest('hex');
 const records = [
   {files: ['buildings.json'], source: 'D.G. del Catastro INSPIRE BU, municipality 11015',
     date: '2026-10-04', conditions: 'Catastro INSPIRE transformed-product terms; no cadastral validity',
@@ -34,7 +34,7 @@ const records = [
     transformation: 'Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped'},
 ];
 for (const record of records) record.sha256 = Object.fromEntries(record.files.map(file=>[file,hash(file)]));
-fs.writeFileSync('dist/data-sources.json', JSON.stringify({version: 1,
+fs.writeFileSync('web/data-sources.json', JSON.stringify({version: 1,
   codeLicense: 'MIT; THIRD_PARTY_NOTICES.md excludes third-party resources',
   credits: 'THIRD_PARTY_NOTICES.md', records},null,2)+'\n');
 console.log('Published provenance and license copies updated');

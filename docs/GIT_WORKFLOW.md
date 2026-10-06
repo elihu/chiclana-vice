@@ -28,14 +28,14 @@ git switch main
 git switch -c feat/nombre-concreto
 ```
 
-4. Implementar un cambio acotado. Editar directamente `dist`; mantener
+4. Implementar un cambio acotado. Editar directamente `web`; mantener
    coordenadas, capacidades, modo ligero, atribuciones y controles táctiles.
 5. Verificar los flujos afectados. Para cambios del juego:
 
 ```bash
-node --input-type=module --check < dist/game3d.js
-node tools/verify3d.mjs
-uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory dist
+node --input-type=module --check < web/game3d.js
+node tests/verify3d.mjs
+uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web
 ```
 
 El servidor se termina con Ctrl+C. La prueba CPU no acredita render GPU ni móvil.
@@ -52,7 +52,7 @@ del juego sin motivo.
 ```bash
 git diff --check
 git diff
-git add dist/game3d.js docs/CONTINUAR-CODEX.md
+git add web/game3d.js docs/CONTINUAR-CODEX.md
 git diff --cached
 git commit -m 'feat: describir el comportamiento añadido'
 ```
@@ -88,8 +88,8 @@ crea un snapshot revisado con lista explícita; su Git nuevo conserva un flujo n
 de ramas/commits. Los originales actuales se guardan en caché externa.
 
 Una vez creado el remoto de la edición pública, trabajar en esa copia, integrar
-features verificadas en main y ejecutar `git push origin main`. Eso publica dist
+features verificadas en main y ejecutar `git push origin main`. Eso publica web
 automáticamente mediante GitHub Actions. Un push de una rama feature no publica.
-`node tools/verify-world.mjs` verifica también fuentes, capas y licencias.
+`node tests/verify-world.mjs` verifica también fuentes, capas y licencias.
 Las ramas posteriores conservan historial público normal: solo el corte inicial
 excluye el historial local con originales restringidos. Véase PUBLICACION.md.

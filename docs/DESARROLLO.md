@@ -7,7 +7,7 @@ y modo ligero. No requiere npm, compilación ni backend.
 Desde la raíz del repositorio:
 
 ```fish
-uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory dist
+uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web
 ```
 
 Abrir http://localhost:8080; Ctrl+C termina el servidor. Para acceso LAN de confianza,
@@ -20,8 +20,8 @@ Código propio MIT; datos y recursos de terceros mantienen sus condiciones.
 La copia pública no incluye originales Catastro, rásteres ni fotografías de referencia.
 
 ```fish
-node tools/verify-world.mjs
-node tools/verify3d.mjs
+node tests/verify-world.mjs
+node tests/verify3d.mjs
 ```
 
 El verificador utiliza DOM/WebGL simulados; no mide GPU. Chrome desktop con GPU

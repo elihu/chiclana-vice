@@ -9,7 +9,7 @@ Fuente: Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es.
 Píxeles ~2,5 m y valores en pasos de 1 m; no son medidas de cornisa.
 La repetición de la auditoría el 6/10/2026 vuelve a aceptar las mismas 15 partes.
 
-El índice identifica la parte en `dist/buildings.json` (empieza en cero).
+El índice identifica la parte en `web/buildings.json` (empieza en cero).
 x/z son metros respecto al origen -6.1485 / 36.4195; x este, z sur.
 
 | Índice | Primer vértice x / z (m) | Plantas | Base (m) | Cubierta estimada (m) | Muestras |

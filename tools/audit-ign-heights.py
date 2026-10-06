@@ -1,7 +1,7 @@
 """Audit independent IGN roof estimates; originals stay in an external cache.
 
 uv run --no-project --with rasterio --with pyproj --with shapely python \
-    tools/audit-ign-heights.py --download --overlay dist/height-samples.json
+    tools/audit-ign-heights.py --download --overlay web/height-samples.json
 
 Downloads only a ~1.4 km2 WCS clip, not the national raster. The IGN service
 currently exposes FIRST coverage (2008–2015), not the REDIAM 2020–21 campaign.
@@ -47,9 +47,9 @@ if args.download:
     path.write_bytes(data)
     path.with_suffix('.access-date').write_text(date.today().isoformat())
 
-manifest = json.loads(Path('dist/world.json').read_text())
-buildings_path = Path('dist') / manifest['files']['buildings']
-osm = json.loads((Path('dist') / manifest['files']['osm']).read_text())
+manifest = json.loads(Path('web/world.json').read_text())
+buildings_path = Path('web') / manifest['files']['buildings']
+osm = json.loads((Path('web') / manifest['files']['osm']).read_text())
 raw = buildings_path.read_bytes()
 city = {'origin': manifest['origin'], 'buildings': json.loads(raw)['buildings'], 'landmarks': osm['landmarks']}
 sx = 111320 * math.cos(math.radians(city['origin'][1]))
