@@ -1,13 +1,6 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { $, setStyle, setText, sleepFrame, ui } from './core/dom.js';
-import {
-  PLACES,
-  POPULATION,
-  SAVE_KEY,
-  SPAWN_POSITION,
-  VIEWPOINTS,
-  JOBS as jobs,
-} from '../game-data.js';
+import { PLACES, SAVE_KEY, SPAWN_POSITION, VIEWPOINTS, JOBS as jobs } from '../game-data.js';
 import { TAU, clamp, d, fold, lerp, pInside, pointSeg } from './core/math.js';
 import {
   actors,
@@ -45,15 +38,6 @@ import {
 import { addGroundPlanes, applyQuality, resizeRenderer, setupRenderer } from './engine/renderer.js';
 import { addSigns } from './world/signs.js';
 import { applyHeightSamples, loadLayers, loadWorld } from './world/loader.js';
-import {
-  bevelGeometry,
-  modelBox,
-  modelCylinder,
-  modelGeometry,
-  modelMaterial,
-  modelParts,
-  sculptedBox,
-} from './engine/materials.js';
 import { blocked, inBuilding, indexBuildings, nearestRoad, safePoint } from './world/spatial.js';
 import { buildBuildings } from './world/buildings.js';
 import { buildDetailedFacades, prepareFacades } from './world/facades.js';
@@ -67,10 +51,12 @@ import {
 } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
 import { buildUrbanFurniture } from './world/furniture.js';
+import { carCollision, createCar, nearestCar } from './game/vehicles.js';
+import { createPerson } from './game/people.js';
 import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress, save } from './game/save.js';
-import { rnd } from './core/random.js';
 import { setAssetVersion } from './core/assets.js';
+import { spawnTraffic, stepAgent, updatePedestrians } from './game/traffic.js';
 
 function installTouchDetection() {
   gfx.W = innerWidth;
@@ -93,178 +79,6 @@ function installTouchDetection() {
     },
     { capture: true, passive: true },
   );
-}
-
-function carCabin(material) {
-  const p = [
-      [-0.84, 0.86, -1.15],
-      [0.84, 0.86, -1.15],
-      [0.84, 0.86, 0.84],
-      [-0.84, 0.86, 0.84],
-      [-0.69, 1.36, -0.84],
-      [0.69, 1.36, -0.84],
-      [0.69, 1.36, 0.34],
-      [-0.69, 1.36, 0.34],
-    ],
-    v = [];
-  for (const f of [
-    [0, 1, 5, 4],
-    [1, 2, 6, 5],
-    [2, 3, 7, 6],
-    [3, 0, 4, 7],
-    [4, 5, 6, 7],
-  ])
-    for (const i of [0, 1, 2, 0, 2, 3]) v.push(...p[f[i]]);
-  let geo = modelGeometry('car-cabin', () => {
-    let g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
-    g.computeVertexNormals();
-    return g;
-  });
-  return new THREE.Mesh(geo, material);
-}
-
-function createCar(color = '#b9b8aa', cop = false) {
-  let group = new THREE.Group(),
-    paint = modelMaterial(color, { metalness: 0.55, roughness: 0.29 }),
-    glass = modelMaterial('#345465', { metalness: 0.35, roughness: 0.2, side: THREE.DoubleSide }),
-    black = modelMaterial('#182123'),
-    chrome = modelMaterial('#a9b3b6', { metalness: 0.85, roughness: 0.23 }),
-    parts = modelParts(),
-    sideways = [0, 0, Math.PI / 2];
-  // Body, lights and wheels never move relative to the car: one mesh per material.
-  // Bevelled body panels never received shadows; skirt, mirrors and pillars did ('trim').
-  parts.add('paint', paint, bevelGeometry(1.84, 0.48, 4.28, 0.1), 0, 0.58, 0);
-  parts.box('trim', paint, 1.9, 0.13, 4.12, 0, 0.38, 0);
-  parts.add('paint', paint, bevelGeometry(1.75, 0.19, 1.25, 0.06), 0, 0.89, 1.32);
-  parts.add('paint', paint, bevelGeometry(1.79, 0.17, 0.85, 0.05), 0, 0.91, -1.55);
-  parts.box('black', black, 1.74, 0.17, 0.13, 0, 0.48, 2.15);
-  parts.box('black', black, 0.67, 0.2, 0.04, 0, 0.73, 2.17);
-  parts.box('plate', modelMaterial('#edf0dd'), 0.46, 0.18, 0.03, 0, 0.54, -2.16);
-  const head = modelMaterial('#fff3c5', { emissive: '#ffeeaa', emissiveIntensity: 0.5 }),
-    tail = modelMaterial('#b52428', { emissive: '#a0141c', emissiveIntensity: 0.4 });
-  for (const x of [-0.66, 0.66]) {
-    parts.box('head', head, 0.46, 0.12, 0.05, x, 0.78, 2.13);
-    parts.box('tail', tail, 0.46, 0.13, 0.05, x, 0.74, -2.16);
-    parts.box('trim', paint, 0.22, 0.16, 0.31, x > 0 ? 0.99 : -0.99, 1.06, 0.54);
-    parts.box('trim', paint, 0.05, 0.46, 0.09, x > 0 ? 0.86 : -0.86, 1.04, -0.38);
-    parts.box('chrome', chrome, 0.09, 0.03, 0.19, x > 0 ? 0.927 : -0.927, 0.83, -0.2);
-  }
-  for (let x of [-0.91, 0.91])
-    for (let z of [-1.34, 1.35]) {
-      parts.add('black', black, modelCylinder(0.34, 0.34, 0.23, 24), x, 0.34, z, sideways);
-      parts.add('chrome', chrome, modelCylinder(0.22, 0.22, 0.245, 20), x, 0.34, z, sideways);
-      parts.add('black', black, modelCylinder(0.09, 0.09, 0.255, 12), x, 0.34, z, sideways);
-    }
-  if (cop) parts.box('livery', modelMaterial('#e9efed'), 1.86, 0.32, 1.6, 0, 0.63, -0.1);
-  parts.attach(group, cop ? 'cop' : 'car', [
-    'trim',
-    'black',
-    'chrome',
-    'plate',
-    'head',
-    'tail',
-    'livery',
-  ]);
-  // Cabin and roof stay separate: first-person view hides them.
-  const cabin = carCabin(glass),
-    roof = sculptedBox(1.43, 0.11, 1.24, paint, 0, 1.39, -0.25, 0.04);
-  group.add(cabin);
-  group.add(roof);
-  let siren = null;
-  if (cop) {
-    siren = new THREE.Group();
-    siren.position.y = 1.46;
-    siren.add(
-      modelBox(
-        0.45,
-        0.15,
-        0.26,
-        modelMaterial('#427ce9', { emissive: '#286eee', emissiveIntensity: 2 }),
-        -0.36,
-        0,
-        -0.15,
-      ),
-    );
-    siren.add(
-      modelBox(
-        0.45,
-        0.15,
-        0.26,
-        modelMaterial('#e85d5d', { emissive: '#dc2424', emissiveIntensity: 2 }),
-        0.36,
-        0,
-        -0.15,
-      ),
-    );
-    group.add(siren);
-  }
-  gfx.scene.add(group);
-  return {
-    mesh: group,
-    firstPersonOccluders: [cabin, roof],
-    x: 0,
-    z: 0,
-    a: 0,
-    speed: 0,
-    health: 100,
-    cop,
-    siren,
-    name: cop ? 'PATRULLA' : 'COSTA GT',
-    radius: 1.12,
-  };
-}
-
-function createPerson(color = '#78805a') {
-  const g = new THREE.Group(),
-    skin = modelMaterial('#c99a78'),
-    shirt = modelMaterial(color),
-    pants = modelMaterial('#334550'),
-    shoes = modelMaterial('#252b2d'),
-    hair = modelMaterial('#3b302a'),
-    sphere = modelGeometry('person-sphere', () => new THREE.SphereGeometry(1, 12, 8));
-  // Torso/head and each leg/arm are merged per material; legs and arms remain animated groups.
-  const oval = (parts, slot, m, x, y, z, sx, sy, sz) =>
-    parts.add(slot, m, sphere, x, y, z, [0, 0, 0], [sx, sy, sz]);
-  const limb = (parts, slot, m, top, bottom, length, y) =>
-    parts.add(slot, m, modelCylinder(top, bottom, length, 10), 0, y);
-  let body = modelParts();
-  oval(body, 'shirt', shirt, 0, 1.14, 0, 0.215, 0.285, 0.135);
-  oval(body, 'pants', pants, 0, 0.91, 0, 0.185, 0.15, 0.13);
-  limb(body, 'skin', skin, 0.055, 0.06, 0.12, 1.44);
-  oval(body, 'skin', skin, 0, 1.585, 0, 0.115, 0.145, 0.117);
-  oval(body, 'hair', hair, 0, 1.665, -0.024, 0.118, 0.079, 0.108);
-  oval(body, 'skin', skin, 0, 1.57, 0.114, 0.033, 0.035, 0.03);
-  for (const x of [-0.116, 0.116]) oval(body, 'skin', skin, x, 1.59, 0, 0.023, 0.04, 0.027);
-  body.attach(g, 'person-body');
-  const limbs = [];
-  for (const x of [-0.105, 0.105]) {
-    const leg = new THREE.Group(),
-      parts = modelParts();
-    leg.position.set(x, 0.9, 0);
-    limb(parts, 'pants', pants, 0.083, 0.065, 0.39, -0.19);
-    oval(parts, 'pants', pants, 0, -0.39, 0, 0.065, 0.073, 0.067);
-    limb(parts, 'pants', pants, 0.062, 0.048, 0.36, -0.58);
-    oval(parts, 'shoes', shoes, 0, -0.815, 0.055, 0.069, 0.075, 0.145);
-    parts.attach(leg, 'person-leg');
-    g.add(leg);
-    limbs.push(leg);
-  }
-  for (const x of [-0.237, 0.237]) {
-    const arm = new THREE.Group(),
-      parts = modelParts();
-    arm.position.set(x, 1.34, 0);
-    oval(parts, 'shirt', shirt, 0, -0.065, 0, 0.073, 0.1, 0.073);
-    limb(parts, 'shirt', shirt, 0.068, 0.052, 0.22, -0.13);
-    limb(parts, 'skin', skin, 0.048, 0.034, 0.24, -0.35);
-    oval(parts, 'skin', skin, 0, -0.49, 0, 0.042, 0.068, 0.044);
-    parts.attach(arm, 'person-arm');
-    g.add(arm);
-    limbs.push(arm);
-  }
-  g.userData.heightMeters = 1.744;
-  gfx.scene.add(g);
-  return { mesh: g, limbs };
 }
 
 function setupPOIs() {
@@ -300,44 +114,6 @@ function updateHUD() {
   ui('joy').classList.toggle('hidden', !!player.car);
   ui('driveControls').classList.toggle('hidden', !player.car);
   updateCameraVisibility();
-}
-
-function spawnTraffic() {
-  let eligible = segments.filter((s) => s.forward.drive && s.length > 18);
-  for (let i = 0; i < POPULATION.traffic; i++) {
-    let s = eligible[Math.floor(rnd() * eligible.length)],
-      n = graph[s.ai];
-    if (blocked(n.x, n.z, 1)) continue;
-    let car = createCar(['#d8d3c5', '#50575b', '#9f5446', '#b8b2a1', '#6b8587', '#a9b4bf'][i % 6]);
-    Object.assign(car, {
-      x: n.x,
-      z: n.z,
-      node: s.ai,
-      next: s.bi,
-      cruise: 6 + rnd() * 4,
-      progress: 0,
-    });
-    traffic.push(car);
-  }
-  for (let i = 0; i < POPULATION.parked; i++) {
-    let s = eligible[Math.floor(rnd() * eligible.length)],
-      p = safePoint((s.a[0] + s.b[0]) / 2, (s.a[1] + s.b[1]) / 2, true),
-      car = createCar(['#dcc394', '#69747b', '#becec1'][i % 3]);
-    Object.assign(car, p);
-    cars.push(car);
-  }
-  // 28 pedestrians on segments of at least 8 m; bounded attempts keep start-up predictable.
-  for (
-    let i = 0, attempts = 0;
-    i < POPULATION.pedestrians && attempts < POPULATION.pedestrianAttempts;
-    attempts++
-  ) {
-    let s = segments[Math.floor(rnd() * segments.length)];
-    if (s.length < 8) continue;
-    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
-    Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1 });
-    people.push(person);
-  }
 }
 
 async function init() {
@@ -506,19 +282,6 @@ function rescue() {
   updateHUD();
 }
 
-function nearestCar() {
-  let best = null,
-    md = 5.5;
-  for (const c of vehicles) {
-    let di = d(c, player);
-    if (di < md && Math.abs(c.speed) < 3) {
-      md = di;
-      best = c;
-    }
-  }
-  return best;
-}
-
 function interact() {
   if (!session.started || session.paused) return;
   if (player.car) {
@@ -565,18 +328,6 @@ function interact() {
   }
   updateHUD();
   snapCamera();
-}
-
-function carCollision(c, x, z) {
-  let f = 1.4,
-    r = 0.7;
-  return (
-    blocked(x, z, 0.55) ||
-    blocked(x + Math.sin(c.a) * f, z + Math.cos(c.a) * f, 0.45) ||
-    blocked(x - Math.sin(c.a) * f, z - Math.cos(c.a) * f, 0.45) ||
-    blocked(x + Math.cos(c.a) * r, z - Math.sin(c.a) * r, 0.2) ||
-    blocked(x - Math.cos(c.a) * r, z + Math.sin(c.a) * r, 0.2)
-  );
 }
 
 function updatePlayer(dt) {
@@ -673,54 +424,6 @@ function updatePlayer(dt) {
   }
 }
 
-function stepAgent(c, dt, isCop = false) {
-  if (c.next === undefined) return;
-  let n = graph[c.next],
-    di = Math.hypot(n.x - c.x, n.z - c.z),
-    speed = c.cruise || 9;
-  if (!isCop && d(c, player) < 7) speed = 0;
-  if (di < Math.max(1, speed * dt)) {
-    // Snap to the node so agents follow the checked segment lines exactly.
-    c.x = n.x;
-    c.z = n.z;
-    c.node = c.next;
-    let candidates = graph[c.node].adj.filter((e) => e.drive && e.to !== c.prev);
-    if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.drive);
-    // Last resort (spawned inside an excluded alley): any road back to the network.
-    if (!candidates.length) candidates = graph[c.node].adj.filter((e) => e.s?.drive);
-    c.prev = c.node;
-    let next;
-    if (isCop && c.path?.length) {
-      while (c.path.length && c.path[0] === c.node) c.path.shift();
-      if (c.path.length) next = { to: c.path.shift() };
-    }
-    if (!next) next = candidates[Math.floor(rnd() * candidates.length)];
-    if (next) c.next = next.to;
-    else c.next = undefined;
-    return;
-  }
-  let a = Math.atan2(n.x - c.x, n.z - c.z),
-    delta = Math.atan2(Math.sin(a - c.a), Math.cos(a - c.a));
-  c.a += clamp(delta, -dt * 3, dt * 3);
-  let nx = c.x + Math.sin(a) * speed * dt,
-    nz = c.z + Math.cos(a) * speed * dt;
-  if (!inBuilding(nx, nz, 0.35)) {
-    c.x = nx;
-    c.z = nz;
-    c.speed = speed;
-    c.stuck = 0;
-  } else {
-    c.speed = 0;
-    c.stuck = (c.stuck || 0) + dt;
-    if (c.stuck > 2) {
-      let tmp = c.node;
-      c.node = c.next;
-      c.next = tmp;
-      c.stuck = 0;
-    }
-  }
-}
-
 function updatePolice(dt) {
   if (!state.wanted) return;
   while (police.length < Math.min(3, state.wanted + 1)) {
@@ -802,22 +505,7 @@ function update(dt) {
     c.mesh.rotation.y = c.a;
   }
   updatePolice(dt);
-  for (const p of people) {
-    p.u += (p.dir * dt * 1.05) / p.s.length;
-    if (p.u > 1 || p.u < 0) {
-      p.dir *= -1;
-      p.u = clamp(p.u, 0, 1);
-    }
-    let x = lerp(p.s.a[0], p.s.b[0], p.u),
-      z = lerp(p.s.a[1], p.s.b[1], p.u),
-      a = Math.atan2(p.s.b[0] - p.s.a[0], p.s.b[1] - p.s.a[1]);
-    x += Math.cos(a) * (p.s.width / 2 + 0.5);
-    z -= Math.sin(a) * (p.s.width / 2 + 0.5);
-    p.mesh.visible = !inBuilding(x, z, 0.2) && Math.hypot(x - player.x, z - player.z) < 140;
-    p.mesh.position.set(x, 0, z);
-    p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
-    p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(session.t * 7 + (i % 2) * Math.PI) * 0.35));
-  }
+  updatePedestrians(dt);
   let goal = target();
   if (goal) {
     if (state.timer > 0) {
