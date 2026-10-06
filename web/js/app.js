@@ -1,7 +1,6 @@
 import * as THREE from '../vendor/three.module.min.js';
 import {
   SAVE_KEY,
-  INITIAL_POSITION,
   SPAWN_POSITION,
   POPULATION,
   PLACES,
@@ -10,6 +9,33 @@ import {
   JOBS as jobs,
 } from '../game-data.js';
 import { readProgress } from '../progress.js';
+import {
+  input,
+  keys,
+  holdPointers,
+  state,
+  player,
+  base,
+  camPos,
+  camTarget,
+  camDesired,
+  camLook,
+  labelPoint,
+  cars,
+  police,
+  traffic,
+  vehicles,
+  people,
+  chunks,
+  waterAreas,
+  pois,
+  graph,
+  segments,
+  buildingGrid,
+  driveNetwork,
+  facadeWork,
+  streetEnvironment,
+} from './core/state.js';
 
 // Cache-busting suffix shared by every runtime resource, passed by the entry module.
 let ASSET_VERSION = null;
@@ -102,8 +128,6 @@ const rnd = () => {
   randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
   return randSeed / 4294967296;
 };
-const input = { left: false, right: false, gas: false, brake: false, boost: false, jx: 0, jy: 0 },
-  keys = {};
 let joyId = null,
   dragId = null,
   dragX = 0,
@@ -112,17 +136,6 @@ let joyId = null,
   lookPitch = 0,
   orbitAge = 0,
   firstPersonCar = null;
-const state = {
-  cash: 0,
-  job: 0,
-  stage: 0,
-  timer: 0,
-  wanted: 0,
-  heat: 0,
-  arrest: 0,
-  found: new Set(),
-  health: 100,
-};
 function loadSavedProgress() {
   const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
   if (stored.quality === 'low') quality = 'low';
@@ -130,25 +143,7 @@ function loadSavedProgress() {
   state.job = stored.job;
   state.found = new Set(stored.found);
 }
-const player = { ...INITIAL_POSITION, a: 0, speed: 0, car: null };
-const camPos = new THREE.Vector3(),
-  camTarget = new THREE.Vector3(),
-  camDesired = new THREE.Vector3(),
-  camLook = new THREE.Vector3(),
-  labelPoint = new THREE.Vector3();
-const cars = [],
-  police = [],
-  traffic = [],
-  vehicles = [], // cars + traffic, kept in sync instead of spreading both every frame
-  people = [],
-  chunks = [],
-  waterAreas = [],
-  pois = [],
-  graph = [],
-  segments = [],
-  buildingGrid = new Map();
 let character, sun, ring, beam, arrow;
-const base = { ...INITIAL_POSITION };
 function loadProgress(message, p) {
   $('loadStatus').textContent = message;
   $('loadProgress').style.width = p + '%';
@@ -335,7 +330,6 @@ function connectOpenSpaces() {
 // is ignored only on segments around nodes that would otherwise be unreachable or have no
 // exit. Segments whose centre line touches a cadastral outline (narrow alleys, where agents
 // used to get stuck) are left out of the agents' network.
-const driveNetwork = { oneway: 0, relaxed: 0, blocked: 0, components: 0, mainNodes: 0 };
 function driveComponents() {
   const n = graph.length,
     index = new Int32Array(n).fill(-1),
@@ -599,20 +593,6 @@ const originalFacadeStreets = [
   'Calle Caraza',
   'Calle Jesús Nazareno',
 ];
-let facadeWork = {
-  fronts: [],
-  parts: 0,
-  streetNames: [
-    'Calle Constitución',
-    'Calle de la Vega',
-    'Calle de la Plaza',
-    'Calle Caraza',
-    'Calle Jesús Nazareno',
-    'Calle Álamo',
-    'Calle Garcia Gutierrez',
-    'Calle Corredera Baja',
-  ],
-};
 // Optional LiDAR pilot: preserve cadastral floor counts/heights and footprint data.
 function applyHeightSamples(samples) {
   if (
@@ -1969,17 +1949,6 @@ function buildRoadDetails() {
 // Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
 let mappedStreetObjects = [];
 // Street-level materials and lightweight instanced urban detail.
-let streetEnvironment = {
-  colliders: [],
-  lamps: 0,
-  benches: 0,
-  bollards: 0,
-  bins: 0,
-  trees: 0,
-  crossings: 0,
-  surfaces: 0,
-  signs: 0,
-};
 function surfaceTexture(kind) {
   let c = document.createElement('canvas');
   c.width = c.height = 256;
@@ -3806,7 +3775,6 @@ function cycleCamera() {
     2,
   );
 }
-const holdPointers = new Map();
 function installControls() {
   $('start').onclick = start;
   $('introHelp').onclick = help;
