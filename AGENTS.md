@@ -5,7 +5,7 @@ navegador sin frameworks ni compilación; Three.js r169 local en `web/vendor/`. 
 Pages publica `web/` tal cual. La documentación y los commits se escriben en español.
 
 Antes de cambiar el juego, lee `docs/DESARROLLO.md` y `docs/ESTADO.md`. Si tocas datos o
-fuentes, lee también `docs/MAP_SOURCES.md` y `docs/DATOS_PUBLICOS.md`. Antes de editar
+fuentes, lee también `docs/MAP_SOURCES.md` y `docs/DATOS.md`. Antes de editar
 algo en `tools/`, lee `tools/AGENTS.md`.
 
 ## Comandos

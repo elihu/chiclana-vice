@@ -25,15 +25,12 @@ https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf
 © colaboradores de OpenStreetMap, ODbL 1.0, extracto del 4/10/2026.
 `osm-world.json` ofrece la capa usada completa: vías, parques/plazas/agua,
 árboles cartografiados e hitos; `street-objects.json` incluye objetos cartografiados.
-`osm-world.json` es la única descarga ODbL de las vías; `roads-osm.json`, idéntico a
-sus vías, se elimina por decisión del 6/10/2026. TODO(integración): quitar esta mención
-cuando se fusione la rama que borra `roads-osm.json`.
+`osm-world.json` es la única descarga ODbL de las vías.
 Transformaciones: recorte, coordenadas locales y categorías/ancho inferidos para juego.
 `frontages.json` (catálogo de frentes) asocia nombres de calle de OSM con frentes de
 edificios y se ofrece en conjunto bajo ODbL 1.0 (decisión del 6/10/2026). Sus contornos
 proceden de Catastro y sus alturas de IGN: se mantienen como avisos adicionales de esas
-fuentes, con sus atribuciones. TODO(integración): pendiente de reflejarlo en
-`frontages.json` y `data-sources.json`.
+fuentes, con sus atribuciones (así figura también en `data-sources.json`).
 Los datos OSM y las contribuciones a esa base se ofrecen bajo ODbL, no bajo MIT.
 https://www.openstreetmap.org/copyright
 https://opendatacommons.org/licenses/odbl/1-0/

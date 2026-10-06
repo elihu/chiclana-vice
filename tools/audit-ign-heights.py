@@ -126,7 +126,9 @@ with rasterio.open(path) as raster:
                              'heightPerFloorRange': [2.5, 4.5], 'absoluteCorrectionRange': [.6, 2]},
               'limits': 'First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.',
               'versions': {'rasterio': rasterio.__version__, 'pyproj': pyproj.__version__, 'shapely': shapely.__version__},
-              'entries': entries, 'audit': rows}
+              'entries': entries,
+              'attribution': 'Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es',
+              'audit': rows}
 for destination, payload in [(args.output, output), (args.overlay, {k:v for k,v in output.items() if k != 'audit'})]:
     if destination:
         Path(destination).parent.mkdir(parents=True, exist_ok=True)

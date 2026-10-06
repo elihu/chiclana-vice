@@ -34,8 +34,8 @@ npm run check
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
 móvil físico. Si un cambio afecta a interfaz, cámara, render o controles, probarlo en un
-navegador real y anotar qué no se ha verificado. TODO(integración): revisar esta
-descripción cuando se fusione el arnés común de pruebas.
+navegador real y anotar qué no se ha verificado. `verify3d` engancha el juego con
+sustituciones de texto que fallan con un error claro si dejan de coincidir.
 
 Prettier no formatea los datos (`web/*.json`, `source-data/`), las licencias ni
 `web/vendor/`. Las versiones de las herramientas están fijadas en `package-lock.json`, que
@@ -62,10 +62,8 @@ Copias intencionadas, que no se editan a mano: `web/LICENSE` y `web/THIRD_PARTY_
 regeneran con `node tools/export-provenance.mjs` y `tests/verify-world.mjs` comprueba que
 coinciden.
 
-Duplicados que no son intencionados y están pendientes (ver [ESTADO.md](ESTADO.md)): el
-array `mappedStreetObjects` de `web/game3d.js` repite `web/street-objects.json`, y
-`web/roads-osm.json` repite las vías de `web/osm-world.json`. TODO(integración): quitar
-esta frase cuando se fusionen las ramas que los eliminan.
+Los objetos de calle se cargan de `web/street-objects.json` (capa opcional) y
+`web/osm-world.json` es la única copia de las vías.
 
 ## Modo ligero
 
@@ -74,12 +72,14 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Fija la resolución de render a 1 píxel por píxel CSS (sin escalar por la densidad de
   pantalla).
 - Acerca el final de la niebla para dibujar menos a lo lejos.
-- Desactiva el mapa de sombras del renderizador.
+- Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
+- Oculta las celdas más allá del final de la niebla.
+- Al arrancar en ligero o en un dispositivo táctil, carga la ortofoto reducida
+  `aerial-2048.jpg`; cambiar la calidad durante la partida no la recarga.
 
-Limitaciones conocidas (auditoría F1 y F9): las luces siguen marcadas para proyectar
-sombras, la elección no se guarda entre sesiones y la distancia de carga de las celdas de
-fachadas no se ajusta a la niebla. TODO(integración): actualizar esta sección con las
-ramas de rendimiento y móvil (sombras, persistencia, ortofoto reducida).
+La elección se guarda en el navegador (`chiclana-real-v2`) y nunca se activa sola.
+
+No se ha medido todavía su efecto en un móvil físico.
 
 ## Medir en el navegador
 

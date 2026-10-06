@@ -20,28 +20,27 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 - **P2**: historial local reescrito sin «Gerion Dev Team»; el push forzado a `origin` lo
   decidirá el usuario ([GIT_WORKFLOW.md](GIT_WORKFLOW.md#reescritura-de-historial)).
 - **P3**: `web/frontages.json` pasa a ODbL 1.0 en conjunto y `web/roads-osm.json` se
-  elimina; `osm-world.json` es la única descarga ODbL de las vías. TODO(integración):
-  pendiente de aplicar en los datos.
+  elimina; `osm-world.json` es la única descarga ODbL de las vías. Aplicado.
 
 ## Pendientes
 
 Los identificadores remiten a la auditoría del 6/10/2026.
 
-- Ramas en curso: rendimiento y draw calls, juego en móvil y accesibilidad, datos y
-  pruebas. TODO(integración): actualizar esta lista al integrarlas.
-- Modo ligero completo (F1, F9) y documentación final del modo ligero.
-- Una sola fuente para objetos de calle (SP-1) y para el catálogo de frentes (SP-8).
-- Atribución reproducible de las alturas IGN (N1) y huella geométrica fija (N2).
-- Metadatos desfasados de `web/world.json` (N8) y textos fijos de la ayuda del juego.
-- Verificación en móvil físico (iOS y Android) y medición en GPU real con `measure.js`.
+- Una sola copia del catálogo de frentes (SP-8: `source-data/facade-catalog.json` y
+  `web/frontages.json` son idénticos).
+- Arnés de pruebas común sin escribir `tests/qa3d-runtime.mjs` y pruebas por invariantes
+  en lugar de recuentos fijos (SP-6, S17).
+- Constantes, lugares y miradores en un solo sitio (SP-4) y parámetros de iglesias en
+  `facade-profiles.json` (SP-5); criterio de alturas en un único sitio (SP-11).
+- Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
+- Recargar la ortofoto al cambiar de calidad en caliente; muros de `buildBuildings` aún
+  en DoubleSide; `nearestRoad` crea objetos por tramo en cada frame.
+- Verificación en móvil físico (iOS y Android), revisión visual de fachadas FrontSide y
+  primera ejecución real de `ci.yml` en GitHub.
 
 ## Al terminar de integrar las ramas en curso
 
 Tareas del integrador, en este orden y en `main`:
 
-1. Renombrar la guía de datos (decidido; no antes, para no chocar con ramas abiertas):
-   `git mv docs/DATOS_PUBLICOS.md docs/DATOS.md` y actualizar los enlaces
-   (`git grep -n DATOS_PUBLICOS`).
-2. Revisar los `TODO(integración)` (`git grep -n 'TODO(integración)'`).
-3. `npm run check`, publicar y, tras el despliegue, crear la etiqueta `v1.0.0` y su
+1. `npm run check`, push forzado de `main` (reescritura P2), publicar y, tras el despliegue, crear la etiqueta `v1.0.0` y su
    release ([GIT_WORKFLOW.md](GIT_WORKFLOW.md#etiquetas-y-releases)).

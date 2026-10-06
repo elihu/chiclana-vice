@@ -1,7 +1,7 @@
 # tools/ — conversores y generadores de datos
 
 Complementa el `AGENTS.md` de la raíz. Procedimiento detallado y comandos con argumentos
-en `docs/DATOS_PUBLICOS.md`.
+en `docs/DATOS.md`.
 
 - Los scripts escriben en `web/` y `source-data/`. Revisa `git diff --stat` después de
   ejecutarlos y no confirmes cambios de datos que la tarea no pida.
@@ -15,5 +15,4 @@ en `docs/DATOS_PUBLICOS.md`.
   espacios en código nuevo. No reformatees en bloque los scripts existentes.
 - Node: módulos ES `.mjs`, sin dependencias de ejecución nuevas.
 - Conserva en las salidas los campos de atribución y licencia (`attribution`, `license`,
-  `sourceUrls`). TODO(integración): `audit-ign-heights.py` aún no genera `attribution`
-  (auditoría N1); si lo ejecutas antes de que se corrija, restaura el campo y avisa.
+  `sourceUrls`).

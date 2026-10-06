@@ -3,7 +3,7 @@
 Qué fuentes se usan, cómo se han transformado y qué partes son aproximadas. Las
 licencias, atribuciones exactas y avisos legales están solo en
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); cómo regenerar los datos, en
-[DATOS_PUBLICOS.md](DATOS_PUBLICOS.md).
+[DATOS.md](DATOS.md).
 
 Zona: longitudes -6.156 a -6.141, latitudes 36.415 a 36.424. Origen local
 [-6.1485, 36.4195]; x hacia el este, z hacia el sur, en metros. El trazado no se mueve ni
@@ -24,8 +24,8 @@ se sustituye.
 - **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa OI.OrthoimageCoverage,
   EPSG:4326, mismos límites, 4096 × 3072 JPEG para suelo y tejados; consulta del 4/10/2026.
   La fecha de vuelo en el centro del sector es 2022-07 (GetFeatureInfo
-  OI.MosaicElement, comprobado el 6/10/2026). Archivo: `web/aerial.jpg`. TODO(integración):
-  añadir la versión reducida para el modo ligero si se fusiona.
+  OI.MosaicElement, comprobado el 6/10/2026). Archivo: `web/aerial.jpg`; `web/aerial-2048.jpg` es el mismo recorte
+  remuestreado a 2048 × 1536 para el modo ligero y los táctiles (`tools/reduce-aerial.py`).
   https://www.ign.es/wms-inspire/pnoa-ma
 - **PNOA-LiDAR, primera cobertura 2008–2015** (IGN): MDSnE2,5 por WCS, consulta del
   5/10/2026. Recorte local EPSG:3042 de unos 2,5 m por píxel con valores enteros en
@@ -54,5 +54,6 @@ se sustituye.
 - Árboles: puntos de OSM más una plantación aproximada y determinista.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
-  TODO(integración): mencionar el sentido único de las vías si se fusiona.
+  El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
+  que dejarían zonas sin salida; a pie no hay restricción.
 - Sin precisión fotogramétrica ni validez catastral; no son medidas arquitectónicas.
