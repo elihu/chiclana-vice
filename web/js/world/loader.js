@@ -79,7 +79,7 @@ export async function loadWorld() {
 }
 
 export async function loadLayers() {
-  const [res, tex, heightSamples, profiles, streetObjects] = await Promise.all([
+  const [res, tex, heightSamples, profiles, streetObjects, designs] = await Promise.all([
     loadWorld(),
     // Light mode and touch devices start with the 2048×1536 derivative (same extent).
     // Toggling quality later does not reload it. Without the orthophoto, plain colours.
@@ -97,6 +97,10 @@ export async function loadLayers() {
     fetch(asset('street-objects.json'))
       .then((r) => (r.ok ? r.json() : []))
       .catch(() => []),
+    fetch(asset('facade-designs.json')).then((r) => {
+      if (!r.ok) throw Error('No se han podido cargar los diseños de fachada');
+      return r.json();
+    }),
   ]);
-  return { res, tex, heightSamples, profiles, streetObjects };
+  return { res, tex, heightSamples, profiles, streetObjects, designs };
 }

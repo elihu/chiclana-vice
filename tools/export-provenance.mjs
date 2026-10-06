@@ -71,6 +71,15 @@ const records = [
     transformation:
       'Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped',
   },
+  {
+    files: ['facade-designs.json'],
+    source: 'Authored procedural facade compositions',
+    conditions:
+      'ODbL-1.0 as a whole (street names and identifiers derived from OSM); also attribute Catastro (anchor vertices). Original parameters; external reference rights not granted.',
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
+    transformation:
+      'Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers',
+  },
 ];
 for (const record of records)
   record.sha256 = Object.fromEntries(record.files.map((file) => [file, hash(file)]));

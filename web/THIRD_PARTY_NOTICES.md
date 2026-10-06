@@ -31,6 +31,10 @@ Transformaciones: recorte, coordenadas locales y categorías/ancho inferidos par
 edificios y se ofrece en conjunto bajo ODbL 1.0 (decisión del 6/10/2026). Sus contornos
 proceden de Catastro y sus alturas de IGN: se mantienen como avisos adicionales de esas
 fuentes, con sus atribuciones (así figura también en `data-sources.json`).
+`facade-designs.json` (composiciones de fachada escritas a mano) se ofrece también en
+conjunto bajo ODbL 1.0 (decisión del 6/10/2026): sus anclajes usan vértices catastrales
+(atribuidos a Catastro) e identificadores y nombres de OSM. El código del motor y del
+compositor sigue bajo MIT.
 Los datos OSM y las contribuciones a esa base se ofrecen bajo ODbL, no bajo MIT.
 https://www.openstreetmap.org/copyright
 https://opendatacommons.org/licenses/odbl/1-0/
@@ -80,7 +84,7 @@ rasgos del edificio real; no se distribuyen las fotografías, planos originales,
 texturas fotográficas ni su composición o iluminación como assets del juego.
 `facade-profiles.json` reúne parámetros propios; el catálogo identifica aristas,
 dimensiones y procedencia de alturas/nombres. No es una reconstrucción fotogramétrica.
-Las recetas geométricas siguen en el código; no se ha horneado toda la escena.
+Las recetas geométricas siguen en el código, salvo las que ya están en `facade-designs.json`; no se ha horneado toda la escena.
 
 Referencias que se mantienen identificadas, con sus condiciones originales:
 

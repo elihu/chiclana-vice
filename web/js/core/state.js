@@ -77,6 +77,7 @@ export const streetEnvironment = {
 export const world = {
   city: null,
   facadeProfiles: null,
+  facadeDesigns: null,
   groundTexture: null,
   worldW: 0,
   worldH: 0,

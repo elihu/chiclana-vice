@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
+import { KIT_PIECES } from '../web/js/world/facade-kit.js';
+import { validateFacadeDesigns } from '../web/js/world/design-validate.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -72,12 +74,51 @@ for (const f of catalog.fronts) {
   const measured = heights.entries.find((s) => s.index === f.buildingIndex);
   assert.equal(f.height, measured?.height ?? b.h, 'front uses current independent height');
 }
+// Diseños de fachada: validación estructural y comprobaciones cruzadas con las capas.
+{
+  const designs = read('web/facade-designs.json'),
+    palette = read('web/facade-profiles.json').palette,
+    errors = validateFacadeDesigns(designs, { kitPieces: KIT_PIECES, palette });
+  assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
+  const inside = (p) =>
+    Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;
+  const landmarks = world.landmarks || [];
+  const claimed = new Map();
+  for (const b of designs.buildings) {
+    if (b.landmark)
+      assert(
+        landmarks.some((l) => l.name.includes(b.landmark)),
+        `landmark ${b.landmark} exists`,
+      );
+    for (const f of b.fronts) {
+      const a = f.anchor;
+      for (const p of [a.a, a.b, a.center, ...(a.ring || [])].filter(Boolean))
+        assert(inside(p), `anchor point inside the world in ${b.id}`);
+      if (a.landmarkRing)
+        assert(
+          landmarks.some((l) => l.name.includes(a.landmarkRing)),
+          `landmarkRing ${a.landmarkRing}`,
+        );
+      if (a.front) {
+        const entry = catalog.fronts.find((x) => x.id === a.front);
+        assert(entry, `front ${a.front} exists in frontages.json`);
+        assert.equal(entry.footprintSha256, a.footprintSha256, `footprint hash of ${a.front}`);
+        assert(
+          !claimed.has(a.front),
+          `front ${a.front} anchored by ${claimed.get(a.front)} and ${b.id}`,
+        );
+        claimed.set(a.front, b.id);
+      }
+    }
+  }
+}
 for (const file of [
   'game3d.js',
   'index.html',
   'height-samples.json',
   'world.json',
   'facade-profiles.json',
+  'facade-designs.json',
 ]) {
   assert(
     !/REDIAM|portalrediam/i.test(fs.readFileSync(`web/${file}`, 'utf8')),

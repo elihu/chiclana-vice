@@ -1,5 +1,19 @@
 import * as THREE from '../../vendor/three.module.min.js';
 
+// Piezas que las recetas JSON pueden llamar con `piece` (statue y spiralColumn llegarán con el paso 2.7).
+export const KIT_PIECES = [
+  'pane',
+  'balcony',
+  'arch',
+  'pediment',
+  'sign',
+  'civicPane',
+  'cross',
+  'column',
+  'door',
+  'belfry',
+];
+
 // Parametric facade pieces in a wall's local frame (x along the wall from `a`, y up, z outward).
 // They create staging meshes only; buildDetailedFacades bakes them into batches.
 export function createFacadeKit({ staging, palette }) {
@@ -206,6 +220,8 @@ export function createFacadeKit({ staging, palette }) {
     cube(g, x, y + 1.3, 0.1, 0.06, 0.5, 0.08, palette.iron);
   }
   return {
+    staging,
+    palette,
     unitBox,
     material,
     cube,

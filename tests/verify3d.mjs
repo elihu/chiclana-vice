@@ -23,6 +23,7 @@ assert.equal(
     'aerial-2048.jpg',
     'height-samples.json',
     'facade-profiles.json',
+    'facade-designs.json',
     'street-objects.json',
   ])
     assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
