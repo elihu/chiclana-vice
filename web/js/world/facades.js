@@ -93,7 +93,7 @@ export function buildDetailedFacades() {
   const staging = new THREE.Group(),
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
-  const { cube, geo, wall, pane, balcony, archShape, pediment, column, door } = kit;
+  const { cube, wall, pane, balcony } = kit;
   // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
   composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
   // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
@@ -107,68 +107,7 @@ export function buildDetailedFacades() {
   // San Telmo: ochre-trimmed gable and offset bell-screen; no invented twin towers.
   composeBuilding(kit, world.facadeDesigns, 'portada-san-telmo');
   // San Juan Bautista: three-bay stone facade, giant pilasters and a central pediment.
-  {
-    let { g, len } = wall([206.93, 180.32], [218.19, 152.82], [-1, -0.4]),
-      x = len / 2,
-      stone = '#c7b495';
-    cube(g, x, 7.1, 0.08, len, 14.2, 0.17, stone);
-    for (let y = 0.55; y < 14; y += 0.62) {
-      cube(g, x, y, 0.18, len, 0.023, 0.025, '#ab987c');
-      for (let u = (Math.round(y / 0.62) % 2) * 0.75; u < len; u += 1.5)
-        cube(g, u, y - 0.3, 0.18, 0.022, 0.58, 0.025, '#ab987c');
-    }
-    for (let u of [0.9, len * 0.29, len * 0.71, len - 0.9]) {
-      cube(g, u, 7, 0.35, 1.2, 13.4, 0.65, stone);
-      cube(g, u, 13.3, 0.46, 1.8, 0.48, 0.9, palette.cream);
-      cube(g, u, 0.55, 0.45, 1.75, 0.85, 0.92, stone);
-      for (let side of [-1, 1])
-        geo(
-          g,
-          new THREE.TorusGeometry(0.3, 0.08, 6, 16),
-          u + side * 0.44,
-          13.3,
-          0.91,
-          palette.cream,
-        );
-    }
-    for (let yy of [13.75, 14.12, 14.45]) cube(g, x, yy, 0.46, len + 0.7, 0.24, 0.95, stone);
-    for (let u of [len * 0.15, x, len * 0.85]) {
-      door(g, u, 0.12, u === x ? 3.3 : 2.7, 4.4);
-      for (let side of [-1, 1]) column(g, u + side * 1.65, 2.6, 4.7, 0.2, stone);
-      pediment(g, u, 5.15, 4.4);
-    }
-    for (let u of [len * 0.15, len * 0.85]) {
-      geo(g, new THREE.CircleGeometry(0.88, 28), u, 8.4, 0.23, '#495b61');
-      geo(g, new THREE.TorusGeometry(0.94, 0.17, 8, 28), u, 8.4, 0.3, palette.cream);
-      geo(g, new THREE.TorusGeometry(2.45, 0.13, 6, 30, Math.PI), u, 7.85, 0.26, palette.cream);
-      pane(g, u, 11.7, 1.9, 0.85, 0.13);
-    }
-    geo(g, new THREE.ShapeGeometry(archShape(3.7, 4.6), 20), x, 7.25, 0.2, '#706857');
-    for (let side of [-1, 1]) column(g, x + side * 2.35, 9.35, 4.6, 0.23, palette.cream);
-    pediment(g, x, 11.85, 5.7);
-    balcony(g, x, 7.08, 5.6, palette.cream, 0.75);
-    pediment(g, x, 14.6, len * 0.7);
-    geo(g, new THREE.TorusGeometry(0.93, 0.18, 8, 28), x, 16.1, 0.52, palette.cream);
-    geo(
-      staging,
-      new THREE.SphereGeometry(4.7, 24, 12, 0, TAU, 0, Math.PI / 2),
-      236.7,
-      14.3,
-      177.2,
-      '#d4dbdf',
-    );
-    for (let j = 0; j < 12; j++) {
-      let rib = geo(
-        staging,
-        new THREE.TorusGeometry(4.72, 0.065, 5, 24, Math.PI),
-        236.7,
-        14.3,
-        177.2,
-        '#3e6b8a',
-      );
-      rib.rotation.y = (j * Math.PI) / 12;
-    }
-  }
+  composeBuilding(kit, world.facadeDesigns, 'portada-san-juan-bautista');
 
   // Nearby residential and commercial frontages: varied plaster, framed openings, shutters and balconies.
   for (const f of facadeWork.fronts) {

@@ -784,6 +784,191 @@
           ]
         }
       ]
+    },
+    "portada-san-juan-bautista": {
+      "description": "Three-bay stone facade with giant pilasters and a central pediment. Equivalent to the San Juan Bautista wall block of buildDetailedFacades in main 5666928.",
+      "params": {},
+      "body": [
+        {
+          "let": {
+            "x": "len / 2",
+            "stone": "#c7b495"
+          }
+        },
+        {
+          "box": ["x", 7.1, 0.08, "len", 14.2, 0.17],
+          "color": "stone"
+        },
+        {
+          "for": "y",
+          "from": 0.55,
+          "while": "y < 14",
+          "step": 0.62,
+          "body": [
+            {
+              "box": ["x", "y", 0.18, "len", 0.023, 0.025],
+              "color": "#ab987c"
+            },
+            {
+              "for": "u",
+              "from": "(round(y / 0.62) % 2) * 0.75",
+              "while": "u < len",
+              "step": 1.5,
+              "body": [
+                {
+                  "box": ["u", "y - 0.3", 0.18, 0.022, 0.58, 0.025],
+                  "color": "#ab987c"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "u",
+          "in": [0.9, "len * 0.29", "len * 0.71", "len - 0.9"],
+          "body": [
+            {
+              "box": ["u", 7, 0.35, 1.2, 13.4, 0.65],
+              "color": "stone"
+            },
+            {
+              "box": ["u", 13.3, 0.46, 1.8, 0.48, 0.9],
+              "color": "$cream"
+            },
+            {
+              "box": ["u", 0.55, 0.45, 1.75, 0.85, 0.92],
+              "color": "stone"
+            },
+            {
+              "for": "side",
+              "in": [-1, 1],
+              "body": [
+                {
+                  "geo": ["TorusGeometry", 0.3, 0.08, 6, 16],
+                  "at": ["u + side * 0.44", 13.3, 0.91],
+                  "color": "$cream"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "for": "yy",
+          "in": [13.75, 14.12, 14.45],
+          "body": [
+            {
+              "box": ["x", "yy", 0.46, "len + 0.7", 0.24, 0.95],
+              "color": "stone"
+            }
+          ]
+        },
+        {
+          "for": "u",
+          "in": ["len * 0.15", "x", "len * 0.85"],
+          "body": [
+            {
+              "piece": "door",
+              "args": ["u", 0.12, "u == x ? 3.3 : 2.7", 4.4]
+            },
+            {
+              "for": "side",
+              "in": [-1, 1],
+              "body": [
+                {
+                  "piece": "column",
+                  "args": ["u + side * 1.65", 2.6, 4.7, 0.2, "stone"]
+                }
+              ]
+            },
+            {
+              "piece": "pediment",
+              "args": ["u", 5.15, 4.4]
+            }
+          ]
+        },
+        {
+          "for": "u",
+          "in": ["len * 0.15", "len * 0.85"],
+          "body": [
+            {
+              "geo": ["CircleGeometry", 0.88, 28],
+              "at": ["u", 8.4, 0.23],
+              "color": "#495b61"
+            },
+            {
+              "geo": ["TorusGeometry", 0.94, 0.17, 8, 28],
+              "at": ["u", 8.4, 0.3],
+              "color": "$cream"
+            },
+            {
+              "geo": ["TorusGeometry", 2.45, 0.13, 6, 30, "PI"],
+              "at": ["u", 7.85, 0.26],
+              "color": "$cream"
+            },
+            {
+              "piece": "pane",
+              "args": ["u", 11.7, 1.9, 0.85, 0.13]
+            }
+          ]
+        },
+        {
+          "geo": ["ArchShape", 3.7, 4.6, 20],
+          "at": ["x", 7.25, 0.2],
+          "color": "#706857"
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "piece": "column",
+              "args": ["x + side * 2.35", 9.35, 4.6, 0.23, "$cream"]
+            }
+          ]
+        },
+        {
+          "piece": "pediment",
+          "args": ["x", 11.85, 5.7]
+        },
+        {
+          "piece": "balcony",
+          "args": ["x", 7.08, 5.6, "$cream", 0.75]
+        },
+        {
+          "piece": "pediment",
+          "args": ["x", 14.6, "len * 0.7"]
+        },
+        {
+          "geo": ["TorusGeometry", 0.93, 0.18, 8, 28],
+          "at": ["x", 16.1, 0.52],
+          "color": "$cream"
+        }
+      ]
+    },
+    "cupula-san-juan-bautista": {
+      "description": "Blue-ribbed dome in absolute world coordinates (anchor world), behind the facade of San Juan Bautista.",
+      "params": {},
+      "body": [
+        {
+          "geo": ["SphereGeometry", 4.7, 24, 12, 0, "TAU", 0, "PI / 2"],
+          "at": [236.7, 14.3, 177.2],
+          "color": "#d4dbdf"
+        },
+        {
+          "for": "j",
+          "from": 0,
+          "while": "j < 12",
+          "step": 1,
+          "body": [
+            {
+              "geo": ["TorusGeometry", 4.72, 0.065, 5, 24, "PI"],
+              "at": [236.7, 14.3, 177.2],
+              "color": "#3e6b8a",
+              "rotation": [0, "(j * PI) / 12", 0]
+            }
+          ]
+        }
+      ]
     }
   },
   "buildings": [
@@ -957,6 +1142,31 @@
             "outward": [1, 1]
           },
           "recipe": "portada-san-telmo"
+        }
+      ]
+    },
+    {
+      "id": "portada-san-juan-bautista",
+      "name": "Portada y cúpula de San Juan Bautista",
+      "landmark": "Iglesia Mayor",
+      "detailType": "church",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": ["THIRD_PARTY_NOTICES.md: turismo.chiclana.es tourism sheets, reference only"],
+      "fronts": [
+        {
+          "anchor": {
+            "a": [206.93, 180.32],
+            "b": [218.19, 152.82],
+            "outward": [-1, -0.4]
+          },
+          "recipe": "portada-san-juan-bautista"
+        },
+        {
+          "anchor": {
+            "world": true
+          },
+          "recipe": "cupula-san-juan-bautista"
         }
       ]
     }
