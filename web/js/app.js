@@ -37,6 +37,8 @@ import {
   streetEnvironment,
   world,
   gfx,
+  session,
+  audio,
 } from './core/state.js';
 
 // Cache-busting suffix shared by every runtime resource, passed by the entry module.
@@ -70,23 +72,7 @@ function setStyle(target, prop, value) {
     c = domCache(e);
   if (c[prop] !== value) e.style[prop] = c[prop] = value;
 }
-let started = false,
-  paused = false,
-  t = 0,
-  last = 0,
-  mode = 0,
-  toastClock = 0,
-  toastShown = false,
-  collisionClock = 0,
-  hold = 0,
-  saveClock = 0,
-  mapAerial = false,
-  route = [],
-  routeClock = 0;
-let audioOn = false,
-  audioCtx,
-  engineOsc,
-  engineGain;
+let mode = 0;
 function installTouchDetection() {
   gfx.W = innerWidth;
   gfx.H = innerHeight;
@@ -141,8 +127,8 @@ function sleepFrame() {
 function toast(message, duration = 4) {
   setText('toast', message);
   ui('toast').classList.add('show');
-  toastClock = duration;
-  toastShown = true;
+  session.toastClock = duration;
+  session.toastShown = true;
 }
 function save() {
   try {
@@ -2802,7 +2788,7 @@ async function init() {
   await sleepFrame();
   $('loading').classList.add('hidden');
   $('welcome').classList.remove('hidden');
-  last = performance.now();
+  session.last = performance.now();
   requestAnimationFrame(frame);
   window.__cityGame = createPublicApi();
 }
@@ -2816,8 +2802,8 @@ function clearInput() {
   document.querySelectorAll('.pressed').forEach((e) => e.classList.remove('pressed'));
 }
 function start() {
-  started = true;
-  paused = false;
+  session.started = true;
+  session.paused = false;
   $('welcome').classList.add('hidden');
   $('hud').classList.remove('hidden');
   toast(
@@ -2825,7 +2811,7 @@ function start() {
     6,
   );
   snapCamera();
-  last = performance.now();
+  session.last = performance.now();
 }
 function setHeat(n) {
   state.wanted = clamp(state.wanted + n, 0, 5);
@@ -2843,8 +2829,8 @@ function advanceStage() {
     } else toast('Recogida completada. Sigue la ruta del minimapa.', 3);
   }
   state.stage++;
-  hold = 0;
-  routeClock = 0;
+  session.hold = 0;
+  session.routeClock = 0;
   if (state.stage >= j.stages.length) {
     state.cash += j.reward;
     toast('ENCARGO COMPLETADO · +' + j.reward + ' €', 5);
@@ -2893,7 +2879,7 @@ function nearestCar() {
   return best;
 }
 function interact() {
-  if (!started || paused) return;
+  if (!session.started || session.paused) return;
   if (player.car) {
     let c = player.car;
     if (Math.abs(c.speed) > 2.5) {
@@ -2973,9 +2959,9 @@ function updatePlayer(dt) {
     let nx = c.x + Math.sin(c.a) * c.speed * dt,
       nz = c.z + Math.cos(c.a) * c.speed * dt;
     if (carCollision(c, nx, nz)) {
-      if (Math.abs(c.speed) > 4 && collisionClock <= 0) {
+      if (Math.abs(c.speed) > 4 && session.collisionClock <= 0) {
         c.health -= Math.min(20, Math.abs(c.speed) * 0.45);
-        collisionClock = 0.6;
+        session.collisionClock = 0.6;
         toast('Golpe · Frena y maniobra hacia atrás.', 1.8);
       }
       c.speed *= -0.15;
@@ -2986,10 +2972,10 @@ function updatePlayer(dt) {
     for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
       const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
       if (other === c || d(c, other) > 3.1) continue;
-      if (collisionClock <= 0 && Math.abs(c.speed) > 3) {
+      if (session.collisionClock <= 0 && Math.abs(c.speed) > 3) {
         c.health -= 5;
         c.speed *= -0.15;
-        collisionClock = 1.3;
+        session.collisionClock = 1.3;
         setHeat(other.cop ? 1 : state.wanted < 2 ? 1 : 0);
       }
     }
@@ -3027,12 +3013,20 @@ function updatePlayer(dt) {
     character.limbs.forEach(
       (l, i) =>
         (l.rotation.x =
-          Math.sin(t * (boost ? 12 : 8) + (i % 2) * Math.PI) * Math.min(0.65, v * 0.13)),
+          Math.sin(session.t * (boost ? 12 : 8) + (i % 2) * Math.PI) * Math.min(0.65, v * 0.13)),
     );
   }
-  if (audioCtx && engineGain) {
-    engineGain.gain.setTargetAtTime(audioOn && player.car ? 0.022 : 0, audioCtx.currentTime, 0.1);
-    engineOsc.frequency.setTargetAtTime(32 + Math.abs(player.speed) * 5, audioCtx.currentTime, 0.1);
+  if (audio.audioCtx && audio.engineGain) {
+    audio.engineGain.gain.setTargetAtTime(
+      audio.audioOn && player.car ? 0.022 : 0,
+      audio.audioCtx.currentTime,
+      0.1,
+    );
+    audio.engineOsc.frequency.setTargetAtTime(
+      32 + Math.abs(player.speed) * 5,
+      audio.audioCtx.currentTime,
+      0.1,
+    );
   }
 }
 function stepAgent(c, dt, isCop = false) {
@@ -3123,7 +3117,7 @@ function updatePolice(dt) {
     stepAgent(p, dt, true);
     p.mesh.position.set(p.x, 0, p.z);
     p.mesh.rotation.y = p.a;
-    if (p.siren) p.siren.visible = Math.sin(t * 14) > -0.5;
+    if (p.siren) p.siren.visible = Math.sin(session.t * 14) > -0.5;
     if (d(p, player) < 9) {
       close = true;
       if (Math.abs(player.speed) < 3) state.arrest += dt;
@@ -3148,11 +3142,11 @@ function updatePolice(dt) {
   }
 }
 function update(dt) {
-  t += dt;
-  collisionClock = Math.max(0, collisionClock - dt);
-  toastClock -= dt;
-  if (toastShown && toastClock <= 0) {
-    toastShown = false;
+  session.t += dt;
+  session.collisionClock = Math.max(0, session.collisionClock - dt);
+  session.toastClock -= dt;
+  if (session.toastShown && session.toastClock <= 0) {
+    session.toastShown = false;
     ui('toast').classList.remove('show');
   }
   updatePlayer(dt);
@@ -3176,7 +3170,7 @@ function update(dt) {
     p.mesh.visible = !inBuilding(x, z, 0.2) && Math.hypot(x - player.x, z - player.z) < 140;
     p.mesh.position.set(x, 0, z);
     p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
-    p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(t * 7 + (i % 2) * Math.PI) * 0.35));
+    p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(session.t * 7 + (i % 2) * Math.PI) * 0.35));
   }
   let goal = target();
   if (goal) {
@@ -3184,7 +3178,7 @@ function update(dt) {
       state.timer -= dt;
       if (state.timer <= 0) {
         state.stage = 0;
-        hold = 0;
+        session.hold = 0;
         toast('Tiempo agotado. Vuelve al punto de recogida para intentarlo de nuevo.', 4);
         updateHUD();
         goal = target();
@@ -3193,9 +3187,9 @@ function update(dt) {
     if (goal.escape) {
       if (state.wanted === 0) advanceStage();
     } else if (d(player, goal) < 8 && Math.abs(player.speed) < 1.8) {
-      hold += dt;
-      if (hold > 1) advanceStage();
-    } else hold = 0;
+      session.hold += dt;
+      if (session.hold > 1) advanceStage();
+    } else session.hold = 0;
     goal = target();
   }
   for (let i = 0; i < pois.length; i++)
@@ -3209,18 +3203,18 @@ function update(dt) {
   if (goal && !goal.escape) {
     ring.visible = beam.visible = true;
     ring.position.set(goal.x, 0.16, goal.z);
-    ring.scale.setScalar(1 + Math.sin(t * 2) * 0.025);
+    ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
     beam.position.set(goal.x, 2, goal.z);
-    beam.material.opacity = 0.1 + Math.sin(t * 2) * 0.025;
+    beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
     arrow.visible = true;
-    arrow.position.set(goal.x, 6 + Math.sin(t * 2) * 0.4, goal.z);
+    arrow.position.set(goal.x, 6 + Math.sin(session.t * 2) * 0.4, goal.z);
     arrow.rotation.z = Math.PI;
-    arrow.rotation.y = t * 0.7;
+    arrow.rotation.y = session.t * 0.7;
   } else ring.visible = beam.visible = arrow.visible = false;
-  routeClock -= dt;
-  if (routeClock <= 0) {
-    routeClock = 2.5;
-    route =
+  session.routeClock -= dt;
+  if (session.routeClock <= 0) {
+    session.routeClock = 2.5;
+    session.route =
       goal && !goal.escape
         ? findRoute(nearestNode(player.x, player.z), nearestNode(goal.x, goal.z))
         : [];
@@ -3237,7 +3231,9 @@ function update(dt) {
     goal
       ? goal.escape
         ? 'Evita a las patrullas'
-        : Math.round(d(player, goal)) + ' m · ' + (hold > 0 ? 'Entregando…' : 'Señal dorada')
+        : Math.round(d(player, goal)) +
+          ' m · ' +
+          (session.hold > 0 ? 'Entregando…' : 'Señal dorada')
       : state.found.size + '/' + pois.length + ' lugares descubiertos',
   );
   setText(
@@ -3258,9 +3254,9 @@ function update(dt) {
   else if (Math.abs(player.x) > world.worldW / 2 - 30 || Math.abs(player.z) > world.worldH / 2 - 30)
     hint = 'Fin de la zona recreada · Abre el mapa para volver';
   setText('hint', hint);
-  saveClock += dt;
-  if (saveClock > 10) {
-    saveClock = 0;
+  session.saveClock += dt;
+  if (session.saveClock > 10) {
+    session.saveClock = 0;
     save();
   }
 }
@@ -3476,16 +3472,16 @@ function drawMap(canvas, mini = false) {
   c.translate(ox - (world.worldW / 2) * scale, oy - (world.worldH / 2) * scale);
   c.scale(scale, scale);
   // The 2D orthophoto reuses the image already loaded for the ground texture.
-  if (mapAerial && !mini && world.groundTexture?.image)
+  if (session.mapAerial && !mini && world.groundTexture?.image)
     c.drawImage(world.groundTexture.image, 0, 0, world.worldW, world.worldH);
   else c.drawImage(chart, 0, 0, world.worldW, world.worldH);
   c.translate(world.worldW / 2, world.worldH / 2);
-  if (route.length) {
+  if (session.route.length) {
     c.strokeStyle = '#ddf98a';
     c.lineWidth = mini ? 4 : 5 / scale;
     c.lineJoin = 'round';
     c.beginPath();
-    route.forEach((id, i) => {
+    session.route.forEach((id, i) => {
       let n = graph[id];
       i ? c.lineTo(n.x, n.z) : c.moveTo(n.x, n.z);
     });
@@ -3567,7 +3563,7 @@ function listStreets() {
       Object.assign(player, position);
       player.speed = 0;
       mode = 0;
-      routeClock = 0;
+      session.routeClock = 0;
       closeMap();
       snapCamera();
       toast(view.name, 3);
@@ -3588,7 +3584,7 @@ function listStreets() {
       }
       Object.assign(player, safe);
       player.speed = 0;
-      routeClock = 0;
+      session.routeClock = 0;
       closeMap();
       snapCamera();
       toast(n, 3);
@@ -3603,11 +3599,11 @@ function listStreets() {
   }
 }
 function mute() {
-  if (engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+  if (audio.engineGain) audio.engineGain.gain.setTargetAtTime(0, audio.audioCtx.currentTime, 0.1);
 }
 function openMap() {
-  if (!started || gfx.contextLost) return;
-  paused = true;
+  if (!session.started || gfx.contextLost) return;
+  session.paused = true;
   clearInput();
   mute();
   $('mapOverlay').classList.remove('hidden');
@@ -3622,9 +3618,9 @@ function closeMap() {
   if (gfx.contextLost) return; // only reloading can bring the image back
   $('mapOverlay').classList.add('hidden');
   closeDialog();
-  paused = false;
+  session.paused = false;
   gfx.needsRender = true;
-  last = performance.now();
+  session.last = performance.now();
 }
 // Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
 // dialog and focus returns to the opener on close.
@@ -3660,7 +3656,7 @@ function trapFocus(e) {
   }
 }
 function modal(html) {
-  paused = true;
+  session.paused = true;
   clearInput();
   mute();
   $('modalBody').innerHTML = html;
@@ -3673,9 +3669,9 @@ function closeModal() {
   if (gfx.contextLost) return; // only reloading can bring the image back
   $('modal').classList.add('hidden');
   closeDialog();
-  paused = false;
+  session.paused = false;
   gfx.needsRender = true;
-  last = performance.now();
+  session.last = performance.now();
 }
 function help() {
   if (gfx.contextLost) return;
@@ -3685,23 +3681,23 @@ function help() {
   $('understood').onclick = closeModal;
 }
 function toggleAudio() {
-  audioOn = !audioOn;
+  audio.audioOn = !audio.audioOn;
   try {
-    if (audioOn && !audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      engineOsc = audioCtx.createOscillator();
-      engineGain = audioCtx.createGain();
-      engineOsc.type = 'sawtooth';
-      engineGain.gain.value = 0;
-      engineOsc.connect(engineGain).connect(audioCtx.destination);
-      engineOsc.start();
+    if (audio.audioOn && !audio.audioCtx) {
+      audio.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audio.engineOsc = audio.audioCtx.createOscillator();
+      audio.engineGain = audio.audioCtx.createGain();
+      audio.engineOsc.type = 'sawtooth';
+      audio.engineGain.gain.value = 0;
+      audio.engineOsc.connect(audio.engineGain).connect(audio.audioCtx.destination);
+      audio.engineOsc.start();
     }
-    if (audioOn) audioCtx.resume();
+    if (audio.audioOn) audio.audioCtx.resume();
     else mute();
   } catch {
-    audioOn = false;
+    audio.audioOn = false;
   }
-  toast(audioOn ? 'Sonido del motor activado' : 'Sonido desactivado', 2);
+  toast(audio.audioOn ? 'Sonido del motor activado' : 'Sonido desactivado', 2);
 }
 // Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
 function applyQuality() {
@@ -3715,7 +3711,7 @@ function applyQuality() {
 function pauseMenu() {
   if (gfx.contextLost) return;
   modal(
-    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/${jobs.length} encargos · ${state.found.size}/${pois.length} lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${gfx.quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
+    `<span class="eyebrow">PAUSA / CENTRO DE CHICLANA</span><h2>Un momento en la Alameda.</h2><p>${state.job}/${jobs.length} encargos · ${state.found.size}/${pois.length} lugares · ${Math.floor(state.cash)} €</p><button class="primary" id="resume">VOLVER AL JUEGO</button><button class="primary secondary" id="full">PANTALLA COMPLETA</button><button class="primary secondary" id="audio">${audio.audioOn ? 'DESACTIVAR' : 'ACTIVAR'} SONIDO</button><button class="primary secondary" id="quality">${gfx.quality === 'low' ? 'CALIDAD NORMAL' : 'MODO MÓVIL LIGERO'}</button><button class="primary secondary" id="help">CONTROLES Y FUENTES</button><button class="primary secondary" id="rescue">REPARAR Y VOLVER A LA ALAMEDA · 100 €</button><button class="textButton" id="reset">Empezar una partida nueva</button>`,
   );
   $('resume').onclick = closeModal;
   $('help').onclick = help;
@@ -3782,8 +3778,8 @@ function installControls() {
   $('interact').onclick = interact;
   $('streetSearch').oninput = listStreets;
   $('mapStyle').onclick = () => {
-    mapAerial = !mapAerial;
-    $('mapStyle').textContent = mapAerial ? 'Ver callejero' : 'Ver ortofoto';
+    session.mapAerial = !session.mapAerial;
+    $('mapStyle').textContent = session.mapAerial ? 'Ver callejero' : 'Ver ortofoto';
     drawMap($('map'));
   };
   function bindHold(id, key) {
@@ -3792,7 +3788,7 @@ function installControls() {
     holdPointers.set(key, pointers);
     e.onpointerdown = (v) => {
       v.preventDefault();
-      if (!started || paused) return;
+      if (!session.started || session.paused) return;
       pointers.add(v.pointerId);
       e.setPointerCapture(v.pointerId);
       input[key] = true;
@@ -3843,7 +3839,7 @@ function installControls() {
       $('stick').style.transform = '';
     });
   $('world').onpointerdown = (e) => {
-    if (!started || paused || dragId !== null) return;
+    if (!session.started || session.paused || dragId !== null) return;
     dragId = e.pointerId;
     dragX = e.clientX;
     dragY = e.clientY;
@@ -3871,7 +3867,10 @@ function installControls() {
     const editable =
       ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
     const control = ['BUTTON', 'A'].includes(e.target.tagName);
-    if (editable || (control && (paused || !started || e.key === ' ' || e.key === 'Enter'))) {
+    if (
+      editable ||
+      (control && (session.paused || !session.started || e.key === ' ' || e.key === 'Enter'))
+    ) {
       // Edición y activación nativas; los atajos de conducción siguen tras pulsar Cámara.
       if (e.key === 'Escape') {
         if (!$('mapOverlay').classList.contains('hidden')) closeMap();
@@ -3884,15 +3883,15 @@ function installControls() {
     if (e.repeat) return;
     keys[k] = true;
     if (k === 'e') interact();
-    if (k === 'c' && started && !paused) cycleCamera();
+    if (k === 'c' && session.started && !session.paused) cycleCamera();
     if (k === 'm') {
       if (!$('mapOverlay').classList.contains('hidden')) closeMap();
-      else if (!paused) openMap();
+      else if (!session.paused) openMap();
     }
     if (k === 'Escape') {
       if (!$('mapOverlay').classList.contains('hidden')) closeMap();
       else if (!$('modal').classList.contains('hidden')) closeModal();
-      else if (started) pauseMenu();
+      else if (session.started) pauseMenu();
     }
   });
   window.addEventListener(
@@ -3901,15 +3900,15 @@ function installControls() {
   );
   window.addEventListener('blur', () => {
     clearInput();
-    if (started && !paused) pauseMenu();
+    if (session.started && !session.paused) pauseMenu();
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       save();
       clearInput();
-      if (started && !paused) pauseMenu();
+      if (session.started && !session.paused) pauseMenu();
     }
-    last = performance.now();
+    session.last = performance.now();
   });
   window.addEventListener('pagehide', save);
   window.addEventListener('resize', () => {
@@ -3924,7 +3923,7 @@ function installControls() {
   });
   $('world').addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
-    paused = true;
+    session.paused = true;
     $('mapOverlay').classList.add('hidden');
     modal(
       '<h2>Se ha interrumpido la imagen.</h2><p>Tu progreso está guardado. Recarga la página y activa el modo móvil ligero en Pausa.</p><button class="primary" id="reload">RECARGAR</button>',
@@ -3937,15 +3936,15 @@ function installControls() {
 }
 let frameCount = 0;
 function frame(now) {
-  let dt = clamp((now - last) / 1000, 0, 0.04) || 0.016;
-  last = now;
-  if (started && !paused) update(dt);
-  else if (!started) {
-    t += dt;
+  let dt = clamp((now - session.last) / 1000, 0, 0.04) || 0.016;
+  session.last = now;
+  if (session.started && !session.paused) update(dt);
+  else if (!session.started) {
+    session.t += dt;
     gfx.camera.position.set(
-      player.x + Math.sin(t * 0.075) * 36,
+      player.x + Math.sin(session.t * 0.075) * 36,
       22,
-      player.z + Math.cos(t * 0.075) * 36,
+      player.z + Math.cos(session.t * 0.075) * 36,
     );
     gfx.camera.lookAt(player.x, 0, player.z);
     gfx.sun.target.position.set(player.x, 0, player.z);
@@ -3956,11 +3955,11 @@ function frame(now) {
     }
   }
   // While paused (map, modal), the last frame stays on screen; redraw only on demand.
-  if (!gfx.contextLost && (!started || !paused || gfx.needsRender)) {
+  if (!gfx.contextLost && (!session.started || !session.paused || gfx.needsRender)) {
     gfx.renderer.render(gfx.scene, gfx.camera);
     gfx.needsRender = false;
   }
-  if (started && !paused && frameCount++ % 3 === 0) {
+  if (session.started && !session.paused && frameCount++ % 3 === 0) {
     let mini = ui('mini');
     if (mini.width !== 280) {
       mini.width = 280;
@@ -4065,7 +4064,7 @@ function createTestApi() {
       return gfx.quality;
     },
     get paused() {
-      return paused;
+      return session.paused;
     },
   };
   return Object.defineProperties(createPublicApi(), Object.getOwnPropertyDescriptors(extra));

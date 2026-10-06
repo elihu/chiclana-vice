@@ -98,3 +98,18 @@ export const gfx = {
   // Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
   touchSeen: false,
 };
+export const session = {
+  started: false,
+  paused: false,
+  t: 0,
+  last: 0,
+  toastClock: 0,
+  toastShown: false,
+  collisionClock: 0,
+  hold: 0,
+  saveClock: 0,
+  route: [],
+  routeClock: 0,
+  mapAerial: false,
+};
+export const audio = { audioOn: false, audioCtx: null, engineOsc: null, engineGain: null };
