@@ -14,7 +14,7 @@ compacta.
 
 - Juego: editar directamente `web/`. No hay compilación ni frameworks.
 - Datos: regenerarlos con `tools/`, nunca a mano (ver
-  [docs/DATOS_PUBLICOS.md](docs/DATOS_PUBLICOS.md)).
+  [docs/DATOS.md](docs/DATOS.md)).
 - Fuentes y aproximaciones: [docs/MAP_SOURCES.md](docs/MAP_SOURCES.md). Licencias:
   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Ejecutar `npm run check` antes de cada commit que cierre trabajo. Si el cambio afecta a

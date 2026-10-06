@@ -60,9 +60,8 @@ aceptadas en el overlay. Los filtros de aceptación están en el propio script y
 campo `acceptance` del overlay; no relajarlos para obtener más alturas. Detalle de las
 partes aceptadas: [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
 
-TODO(integración): el script aún no escribe el campo `attribution` del overlay (auditoría
-N1). Hasta que se corrija, comprobar `git diff web/height-samples.json` y restaurar la
-atribución antes de seguir.
+El script escribe el campo `attribution` del overlay (CC BY 4.0) y `verify-world`
+comprueba que llega igual a `data-sources.json`.
 
 ## 3. Catálogo de frentes
 
@@ -81,9 +80,10 @@ npm test
 
 `verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
 overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
-`web/` coinciden y que las licencias están incluidas. No compara la geometría con una
-instantánea fija anterior (auditoría N2). TODO(integración): actualizar cuando se fusione
-la huella geométrica fija de las pruebas.
+`web/` coinciden y que las licencias están incluidas. Además compara una huella fija de
+la geometría (contornos, patios, plantas y vías) con `source-data/geometry-baseline.json`;
+un cambio deliberado de geometría actualiza esa huella en su propio commit
+(`node tests/verify-world.mjs --print-geometry`).
 
 Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
 probar el juego en un navegador.

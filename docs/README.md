@@ -10,7 +10,7 @@ documento; los demás enlazan a él.
 - [Flujo de Git](GIT_WORKFLOW.md): ramas, worktrees por agente, commits, etiquetas e
   historial.
 - [Publicación y CI](PUBLICACION.md): GitHub Actions, Pages y ajustes del repositorio.
-- [Reproducir los datos](DATOS_PUBLICOS.md): conversores y orden de los pasos.
+- [Reproducir los datos](DATOS.md): conversores y orden de los pasos.
 
 ## Referencia
 
