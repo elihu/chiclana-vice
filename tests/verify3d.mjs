@@ -52,7 +52,8 @@ globalThis.window = globalThis;
 globalThis.innerWidth = 390;
 globalThis.innerHeight = 844;
 globalThis.devicePixelRatio = 2;
-globalThis.matchMedia = () => ({ matches: true });
+const mediaQueries = [];
+globalThis.matchMedia = (q) => (mediaQueries.push(q), { matches: true });
 const windowListeners = {};
 globalThis.addEventListener = (n, f) => (windowListeners[n] ??= []).push(f);
 globalThis.document = {
@@ -724,6 +725,9 @@ console.log('Pedestrians', g.people.length);
   await g.loadWorld();
   console.log('Incompatible map layers rejected clearly');
 }
+assert(mediaQueries.includes('(any-pointer: coarse)'), 'touch controls for any coarse pointer');
+assert(!/\(pointer:\s*coarse\)/.test(fs.readFileSync('web/style.css', 'utf8')));
+assert(windowListeners.pointerdown, 'first touch enables touch mode');
 // After losing the WebGL context the game cannot be resumed, only reloaded (keep last).
 {
   els.world.listeners.webglcontextlost.forEach((f) => f({ preventDefault() {} }));

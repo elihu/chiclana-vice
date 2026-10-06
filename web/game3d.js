@@ -60,7 +60,26 @@ let audioOn = false,
   engineGain;
 let W = innerWidth,
   H = innerHeight,
-  coarse = matchMedia('(pointer:coarse)').matches;
+  coarse = matchMedia('(any-pointer: coarse)').matches;
+// Touch support: any touch-capable pointer (also hybrids), or the first real touch seen.
+let touchSeen = false;
+const coarseQuery = matchMedia('(any-pointer: coarse)');
+coarseQuery.addEventListener?.('change', (e) => {
+  coarse = e.matches || touchSeen;
+  if (renderer) applyQuality();
+});
+addEventListener(
+  'pointerdown',
+  (e) => {
+    if (e.pointerType !== 'touch' || touchSeen) return;
+    touchSeen = true;
+    if (!coarse) {
+      coarse = true;
+      if (renderer) applyQuality();
+    }
+  },
+  { capture: true, passive: true },
+);
 let randSeed = 7631;
 const rnd = () => {
   randSeed = (randSeed * 1664525 + 1013904223) >>> 0;
