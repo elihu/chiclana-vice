@@ -1,6 +1,9 @@
 # Publicación gratuita con GitHub Pages
 
-Preparación local completada; ningún remoto configurado ni sitio publicado aún.
+Repositorio público personal: https://github.com/elihu/chiclana-vice
+Remoto origin: https://github.com/elihu/chiclana-vice.git
+GitHub Pages configurado con GitHub Actions: https://elihu.github.io/chiclana-vice/
+Configuración realizada el 6/10/2026 en la cuenta personal elihu, fuera de organizaciones.
 El workflow .github/workflows/pages.yml verifica capas y juego, publica únicamente
 `dist/` al hacer push a `main` y permite ejecución manual desde main. Las ramas de
 features no publican; integrarlas tras revisar y probar. Sin compilación/frameworks.
@@ -38,11 +41,16 @@ No se reescribe ni destruye el historial local.
 
 ## Primer despliegue
 
-Pendiente usuario/repositorio público y acceso Git de la cuenta. No enviar tokens
-ni contraseñas al chat. GitHub CLI no está instalado aquí; se puede crear desde
-la web un repositorio vacío y pasar su URL. En Settings → Pages → Build and
- deployment, elegir GitHub Actions. El primer push debe salir de la copia pública
-con historial nuevo, nunca de esta copia histórica.
+GitHub CLI instalado y autenticado localmente. Repositorio creado desde esta
+copia pública, con historial independiente; Pages usa build_type=workflow.
+Para publicar cambios verificados, integrarlos en main y ejecutar:
+
+```fish
+git push origin main
+```
+
+Seguir el despliegue con `gh run list` o la pestaña Actions del repositorio.
+No enviar tokens ni contraseñas al chat.
 
 El progreso se guarda por navegador/origen; no hay cuentas, backend, analytics ni
 multijugador. Tu amigo puede jugar su propia partida al abrir la URL.

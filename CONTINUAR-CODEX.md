@@ -22,8 +22,9 @@ Servir con uv; detalles en README-PC.md.
 
 Edición exportada sin historial privado, originales Catastro, rásteres ni auditorías
 de otras fuentes. Código propio MIT; datos y referencias mantienen condiciones.
-Workflow Pages verifica y publica dist al hacer push a main. Sin remoto configurado
-por el exportador; la publicación inicial todavía requiere cuenta/repositorio.
+Workflow Pages verifica y publica dist al hacer push a main. Remoto origin configurado en https://github.com/elihu/chiclana-vice.git, cuenta
+personal elihu. Pages con Actions: https://elihu.github.io/chiclana-vice/.
+Publicación autorizada el 6/10/2026; push a main despliega automáticamente.
 
 Revisión 6/10/2026: atribuciones fotográficas completadas y fórmula de obra
 derivada IGN en créditos/metadatos. ALTURAS_PILOTO.md detalla las 15 partes;
