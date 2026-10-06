@@ -45,8 +45,11 @@ se sustituye.
   edificio real a partir de las referencias citadas en los avisos de terceros. No se
   distribuyen fotos ni planos como texturas.
 - Las alturas de iglesias y Ayuntamiento son aproximaciones visuales, no mediciones LiDAR.
-- Paleta y política de alturas en `web/facade-profiles.json`; recetas de geometría en
-  `web/facade-designs.json` y reglas de selección de calles en `web/city-design.json`.
+- Paleta, celda de lotes y política de alturas en `web/facade-profiles.json`; recetas de
+  geometría en `web/facade-designs.json`; reglas de selección de calles, zonas, mobiliario,
+  pavimentos, vegetación y edificios genéricos (paleta, colores y alturas mínimas) en
+  `web/city-design.json`. Todos son valores aproximados de autor, interpretados de las
+  referencias de los avisos de terceros, no mediciones.
 - Correcciones manuales: `web/map-corrections.json` guarda ajustes sobre las vías, las áreas
   y los contornos catastrales (esquema en `schemas/map-corrections.schema.json`). Se aplican
   en memoria al cargar y cada una lleva una guarda con el valor que debe encontrar, el

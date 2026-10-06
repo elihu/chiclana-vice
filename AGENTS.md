@@ -25,7 +25,11 @@ Siempre:
 - Conserva coordenadas, contornos, patios, plantas, calles, capacidades del juego,
   controles táctiles y modo ligero.
 - Agrupa geometría y materiales repetidos; piensa en móviles modestos.
-- Los JSON de `web/` se generan con `tools/`; no los edites a mano (ver `tools/AGENTS.md`).
+- Los JSON de datos de `web/` se generan con `tools/`; no los edites a mano (ver
+  `tools/AGENTS.md`). Excepción: los archivos de diseño de autor `facade-designs.json`,
+  `city-design.json` y `map-corrections.json` se editan a mano y los valida
+  `tests/verify-world.mjs` (procedimiento en `docs/DATOS.md`); `facade-profiles.json`
+  conserva solo paleta, celda de lotes y política de alturas.
 - Edita `LICENSE` y `THIRD_PARTY_NOTICES.md` en la raíz; las copias de `web/` se
   regeneran con `node tools/export-provenance.mjs`.
 - Documenta fuentes y aproximaciones en `docs/MAP_SOURCES.md`. Las licencias y
@@ -54,7 +58,9 @@ Nunca:
 
 - `web/`: sitio publicado y fuente editable (`game3d.js` como entrada y el juego en
   módulos ES en `js/`, `style.css`, `index.html`, capas
-  JSON, `arcade/`, `vendor/`, `licenses/`).
+  JSON, `arcade/`, `vendor/`, `licenses/`). Las fachadas, las reglas de calle y las
+  correcciones del mapa se describen en JSON (`facade-designs.json`, `city-design.json`,
+  `map-corrections.json`); el modo `?debug` está en `js/debug/`.
 - `tools/`: conversores y generadores de datos (Node `.mjs`, Python `.py`).
 - `tests/`: verificadores en Node de datos y flujos del juego.
 - `source-data/`: catálogo y auditoría que usan los conversores; no se publica.

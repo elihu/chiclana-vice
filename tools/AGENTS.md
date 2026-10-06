@@ -3,6 +3,11 @@
 Complementa el `AGENTS.md` de la raíz. Procedimiento detallado y comandos con argumentos
 en `docs/DATOS.md`.
 
+- Excepción: `web/facade-designs.json`, `web/city-design.json` y `web/map-corrections.json`
+  son archivos de diseño de autor que se editan a mano (sus esquemas, en `schemas/`, son
+  documentación para el editor). Tras editarlos: `node tests/verify-design.mjs`,
+  `node tools/export-provenance.mjs` y `npm test`. Si una corrección mueve un vértice de un
+  edificio, regenera además `web/frontages.json` con `node tools/export-facades.mjs`.
 - Los scripts escriben en `web/` y `source-data/`. Revisa `git diff --stat` después de
   ejecutarlos y no confirmes cambios de datos que la tarea no pida.
 - Orden obligatorio tras cambiar datos: generador (`rebuild-map.py`, `prepare-world.mjs`,

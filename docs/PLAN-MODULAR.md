@@ -293,7 +293,7 @@ web/
   game-data.js          sin cambios (lugares, miradores, encargos, población)
   progress.js           sin cambios
   measure.js            sin cambios
-  facade-profiles.json  paleta, sombras de calle, política de alturas (se reduce en fase 2)
+  facade-profiles.json  paleta, celda de lotes y política de alturas (reducido en fase 2)
   facade-designs.json   NUEVO (fase 2): recetas y composiciones de fachada
   city-design.json      NUEVO (fase 2): zonas, reglas de calle, mobiliario, vegetación
   map-corrections.json  NUEVO (fase 2): correcciones manuales sobre OSM y Catastro
@@ -1145,6 +1145,40 @@ Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas deci
   añadir el `$schema` al fichero.
 - K3 y K4 se leen con las precisiones de 11.2 (`roof` por edificio, `composeFront` para
   frentes genéricos).
+
+### 11.4 Notas de ejecución de los pasos 2.9 a 2.12 (6/10/2026)
+
+- 2.9 se hizo en cinco commits `refactor`, todos con huella idéntica y sin cambiar la lista de
+  recursos: el esquema y el `$schema` (`schemas/city-design.schema.json`), y después
+  mobiliario, pavimentos y señales, vegetación y edificios genéricos. Cada commit amplía a la
+  vez `city-design.json`, `validateCityDesign` (con una especificación por sección), su
+  prueba negativa en `tests/verify-design.mjs` y las comprobaciones cruzadas de
+  `tests/verify-world.mjs` (puntos dentro del mundo, calles y tipos de vía existentes en OSM).
+- Al pasar los literales a datos se añadieron al ejemplo los números que seguían escondidos
+  en el código, con el mismo valor: `plazaLamps.bench` y `plazaLamps.bin`,
+  `bollards.endMargin`, `crossings.edgeStart` y `edgeEnd`, `centerLines.start`, `endMargin` y
+  `halfWidth`, las alturas `water`, `deck` y `railing`, `vegetation.marketTrees.roadClearance`,
+  `buildingClearance` y `colliderClearance` y `vegetation.shrubBuildingClearance`. Las
+  farolas de calle usan `frontages.originalStreets`, como antes. Las operaciones de coma
+  flotante conservan el orden original (por ejemplo `lerp(from, to, i / (count - 1)) + shift`).
+- Lugares, miradores y encargos siguen en `web/game-data.js`. La lista de 11.3 los nombra,
+  pero INVENTARIO-DATOS.md los declara ya en datos y mantiene el módulo (lo importan de forma
+  síncrona el juego, la validación de partidas guardadas y los tests); moverlos a JSON
+  obliga a cambiar la validación de `progress.js` y a cargarlos antes de importar esos
+  módulos. Queda pendiente de que el usuario confirme si se quiere.
+- 2.10: `map-corrections.json` es obligatorio (error claro si no carga), va vacío y sin
+  `appliesTo` (los hashes de la base harían saltar `verify-world` en cada regeneración; las
+  guardas de cada corrección ya protegen). Se implementan las operaciones de K7; `building.hide`
+  de D9 no existe (K7 prevalece: ocultar edificios cambiaría los índices de frente). El SHA-256
+  del contorno es una función propia síncrona porque `crypto.subtle` no existe en contextos
+  no seguros (juego servido por HTTP en la red local). `verify-world` exige además que
+  `frontages.json` coincida con los contornos ya corregidos.
+- 2.11: el panel tiene dos botones, «Copiar anclaje» (`facade-designs.json`) y «Copiar
+  corrección» (esqueleto `road.movePoint` de `map-corrections.json`), en vez de uno. El
+  fragmento queda también en un cuadro de texto por si el portapapeles no está disponible.
+- 2.12: el orden de edición documentado es editar, `node tests/verify-design.mjs`,
+  `export-provenance`, `npm test`, porque `npm test` antes de `export-provenance` falla por el
+  checksum desfasado.
 
 ## 12. Fuentes consultadas
 
