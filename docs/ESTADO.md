@@ -45,16 +45,20 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Relieve del terreno
 
-[Plan de implementación](PLAN-TERRENO.md) revisado contra `v1.1.0` e integrado en
-`main` local. Implementación solicitada en una rama y worktree propios, sin publicar
-ni integrar el código hasta su revisión. En `feat/relieve-terreno` está implementada
-la carga, malla, bases, pavimentos, actores e inspector; el recorte real se revisa en
-una copia local provisional. La rama conserva el modo plano por defecto. Pendientes:
-segunda revisión de perfiles, plataformas/pasos inferiores y agua, accesos en pendientes, mediciones comparables
-y móvil físico. Auditoría y comandos: [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
-Contrato generalizable y evidencia de las superficies de autor:
-[SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Cuestas generales confirmadas en la
-revisión local del usuario; el motor mantiene ambos niveles por continuidad y ruta.
+Integrado en `main` local desde `feat/relieve-terreno`, sin publicar. Implementados
+la carga opcional, malla, bases, pavimentos, actores, cámaras e inspector, con
+superficies y niveles declarados en diseño. El recorte real sigue fuera de Git y el
+modo plano permanece por defecto; las previsualizaciones se conservan en /tmp.
+
+El usuario confirmó cuestas generales y río; se han corregido después cubeta Alameda,
+grosor de plataformas, accesos de puentes, recubrimientos y separación de la reserva
+del tranvía. La última revisión visual de esos ajustes y las mediciones en móvil
+siguen pendientes. Pasan las pruebas del juego, terreno, superficies y exportadores
+Python; las comprobaciones de Chrome con SwiftShader no acreditan GPU física.
+
+Auditoría y reproducción: [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Contrato genérico
+y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
+[PLAN-TERRENO.md](PLAN-TERRENO.md).
 
 ## Pendientes
 
