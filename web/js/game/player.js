@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import {
   actors,
   base,
@@ -137,11 +138,7 @@ export function updatePlayer(dt) {
     player.a = c.a;
     player.speed = c.speed;
     state.health = c.health;
-    c.mesh.rotation.z = lerp(
-      c.mesh.rotation.z,
-      -steer * Math.min(0.04, Math.abs(c.speed) * 0.002),
-      dt * 6,
-    );
+    c.bank = lerp(c.bank ?? 0, -steer * Math.min(0.04, Math.abs(c.speed) * 0.002), dt * 6);
     if (c.health <= 0) rescue();
   } else {
     let ix = input.jx,
@@ -162,7 +159,7 @@ export function updatePlayer(dt) {
       actors.character.mesh.rotation.y = a;
     }
     player.speed = v;
-    actors.character.mesh.position.set(player.x, 0, player.z);
+    actors.character.mesh.position.set(player.x, surfaceHeightAt(player.x, player.z), player.z);
     actors.character.limbs.forEach(
       (l, i) =>
         (l.rotation.x =

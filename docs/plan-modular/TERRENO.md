@@ -5,6 +5,11 @@ modelo de alturas (lo investiga otro trabajo); solo localiza dónde el código s
 `y = 0` y deja preparado el punto de entrada. Funciones por nombre de `main` 5666928 y
 módulo destino tras la fase 1.
 
+Este anexo conserva el inventario histórico de la versión plana. El contrato y la
+implementación provisional actuales están en [DESARROLLO.md](../DESARROLLO.md#terreno)
+y [TERRENO_PILOTO.md](../TERRENO_PILOTO.md). La huella por bytes cambia de forma
+documentada, sin renovar la huella geográfica.
+
 ## T1. Dónde se supone suelo plano
 
 Tabla del plan, con las rutas anteriores a la fase 2. La versión vigente está en

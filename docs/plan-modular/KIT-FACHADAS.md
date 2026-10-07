@@ -177,6 +177,11 @@ defecto y el frente los sobrescribe con `with`.
 
 ## K4. Compositor (`web/js/world/facade-composer.js`)
 
+Con el piloto de terreno, todos los grupos del conjunto suman la misma `baseY` del
+monumento indicado en `building.landmark` o del edificio anclado. Un anclaje `world`
+conserva x/z globales en planta; sus alturas son relativas a esa base, incluida la
+cúpula. La base no se suma de nuevo a cada pieza y `h` sigue siendo altura relativa.
+
 ```js
 export function composeBuilding(kit, designs, id, context) // context: { palette, landmarks, fronts, buildings, staging }
 ```

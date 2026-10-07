@@ -131,8 +131,7 @@ ciclo.
 Con `?debug` en la URL (también en la web publicada) `startGame` importa
 `js/debug/inspector.js`; sin él, el módulo ni se pide y el juego no cambia. Un toque corto
 sobre el lienzo (menos de 6 px y 350 ms, así que el arrastre de cámara no lo activa) abre un
-panel con las coordenadas locales del punto (rayo contra edificios y fachadas, o el plano
-`y = 0`), el edificio, el frente `building-<i>-edge-<e>` (con indicación de si está en
+panel con las coordenadas locales del punto (rayo contra edificios y fachadas, o el suelo real (plano si no hay capa)), el edificio, el frente `building-<i>-edge-<e>` (con indicación de si está en
 `frontages.json`), la vía OSM más cercana (`id`, aparición, nombre y vértice), el objeto de
 calle a menos de 3 m, el monumento que lo contiene y la posición y el rumbo del jugador.
 «Copiar anclaje» y «Copiar corrección» ponen el fragmento JSON en el portapapeles
@@ -142,35 +141,32 @@ Probado a mano en un móvil Android; no en iOS.
 
 ## Terreno
 
-El suelo es plano. `web/js/world/terrain.js` define `flatTerrain` (`heightAt() → 0`) y
-`heightAt(terrain, x, z)`; `init` lo asigna en `world.terrain`, pero ningún constructor lo
-llama todavía. La capa de alturas real entrará como capa opcional con el mismo patrón que
-`height-samples.json` (sin ella, terreno plano) y la física seguirá en planta; el diseño
-está en [plan-modular/TERRENO.md](plan-modular/TERRENO.md). Supuestos de suelo plano en el
-código:
+El modo plano sigue siendo la alternativa por defecto mientras se valida el piloto.
+La carga opcional de `terrain.json` y `terrain.bin` se resuelve antes de construir la
+escena. Una capa presente pero incompatible detiene el arranque; un 404 usa terreno
+plano y un fallo de red añade un aviso. La referencia vertical se suma por separado a
+las alturas relativas de edificios; la física y las rutas siguen en planta.
 
-| Módulo destino                                         | Función                                                                            | Supuesto actual                                                                                                                      | Con terreno                                                                                                                          |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `engine/renderer.js`                                   | `addGroundPlanes`                                                                  | Suelo: `PlaneGeometry` horizontal en `y = 0`; exterior en `y = -0,1`                                                                 | Malla de terreno con la ortofoto; el plano exterior, en la cota del borde                                                            |
-| `world/buildings.js`                                   | `buildBuildings`                                                                   | Muros de `y = 0,02` a `h`; cubierta en `h + 0,02`, todo absoluto                                                                     | Cota base por parte (`b.baseY`, p. ej. mínimo del terreno en el contorno); muros de `baseY` a `baseY + h`                            |
-| `world/facade-kit.js`, `world/facade-composer.js`      | `wall` (kit), recetas `nave` y `cupula-san-juan-bautista` de `facade-designs.json` | Grupo del muro en `y = 0`; cubierta de nave en `h`; la cúpula usa un anclaje `world` absoluto en `y = 14,3`                          | Grupo en la cota de `a` (o media del frente); cúpula relativa a la base                                                              |
-| `world/streets.js`, `city-design.json`                 | `buildStreetSurfaces`, `buildRoadDetails` (alturas en `pavements.layerHeights`)    | Calzada 0,028, piedra 0,05, losas 0,036, línea 0,065, pasos 0,082, agua 0,025, puente 0,02 y barandilla 1                            | Desfase sobre el terreno en cada vértice; tiras de calzada subdivididas para seguir la pendiente                                     |
-| `engine/materials.js`                                  | `flatGeometry`, `flatPolygon`                                                      | Polígonos horizontales                                                                                                               | Polígonos drapeados (triangulación con cota por vértice)                                                                             |
-| `world/furniture.js`                                   | grupos de mobiliario                                                               | Grupo en `y = 0`                                                                                                                     | `heightAt(x, z)` en el punto de colocación                                                                                           |
-| `world/vegetation.js`                                  | `buildTrees`                                                                       | Tronco en `h / 2`, copas en `h + …`, arbustos en 0,42                                                                                | Sumar `heightAt(x, z)` a cada instancia                                                                                              |
-| `world/signs.js`                                       | `addSigns`                                                                         | Placas a 2,45 m, postes a 1,4 m                                                                                                      | Sumar la cota del poste                                                                                                              |
-| `game/update.js`, `game/police.js`, `app.js` (`frame`) | posicionado de vehículos                                                           | `c.mesh.position.set(c.x, 0, c.z)`                                                                                                   | `heightAt(c.x, c.z)`; opcionalmente cabeceo por pendiente                                                                            |
-| `game/player.js`                                       | `updatePlayer`                                                                     | Personaje en `y = 0`; física 2D (x, z)                                                                                               | La física sigue en 2D; la cota solo se aplica al dibujar                                                                             |
-| `game/traffic.js`                                      | `updatePedestrians`                                                                | Peatones en `y = 0`                                                                                                                  | `heightAt`                                                                                                                           |
-| `game/missions.js`                                     | `updateMarkers`                                                                    | Anillo 0,16, haz 2, flecha 6                                                                                                         | Relativos a `heightAt(goal)`                                                                                                         |
-| `engine/camera.js`                                     | `updateCamera`                                                                     | Alturas de cámara absolutas (4,7, 3,2, 45), ojo 1,2 / 1,61, objetivo 1,1, vista aérea mirando a `y = 0`; sol con objetivo en `y = 0` | Relativas a la cota del jugador                                                                                                      |
-| `engine/camera.js`                                     | `cameraSweep`                                                                      | Compara la altura del rayo con `renderH` (altura absoluta = sobre `y = 0`)                                                           | Comparar con `baseY + renderH`                                                                                                       |
-| `app.js`                                               | `frame` (bienvenida)                                                               | Cámara de presentación a 22 m mirando a `y = 0`                                                                                      | Relativa a la cota del jugador                                                                                                       |
-| `ui/hud.js`                                            | `drawLabels`                                                                       | Etiquetas a 14 m y marcador a 2 m                                                                                                    | Relativas a la cota del lugar                                                                                                        |
-| `debug/inspector.js`                                   | `pickPoint` (`?debug`)                                                             | Si el rayo no toca edificios ni fachadas, corta el plano `y = 0`                                                                     | Cortar contra la malla de terreno o iterar con `heightAt`                                                                            |
-| `world/spatial.js`                                     | `inBuilding`, `blocked`, `safePoint`                                               | 2D, sin cota                                                                                                                         | Sin cambios (la colisión sigue en planta)                                                                                            |
-| `world/loader.js`                                      | `loadWorld`, `applyHeightSamples`                                                  | `world.json` declara «Terreno: plano»; alturas IGN normalizadas al terreno (MDSn)                                                    | Nueva capa opcional (p. ej. `terrain.json`) cargada como `height-samples.json`; las alturas de edificio siguen siendo sobre el suelo |
-| `ui/map.js`                                            | mapa 2D                                                                            | Planta                                                                                                                               | Sin cambios                                                                                                                          |
+| Módulo                       | Responsabilidad                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `world/terrain.js`           | Contrato, rejilla y muestreo triangular puro, sin DOM ni Three.                |
+| `world/terrain-mesh.js`      | Malla indexada, normales, UV y transición exterior.                            |
+| `world/terrain-placement.js` | Bases de edificios y monumentos, perfiles e índice estático de puentes.        |
+| `engine/terrain-sampling.js` | Terreno, superficie transitable y colocación/inclinación de vehículos.         |
+| `engine/terrain-drape.js`    | Cortes de aristas y pavimentos contra celdas y diagonales.                     |
+| Constructores y juego        | Bases, objetos, cámaras, actores y marcadores relativos a la misma superficie. |
+
+`app` pasa la geometría del suelo al renderizador; `engine` no importa constructores
+`world`. `reloadGroundTexture` actualiza los materiales sin mover la geometría.
+`cameraSweep` conserva los márgenes de patios y compara con `baseY + renderH`, además
+de comprobar terreno/tableros. El inspector selecciona el suelo real e informa de cotas
+relativas y referencia.
+
+La implementación y los límites del recorte provisional están en
+[TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles reales de varias pasarelas, accesos
+y agua siguen pendientes de validación; la interfaz nueva no acredita que hayan quedado
+resueltos. El inventario anterior se conserva como historia en
+[plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
 ## Modo ligero
 

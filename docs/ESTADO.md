@@ -47,7 +47,11 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 
 [Plan de implementación](PLAN-TERRENO.md) revisado contra `v1.1.0` e integrado en
 `main` local. Implementación solicitada en una rama y worktree propios, sin publicar
-ni integrar el código hasta su revisión.
+ni integrar el código hasta su revisión. En `feat/relieve-terreno` está implementada
+la carga, malla, bases, pavimentos, actores e inspector; el recorte real se revisa en
+una copia local provisional. La rama conserva el modo plano por defecto. Pendientes:
+perfiles de pasarelas y rellanos, accesos en pendientes, agua, mediciones comparables
+y móvil físico. Auditoría y comandos: [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 
 ## Pendientes
 

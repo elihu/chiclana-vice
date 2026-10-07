@@ -34,6 +34,14 @@ se sustituye.
   Parámetros, URL y checksums en `web/height-samples.json` y
   `source-data/height-audit-ign.json`; detalle en [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
+- **MDT IGN de paso nominal 5 m, provisional**: servicio WCS `Elevacion4258_5`,
+  consulta del 7/10/2026, ASCII multipart en EPSG:4326 según DescribeCoverage.
+  Transformación local existente, remuestreo a unos 10 m, referencia fija en el origen
+  y cuantización a 0,1 m. El original permanece fuera de Git; rejilla real solo en la
+  copia local de revisión, sin activar en el juego de la rama. Auditorías:
+  `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
+  aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+  https://servicios.idee.es/wcs-inspire/mdt
 - **Three.js r169** local en `web/vendor/`.
 
 ## Fachadas y monumentos

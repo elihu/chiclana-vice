@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "accessDate": "2026-10-07",
+  "sourceUrl": "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc",
+  "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
+  "header": {
+    "ncols": 346.0,
+    "nrows": 209.0,
+    "xllcorner": -6.1563,
+    "yllcorner": 36.4148,
+    "dx": 4.5086705e-05,
+    "dy": 4.4976077e-05
+  },
+  "samples": 72314,
+  "nodata": 0,
+  "range": [
+    0.0,
+    52.0
+  ],
+  "percentiles": {
+    "5": 2.147,
+    "50": 7.0,
+    "95": 28.867
+  },
+  "maximumNeighbourSlope": 1.3068270694634854,
+  "resolutionMetres": [
+    4.038789923571809,
+    5.00673689164
+  ],
+  "crs": "EPSG:4326 según DescribeCoverage; orden Lat,Long; ASCII x=longitud",
+  "acquisitionDate": "sin confirmar",
+  "verticalReference": "sin confirmar para este recorte",
+  "metadataWarning": "DescribeCoverage publica unidades W.m-2.Sr-1 impropias del MDT: no utilizarlas como evidencia vertical.",
+  "decision": "no activar hasta revisar perfiles transitables y referencia vertical",
+  "serviceEvidence": {
+    "capabilitiesSha256": "30c95575991611cd15924369d2a3ad5066aa9a81ff68f8e549c71bdc6c638d3f",
+    "descriptionSha256": "cfb3a677580104eca03fedef17ef8a36027b651cf8d0973b48d9fa5516aab6e0",
+    "envelope": {
+      "srsName": "http://www.opengis.net/def/crs/EPSG/0/4326",
+      "axisLabels": "lat long",
+      "uomLabels": "deg deg",
+      "srsDimension": "2"
+    },
+    "declaredUnit": {
+      "code": "W.m-2.Sr-1"
+    },
+    "offsetVectors": [
+      "0 0.000045",
+      "-0.000045 0"
+    ],
+    "headers": {
+      "date": "Wed, 07 Oct 2026 11:32:24 GMT",
+      "content-type": "multipart/related; boundary=wcs"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { d } from '../core/math.js';
 import {
   gfx,
@@ -77,7 +78,9 @@ export function drawLabels() {
       setStyle(p.el, 'display', 'none');
       continue;
     }
-    let v = labelPoint.set(p.labelX, 14, p.labelZ).project(gfx.camera);
+    let v = labelPoint
+      .set(p.labelX, surfaceHeightAt(p.labelX, p.labelZ) + 14, p.labelZ)
+      .project(gfx.camera);
     if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) {
       setStyle(p.el, 'display', 'none');
       continue;
@@ -92,7 +95,7 @@ export function drawLabels() {
     setStyle(el, 'display', 'none');
     return;
   }
-  let v = labelPoint.set(goal.x, 2, goal.z).project(gfx.camera);
+  let v = labelPoint.set(goal.x, surfaceHeightAt(goal.x, goal.z) + 2, goal.z).project(gfx.camera);
   if (v.z < 1 && Math.abs(v.x) < 0.85 && Math.abs(v.y) < 0.65) {
     setStyle(el, 'display', 'none');
     return;

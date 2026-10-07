@@ -3,6 +3,8 @@ import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/material
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
 import { surfaceTexture } from '../engine/textures.js';
+import { drapeTriangles } from '../engine/terrain-drape.js';
+import { groundHeightAt } from '../engine/terrain-sampling.js';
 
 export function buildRoadDetails() {
   // Reglas y alturas de capa en web/city-design.json (secciones `centerLines` y `pavements`).
@@ -32,7 +34,10 @@ export function buildRoadDetails() {
     }
   }
   let geom = new THREE.BufferGeometry();
-  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(drapeTriangles(positions).position, 3),
+  );
   geom.computeVertexNormals();
   gfx.scene.add(
     new THREE.Mesh(
@@ -46,27 +51,44 @@ export function buildRoadDetails() {
     decks = [],
     rails = [],
     at = (x, y, z, angle = 0) => new THREE.Matrix4().makeRotationY(angle).setPosition(x, y, z);
-  for (const a of waterAreas)
-    water.push({ geometry: flatGeometry(a.p), matrix: at(0, heights.water, 0) });
+  for (const a of waterAreas) {
+    // Aproximación visual por tramo: lámina horizontal en la cota mínima del borde.
+    const y = world.terrain.kind === 'flat' ? 0 : Math.min(...a.p.map((p) => groundHeightAt(...p)));
+    water.push({ geometry: flatGeometry(a.p), matrix: at(0, y + heights.water, 0) });
+  }
   for (const r of world.city.roads) {
     if (!r.bridge) continue;
     for (let i = 1; i < r.p.length; i++) {
       let a = r.p[i - 1],
         b = r.p[i],
         length = Math.hypot(b[0] - a[0], b[1] - a[1]),
-        angle = Math.atan2(b[0] - a[0], b[1] - a[1]);
+        angle = Math.atan2(b[0] - a[0], b[1] - a[1]),
+        profile = r.bridgeProfile[i - 1],
+        y = profile ? (profile.y0 + profile.y1) / 2 : 0,
+        slope = profile ? -Math.atan2(profile.y1 - profile.y0, length) : 0,
+        matrix = (x, yy, z) =>
+          new THREE.Matrix4()
+            .makeRotationFromEuler(new THREE.Euler(slope, angle, 0, 'YXZ'))
+            .setPosition(x, yy, z);
       decks.push({
-        geometry: new THREE.BoxGeometry(r.w, 0.12, length),
-        matrix: at((a[0] + b[0]) / 2, heights.deck, (a[1] + b[1]) / 2, angle),
+        geometry: new THREE.BoxGeometry(
+          r.w,
+          0.12,
+          Math.hypot(length, profile ? profile.y1 - profile.y0 : 0),
+        ),
+        matrix: matrix((a[0] + b[0]) / 2, y + heights.deck, (a[1] + b[1]) / 2),
       });
       for (let side of [-1, 1])
         rails.push({
-          geometry: new THREE.BoxGeometry(0.12, 0.12, length),
-          matrix: at(
+          geometry: new THREE.BoxGeometry(
+            0.12,
+            0.12,
+            Math.hypot(length, profile ? profile.y1 - profile.y0 : 0),
+          ),
+          matrix: matrix(
             (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
-            heights.railing,
+            y + heights.railing,
             (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
-            angle,
           ),
         });
     }
@@ -78,6 +100,7 @@ export function buildRoadDetails() {
   ]) {
     if (!parts.length) continue;
     let mesh = new THREE.Mesh(mergeParts(parts), material);
+    mesh.name = parts === decks ? 'bridge-decks' : parts === water ? 'river-water' : 'bridge-rails';
     mesh.castShadow = cast;
     mesh.receiveShadow = true;
     gfx.scene.add(mesh);
@@ -167,8 +190,9 @@ export function buildStreetSurfaces() {
   for (const g of Object.values(groups)) {
     if (!g.p.length) continue;
     let geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(g.p, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(g.uv, 2));
+    const draped = drapeTriangles(g.p, g.uv);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(draped.position, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(draped.uv, 2));
     geo.computeVertexNormals();
     let mesh = new THREE.Mesh(
       geo,
@@ -218,7 +242,7 @@ export function buildStreetSurfaces() {
     streetEnvironment.crossings++;
   }
   let mg = new THREE.BufferGeometry();
-  mg.setAttribute('position', new THREE.Float32BufferAttribute(mark, 3));
+  mg.setAttribute('position', new THREE.Float32BufferAttribute(drapeTriangles(mark).position, 3));
   mg.computeVertexNormals();
   gfx.scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }

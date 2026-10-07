@@ -29,4 +29,6 @@ documento; los demás enlazan a él.
   correcciones de [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
 
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
-  puentes, actores y validación por fases; pendiente de implementación.
+  puentes, actores y validación por fases.
+- [Relieve provisional y reproducción](TERRENO_PILOTO.md): implementación de la rama,
+  auditoría, copia local de revisión y pendientes antes de activar los datos.

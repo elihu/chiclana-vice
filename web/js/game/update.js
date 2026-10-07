@@ -1,3 +1,4 @@
+import { placeVehicle } from '../engine/terrain-sampling.js';
 import { findRoute, nearestNode } from './graph.js';
 import { lerp } from '../core/math.js';
 import { player, session, traffic, vehicles, view } from '../core/state.js';
@@ -21,8 +22,7 @@ export function update(dt) {
   updatePlayer(dt);
   for (const c of traffic) stepAgent(c, dt);
   for (const c of vehicles) {
-    c.mesh.position.set(c.x, 0, c.z);
-    c.mesh.rotation.y = c.a;
+    placeVehicle(c);
   }
   updatePolice(dt);
   updatePedestrians(dt);

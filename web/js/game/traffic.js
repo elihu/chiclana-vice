@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { POPULATION } from '../../game-data.js';
 import { blocked, inBuilding, safePoint } from '../world/spatial.js';
 import { cars, graph, people, player, segments, session, traffic } from '../core/state.js';
@@ -105,7 +106,7 @@ export function updatePedestrians(dt) {
     x += Math.cos(a) * (p.s.width / 2 + 0.5);
     z -= Math.sin(a) * (p.s.width / 2 + 0.5);
     p.mesh.visible = !inBuilding(x, z, 0.2) && Math.hypot(x - player.x, z - player.z) < 140;
-    p.mesh.position.set(x, 0, z);
+    p.mesh.position.set(x, surfaceHeightAt(x, z), z);
     p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
     p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(session.t * 7 + (i % 2) * Math.PI) * 0.35));
   }

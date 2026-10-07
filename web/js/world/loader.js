@@ -1,8 +1,9 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
-import { applyCorrections } from './corrections.js';
+import { applyCorrections, sha256Hex } from './corrections.js';
 import { gfx, world } from '../core/state.js';
 import { validateCorrections } from './design-validate.js';
+import { loadTerrain } from './terrain.js';
 
 // Optional LiDAR pilot: preserve cadastral floor counts/heights and footprint data.
 export function applyHeightSamples(samples) {
@@ -162,5 +163,28 @@ export async function loadLayers() {
       }),
     ],
   );
-  return { res, tex, aerial, heightSamples, profiles, streetObjects, designs, cityDesign };
+  const { terrain, warning } = await loadTerrain(
+    (file) => fetch(asset(file)),
+    res,
+    async (bytes) =>
+      globalThis.crypto?.subtle
+        ? Array.from(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', bytes)), (v) =>
+            v.toString(16).padStart(2, '0'),
+          ).join('')
+        : sha256Hex(new Uint8Array(bytes)),
+  );
+  return {
+    res,
+    tex,
+    aerial,
+    heightSamples,
+    profiles,
+    streetObjects,
+    designs,
+    cityDesign,
+    terrain,
+    warning: terrain.manifest?.preview
+      ? 'Relieve provisional: puentes y accesos pendientes de revisión'
+      : warning,
+  };
 }

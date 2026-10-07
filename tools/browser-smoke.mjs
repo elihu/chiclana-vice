@@ -104,6 +104,10 @@ console.log(
   ),
 );
 ws.close();
-proc.kill();
-fs.rmSync(profile, { recursive: true, force: true });
+if (proc.exitCode === null) {
+  const stopped = new Promise((resolve) => proc.once('exit', resolve));
+  proc.kill();
+  await stopped;
+}
+fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
 process.exit(state.ready && !errors.length ? 0 : 1);

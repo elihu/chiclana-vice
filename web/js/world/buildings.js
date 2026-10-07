@@ -4,6 +4,8 @@ import { facadeTexture } from '../engine/textures.js';
 import { loadProgress } from '../ui/feedback.js';
 import { rnd } from '../core/random.js';
 import { sleepFrame } from '../core/dom.js';
+import { groundHeightAt } from '../engine/terrain-sampling.js';
+import { terrainEdge } from '../engine/terrain-drape.js';
 
 export async function buildBuildings() {
   let groups = new Map(),
@@ -55,26 +57,29 @@ export async function buildBuildings() {
     );
     for (const ring of [b.p, ...b.holes])
       for (let i = 0; i < ring.length; i++) {
-        let a = ring[i],
-          q = ring[(i + 1) % ring.length],
-          len = Math.hypot(q[0] - a[0], q[1] - a[1]);
-        if (len < 0.1) continue;
-        const vertices = [
-            [a[0], 0.02, a[1]],
-            [q[0], 0.02, q[1]],
-            [q[0], h, q[1]],
-            [a[0], h, a[1]],
-          ],
-          uvs = [
-            [0, 0],
-            [len / rules.wallUvWidth, 0],
-            [len / rules.wallUvWidth, h / world.facadeProfiles.heightPolicy.floorHeight],
-            [0, h / world.facadeProfiles.heightPolicy.floorHeight],
-          ];
-        for (const j of [0, 1, 2, 0, 2, 3]) {
-          (b.detailType ? g.dw : g.w).push(...vertices[j]);
-          (b.detailType ? g.dwu : g.wu).push(...uvs[j]);
-          (b.detailType ? g.dwc : g.wc).push(col.r, col.g, col.b);
+        const edge = terrainEdge(ring[i], ring[(i + 1) % ring.length]);
+        for (let k = 1; k < edge.length; k++) {
+          let a = edge[k - 1],
+            q = edge[k],
+            len = Math.hypot(q[0] - a[0], q[1] - a[1]);
+          if (len < 0.1) continue;
+          const vertices = [
+              [a[0], groundHeightAt(...a) + (world.terrain.kind === 'flat' ? 0.02 : -0.08), a[1]],
+              [q[0], groundHeightAt(...q) + (world.terrain.kind === 'flat' ? 0.02 : -0.08), q[1]],
+              [q[0], b.baseY + h, q[1]],
+              [a[0], b.baseY + h, a[1]],
+            ],
+            uvs = [
+              [0, 0],
+              [len / rules.wallUvWidth, 0],
+              [len / rules.wallUvWidth, h / world.facadeProfiles.heightPolicy.floorHeight],
+              [0, h / world.facadeProfiles.heightPolicy.floorHeight],
+            ];
+          for (const j of [0, 1, 2, 0, 2, 3]) {
+            (b.detailType ? g.dw : g.w).push(...vertices[j]);
+            (b.detailType ? g.dwu : g.wu).push(...uvs[j]);
+            (b.detailType ? g.dwc : g.wc).push(col.r, col.g, col.b);
+          }
         }
       }
     let outer = b.p.map((p) => new THREE.Vector2(...p)),
@@ -84,7 +89,7 @@ export async function buildBuildings() {
     for (const tr of tris)
       for (const i of tr) {
         let p = all[i];
-        g.r.push(p.x, h + 0.02, p.y);
+        g.r.push(p.x, b.baseY + h + 0.02, p.y);
         g.ru.push(p.x / world.worldW + 0.5, 0.5 - p.y / world.worldH);
       }
     if (++count % 900 === 0) {

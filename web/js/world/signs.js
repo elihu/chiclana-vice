@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
@@ -69,11 +70,18 @@ export function addSigns() {
       [1, 0],
     ]) {
       let lx = (u - 0.5) * 3.3;
-      position.push(sign.x + lx * cos, 2.45 + (v - 0.5) * 0.62, sign.z - lx * sin);
+      position.push(
+        sign.x + lx * cos,
+        surfaceHeightAt(sign.x, sign.z) + 2.45 + (v - 0.5) * 0.62,
+        sign.z - lx * sin,
+      );
       uv.push((ox + u * cellW) / atlas.width, 1 - (oy + (1 - v) * cellH) / atlas.height);
     }
     index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
-    posts.setMatrixAt(i, matrix.makeTranslation(sign.x, 1.4, sign.z));
+    posts.setMatrixAt(
+      i,
+      matrix.makeTranslation(sign.x, surfaceHeightAt(sign.x, sign.z) + 1.4, sign.z),
+    );
   });
   let tex = new THREE.CanvasTexture(atlas);
   tex.colorSpace = THREE.SRGBColorSpace;

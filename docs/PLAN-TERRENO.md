@@ -1,7 +1,6 @@
 # Plan de implementación del relieve del terreno
 
-Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **plan, no
-implementado**. Este documento permite ejecutar la incorporación del terreno tras la
+Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **implementación provisional en rama; datos reales pendientes de validación**. Este documento permite ejecutar la incorporación del terreno tras la
 fase 3 del [plan modular](PLAN-MODULAR.md). Complementa el inventario de
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md); en las decisiones de implementación
 que difieran, seguir este documento y actualizar después el inventario.
@@ -260,3 +259,19 @@ jugable, más el acabado de accesos y puentes. No es un presupuesto cerrado: com
 el MDT y resolver bases de monumentos son los principales factores de incertidumbre.
 Si una fase encuentra datos insuficientes, entregar el diagnóstico y mantener el modo
 plano; no sustituir las cotas por valores inventados para cerrar los tests.
+
+## 10. Avance de la rama `feat/relieve-terreno`
+
+La implementación y evidencia están en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+
+| Fase | Estado de aceptación                                                                      |
+| ---- | ----------------------------------------------------------------------------------------- |
+| A    | Recorte y evidencia recuperados; faltan resolver pendientes de superficies reales.        |
+| B    | Contrato, exportación reproducible y alternativas de carga comprobados.                   |
+| C    | Bases, cubiertas, muros y fachadas adaptados; accesos reales requieren revisión.          |
+| D    | Pavimentos cortados y perfiles indexados; no cerrada por pasarelas y agua.                |
+| E    | Actores, cámaras, marcadores e inspector adaptados; revisión real ligada a D.             |
+| F    | Pruebas CPU y arranque Chrome del piloto; pendientes métricas comparables y móvil físico. |
+
+El usuario ha aprobado la atribución y solicitado revisar localmente el recorte real.
+Esa revisión no autoriza publicar ni cambia los criterios de aceptación anteriores.

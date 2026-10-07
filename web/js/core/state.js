@@ -79,6 +79,7 @@ export const world = {
   mappedStreetObjects: [],
   streetNames: [],
   terrain: null,
+  bridgeGrid: null,
 };
 export const gfx = {
   renderer: null,

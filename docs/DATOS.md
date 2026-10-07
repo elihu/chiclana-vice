@@ -165,3 +165,20 @@ Los casos de conversión de sentidos OSM se comprueban además con
 
 Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
 probar el juego en un navegador.
+
+## 5. Terreno provisional
+
+`audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
+`export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
+GIS nuevas. `audit-terrain-surfaces.mjs` revisa pendientes, bases y perfiles sobre las
+capas actuales. No se distribuyen los originales.
+
+Los comandos, la copia de revisión y los pendientes están en
+[TERRENO_PILOTO.md](TERRENO_PILOTO.md#reproducción). El exportador exige auditoría
+validada para activar datos definitivos en `web/`; `--preview` permite solo revisión
+provisional. `export-terrain-metadata.mjs` actualiza los metadatos del manifiesto y
+registra una huella independiente, seguida de `export-provenance.mjs`. Este último
+admite `--directory` para una copia de revisión fuera del árbol publicado.
+
+Pruebas del exportador: `uv run --no-project python tests/verify-terrain-tools.py`.
+Las pruebas JS de contrato, malla y rampa están incluidas en `npm test`.

@@ -11,6 +11,7 @@ import {
   validateFacadeDesigns,
 } from '../web/js/world/design-validate.js';
 import { applyCorrections } from '../web/js/world/corrections.js';
+import { createTerrain } from '../web/js/world/terrain.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -211,6 +212,24 @@ for (const file of [
   );
 }
 const sources = read('web/data-sources.json');
+if (fs.existsSync('web/terrain.json')) {
+  const terrain = read('web/terrain.json'),
+    bytes = fs.readFileSync('web/terrain.bin');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), terrain.sha256);
+  createTerrain(
+    terrain,
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    world,
+  );
+  const record = sources.records.find((r) => r.files.includes('terrain.json'));
+  assert(record && record.files.includes('terrain.bin'), 'both terrain files registered');
+  assert.equal(record.attribution, terrain.attribution);
+  assert.equal(
+    read('source-data/terrain-baseline.json').sha256,
+    terrain.sha256,
+    'independent terrain fingerprint',
+  );
+}
 for (const record of sources.records)
   for (const file of record.files) {
     assert.equal(

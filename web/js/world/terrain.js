@@ -1,4 +1,4 @@
-// Terreno: hoy plano. La capa de alturas real se conectará aquí (docs/plan-modular/TERRENO.md).
+// Muestreo puro; diagonal NW→SE compartida con el dibujo.
 export const flatTerrain = Object.freeze({
   kind: 'flat',
   heightAt() {
@@ -7,5 +7,92 @@ export const flatTerrain = Object.freeze({
 });
 
 export function heightAt(terrain, x, z) {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) throw Error('Consulta de terreno no finita');
   return terrain ? terrain.heightAt(x, z) : 0;
+}
+
+export function createTerrain(m, buffer, city) {
+  const pair = (a) => Array.isArray(a) && a.length === 2 && a.every(Number.isFinite);
+  if (
+    !m ||
+    m.version !== 1 ||
+    !pair(m.origin) ||
+    !pair(m.size) ||
+    !Array.isArray(m.bounds) ||
+    m.bounds.length !== 4 ||
+    m.bounds.some(
+      (v, i) => v !== [-m.size[0] / 2, m.size[0] / 2, -m.size[1] / 2, m.size[1] / 2][i],
+    ) ||
+    m.origin.some((v, i) => v !== city.origin[i]) ||
+    m.size.some((v, i) => v !== city.size[i]) ||
+    !Number.isInteger(m.columns) ||
+    !Number.isInteger(m.rows) ||
+    m.columns < 2 ||
+    m.rows < 2 ||
+    m.columns * m.rows > 1000000 ||
+    m.encoding !== 'int16-le' ||
+    m.scale !== 0.1 ||
+    m.rowOrder !== 'north-to-south' ||
+    m.diagonal !== 'nw-se' ||
+    m.file !== 'terrain.bin' ||
+    !/^[a-f0-9]{64}$/.test(m.sha256 || '') ||
+    !Number.isFinite(m.referenceElevation) ||
+    !pair(m.step) ||
+    m.step[0] !== m.size[0] / (m.columns - 1) ||
+    m.step[1] !== m.size[1] / (m.rows - 1) ||
+    !(buffer instanceof ArrayBuffer) ||
+    buffer.byteLength !== m.columns * m.rows * 2
+  )
+    throw Error('Capa de terreno incompatible');
+  const data = new Float32Array(m.columns * m.rows),
+    view = new DataView(buffer);
+  for (let i = 0; i < data.length; i++) data[i] = view.getInt16(i * 2, true) * m.scale;
+  return {
+    kind: 'grid',
+    manifest: m,
+    data,
+    heightAt(x, z) {
+      if (!Number.isFinite(x) || !Number.isFinite(z)) throw Error('Consulta de terreno no finita');
+      const gx = Math.max(0, Math.min(m.columns - 1, (x + m.size[0] / 2) / m.step[0])),
+        gz = Math.max(0, Math.min(m.rows - 1, (z + m.size[1] / 2) / m.step[1])),
+        i = Math.min(m.columns - 2, Math.floor(gx)),
+        j = Math.min(m.rows - 2, Math.floor(gz)),
+        u = gx - i,
+        v = gz - j,
+        k = j * m.columns + i,
+        a = data[k],
+        b = data[k + 1],
+        c = data[k + m.columns],
+        d = data[k + m.columns + 1];
+      return u >= v ? a * (1 - u) + b * (u - v) + d * v : a * (1 - v) + d * u + c * (v - u);
+    },
+  };
+}
+
+export async function loadTerrain(read, city, digest) {
+  let response;
+  try {
+    response = await read('terrain.json');
+  } catch {
+    return { terrain: flatTerrain, warning: 'Terreno no disponible: modo plano' };
+  }
+  if (response.status === 404) return { terrain: flatTerrain, warning: null };
+  if (!response.ok) return { terrain: flatTerrain, warning: 'Terreno no disponible: modo plano' };
+  let manifest;
+  try {
+    manifest = await response.json();
+  } catch {
+    throw Error('Manifiesto de terreno inválido');
+  }
+  if (!manifest || manifest.file !== 'terrain.bin') throw Error('Archivo de terreno incompatible');
+  let binary;
+  try {
+    binary = await read(manifest.file);
+  } catch {
+    return { terrain: flatTerrain, warning: 'Red de terreno no disponible: modo plano' };
+  }
+  if (!binary.ok) throw Error('Falta el binario de terreno');
+  const bytes = await binary.arrayBuffer();
+  if ((await digest(bytes)) !== manifest.sha256) throw Error('Checksum de terreno incorrecto');
+  return { terrain: createTerrain(manifest, bytes, city), warning: null };
 }
