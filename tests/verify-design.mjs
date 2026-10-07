@@ -152,88 +152,23 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     'web/city-design.json válido',
   );
 
-  // Copia literal del bucle del Mercado de buildDetailedFacades en main 5666928; se borra al cerrar la fase 2.
-  function referenceMarket(kit, mp, center) {
-    const { cube, pane, wall, sign } = kit;
-    for (let i = 0; i < 4; i++) {
-      let a = mp[i],
-        b = mp[(i + 1) % 4],
-        mx = (a[0] + b[0]) / 2,
-        mz = (a[1] + b[1]) / 2,
-        { g, len } = wall(a, b, [mx - center[0], mz - center[1]]);
-      cube(g, len / 2, 4.77, 0.055, len, 9.5, 0.09, palette.stone);
-      cube(g, len / 2, 1.46, 0.115, len, 2.92, 0.15, palette.base);
-      cube(g, len / 2, 9.3, 0.37, len + 0.5, 0.24, 0.85, '#ded9c9');
-      cube(g, len / 2, 9.62, 0.1, len + 0.2, 0.3, 0.3, '#d9d1bf');
-      let bays = Math.max(3, Math.round(len / 5.15)),
-        step = len / bays;
-      for (let j = 0; j < bays; j++) {
-        let x = (j + 0.5) * step,
-          ww = Math.min(2.8, step * 0.65);
-        cube(g, x, 5.32, 0.135, ww + 0.23, 2.48, 0.12, '#a79782');
-        pane(g, x, 5.32, ww, 2.23, 0.14);
-        cube(g, x, 5.88, 0.28, ww, 0.075, 0.045, palette.iron);
-        cube(g, x - ww * 0.25, 5.32, 0.28, 0.045, 2.23, 0.04, palette.iron);
-        cube(g, x + ww * 0.25, 5.32, 0.28, 0.045, 2.23, 0.04, palette.iron);
-        cube(g, x, 8.08, 0.15, step - 0.42, 1.7, 0.08, '#768580');
-        for (let q = -step / 2 + 0.35; q < step / 2 - 0.25; q += 0.17)
-          cube(g, x + q, 8.08, 0.28, 0.057, 1.75, 0.23, '#e6dfcb');
-        cube(g, x, 1.36, 0.2, step - 0.63, 2.57, 0.055, '#303b3c');
-        for (let k = 0; k < 3; k++)
-          cube(g, x - step * 0.3 + k * step * 0.3, 1.38, 0.25, 0.055, 2.55, 0.05, '#9a9485');
-        if (len > 60 && j % 5 !== 2) {
-          let aw = cube(g, x, 2.94, 0.93, step - 0.19, 0.1, 1.72, '#d8bf83');
-          aw.rotation.x = 0.13;
-          cube(g, x, 2.8, 1.77, step - 0.16, 0.3, 0.055, '#d8bf83');
-          cube(g, x, 3.06, 0.34, step - 0.1, 0.085, 0.12, '#645949');
-        }
-      }
-      for (let y = 0.45; y < 2.8; y += 0.46) {
-        cube(g, len / 2, y, 0.198, len, 0.018, 0.02, '#a78770');
-        for (let x = (Math.round(y / 0.46) % 2) * 0.57; x < len; x += 1.14)
-          cube(g, x, y - 0.23, 0.198, 0.018, 0.44, 0.02, '#a78770');
-      }
-      for (let x = 0; x < len; x += 1.35) cube(g, x, 5.1, 0.13, 0.016, 4.0, 0.018, '#b5a78f');
-      for (let y = 3.35; y < 7.1; y += 0.76)
-        cube(g, len / 2, y, 0.131, len, 0.015, 0.02, '#b5a78f');
-      if (len > 60) sign(g, 'MERCADO DE ABASTOS', len / 2, 3.42, 13, 0.46, '#e7deca', '#988571');
-    }
-  }
-  // Descripción de cada malla: orden, geometría, color, textura y matriz de mundo exacta.
-  const describe = (staging) => {
-    staging.updateMatrixWorld(true);
-    const rows = [];
-    staging.traverse((o) => {
-      if (!o.isMesh)
-        return rows.push(['group', ...o.matrixWorld.elements, o.children.length].join(','));
-      const m = o.material;
-      rows.push(
-        [
-          o.geometry.type,
-          m.color.getHexString(),
-          m.map ? 'map' : '-',
-          ...o.matrixWorld.elements,
-        ].join(','),
-      );
-    });
-    return rows;
-  };
-
-  const market = designs.buildings.find((b) => b.id === 'mercado').fronts[0].anchor;
-  const fromData = newKit(),
-    original = newKit();
-  const groups = composeBuilding(fromData, designs, 'mercado');
-  referenceMarket(original, market.ring, market.center);
+  // Mercado desde datos: cuatro muros con cientos de mallas, rótulo en los dos lados largos y
+  // matrices finitas. La equivalencia exacta con el bucle anterior se comprobó al migrarlo.
+  const market = newKit();
+  const groups = composeBuilding(market, designs, 'mercado');
   assert.equal(groups.length, 4, 'cuatro muros del Mercado');
-  assert.equal(fromData.staging.children.length, 4);
-  const a = describe(fromData.staging),
-    b = describe(original.staging);
-  assert(a.length > 1000, 'el Mercado tiene cientos de mallas: ' + a.length);
-  assert.equal(a.length, b.length, 'mismo número de mallas');
-  const byColor = (rows) =>
-    rows.reduce((t, r) => ((t[r.split(',')[1]] = (t[r.split(',')[1]] || 0) + 1), t), {});
-  assert.deepEqual(byColor(a), byColor(b), 'mismas mallas por color');
-  for (let i = 0; i < a.length; i++) assert.equal(a[i], b[i], 'malla ' + i + ' idéntica');
+  assert.equal(market.staging.children.length, 4);
+  market.staging.updateMatrixWorld(true);
+  let meshes = 0,
+    signs = 0;
+  market.staging.traverse((o) => {
+    assert(o.matrixWorld.elements.every(Number.isFinite), 'matriz finita');
+    if (!o.isMesh) return;
+    meshes++;
+    if (o.material.map) signs++;
+  });
+  assert(meshes > 1000, 'el Mercado tiene cientos de mallas: ' + meshes);
+  assert.equal(signs, 2, 'rótulo en los dos muros largos');
 
   // Piezas añadidas con las portadas: statue (cono, esfera y base) y spiralColumn (un tubo).
   {
