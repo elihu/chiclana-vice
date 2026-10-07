@@ -24,4 +24,6 @@ documento; los demás enlazan a él.
 - [Propuesta de convenciones](PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
   documentación, Git y CI.
 - [Plan de modularización y diseño desde datos](PLAN-MODULAR.md): plan por fases; las
-  fases 0 a 2 están ejecutadas y falta la 3 (terreno).
+  fases 0 a 3 están ejecutadas; la fase 3 prepara la interfaz de terreno plano.
+- [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, contratos,
+  malla, edificios, puentes, actores y validación por fases; todavía no implementado.
