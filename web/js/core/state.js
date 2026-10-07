@@ -77,6 +77,7 @@ export const world = {
   // Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
   mappedStreetObjects: [],
   streetNames: [],
+  terrain: null,
 };
 export const gfx = {
   renderer: null,
