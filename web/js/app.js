@@ -18,7 +18,9 @@ import { addGroundPlanes, setupRenderer } from './engine/renderer.js';
 import { addSigns } from './world/signs.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
+import { KIT_PIECES } from './world/facade-kit.js';
 import { buildDetailedFacades, prepareFacades } from './world/facades.js';
+import { validateCityDesign, validateFacadeDesigns } from './world/design-validate.js';
 import { buildRoadDetails, buildStreetSurfaces } from './world/streets.js';
 import { buildRoadGraph, connectOpenSpaces, orientDriveGraph } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
@@ -40,11 +42,25 @@ import { update } from './game/update.js';
 
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
-  const { res, tex, heightSamples, profiles, streetObjects } = await loadLayers();
+  const { res, tex, heightSamples, profiles, streetObjects, designs, cityDesign } =
+    await loadLayers();
   world.city = res;
   world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   world.facadeProfiles = profiles;
+  const cityErrors = validateCityDesign(cityDesign, {
+    recipes: Object.keys(designs?.recipes || {}),
+  });
+  if (cityErrors.length) throw Error('Diseño de ciudad incompatible: ' + cityErrors.join('; '));
+  const designErrors = validateFacadeDesigns(designs, {
+    kitPieces: KIT_PIECES,
+    palette: profiles.palette,
+    frontRecipes: [cityDesign.frontages.recipe],
+  });
+  if (designErrors.length)
+    throw Error('Diseños de fachada incompatibles: ' + designErrors.join('; '));
+  world.facadeDesigns = designs;
+  world.cityDesign = cityDesign;
   world.groundTexture = tex;
   if (world.groundTexture) {
     world.groundTexture.colorSpace = THREE.SRGBColorSpace;
@@ -164,5 +180,9 @@ export async function startGame({ version = null, platform: injected = {} } = {}
     showStartupError(err);
     return null;
   }
-  return createTestApi(frame);
+  const api = createTestApi(frame);
+  // Modo de depuración opcional: sin `?debug` el módulo ni se pide.
+  if (new URLSearchParams(globalThis.location?.search ?? '').has('debug'))
+    (await import('./debug/inspector.js')).installInspector(api);
+  return api;
 }

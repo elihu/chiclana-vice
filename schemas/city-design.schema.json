@@ -1,0 +1,639 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://elihu.github.io/chiclana-vice/schemas/city-design.schema.json",
+  "title": "Chiclana Vice: reglas de diseño de la ciudad",
+  "description": "Documentación para el editor. La referencia normativa es validateCityDesign en web/js/world/design-validate.js. Rectángulos como [minX, maxX, minZ, maxZ] en metros locales (x este, z sur).",
+  "type": "object",
+  "required": [
+    "version",
+    "zones",
+    "frontages",
+    "furniture",
+    "pavements",
+    "crossings",
+    "centerLines",
+    "signs",
+    "vegetation",
+    "buildings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "attribution": {
+      "type": "string"
+    },
+    "zones": {
+      "description": "Rectángulos con nombre que usan los constructores del mundo.",
+      "type": "object",
+      "required": [
+        "frontagePilot",
+        "frontageOriginal",
+        "streetLamps",
+        "pavedRoads",
+        "pavedSquares"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "frontagePilot": {
+          "$ref": "#/$defs/rect"
+        },
+        "frontageOriginal": {
+          "$ref": "#/$defs/rect"
+        },
+        "streetLamps": {
+          "$ref": "#/$defs/rect",
+          "description": "Zona donde se colocan las farolas de calle."
+        },
+        "pavedRoads": {
+          "$ref": "#/$defs/rect",
+          "description": "Se pavimentan las vías con algún punto estrictamente dentro."
+        },
+        "pavedSquares": {
+          "$ref": "#/$defs/rect",
+          "description": "Se pavimentan las plazas con algún punto estrictamente dentro."
+        }
+      }
+    },
+    "frontages": {
+      "description": "Qué calles y aristas reciben frentes genéricos y con qué receta de facade-designs.json.",
+      "type": "object",
+      "required": [
+        "streets",
+        "originalStreets",
+        "residentialStreets",
+        "minimumEdge",
+        "sideProbe",
+        "maximumRoadDistance",
+        "minimumSetback",
+        "recipe"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "streets": {
+          "$ref": "#/$defs/names"
+        },
+        "originalStreets": {
+          "$ref": "#/$defs/names"
+        },
+        "residentialStreets": {
+          "$ref": "#/$defs/names"
+        },
+        "minimumEdge": {
+          "$ref": "#/$defs/positive"
+        },
+        "sideProbe": {
+          "$ref": "#/$defs/positive"
+        },
+        "maximumRoadDistance": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumSetback": {
+          "$ref": "#/$defs/positive"
+        },
+        "recipe": {
+          "type": "string"
+        }
+      }
+    },
+    "furniture": {
+      "description": "Mobiliario fijo (farolas, bancos, papeleras y bolardos). Los modelos están en el motor.",
+      "type": "object",
+      "required": [
+        "protectedPoints",
+        "protectedRadius",
+        "streetLamps",
+        "plazaLamps",
+        "benches",
+        "binOffset",
+        "bollards",
+        "fromOsm"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "protectedPoints": {
+          "description": "Puntos sin mobiliario (misiones, miradores, entradas) en un radio protectedRadius.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "protectedRadius": {
+          "$ref": "#/$defs/positive"
+        },
+        "streetLamps": {
+          "description": "Farolas clásicas a ambos lados de las calles de frontages.originalStreets, dentro de zones.streetLamps.",
+          "type": "object",
+          "required": ["minimumSegment", "start", "spacing", "offset", "minimumSeparation"],
+          "additionalProperties": false,
+          "properties": {
+            "minimumSegment": {
+              "$ref": "#/$defs/positive"
+            },
+            "start": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "spacing": {
+              "$ref": "#/$defs/positive"
+            },
+            "offset": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "minimumSeparation": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "plazaLamps": {
+          "description": "Farolas modernas de la plaza del Mercado, repartidas entre from y to y desplazadas shift; un banco y una papelera cada benchEvery.",
+          "type": "object",
+          "required": ["from", "to", "shift", "count", "benchEvery", "bench", "bin"],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "$ref": "#/$defs/point"
+            },
+            "to": {
+              "$ref": "#/$defs/point"
+            },
+            "shift": {
+              "$ref": "#/$defs/point"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "benchEvery": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "bench": {
+              "description": "[x, z, ángulo] en radianes; en plazaLamps, [dx, dz, ángulo] respecto a la farola.",
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "bin": {
+              "$ref": "#/$defs/point"
+            }
+          }
+        },
+        "benches": {
+          "description": "Bancos fijos con su papelera a binOffset metros en x.",
+          "type": "array",
+          "items": {
+            "description": "[x, z, ángulo] en radianes; en plazaLamps, [dx, dz, ángulo] respecto a la farola.",
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "binOffset": {
+          "type": "number"
+        },
+        "bollards": {
+          "description": "Bolardos a ambos lados de las calles indicadas.",
+          "type": "object",
+          "required": ["streets", "minimumSegment", "start", "endMargin", "spacing", "offset"],
+          "additionalProperties": false,
+          "properties": {
+            "streets": {
+              "$ref": "#/$defs/names"
+            },
+            "minimumSegment": {
+              "$ref": "#/$defs/positive"
+            },
+            "start": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "endMargin": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "spacing": {
+              "$ref": "#/$defs/positive"
+            },
+            "offset": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "fromOsm": {
+          "description": "Etiqueta OSM «clave=valor» del archivo street-objects.json → tipo de mobiliario.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z_]+=[a-z_]+$"
+          },
+          "additionalProperties": {
+            "enum": ["lamp", "bench"]
+          }
+        }
+      }
+    },
+    "pavements": {
+      "description": "Pavimentos de calles y plazas.",
+      "type": "object",
+      "required": ["pedestrianTypes", "nonDrivableTypes", "minimumHalfWidth", "layerHeights"],
+      "additionalProperties": false,
+      "properties": {
+        "pedestrianTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Tipos de vía OSM que se pavimentan con piedra; el resto, con asfalto."
+        },
+        "nonDrivableTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Tipos de vía OSM por los que no circulan vehículos (grafo de calles)."
+        },
+        "minimumHalfWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "layerHeights": {
+          "description": "Altura en metros de cada capa sobre el suelo; ver docs/plan-modular/TERRENO.md.",
+          "type": "object",
+          "required": [
+            "asphalt",
+            "stone",
+            "slabs",
+            "centerLine",
+            "crossing",
+            "water",
+            "deck",
+            "railing"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "asphalt": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "stone": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "slabs": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "centerLine": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "crossing": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "water": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "deck": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "railing": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        }
+      }
+    },
+    "crossings": {
+      "description": "Pasos de peatones sobre los nodos OSM highway=crossing a menos de maximumDistance de una vía de coche de al menos minimumRoadWidth, sin puente.",
+      "type": "object",
+      "required": [
+        "maximumDistance",
+        "minimumRoadWidth",
+        "halfWidthFactor",
+        "edgeStart",
+        "edgeEnd",
+        "stripeSpacing",
+        "stripeWidth",
+        "stripeHalfLength"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maximumDistance": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumRoadWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "halfWidthFactor": {
+          "$ref": "#/$defs/positive"
+        },
+        "edgeStart": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "edgeEnd": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "stripeSpacing": {
+          "$ref": "#/$defs/positive"
+        },
+        "stripeWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "stripeHalfLength": {
+          "$ref": "#/$defs/positive"
+        }
+      }
+    },
+    "centerLines": {
+      "description": "Línea central discontinua de las vías de coche anchas.",
+      "type": "object",
+      "required": [
+        "minimumWidth",
+        "minimumLength",
+        "start",
+        "endMargin",
+        "spacing",
+        "dash",
+        "halfWidth",
+        "color",
+        "opacity"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "minimumWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "minimumLength": {
+          "$ref": "#/$defs/positive"
+        },
+        "start": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "endMargin": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "spacing": {
+          "$ref": "#/$defs/positive"
+        },
+        "dash": {
+          "$ref": "#/$defs/positive"
+        },
+        "halfWidth": {
+          "$ref": "#/$defs/positive"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "opacity": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "signs": {
+      "description": "Placas de calle: una por nombre de vía, hasta maximum.",
+      "type": "object",
+      "required": ["maximum", "offset", "minimumPoints"],
+      "additionalProperties": false,
+      "properties": {
+        "maximum": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "minimumPoints": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "vegetation": {
+      "description": "Plantación de árboles y arbustos. Los modelos y los tonos aleatorios están en el motor.",
+      "type": "object",
+      "required": [
+        "parkDensity",
+        "parkMaximum",
+        "spacing",
+        "roadClearance",
+        "buildingClearance",
+        "marketTrees",
+        "shrubEveryVertex",
+        "shrubRoadClearance",
+        "shrubBuildingClearance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "parkDensity": {
+          "$ref": "#/$defs/positive",
+          "description": "Un intento de árbol por cada parkDensity m² de la caja del parque."
+        },
+        "parkMaximum": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Máximo de intentos por parque."
+        },
+        "spacing": {
+          "$ref": "#/$defs/positive",
+          "description": "Separación mínima entre árboles."
+        },
+        "roadClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "buildingClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "marketTrees": {
+          "description": "Árboles de la plaza del Mercado, repartidos entre from y to y desplazados shift.",
+          "type": "object",
+          "required": [
+            "from",
+            "to",
+            "shift",
+            "count",
+            "roadClearance",
+            "buildingClearance",
+            "colliderClearance"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "$ref": "#/$defs/point"
+            },
+            "to": {
+              "$ref": "#/$defs/point"
+            },
+            "shift": {
+              "$ref": "#/$defs/point"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "roadClearance": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "buildingClearance": {
+              "$ref": "#/$defs/nonNegative"
+            },
+            "colliderClearance": {
+              "$ref": "#/$defs/nonNegative"
+            }
+          }
+        },
+        "shrubEveryVertex": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "shrubRoadClearance": {
+          "$ref": "#/$defs/nonNegative"
+        },
+        "shrubBuildingClearance": {
+          "$ref": "#/$defs/nonNegative"
+        }
+      }
+    },
+    "buildings": {
+      "description": "Edificios genéricos: paleta, colores por tipo, alturas mínimas y escala UV.",
+      "type": "object",
+      "required": ["palette", "detailColors", "minimumHeights", "wallUvWidth"],
+      "additionalProperties": false,
+      "properties": {
+        "palette": {
+          "description": "Colores de los edificios genéricos, elegidos con el azar con semilla del juego.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/color"
+          },
+          "minItems": 1
+        },
+        "detailColors": {
+          "description": "Color de pared por tipo de detalle de fachada.",
+          "type": "object",
+          "required": ["church", "townhall", "market", "street"],
+          "additionalProperties": false,
+          "properties": {
+            "church": {
+              "$ref": "#/$defs/color"
+            },
+            "townhall": {
+              "$ref": "#/$defs/color"
+            },
+            "market": {
+              "$ref": "#/$defs/color"
+            },
+            "street": {
+              "$ref": "#/$defs/color"
+            }
+          }
+        },
+        "minimumHeights": {
+          "description": "Alturas mínimas especiales, aplicadas en orden: un círculo (center, radius) sobre el centro del edificio o un tipo de detalle con plantas mínimas.",
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["name", "center", "radius", "height"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "center": {
+                    "$ref": "#/$defs/point"
+                  },
+                  "radius": {
+                    "$ref": "#/$defs/positive"
+                  },
+                  "height": {
+                    "$ref": "#/$defs/positive"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["name", "detailType", "minimumFloors", "height"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "detailType": {
+                    "enum": ["market", "townhall", "church", "street"]
+                  },
+                  "minimumFloors": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "height": {
+                    "$ref": "#/$defs/positive"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "wallUvWidth": {
+          "$ref": "#/$defs/positive",
+          "description": "Metros de pared por repetición horizontal de la textura de fachada."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "positive": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "nonNegative": {
+      "type": "number",
+      "minimum": 0
+    },
+    "point": {
+      "description": "[x, z] en metros locales.",
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "rect": {
+      "description": "[minX, maxX, minZ, maxZ]; el mínimo es menor que el máximo.",
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "names": {
+      "description": "Nombres de calle tal como aparecen en osm-world.json, sin repetir.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    }
+  }
+}

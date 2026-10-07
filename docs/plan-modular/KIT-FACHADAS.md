@@ -90,7 +90,8 @@ completo: [facade-designs.example.json](facade-designs.example.json).
   "recipes": { nombre: { "params": { nombre: valor }, "body": [nodo…] } },
   "buildings": [ {
     "id", "name", "landmark", "detailType", "lod", "status", "references": [texto],
-    "fronts": [ { "anchor": anclaje, "recipe": nombre, "with": { param: valor }, "scaleY": valor } ]
+    "fronts": [ { "anchor": anclaje, "recipe": nombre, "with": { param: valor }, "scaleY": valor } ],
+    "roof": { "y": valor, "color": color }   // opcional, una por edificio (landmarkRing)
   } ]
 }
 ```
@@ -108,18 +109,27 @@ completo: [facade-designs.example.json](facade-designs.example.json).
 
 ### Nodos (cada nodo tiene exactamente una clave de tipo)
 
-| Nodo                                                                           | Equivale a                                                               |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| `{"let": {"a": v, "b": v}}`                                                    | `let a = v; let b = v;` en orden, en el ámbito actual                    |
-| `{"box": [x, y, z, w, h, d], "color": c, "rotation": [rx, ry, rz]}`            | `const m = cube(g, x, y, z, w, h, d, c); m.rotation.set(rx, ry, rz)`     |
-| `{"piece": "pane", "args": [v…], "rotation": [rx, ry, rz]}`                    | `kit.pane(g, …args)`; rotación opcional sobre la malla devuelta          |
-| `{"geo": ["TorusGeometry", p…], "at": [x, y, z], "color": c, "rotation": […]}` | `geo(g, new THREE.TorusGeometry(…p), x, y, z, c)`                        |
-| `{"group": {"at": [x, y, z], "rotation": [rx, ry, rz]}, "body": [nodo…]}`      | `const sub = new THREE.Group(); …; g.add(sub)`; el cuerpo usa `sub`      |
-| `{"for": "v", "from": v, "while": expr, "step": v, "body": [nodo…]}`           | `for (let v = from; while; v += step) { … }`; `step` se evalúa una vez   |
-| `{"for": "v", "in": [v…], "body": [nodo…]}`                                    | `for (const v of [ … ]) { … }`; la lista se evalúa antes del bucle       |
-| `{"if": expr, "then": [nodo…], "else": [nodo…]}`                               | `if (expr) { … } else { … }`                                             |
-| `{"use": "receta", "with": {"p": v}}`                                          | Ejecuta otra receta sobre el mismo `g` en un ámbito hijo                 |
-| `{"roof": {"y": v, "color": c}}`                                               | `staging.add(flatPolygon(anillo, y, material(c)))` (solo `landmarkRing`) |
+| Nodo                                                                           | Equivale a                                                             |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `{"let": {"a": v, "b": v}}`                                                    | `let a = v; let b = v;` en orden, en el ámbito actual                  |
+| `{"box": [x, y, z, w, h, d], "color": c, "rotation": [rx, ry, rz]}`            | `const m = cube(g, x, y, z, w, h, d, c); m.rotation.set(rx, ry, rz)`   |
+| `{"piece": "pane", "args": [v…], "rotation": [rx, ry, rz]}`                    | `kit.pane(g, …args)`; rotación opcional sobre la malla devuelta        |
+| `{"geo": ["TorusGeometry", p…], "at": [x, y, z], "color": c, "rotation": […]}` | `geo(g, new THREE.TorusGeometry(…p), x, y, z, c)`                      |
+| `{"group": {"at": [x, y, z], "rotation": [rx, ry, rz]}, "body": [nodo…]}`      | `const sub = new THREE.Group(); …; g.add(sub)`; el cuerpo usa `sub`    |
+| `{"for": "v", "from": v, "while": expr, "step": v, "body": [nodo…]}`           | `for (let v = from; while; v += step) { … }`; `step` se evalúa una vez |
+| `{"for": "v", "in": [v…], "body": [nodo…]}`                                    | `for (const v of [ … ]) { … }`; la lista se evalúa antes del bucle     |
+| `{"if": expr, "then": [nodo…], "else": [nodo…]}`                               | `if (expr) { … } else { … }`                                           |
+| `{"use": "receta", "with": {"p": v}}`                                          | Ejecuta otra receta sobre el mismo `g` en un ámbito hijo               |
+
+Cubierta: no es un nodo de receta sino la clave `roof: {"y": v, "color": c}` del edificio
+(sección 11.1 del plan): una sola por edificio, compuesta tras todos sus muros con
+`staging.add(flatPolygon(anillo, y, material(c)))`. Exige exactamente un frente con
+anclaje `landmarkRing`; `y` y `color` se evalúan con los parámetros de su receta y su `with`.
+
+Colores (`color` de `box`, `geo` y `roof`): `#rrggbb`, `$paleta`, un `pick`, el nombre de un
+parámetro o variable cuyo valor sea un color, o `=expresión` (por ejemplo
+`=len > 5 ? claro : oscuro`). El resultado debe ser `#rrggbb` o `$paleta`; si no, el
+compositor falla con un error claro.
 
 Ámbitos: cada iteración de `for` y cada rama de `if` se ejecutan en un ámbito hijo; `let`
 escribe en el ámbito actual (como el bloque de JavaScript). La variable de un `for` no se

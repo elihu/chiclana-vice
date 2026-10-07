@@ -5,22 +5,25 @@ import { nearestRoad } from './spatial.js';
 import { surfaceTexture } from '../engine/textures.js';
 
 export function buildRoadDetails() {
-  const positions = [],
+  // Reglas y alturas de capa en web/city-design.json (secciones `centerLines` y `pavements`).
+  const line = world.cityDesign.centerLines,
+    heights = world.cityDesign.pavements.layerHeights,
+    positions = [],
     colors = [];
   let c = new THREE.Color('#e8e0cb');
   for (const s of segments) {
-    if (!s.drive || s.width < 7 || s.length < 9) continue;
+    if (!s.drive || s.width < line.minimumWidth || s.length < line.minimumLength) continue;
     let dx = (s.b[0] - s.a[0]) / s.length,
       dz = (s.b[1] - s.a[1]) / s.length;
-    for (let at = 1; at < s.length - 2; at += 9) {
+    for (let at = line.start; at < s.length - line.endMargin; at += line.spacing) {
       let x = s.a[0] + dx * at,
         z = s.a[1] + dz * at,
-        e = Math.min(3, s.length - at);
+        e = Math.min(line.dash, s.length - at);
       let p = [
-        [x - dz * 0.07, 0.065, z + dx * 0.07],
-        [x + dz * 0.07, 0.065, z - dx * 0.07],
-        [x + dx * e + dz * 0.07, 0.065, z + dz * e - dx * 0.07],
-        [x + dx * e - dz * 0.07, 0.065, z + dz * e + dx * 0.07],
+        [x - dz * line.halfWidth, heights.centerLine, z + dx * line.halfWidth],
+        [x + dz * line.halfWidth, heights.centerLine, z - dx * line.halfWidth],
+        [x + dx * e + dz * line.halfWidth, heights.centerLine, z + dz * e - dx * line.halfWidth],
+        [x + dx * e - dz * line.halfWidth, heights.centerLine, z + dz * e + dx * line.halfWidth],
       ];
       for (let i of [0, 1, 2, 0, 2, 3]) {
         positions.push(...p[i]);
@@ -34,7 +37,7 @@ export function buildRoadDetails() {
   gfx.scene.add(
     new THREE.Mesh(
       geom,
-      mat('#e8dfbb', { side: THREE.DoubleSide, transparent: true, opacity: 0.55 }),
+      mat(line.color, { side: THREE.DoubleSide, transparent: true, opacity: line.opacity }),
     ),
   );
   // Retain actual river outline and actual mapped bridges. Static pieces share one
@@ -43,7 +46,8 @@ export function buildRoadDetails() {
     decks = [],
     rails = [],
     at = (x, y, z, angle = 0) => new THREE.Matrix4().makeRotationY(angle).setPosition(x, y, z);
-  for (const a of waterAreas) water.push({ geometry: flatGeometry(a.p), matrix: at(0, 0.025, 0) });
+  for (const a of waterAreas)
+    water.push({ geometry: flatGeometry(a.p), matrix: at(0, heights.water, 0) });
   for (const r of world.city.roads) {
     if (!r.bridge) continue;
     for (let i = 1; i < r.p.length; i++) {
@@ -53,14 +57,14 @@ export function buildRoadDetails() {
         angle = Math.atan2(b[0] - a[0], b[1] - a[1]);
       decks.push({
         geometry: new THREE.BoxGeometry(r.w, 0.12, length),
-        matrix: at((a[0] + b[0]) / 2, 0.02, (a[1] + b[1]) / 2, angle),
+        matrix: at((a[0] + b[0]) / 2, heights.deck, (a[1] + b[1]) / 2, angle),
       });
       for (let side of [-1, 1])
         rails.push({
           geometry: new THREE.BoxGeometry(0.12, 0.12, length),
           matrix: at(
             (a[0] + b[0]) / 2 + ((Math.cos(angle) * r.w) / 2) * side,
-            1,
+            heights.railing,
             (a[1] + b[1]) / 2 - ((Math.sin(angle) * r.w) / 2) * side,
             angle,
           ),
@@ -82,6 +86,11 @@ export function buildRoadDetails() {
 }
 
 export function buildStreetSurfaces() {
+  const design = world.cityDesign,
+    paved = design.pavements,
+    heights = paved.layerHeights,
+    [roadMinX, roadMaxX, roadMinZ, roadMaxZ] = design.zones.pavedRoads,
+    [squareMinX, squareMaxX, squareMinZ, squareMaxZ] = design.zones.pavedSquares;
   let asphalt = surfaceTexture('asphalt'),
     stone = surfaceTexture('stone'),
     slabs = surfaceTexture('slabs');
@@ -98,8 +107,10 @@ export function buildStreetSurfaces() {
   }
   for (const road of world.city.roads) {
     if (road.bridge) continue;
-    let pedestrian = ['pedestrian', 'footway', 'path'].includes(road.type),
-      local = road.p.some((p) => p[0] > -370 && p[0] < 100 && p[1] > -250 && p[1] < 110);
+    let pedestrian = paved.pedestrianTypes.includes(road.type),
+      local = road.p.some(
+        (p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ,
+      );
     if (!local) continue;
     let g = groups[pedestrian ? 'stone' : 'asphalt'],
       along = 0;
@@ -112,8 +123,8 @@ export function buildStreetSurfaces() {
       if (len < 0.1) continue;
       let nx = -dz / len,
         nz = dx / len,
-        half = Math.max(0.65, road.w / 2),
-        y = pedestrian ? 0.05 : 0.028;
+        half = Math.max(paved.minimumHalfWidth, road.w / 2),
+        y = pedestrian ? heights.stone : heights.asphalt;
       let p = [
         [a[0] + nx * half, y, a[1] + nz * half],
         [a[0] - nx * half, y, a[1] - nz * half],
@@ -134,7 +145,9 @@ export function buildStreetSurfaces() {
   for (const a of world.city.areas) {
     if (
       a.kind !== 'square' ||
-      !a.p.some((p) => p[0] > -360 && p[0] < 100 && p[1] > -240 && p[1] < 100)
+      !a.p.some(
+        (p) => p[0] > squareMinX && p[0] < squareMaxX && p[1] > squareMinZ && p[1] < squareMaxZ,
+      )
     )
       continue;
     // All squares share the slab material and one merged mesh.
@@ -145,7 +158,7 @@ export function buildStreetSurfaces() {
       let k = index.getX(i),
         x = p.getX(k),
         z = p.getZ(k);
-      groups.slabs.p.push(x, 0.036 + p.getY(k), z);
+      groups.slabs.p.push(x, heights.slabs + p.getY(k), z);
       groups.slabs.uv.push(x / 4, -z / 4);
     }
     geo.dispose();
@@ -169,25 +182,36 @@ export function buildStreetSurfaces() {
     gfx.scene.add(mesh);
   }
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
-  const mark = [];
+  const mark = [],
+    cross = design.crossings;
   for (const p of world.mappedStreetObjects) {
     if (p.tags.highway !== 'crossing') continue;
     let near = nearestRoad(p.x, p.z, true);
-    if (!near || near.d > 8 || near.s.bridge || near.s.width < 4) continue;
+    if (
+      !near ||
+      near.d > cross.maximumDistance ||
+      near.s.bridge ||
+      near.s.width < cross.minimumRoadWidth
+    )
+      continue;
     let s = near.s,
       dx = (s.b[0] - s.a[0]) / s.length,
       dz = (s.b[1] - s.a[1]) / s.length,
-      half = s.width * 0.43;
-    for (let across = -half + 0.25; across < half - 0.2; across += 0.85) {
+      half = s.width * cross.halfWidthFactor;
+    for (
+      let across = -half + cross.edgeStart;
+      across < half - cross.edgeEnd;
+      across += cross.stripeSpacing
+    ) {
       let x = p.x - dz * across,
         z = p.z + dx * across,
-        ww = 0.43,
-        ll = 2;
+        ww = cross.stripeWidth,
+        ll = cross.stripeHalfLength;
       let pts = [
-        [x - (dz * ww) / 2 - dx * ll, 0.082, z + (dx * ww) / 2 - dz * ll],
-        [x + (dz * ww) / 2 - dx * ll, 0.082, z - (dx * ww) / 2 - dz * ll],
-        [x + (dz * ww) / 2 + dx * ll, 0.082, z - (dx * ww) / 2 + dz * ll],
-        [x - (dz * ww) / 2 + dx * ll, 0.082, z + (dx * ww) / 2 + dz * ll],
+        [x - (dz * ww) / 2 - dx * ll, heights.crossing, z + (dx * ww) / 2 - dz * ll],
+        [x + (dz * ww) / 2 - dx * ll, heights.crossing, z - (dx * ww) / 2 - dz * ll],
+        [x + (dz * ww) / 2 + dx * ll, heights.crossing, z - (dx * ww) / 2 + dz * ll],
+        [x - (dz * ww) / 2 + dx * ll, heights.crossing, z + (dx * ww) / 2 + dz * ll],
       ];
       for (let i of [0, 1, 2, 0, 2, 3]) mark.push(...pts[i]);
     }

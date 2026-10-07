@@ -5,7 +5,8 @@ import { mat } from '../engine/materials.js';
 
 // Street signs: one canvas atlas, one material and one merged mesh; posts are instanced.
 export function addSigns() {
-  let selected = world.city.roads.filter((r) => r.name && r.p.length > 2),
+  const rules = world.cityDesign.signs;
+  let selected = world.city.roads.filter((r) => r.name && r.p.length >= rules.minimumPoints),
     seen = new Set(),
     signs = [];
   for (const r of selected) {
@@ -16,11 +17,11 @@ export function addSigns() {
     if (!near) continue;
     let s = near.s,
       ang = Math.atan2(s.b[0] - s.a[0], s.b[1] - s.a[1]),
-      x = p[0] + Math.cos(ang) * (r.w / 2 + 0.5),
-      z = p[1] - Math.sin(ang) * (r.w / 2 + 0.5);
+      x = p[0] + Math.cos(ang) * (r.w / 2 + rules.offset),
+      z = p[1] - Math.sin(ang) * (r.w / 2 + rules.offset);
     if (inBuilding(x, z, 0.15)) continue;
     signs.push({ name: r.name, x, z, ang });
-    if (seen.size > 90) break;
+    if (seen.size >= rules.maximum) break;
   }
   if (!signs.length) return;
   // 512×96 cells as before, separated by an 8 px gutter of the background colour so

@@ -3,7 +3,6 @@ import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/sta
 import { inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
-import { originalFacadeStreets } from './facades.js';
 
 export function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -26,24 +25,16 @@ export function buildUrbanFurniture() {
     g.add(m);
     return m;
   }
-  const protectedPoints = [
-    [186, -156],
-    [-279, -95],
-    [133, -229],
-    [188, 185],
-    [207, 141],
-    [-95, -12],
-    [-35, -174],
-    [-99, -15],
-    [-215, -145],
-  ];
+  // Reglas y posiciones en web/city-design.json (sección `furniture`).
+  const rules = world.cityDesign.furniture,
+    [lampMinX, lampMaxX, lampMinZ, lampMaxZ] = world.cityDesign.zones.streetLamps;
   function clear(x, z, r = 0.35) {
     return (
       Math.abs(x) < world.worldW / 2 - 3 &&
       Math.abs(z) < world.worldH / 2 - 3 &&
       !inBuilding(x, z, r) &&
       !waterAreas.some((p) => pInside(x, z, p.p)) &&
-      !protectedPoints.some((p) => Math.hypot(x - p[0], z - p[1]) < 5) &&
+      !rules.protectedPoints.some((p) => Math.hypot(x - p[0], z - p[1]) < rules.protectedRadius) &&
       !streetEnvironment.colliders.some((p) => Math.hypot(x - p.x, z - p.z) < p.r + r + 0.35)
     );
   }
@@ -106,20 +97,26 @@ export function buildUrbanFurniture() {
     collider(x, z, 0.14);
     streetEnvironment.bollards++;
   }
-  const lampPoints = [];
+  const lampPoints = [],
+    lamps = rules.streetLamps;
   for (const s of segments) {
-    if (!originalFacadeStreets.includes(s.name) || s.length < 10) continue;
-    for (let at = 7; at < s.length; at += 22) {
+    if (
+      !world.cityDesign.frontages.originalStreets.includes(s.name) ||
+      s.length < lamps.minimumSegment
+    )
+      continue;
+    for (let at = lamps.start; at < s.length; at += lamps.spacing) {
       let u = at / s.length,
         x = lerp(s.a[0], s.b[0], u),
         z = lerp(s.a[1], s.b[1], u);
-      if (x < -355 || x > 90 || z < -230 || z > 100) continue;
+      if (x < lampMinX || x > lampMaxX || z < lampMinZ || z > lampMaxZ) continue;
       let nx = -(s.b[1] - s.a[1]) / s.length,
         nz = (s.b[0] - s.a[0]) / s.length;
       for (let side of [1, -1]) {
-        let xx = x + nx * (s.width / 2 + 0.48) * side,
-          zz = z + nz * (s.width / 2 + 0.48) * side;
-        if (lampPoints.some((p) => Math.hypot(xx - p[0], zz - p[1]) < 14)) continue;
+        let xx = x + nx * (s.width / 2 + lamps.offset) * side,
+          zz = z + nz * (s.width / 2 + lamps.offset) * side;
+        if (lampPoints.some((p) => Math.hypot(xx - p[0], zz - p[1]) < lamps.minimumSeparation))
+          continue;
         if (clear(xx, zz, 0.35)) {
           lamp(xx, zz);
           lampPoints.push([xx, zz]);
@@ -129,43 +126,43 @@ export function buildUrbanFurniture() {
     }
   }
   // Plaza de las Bodegas: slender red lamps echo the photographic market reference.
-  for (let i = 0; i < 5; i++) {
-    let x = lerp(-258, -192, i / 4) + 7,
-      z = lerp(-167, -93, i / 4) - 6;
+  const plaza = rules.plazaLamps;
+  for (let i = 0; i < plaza.count; i++) {
+    let x = lerp(plaza.from[0], plaza.to[0], i / (plaza.count - 1)) + plaza.shift[0],
+      z = lerp(plaza.from[1], plaza.to[1], i / (plaza.count - 1)) + plaza.shift[1];
     lamp(x, z, true);
-    if (i % 2 === 0) {
-      bench(x + 2.5, z - 2, -0.7);
-      bin(x + 4.4, z - 1.2);
+    if (i % plaza.benchEvery === 0) {
+      bench(x + plaza.bench[0], z + plaza.bench[1], plaza.bench[2]);
+      bin(x + plaza.bin[0], z + plaza.bin[1]);
     }
   }
-  for (const [x, z, a] of [
-    [-107, -33, 1.4],
-    [-105, 20, 1.4],
-    [-118, 45, 1.4],
-    [-48, -45, -0.7],
-    [-173, -87, -0.7],
-    [-299, -120, -0.6],
-  ]) {
+  for (const [x, z, a] of rules.benches) {
     bench(x, z, a);
-    bin(x + 2.3, z);
+    bin(x + rules.binOffset, z);
   }
   // Bollards protect pedestrian edges; keep the centreline and mission access clear.
+  const bollards = rules.bollards;
   for (const s of segments) {
-    if (!['Calle Constitución', 'Calle de la Plaza'].includes(s.name) || s.length < 12) continue;
-    for (let at = 3; at < s.length - 3; at += 9) {
+    if (!bollards.streets.includes(s.name) || s.length < bollards.minimumSegment) continue;
+    for (let at = bollards.start; at < s.length - bollards.endMargin; at += bollards.spacing) {
       let u = at / s.length,
         x = lerp(s.a[0], s.b[0], u),
         z = lerp(s.a[1], s.b[1], u),
         nx = -(s.b[1] - s.a[1]) / s.length,
         nz = (s.b[0] - s.a[0]) / s.length;
       for (let side of [-1, 1])
-        bollard(x + nx * (s.width / 2 + 0.2) * side, z + nz * (s.width / 2 + 0.2) * side);
+        bollard(
+          x + nx * (s.width / 2 + bollards.offset) * side,
+          z + nz * (s.width / 2 + bollards.offset) * side,
+        );
     }
   }
-  for (const p of world.mappedStreetObjects) {
-    if (p.tags.highway === 'street_lamp') lamp(p.x, p.z);
-    if (p.tags.amenity === 'bench') bench(p.x, p.z);
-  }
+  const builders = { lamp: (p) => lamp(p.x, p.z), bench: (p) => bench(p.x, p.z) };
+  for (const p of world.mappedStreetObjects)
+    for (const [tag, kind] of Object.entries(rules.fromOsm)) {
+      const [key, value] = tag.split('=');
+      if (p.tags[key] === value) builders[kind](p);
+    }
   // Static batching keeps all furniture to one draw call per material.
   staging.updateMatrixWorld(true);
   let batches = new Map();

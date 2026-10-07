@@ -293,7 +293,7 @@ web/
   game-data.js          sin cambios (lugares, miradores, encargos, población)
   progress.js           sin cambios
   measure.js            sin cambios
-  facade-profiles.json  paleta, sombras de calle, política de alturas (se reduce en fase 2)
+  facade-profiles.json  paleta, celda de lotes y política de alturas (reducido en fase 2)
   facade-designs.json   NUEVO (fase 2): recetas y composiciones de fachada
   city-design.json      NUEVO (fase 2): zonas, reglas de calle, mobiliario, vegetación
   map-corrections.json  NUEVO (fase 2): correcciones manuales sobre OSM y Catastro
@@ -1090,6 +1090,95 @@ Las cinco preguntas abiertas están resueltas; el plan se ejecuta con estas deci
 4. **Modo `?debug`**: disponible también en la web publicada.
 5. **Reanclar el Mercado**: sí, en un commit `feat` propio, separado del refactor, con
    huella nueva documentada y revisión visual del usuario antes de seguir.
+
+### 11.1 Decisiones tras la parada de 2.4 (6/10/2026)
+
+- **Criterio nuevo del usuario**: se aceptan decisiones que mejoren el diseño aunque la
+  escena deje de ser idéntica a `main`. Condiciones: van en commits `feat` propios,
+  separados de los commits de refactor (que siguen exigiendo huella idéntica); el mensaje
+  y el informe explican el cambio; se regenera la referencia de huella después del commit
+  (`/tmp/chiclana-fp/base.json`, guardando la anterior con otro nombre) y se adjuntan
+  capturas antes y después en los puntos de VB. Nunca se cambian coordenadas reales,
+  contornos ni calles.
+- **`roof`**: una cubierta por edificio, compuesta tras todos sus muros (como `nave()`
+  original), no una por frente. Un nodo `roof` en el nivel del edificio, no de la receta.
+- **`commercialStreet`**: la regla pasa a datos. El contexto de expresión expone `hash`
+  (el hash determinista por frente que ya usa el código) y `street`; la regla exacta
+  actual (incluido `hash % 3`) se escribe como expresión en el diseño, de modo que el
+  resultado no cambia. Si una regla más clara mejora el diseño, aplicarla después en un
+  commit `feat` según el criterio anterior.
+- **`outwardOf(building, edge)`**: se extrae al kit en 2.8, cuando lo necesiten los anclajes
+  `front`.
+- **Colores paramétricos**: el campo `color` acepta también una expresión (cadena que empieza
+  por `=`) o un parámetro de receta cuyo valor sea `#hex` o `$paleta`; el compositor valida
+  el resultado y falla con un error claro si no es un color.
+- **Puntos dentro del mundo**: `|x| ≤ size[0]/2` y `|z| ≤ size[1]/2` (origen centrado).
+
+### 11.2 Notas de ejecución de los pasos 2.5 a 2.8 (6/10/2026)
+
+- `roof` pasa a ser la clave `roof: {y, color}` del edificio (no un nodo de receta); `y` y
+  `color` se evalúan con los parámetros de la receta del único frente `landmarkRing`. El
+  compositor admite colores `=expresión` y por nombre de parámetro o variable; el
+  resultado debe ser `#rrggbb` o `$paleta`. Commit `feat` previo a 2.6, escena idéntica.
+- Las expresiones no tienen cadenas, así que `street` (el nombre) se expone pero no se
+  puede comparar en una expresión: `commercialStreet` lo calcula el juego a partir de
+  `frontages.residentialStreets` y la receta escribe `commercialStreet && hash % 3 != 0`.
+  `hash` y `seed` valen lo mismo.
+- 2.8: `bayWidth` y `streetShades` salen de `facade-profiles.json` y viven en la receta
+  `street-generic` (parámetro y `pick`); el juego aplica la receta con `composeFront`
+  (no hay un edificio por frente). `validateFacadeDesigns` recibe `frontRecipes` para
+  comprobar esa receta con las variables de frente. `outwardOf` está en el kit y la usan
+  `prepareFacades` y el anclaje `front` de un frente no seleccionado (con `street` vacío).
+- `facade-profiles.json` conserva `palette`, `facadeCellSize` y `heightPolicy`.
+
+### 11.3 Decisiones tras la parada de 2.8 (6/10/2026)
+
+- **Calles comerciales**: se mantiene la lista `frontages.residentialStreets` en
+  `city-design.json` y el booleano `commercialStreet` calculado por el juego. No se añaden
+  cadenas a `expr.js`: la lista en datos es más clara y suficiente.
+- **`bayWidth` y `streetShades`** viven en la receta `street-generic`: cada receta es
+  dueña de su aspecto. Aceptado.
+- **`facade-profiles.json`** queda solo con paleta, `facadeCellSize` y política de alturas.
+  En 2.9, mover a `city-design.json` las listas de INVENTARIO-DATOS.md (lugares, encargos,
+  miradores, zonas, puntos protegidos) y dejar `facade-profiles.json` con eso únicamente.
+- **Esquema de `city-design.json`**: crear `schemas/city-design.schema.json` en 2.9 y
+  añadir el `$schema` al fichero.
+- K3 y K4 se leen con las precisiones de 11.2 (`roof` por edificio, `composeFront` para
+  frentes genéricos).
+
+### 11.4 Notas de ejecución de los pasos 2.9 a 2.12 (6/10/2026)
+
+- 2.9 se hizo en cinco commits `refactor`, todos con huella idéntica y sin cambiar la lista de
+  recursos: el esquema y el `$schema` (`schemas/city-design.schema.json`), y después
+  mobiliario, pavimentos y señales, vegetación y edificios genéricos. Cada commit amplía a la
+  vez `city-design.json`, `validateCityDesign` (con una especificación por sección), su
+  prueba negativa en `tests/verify-design.mjs` y las comprobaciones cruzadas de
+  `tests/verify-world.mjs` (puntos dentro del mundo, calles y tipos de vía existentes en OSM).
+- Al pasar los literales a datos se añadieron al ejemplo los números que seguían escondidos
+  en el código, con el mismo valor: `plazaLamps.bench` y `plazaLamps.bin`,
+  `bollards.endMargin`, `crossings.edgeStart` y `edgeEnd`, `centerLines.start`, `endMargin` y
+  `halfWidth`, las alturas `water`, `deck` y `railing`, `vegetation.marketTrees.roadClearance`,
+  `buildingClearance` y `colliderClearance` y `vegetation.shrubBuildingClearance`. Las
+  farolas de calle usan `frontages.originalStreets`, como antes. Las operaciones de coma
+  flotante conservan el orden original (por ejemplo `lerp(from, to, i / (count - 1)) + shift`).
+- Lugares, miradores y encargos siguen en `web/game-data.js`. La lista de 11.3 los nombra,
+  pero INVENTARIO-DATOS.md los declara ya en datos y mantiene el módulo (lo importan de forma
+  síncrona el juego, la validación de partidas guardadas y los tests); moverlos a JSON
+  obliga a cambiar la validación de `progress.js` y a cargarlos antes de importar esos
+  módulos. Queda pendiente de que el usuario confirme si se quiere.
+- 2.10: `map-corrections.json` es obligatorio (error claro si no carga), va vacío y sin
+  `appliesTo` (los hashes de la base harían saltar `verify-world` en cada regeneración; las
+  guardas de cada corrección ya protegen). Se implementan las operaciones de K7; `building.hide`
+  de D9 no existe (K7 prevalece: ocultar edificios cambiaría los índices de frente). El SHA-256
+  del contorno es una función propia síncrona porque `crypto.subtle` no existe en contextos
+  no seguros (juego servido por HTTP en la red local). `verify-world` exige además que
+  `frontages.json` coincida con los contornos ya corregidos.
+- 2.11: el panel tiene dos botones, «Copiar anclaje» (`facade-designs.json`) y «Copiar
+  corrección» (esqueleto `road.movePoint` de `map-corrections.json`), en vez de uno. El
+  fragmento queda también en un cuadro de texto por si el portapapeles no está disponible.
+- 2.12: el orden de edición documentado es editar, `node tests/verify-design.mjs`,
+  `export-provenance`, `npm test`, porque `npm test` antes de `export-provenance` falla por el
+  checksum desfasado.
 
 ## 12. Fuentes consultadas
 

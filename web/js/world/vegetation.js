@@ -42,6 +42,8 @@ export function buildTrees() {
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
   gfx.scene.add(vegetation);
+  // Densidad, separaciones y árboles de la plaza en web/city-design.json (sección `vegetation`).
+  const rules = world.cityDesign.vegetation;
   let points = [...world.city.trees];
   for (const a of world.city.areas) {
     if (a.kind !== 'park' || a.p.length < 3) continue;
@@ -51,7 +53,11 @@ export function buildTrees() {
       mxx = Math.max(...xs),
       mnz = Math.min(...zs),
       mxz = Math.max(...zs);
-    for (let i = 0; i < Math.min(100, ((mxx - mnx) * (mxz - mnz)) / 105); i++) {
+    for (
+      let i = 0;
+      i < Math.min(rules.parkMaximum, ((mxx - mnx) * (mxz - mnz)) / rules.parkDensity);
+      i++
+    ) {
       let x = lerp(mnx, mxx, rnd()),
         z = lerp(mnz, mxz, rnd()),
         near = nearestRoad(x, z);
@@ -59,25 +65,28 @@ export function buildTrees() {
         Math.abs(x) > world.worldW / 2 ||
         Math.abs(z) > world.worldH / 2 ||
         !pInside(x, z, a.p) ||
-        inBuilding(x, z, 1.8) ||
+        inBuilding(x, z, rules.buildingClearance) ||
         !near ||
-        near.d < near.s.width / 2 + 2 ||
-        points.some((p) => Math.hypot(x - p[0], z - p[1]) < 4.2)
+        near.d < near.s.width / 2 + rules.roadClearance ||
+        points.some((p) => Math.hypot(x - p[0], z - p[1]) < rules.spacing)
       )
         continue;
       points.push([x, z]);
     }
   }
   // Street trees at the market plaza, kept off the carriageway and facades.
-  for (let i = 0; i < 5; i++) {
-    let x = lerp(-254, -195, i / 4) + 9,
-      z = lerp(-164, -98, i / 4) - 8;
+  const market = rules.marketTrees;
+  for (let i = 0; i < market.count; i++) {
+    let x = lerp(market.from[0], market.to[0], i / (market.count - 1)) + market.shift[0],
+      z = lerp(market.from[1], market.to[1], i / (market.count - 1)) + market.shift[1];
     let near = nearestRoad(x, z);
     if (
-      !inBuilding(x, z, 1.8) &&
+      !inBuilding(x, z, market.buildingClearance) &&
       near &&
-      near.d > near.s.width / 2 + 1.2 &&
-      !streetEnvironment.colliders.some((p) => Math.hypot(x - p.x, z - p.z) < 2)
+      near.d > near.s.width / 2 + market.roadClearance &&
+      !streetEnvironment.colliders.some(
+        (p) => Math.hypot(x - p.x, z - p.z) < market.colliderClearance,
+      )
     )
       points.push([x, z]);
   }
@@ -152,15 +161,15 @@ export function buildTrees() {
   const shrubs = [];
   for (const a of world.city.areas) {
     if (a.kind !== 'park') continue;
-    for (let i = 0; i < a.p.length; i += 3) {
+    for (let i = 0; i < a.p.length; i += rules.shrubEveryVertex) {
       let p = a.p[i],
         near = nearestRoad(...p);
       if (
         Math.abs(p[0]) > world.worldW / 2 ||
         Math.abs(p[1]) > world.worldH / 2 ||
-        inBuilding(...p, 0.7) ||
+        inBuilding(...p, rules.shrubBuildingClearance) ||
         !near ||
-        near.d < near.s.width / 2 + 1
+        near.d < near.s.width / 2 + rules.shrubRoadClearance
       )
         continue;
       shrubs.push(p);

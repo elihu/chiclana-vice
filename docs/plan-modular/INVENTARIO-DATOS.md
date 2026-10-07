@@ -1,6 +1,12 @@
 # Anexo: inventario de datos y de diseño en el código
 
 Parte de [PLAN-MODULAR.md](../PLAN-MODULAR.md), fase 2. Estado de `main` 5666928.
+
+**Estado al cerrar la fase 2**: las filas con destino FD y CD están migradas
+(`facade-designs.json` y `city-design.json`). Siguen en el código los modelos (farola,
+banco, papelera, bolardo, árbol), las texturas, las celdas de agrupación (85, 170 y 255 m),
+la escena y la cámara, y `game-data.js` (lugares, miradores, encargos): ver la sección 11.4
+de PLAN-MODULAR.md. La tabla de abajo describe el punto de partida.
 Coordenadas en metros locales (x este, z sur).
 
 ## Ya en datos

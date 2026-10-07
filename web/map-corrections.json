@@ -1,0 +1,8 @@
+{
+  "$schema": "../schemas/map-corrections.schema.json",
+  "version": 1,
+  "license": "ODbL-1.0",
+  "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "attribution": "© OpenStreetMap contributors; corrections by the Chiclana Vice project. Building vertices from D.G. del Catastro INSPIRE BU.",
+  "corrections": []
+}

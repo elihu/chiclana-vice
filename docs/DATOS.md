@@ -8,13 +8,83 @@ regenerar los datos.
 
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
 `buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Carga además la
-ortofoto `aerial.jpg`, `facade-profiles.json` (parámetros de fachadas propios,
-obligatorio) y `height-samples.json` (alturas IGN; si falta, el juego usa la altura por
-plantas). `web/data-sources.json` registra fuente, condiciones y SHA-256 de
+ortofoto `aerial.jpg`, `facade-profiles.json` (paleta y política de alturas propias,
+obligatorio), `facade-designs.json` (recetas y composiciones de fachada, obligatorio),
+`city-design.json` (zonas, reglas de calle, mobiliario, pavimentos, vegetación y edificios
+genéricos, obligatorio), `map-corrections.json` (correcciones manuales sobre la base,
+obligatorio, hoy vacío) y `height-samples.json` (alturas IGN; si falta, el juego usa la
+altura por plantas). `web/data-sources.json` registra fuente, condiciones y SHA-256 de
 cada archivo de datos publicado.
 
-Las recetas de geometría siguen en `web/js/world/facades.js`: separar parámetros en JSON no equivale
-a hornear la escena.
+Las recetas de geometría de fachada están en `web/facade-designs.json` y las ejecuta el
+compositor (`web/js/world/facade-composer.js`) con las piezas del kit
+(`web/js/world/facade-kit.js`): describir la geometría en JSON no equivale a hornear la
+escena.
+
+## Diseños y correcciones (a mano)
+
+Cuatro archivos de `web/` no los genera ninguna herramienta: `facade-designs.json`,
+`city-design.json`, `map-corrections.json` y `facade-profiles.json` (este último solo con
+la paleta de fachadas, `facadeCellSize` y la política de alturas, que sí escribe
+`export-height-policy.mjs`). Cada uno lleva un `$schema` hacia `schemas/` para que el
+editor ofrezca ayuda; el validador de `web/js/world/design-validate.js` es la referencia
+(formato en [plan-modular/KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md)).
+
+Orden al editarlos:
+
+```fish
+node tests/verify-design.mjs        # valida la estructura de los archivos editados
+node tools/export-provenance.mjs    # recalcula los SHA-256 de data-sources.json
+npm test                            # comprobaciones cruzadas con las capas de base
+```
+
+(`npm test` antes de `export-provenance` falla solo por el checksum desfasado.) Un cambio de
+aspecto no idéntico va en un commit `feat` propio; ver las condiciones en
+[PLAN-MODULAR.md](PLAN-MODULAR.md#111-decisiones-tras-la-parada-de-24-6102026).
+
+- `facade-designs.json`: recetas de fachada y los edificios que las aplican a frentes
+  anclados (`front`, `ring`, `landmarkRing`, segmento o `world`). Un anclaje `front` usa un
+  ID de `frontages.json` y su `footprintSha256`.
+- `city-design.json`: qué calles reciben frentes genéricos (`frontages`), zonas,
+  mobiliario fijo, pavimentos, pasos de peatones, línea central, vegetación, señales y
+  paleta, colores y alturas mínimas de los edificios genéricos. Los modelos (farola,
+  banco, árbol…) y las texturas siguen en el código.
+- `map-corrections.json`: ajustes sobre las vías, las áreas y los contornos catastrales,
+  aplicados en memoria al cargar. Cada corrección lleva una guarda (`expect`) con el
+  valor que debe encontrar; si OSM se regenera y no coincide, el juego y `verify-world`
+  fallan con «Corrección fix-NNN no aplicable». No se modifican `osm-world.json` ni
+  `buildings.json`. Por derivar de OSM, el archivo es ODbL 1.0.
+
+Ejemplo, desde el modo `?debug` (ver [DESARROLLO.md](DESARROLLO.md#modo-de-depuración-debug)):
+
+1. Abre `http://localhost:8080/?debug`, empieza la partida y toca el punto del mapa.
+2. Pulsa «Copiar corrección» y pega el fragmento en `corrections` de
+   `web/map-corrections.json`; renumera `id` (`fix-001`, `fix-002`…), ajusta `to` y
+   rellena `reason`:
+
+   ```json
+   {
+     "id": "fix-001",
+     "op": "road.movePoint",
+     "road": { "id": "141515046", "occurrence": 0 },
+     "index": 3,
+     "expect": [184.84, -157.36],
+     "to": [185.2, -157.0],
+     "reason": "la calzada invade la acera",
+     "evidence": "ortofoto PNOA 2022-07",
+     "date": "2026-10-06"
+   }
+   ```
+
+3. Ejecuta los tres comandos de arriba. Operaciones: `road.set`, `road.movePoint`,
+   `road.insertPoint`, `road.add`, `road.remove`, `area.movePoint` y
+   `building.moveVertex`; las guardas de cada una, en KIT-FACHADAS.md (K7). Una corrección
+   de `building.moveVertex` cambia el `footprintSha256` de esa parte: regenera
+   `frontages.json` en el mismo commit (`node tools/export-facades.mjs`).
+
+«Copiar anclaje» da `{ "front": …, "footprintSha256": … }` para un frente de
+`facade-designs.json`; solo es válido si el frente está catalogado en `frontages.json`
+(el panel lo indica).
 
 ## Reglas
 

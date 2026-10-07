@@ -1132,3 +1132,55 @@ textarea {
     font-size: 12px;
   }
 }
+
+/* Inspector del modo ?debug (js/debug/inspector.js): solo existe con ?debug en la URL. */
+.debugPanel {
+  position: fixed;
+  z-index: 60;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: calc(env(safe-area-inset-left) + 8px);
+  width: min(380px, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 16px));
+  max-height: 46vh;
+  overflow: auto;
+  padding: 10px 12px;
+  background: #142a32f2;
+  border: 1px solid #e7fa8a66;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  touch-action: pan-y;
+}
+.debugPanel[hidden] {
+  display: none;
+}
+.debugPanel dl {
+  margin: 8px 0;
+}
+.debugPanel dt {
+  color: var(--lime);
+  margin-top: 6px;
+}
+.debugPanel dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.debugPanel button {
+  min-height: 44px;
+  padding: 0 12px;
+  margin: 0 6px 6px 0;
+  background: #e7fa8a22;
+  border: 1px solid #e7fa8a66;
+  border-radius: 4px;
+}
+.debugPanel .debugClose {
+  float: right;
+}
+.debugOutput {
+  width: 100%;
+  background: #0a161b;
+  color: var(--white);
+  border: 1px solid #ffffff33;
+  font:
+    11px/1.35 ui-monospace,
+    monospace;
+}

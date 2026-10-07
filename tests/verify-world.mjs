@@ -4,6 +4,13 @@ import { createHash } from 'node:crypto';
 import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
+import { KIT_PIECES } from '../web/js/world/facade-kit.js';
+import {
+  validateCityDesign,
+  validateCorrections,
+  validateFacadeDesigns,
+} from '../web/js/world/design-validate.js';
+import { applyCorrections } from '../web/js/world/corrections.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -72,12 +79,131 @@ for (const f of catalog.fronts) {
   const measured = heights.entries.find((s) => s.index === f.buildingIndex);
   assert.equal(f.height, measured?.height ?? b.h, 'front uses current independent height');
 }
+// Diseños de fachada: validación estructural y comprobaciones cruzadas con las capas.
+{
+  const designs = read('web/facade-designs.json'),
+    palette = read('web/facade-profiles.json').palette,
+    city = read('web/city-design.json'),
+    cityErrors = validateCityDesign(city, { recipes: Object.keys(designs.recipes) }),
+    errors = validateFacadeDesigns(designs, {
+      kitPieces: KIT_PIECES,
+      palette,
+      frontRecipes: [city.frontages.recipe],
+    });
+  assert.deepEqual(cityErrors, [], 'city design valid:\n' + cityErrors.join('\n'));
+  assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
+  const inside = (p) =>
+    Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;
+  const landmarks = world.landmarks || [];
+  // Zonas y calles de city-design.json: dentro del mundo y con vías reales en OSM.
+  for (const [name, [x0, x1, z0, z1]] of Object.entries(city.zones))
+    for (const p of [
+      [x0, z0],
+      [x1, z1],
+    ])
+      assert(inside(p), `zone ${name} corner inside the world`);
+  const roadNames = new Set(world.roads.map((r) => r.name));
+  for (const street of city.frontages.streets)
+    assert(roadNames.has(street), `frontage street ${street} exists in OSM roads`);
+  // Mobiliario: puntos dentro del mundo y calles de los pivotes con vías reales.
+  const furniture = city.furniture;
+  for (const p of [
+    ...furniture.protectedPoints,
+    furniture.plazaLamps.from,
+    furniture.plazaLamps.to,
+    ...furniture.benches.map((b) => b.slice(0, 2)),
+    city.vegetation.marketTrees.from,
+    city.vegetation.marketTrees.to,
+  ])
+    assert(inside(p), `furniture point ${p} inside the world`);
+  for (const street of furniture.bollards.streets)
+    assert(roadNames.has(street), `bollard street ${street} exists in OSM roads`);
+  for (const m of city.buildings.minimumHeights.filter((x) => x.center))
+    assert(inside(m.center), `minimum height ${m.name} inside the world`);
+  // Tipos de vía de city-design.json: existen en OSM y los peatonales no son circulables.
+  const roadTypes = new Set(world.roads.map((r) => r.type));
+  for (const type of city.pavements.nonDrivableTypes)
+    assert(roadTypes.has(type), `non-drivable type ${type} exists in OSM roads`);
+  for (const type of city.pavements.pedestrianTypes)
+    assert(city.pavements.nonDrivableTypes.includes(type), `pedestrian type ${type} not drivable`);
+  const claimed = new Map();
+  for (const b of designs.buildings) {
+    if (b.landmark)
+      assert(
+        landmarks.some((l) => l.name.includes(b.landmark)),
+        `landmark ${b.landmark} exists`,
+      );
+    for (const f of b.fronts) {
+      const a = f.anchor;
+      for (const p of [a.a, a.b, a.center, ...(a.ring || [])].filter(Boolean))
+        assert(inside(p), `anchor point inside the world in ${b.id}`);
+      if (a.landmarkRing)
+        assert(
+          landmarks.some((l) => l.name.includes(a.landmarkRing)),
+          `landmarkRing ${a.landmarkRing}`,
+        );
+      if (a.front) {
+        const entry = catalog.fronts.find((x) => x.id === a.front);
+        assert(entry, `front ${a.front} exists in frontages.json`);
+        assert.equal(entry.footprintSha256, a.footprintSha256, `footprint hash of ${a.front}`);
+        assert(
+          !claimed.has(a.front),
+          `front ${a.front} anchored by ${claimed.get(a.front)} and ${b.id}`,
+        );
+        claimed.set(a.front, b.id);
+      }
+    }
+  }
+}
+// Correcciones manuales: archivo válido y aplicable sobre las capas de base, sin tocarlas.
+{
+  const file = read('web/map-corrections.json'),
+    errors = validateCorrections(file);
+  assert.deepEqual(errors, [], 'map corrections valid:\n' + errors.join('\n'));
+  const layers = structuredClone({
+      roads: world.roads,
+      areas: world.areas,
+      buildings: world.buildings,
+    }),
+    applied = applyCorrections(layers, file);
+  assert.equal(applied.length, file.corrections.length, 'every published correction applies');
+  for (const r of layers.roads) {
+    assert(r.p.length >= 2 && Number.isFinite(r.w) && r.w > 0, 'valid road after corrections');
+    for (const p of r.p) assert(p.length === 2 && p.every(Number.isFinite));
+  }
+  for (const c of file.corrections)
+    if (c.add) assert.equal(c.add.id, c.id, 'road.add id equals the correction id');
+  // Un contorno corregido cambia su huella: frontages.json se regenera en el mismo commit.
+  for (const front of catalog.fronts)
+    assert.equal(
+      createHash('sha256')
+        .update(JSON.stringify(layers.buildings[front.buildingIndex].p))
+        .digest('hex'),
+      front.footprintSha256,
+      `frontages.json matches the corrected footprint of ${front.id}`,
+    );
+  if (file.appliesTo?.osmSha256)
+    assert.equal(
+      createHash('sha256').update(fs.readFileSync('web/osm-world.json')).digest('hex'),
+      file.appliesTo.osmSha256,
+      'corrections apply to the current osm-world.json',
+    );
+  if (file.appliesTo?.buildingsSha256)
+    assert.equal(
+      createHash('sha256').update(fs.readFileSync('web/buildings.json')).digest('hex'),
+      file.appliesTo.buildingsSha256,
+      'corrections apply to the current buildings.json',
+    );
+}
 for (const file of [
   'game3d.js',
   'index.html',
   'height-samples.json',
   'world.json',
   'facade-profiles.json',
+  'facade-designs.json',
+  'city-design.json',
+  'map-corrections.json',
 ]) {
   assert(
     !/REDIAM|portalrediam/i.test(fs.readFileSync(`web/${file}`, 'utf8')),

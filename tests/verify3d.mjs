@@ -23,6 +23,8 @@ assert.equal(
     'aerial-2048.jpg',
     'height-samples.json',
     'facade-profiles.json',
+    'facade-designs.json',
+    'city-design.json',
     'street-objects.json',
   ])
     assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
@@ -727,4 +729,83 @@ assert(windowListeners.pointerdown, 'first touch enables touch mode');
   g.frame(5000);
   assert.equal(g.renderer.renders, renders, 'no render after context loss');
   console.log('Context loss blocks resuming passed');
+}
+
+// Modo ?debug: el módulo solo se pide con ?debug; el inspector localiza edificio, frente y vía.
+{
+  const app = fs.readFileSync('web/js/app.js', 'utf8');
+  assert.equal(app.match(/debug\/inspector\.js/g).length, 1, 'un único import del inspector');
+  assert(
+    /has\('debug'\)\)\s*\(await import\('\.\/debug\/inspector\.js'\)\)/.test(app),
+    'el inspector se importa dinámicamente solo con ?debug',
+  );
+  assert.equal(globalThis.location, undefined, 'el arnés arranca sin ?debug');
+  assert.equal(els.debugPanel, undefined, 'sin ?debug no hay panel');
+
+  const { inspectPoint, installInspector, isTap, fragments, formatInfo } =
+    await import('../web/js/debug/inspector.js');
+  // Un punto conocido de la calle Jesús Nazareno: 0,2 m fuera de un frente catalogado.
+  const front = g.facadeWork.fronts.find((f) => f.street === 'Calle Jesús Nazareno');
+  assert(front, 'hay frentes en la calle Jesús Nazareno');
+  const x = (front.a[0] + front.q[0]) / 2 + front.nx * 0.2,
+    z = (front.a[1] + front.q[1]) / 2 + front.nz * 0.2,
+    info = inspectPoint(x, z);
+  assert.equal(info.building.index, front.buildingIndex, 'edificio del punto');
+  assert.equal(info.front.id, front.id, 'frente del punto');
+  assert(info.front.catalogued, 'frente catalogado en frontages.json');
+  assert.equal(info.road.name, 'Calle Jesús Nazareno', 'vía del punto');
+  assert.deepEqual(
+    [info.point.x, info.point.z],
+    [Math.round(x * 100) / 100, Math.round(z * 100) / 100],
+  );
+  assert.match(info.building.footprintSha256, /^[0-9a-f]{64}$/);
+  const { anchor, correction } = fragments(info, '2026-10-06');
+  assert.deepEqual(anchor, { front: front.id, footprintSha256: info.building.footprintSha256 });
+  const { validateCorrections } = await import('../web/js/world/design-validate.js');
+  assert.deepEqual(
+    validateCorrections({
+      version: 1,
+      license: 'ODbL-1.0',
+      attribution: 'x',
+      corrections: [correction],
+    }),
+    [],
+    'la corrección copiada es válida',
+  );
+  // En mitad del mar de agua o lejos de todo no hay edificio ni frente.
+  assert.equal(inspectPoint(-5000, -5000).building, null);
+  assert(
+    formatInfo(info).some(([label]) => label === 'Jugador'),
+    'incluye la posición del jugador',
+  );
+
+  // Un toque son menos de 6 px y menos de 350 ms con el mismo puntero.
+  const down = { id: 1, x: 100, y: 100, t: 0 };
+  assert(isTap(down, { id: 1, x: 103, y: 104, t: 200 }), 'toque corto');
+  assert(!isTap(down, { id: 1, x: 120, y: 100, t: 100 }), 'arrastre');
+  assert(!isTap(down, { id: 1, x: 100, y: 100, t: 400 }), 'pulsación larga');
+  assert(!isTap(down, { id: 2, x: 100, y: 100, t: 100 }), 'otro puntero');
+
+  // El panel se crea oculto y los oyentes no pisan los del juego (addEventListener).
+  const root = {
+      items: [],
+      appendChild(e) {
+        this.items.push(e);
+      },
+    },
+    canvas = els.world,
+    before = canvas.onpointerdown;
+  const { panel } = installInspector(g, { root });
+  assert.equal(root.items[0], panel);
+  assert.equal(panel.hidden, true, 'panel oculto hasta el primer toque');
+  assert.equal(canvas.onpointerdown, before, 'no sustituye el oyente de arrastre');
+  const fire = (type, init) => {
+    for (const f of canvas.listeners[type] ?? []) f({ target: canvas, pointerId: 7, ...init });
+  };
+  fire('pointerdown', { clientX: 100, clientY: 100 });
+  fire('pointerup', { clientX: 140, clientY: 100 });
+  assert.equal(panel.hidden, true, 'un arrastre no abre el panel');
+  console.log(
+    'Debug inspector passed: point, front and road found; tap rules; no cost without ?debug',
+  );
 }

@@ -38,12 +38,23 @@ visual del usuario y publicación.
   pausa con Espacio y cierre con Escape, sin excepciones JavaScript. No acredita
   rendimiento en GPU, móvil físico o ejecución de CI.
 
+Las medidas de las portadas, los campanarios y las naves de iglesia están en
+`web/facade-designs.json` (recetas editables sin tocar el código), con lo que se cierra
+el pendiente SP-5 de la auditoría.
+
+## Diseño desde datos (rama `feat/diseno-datos`)
+
+Pendiente de revisión visual del usuario e integración. Las fachadas, las reglas de calle
+y las correcciones manuales del mapa están en `web/facade-designs.json`,
+`web/city-design.json` y `web/map-corrections.json`; el modo `?debug` ayuda a editarlos
+([DATOS.md](DATOS.md#diseños-y-correcciones-a-mano)). Verificado en CPU (`npm run check`,
+huella de escena idéntica a `main`) y en Chrome sin interfaz con SwiftShader; no en GPU
+real ni en móvil.
+
 ## Pendientes
 
 Los identificadores remiten a la auditoría del 6/10/2026.
 
-- SP-5: revisar qué medidas de portadas y campanarios siguen en las recetas de
-  iglesias; las naves ya usan los perfiles.
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Recargar la ortofoto al cambiar de calidad en caliente; muros de `buildBuildings` aún
   en DoubleSide; `nearestRoad` crea objetos por tramo en cada frame.

@@ -91,6 +91,7 @@ sin bundler ni compilación:
 | `js/world/`      | Carga de capas, índice espacial y constructores (edificios, fachadas, calles…) |
 | `js/game/`       | Grafo y rutas, vehículos, personas, tráfico, policía, misiones, jugador, bucle |
 | `js/ui/`         | Avisos, HUD, mapa, diálogos, entrada y controles                               |
+| `js/debug/`      | Inspector del modo `?debug`; se carga solo con `?debug`                        |
 | `js/app.js`      | `startGame`, `init`, `frame` y `showStartupError`                              |
 | `js/test-api.js` | API de pruebas (`createPublicApi`, `createTestApi`)                            |
 
@@ -100,6 +101,15 @@ puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudRea
 que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
 ciclo.
 
+- **Fachadas desde datos**: las fachadas detalladas (Ayuntamiento, Mercado, naves y
+  portadas de iglesia, frentes genéricos de calle) son recetas de `web/facade-designs.json`
+  que ejecuta `world/facade-composer.js` con las piezas de `world/facade-kit.js`
+  (`engine/expr.js` evalúa las expresiones). `web/city-design.json` fija qué calles y zonas
+  reciben frentes y con qué receta. `world/design-validate.js` valida ambos al cargar y en
+  `tests/verify-world.mjs`; el formato está en `docs/plan-modular/KIT-FACHADAS.md`.
+- **Correcciones del mapa**: `world/corrections.js` aplica `web/map-corrections.json` a las
+  vías, áreas y contornos en `loadWorld`, tras validar las capas y antes de construir el
+  grafo. Es una función pura de datos (sin DOM ni Three).
 - **Sin efectos de nivel superior**: ningún módulo toca `document`, `window`,
   `localStorage` ni registra oyentes al evaluarse; todo ocurre dentro de funciones que
   llama `startGame()`. Así Node puede importar cualquier módulo sin DOM.
@@ -115,6 +125,20 @@ ciclo.
 - **Cambiar la versión**: sustituir todas las apariciones a la vez, por ejemplo
   `sed -i 's/?v=[^"]*"/?v=NUEVA"/g' web/index.html`; `verify-modules.mjs` detecta
   cualquier olvido.
+
+## Modo de depuración (`?debug`)
+
+Con `?debug` en la URL (también en la web publicada) `startGame` importa
+`js/debug/inspector.js`; sin él, el módulo ni se pide y el juego no cambia. Un toque corto
+sobre el lienzo (menos de 6 px y 350 ms, así que el arrastre de cámara no lo activa) abre un
+panel con las coordenadas locales del punto (rayo contra edificios y fachadas, o el plano
+`y = 0`), el edificio, el frente `building-<i>-edge-<e>` (con indicación de si está en
+`frontages.json`), la vía OSM más cercana (`id`, aparición, nombre y vértice), el objeto de
+calle a menos de 3 m, el monumento que lo contiene y la posición y el rumbo del jugador.
+«Copiar anclaje» y «Copiar corrección» ponen el fragmento JSON en el portapapeles
+(también queda en un cuadro de texto, porque el portapapeles exige un contexto seguro: HTTPS
+o `localhost`). El procedimiento de edición está en [DATOS.md](DATOS.md#diseños-y-correcciones-a-mano).
+No se ha probado en un móvil físico.
 
 ## Modo ligero
 
