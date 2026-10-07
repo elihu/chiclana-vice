@@ -4,7 +4,40 @@ import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/sta
 import { nearestRoad } from './spatial.js';
 import { surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
-import { groundHeightAt } from '../engine/terrain-sampling.js';
+import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
+import { pInside, pointSeg } from '../core/math.js';
+
+const pointSegDistance = (q, polygon) =>
+  Math.min(...polygon.map((p, i) => pointSeg(...q, p, polygon[(i + 1) % polygon.length]).d));
+
+function platformGeometry(polygon) {
+  const top = flatGeometry(polygon),
+    flat = top.toNonIndexed(),
+    a = flat.getAttribute('position').array,
+    positions = [];
+  for (let i = 0; i < a.length; i += 9) {
+    positions.push(...a.slice(i, i + 9));
+    for (const k of [2, 1, 0])
+      positions.push(a[i + k * 3], a[i + k * 3 + 1] - 0.12, a[i + k * 3 + 2]);
+  }
+  for (let i = 0; i < polygon.length; i++) {
+    const p = polygon[i],
+      q = polygon[(i + 1) % polygon.length],
+      v = [
+        [p[0], 0, p[1]],
+        [q[0], 0, q[1]],
+        [q[0], -0.12, q[1]],
+        [p[0], -0.12, p[1]],
+      ];
+    for (const k of [0, 1, 2, 0, 2, 3]) positions.push(...v[k]);
+  }
+  top.dispose();
+  flat.dispose();
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  g.computeVertexNormals();
+  return g;
+}
 
 export function buildRoadDetails() {
   // Reglas y alturas de capa en web/city-design.json (secciones `centerLines` y `pavements`).
@@ -54,7 +87,24 @@ export function buildRoadDetails() {
   for (const a of waterAreas) {
     // Aproximación visual por tramo: lámina horizontal en la cota mínima del borde.
     const y = world.terrain.kind === 'flat' ? 0 : Math.min(...a.p.map((p) => groundHeightAt(...p)));
-    water.push({ geometry: flatGeometry(a.p), matrix: at(0, y + heights.water, 0) });
+    let geometry = flatGeometry(a.p);
+    if (world.surfaces) {
+      const positions = geometry.toNonIndexed().getAttribute('position').array;
+      geometry.dispose();
+      geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        'position',
+        new THREE.Float32BufferAttribute(
+          drapeTriangles(positions, null, world.surfaces.waterHeightAt).position,
+          3,
+        ),
+      );
+      geometry.computeVertexNormals();
+    }
+    water.push({ geometry, matrix: at(0, world.surfaces ? heights.water : y + heights.water, 0) });
+  }
+  for (const p of world.surfaces?.platforms || []) {
+    decks.push({ geometry: platformGeometry(p.polygon), matrix: at(0, p.y + heights.deck, 0) });
   }
   for (const r of world.city.roads) {
     if (!r.bridge) continue;
@@ -134,8 +184,9 @@ export function buildStreetSurfaces() {
       local = road.p.some(
         (p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ,
       );
-    if (!local) continue;
-    let g = groups[pedestrian ? 'stone' : 'asphalt'],
+    if (!local && !world.surfaces) continue;
+    let output = groups[pedestrian ? 'stone' : 'asphalt'],
+      g = world.surfaces ? { p: [], uv: [] } : output,
       along = 0;
     for (let i = 1; i < road.p.length; i++) {
       let a = road.p[i - 1],
@@ -148,24 +199,48 @@ export function buildStreetSurfaces() {
         nz = dx / len,
         half = Math.max(paved.minimumHalfWidth, road.w / 2),
         y = pedestrian ? heights.stone : heights.asphalt;
-      let p = [
-        [a[0] + nx * half, y, a[1] + nz * half],
-        [a[0] - nx * half, y, a[1] - nz * half],
-        [b[0] - nx * half, y, b[1] - nz * half],
-        [b[0] + nx * half, y, b[1] + nz * half],
-      ];
-      tri(g, p, [
-        [0, along / 4],
-        [half / 2, along / 4],
-        [half / 2, (along + len) / 4],
-        [0, (along + len) / 4],
-      ]);
+      const count = world.surfaces
+        ? Math.max(1, Math.ceil(len / world.cityDesign.terrainSurfaces.roads.pavementStep))
+        : 1;
+      for (let k = 0; k < count; k++) {
+        const aa = [a[0] + (dx * k) / count, a[1] + (dz * k) / count],
+          bb = [a[0] + (dx * (k + 1)) / count, a[1] + (dz * (k + 1)) / count];
+        let p = [
+          [aa[0] + nx * half, y, aa[1] + nz * half],
+          [aa[0] - nx * half, y, aa[1] - nz * half],
+          [bb[0] - nx * half, y, bb[1] - nz * half],
+          [bb[0] + nx * half, y, bb[1] + nz * half],
+        ];
+        tri(g, p, [
+          [0, (along + (len * k) / count) / 4],
+          [half / 2, (along + (len * k) / count) / 4],
+          [half / 2, (along + (len * (k + 1)) / count) / 4],
+          [0, (along + (len * (k + 1)) / count) / 4],
+        ]);
+      }
       along += len;
       streetEnvironment.surfaces++;
+    }
+    if (world.surfaces) {
+      const mesh = drapeTriangles(g.p, g.uv, (x, z) => surfaceHeightAt(x, z, null, road.id));
+      output.p.push(...mesh.position);
+      output.uv.push(...mesh.uv);
     }
   }
   // Mapped pedestrian squares retain their real polygon outlines.
   for (const a of world.city.areas) {
+    if (
+      world.surfaces?.platforms.some(
+        (p) =>
+          p.area === a ||
+          (a.kind === 'square' &&
+            a.p.filter((q) => pInside(...q, p.polygon) || pointSegDistance(q, p.polygon) < 3)
+              .length /
+              a.p.length >
+              0.8),
+      )
+    )
+      continue;
     if (
       a.kind !== 'square' ||
       !a.p.some(
@@ -190,7 +265,10 @@ export function buildStreetSurfaces() {
   for (const g of Object.values(groups)) {
     if (!g.p.length) continue;
     let geo = new THREE.BufferGeometry();
-    const draped = drapeTriangles(g.p, g.uv);
+    const draped =
+      world.surfaces && g !== groups.slabs
+        ? { position: g.p, uv: g.uv }
+        : drapeTriangles(g.p, g.uv);
     geo.setAttribute('position', new THREE.Float32BufferAttribute(draped.position, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(draped.uv, 2));
     geo.computeVertexNormals();

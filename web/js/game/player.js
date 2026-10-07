@@ -34,6 +34,8 @@ export function rescue() {
     player.car.health = 100;
   }
   Object.assign(player, p);
+  player.surfaceY = undefined;
+  if (player.car) player.car.surfaceY = undefined;
   state.health = 100;
   snapCamera();
   toast('Traslado a la Alameda y reparación · 100 €', 4);
@@ -54,7 +56,7 @@ export function interact() {
       let x = c.x + Math.cos(c.a) * 2.2 * sign,
         z = c.z - Math.sin(c.a) * 2.2 * sign;
       // La puerta no puede atravesar un muro (p. ej., hacia un patio cerrado).
-      if (!blocked(x, z, 0.35) && !crossesWall(c.x, c.z, x, z)) {
+      if (!blocked(x, z, 0.35, c.surfaceY ?? null) && !crossesWall(c.x, c.z, x, z)) {
         exit = { x, z };
         break;
       }
@@ -64,6 +66,7 @@ export function interact() {
       return;
     }
     player.car = null;
+    player.surfaceY = c.surfaceY;
     Object.assign(player, exit);
     player.speed = 0;
     toast('A pie · Usa el joystick. Arrastra la escena para mirar.', 3);
@@ -80,6 +83,7 @@ export function interact() {
       setHeat(1);
     }
     player.car = c;
+    c.surfaceRoad = undefined;
     player.x = c.x;
     player.z = c.z;
     player.a = c.a;
@@ -125,7 +129,12 @@ export function updatePlayer(dt) {
     }
     for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
       const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
-      if (other === c || d(c, other) > 3.1) continue;
+      if (
+        other === c ||
+        d(c, other) > 3.1 ||
+        Math.abs((c.surfaceY ?? 0) - (other.surfaceY ?? 0)) > 2
+      )
+        continue;
       if (session.collisionClock <= 0 && Math.abs(c.speed) > 3) {
         c.health -= 5;
         c.speed *= -0.15;
@@ -154,12 +163,13 @@ export function updatePlayer(dt) {
     if (mag > 0.1) {
       let nx = player.x + Math.sin(a) * v * dt,
         nz = player.z + Math.cos(a) * v * dt;
-      if (!blocked(nx, player.z, 0.28)) player.x = nx;
-      if (!blocked(player.x, nz, 0.28)) player.z = nz;
+      if (!blocked(nx, player.z, 0.28, player.surfaceY ?? null)) player.x = nx;
+      if (!blocked(player.x, nz, 0.28, player.surfaceY ?? null)) player.z = nz;
       actors.character.mesh.rotation.y = a;
     }
     player.speed = v;
-    actors.character.mesh.position.set(player.x, surfaceHeightAt(player.x, player.z), player.z);
+    player.surfaceY = surfaceHeightAt(player.x, player.z, player.surfaceY ?? null);
+    actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
     actors.character.limbs.forEach(
       (l, i) =>
         (l.rotation.x =

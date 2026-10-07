@@ -55,7 +55,7 @@ function clip(poly, a, b) {
   return out;
 }
 
-export function drapeTriangles(position, uv = null) {
+export function drapeTriangles(position, uv = null, heightSampler = surfaceHeightAt) {
   if (world.terrain?.kind !== 'grid') return { position, uv };
   const m = world.terrain.manifest,
     result = [],
@@ -88,7 +88,7 @@ export function drapeTriangles(position, uv = null) {
             p = clip(p, cell[edge], cell[(edge + 1) % 3]);
           for (let n = 1; n + 1 < p.length; n++)
             for (const v of [p[0], p[n], p[n + 1]]) {
-              result.push(v[0], v[1] + surfaceHeightAt(v[0], v[2]), v[2]);
+              result.push(v[0], v[1] + heightSampler(v[0], v[2]), v[2]);
               if (tex) tex.push(v[3], v[4]);
             }
         }

@@ -21,10 +21,9 @@ el mundo y el comportamiento anteriores. La revisión local usa una copia separa
 - Actores, bienvenida, cámaras, primera persona, etiquetas y marcadores relativos a la
   superficie. Inclinación visual de vehículos limitada a 15°, sin física vertical.
   Permanecen `crossesWall`, los márgenes de patios, `nearestRoad` y DoubleSide.
-- Índice estático de tableros separado del terreno. **Su perfil inicial une cotas de
-  accesos; es una hipótesis pendiente de resolver para varios tramos reales.** El agua
-  es horizontal por área en el mínimo del borde, una aproximación visual sin medición
-  de profundidad o marea.
+- Superficies de autor separadas del MDT, perfiles de calzada, agua por tramos y
+  plataformas con selección inferior/superior por continuidad y ruta. Contrato,
+  evidencia y aproximaciones en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
 
 ## Auditoría del recorte
 
@@ -38,14 +37,16 @@ la referencia vertical exacta quedan sin confirmar.
 La rejilla derivada cubre exactamente 1343,67 × 1001,88 m: 136 × 102 vértices,
 27.744 bytes de alturas y 27.270 triángulos del suelo. Referencia: 6,909 m muestreados
 en el origen del mapa; no es una cota certificada. Rango del original: 0–52 m. No se
-suavizan pendientes ni se rellena NoData como cero.
+suaviza el MDT original ni se rellena NoData como cero. Los perfiles construidos
+suavizan solo corredores de calzada, según el diseño de autor.
 
 `source-data/terrain-surface-audit.json` se genera sobre las capas corregidas en
-memoria. Registra 148 muestras de vías con pendiente superior al 20%; ese umbral sirve
+memoria. El primer piloto registraba 148 muestras de vías con pendiente superior al
+20%; la composición de superficies reduce esas muestras a 43. Ese umbral sirve
 para revisión, no como límite físico ni criterio de corrección. Algunas partes de
 edificio abarcan cerca de 8 m de desnivel, por lo que los accesos necesitan revisión.
 
-Puntos prioritarios:
+Problemas detectados en el primer piloto, antes de componer plataformas y perfiles:
 
 | Zona                            | Coordenadas locales aproximadas | Motivo                                                                                                           |
 | ------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -55,11 +56,11 @@ Puntos prioritarios:
 | Pasarelas 1195660889/1195660891 | x 281, z −120                   | Nodo compartido y cotas incompatibles; perfil inicial hasta 2,62 m bajo el MDT en el eje y 2,80 m en los bordes. |
 
 Las dos últimas pasarelas están confirmadas en OSM como `footway`, `bridge=yes`,
-`layer=1`, unidas en el nodo 11097481555. Están dentro de polígonos de plaza, junto a
-la Alameda, al oeste de Remedios; **no cruzan el Iro**. La ortofoto muestra equipamiento
-con diferencias de nivel en ese entorno. Esto identifica el problema, pero no confirma
-la cota estructural del rellano. No se usa una envolvente automática para ocultarlo ni
-se cambian los trazados.
+`layer=1`, unidas en el nodo 11097481555. La revisión posterior identifica sus polígonos
+de plaza como plataforma sobre el Iro y corrige la interpretación inicial de un rellano
+aislado. Ahora comparten cota de plataforma y permiten el paso inferior de Carmen
+Picazo. Remedios incluye también San Sebastián inferior. Las cotas estructurales son
+aproximaciones de autor explícitas, pendientes de revisión; no se cambia el trazado.
 
 ## Reproducción
 
@@ -110,6 +111,13 @@ de geografía.
 - También arrancaron sin errores el plano en raíz y subruta, y el relieve en subruta;
   se comprobó la carga con calidad normal y ligera. Son pruebas de navegador con
   renderizado por software, no aceptación visual de todas las calles.
+- La segunda composición de perfiles y plataformas contiene 1.246.745 triángulos
+  incluyendo instancias y mantiene 112 llamadas de dibujo. El primer intento de
+  refinamiento tenía 1.599.238; se redujo la resolución de construcción y se conserva
+  un perfil longitudinal más fino. Las capturas y pruebas genéricas de Chrome cubren
+  cuatro posiciones, encima y debajo de ambas plataformas, también con calidad ligera:
+  cotas exactas del coche, cámaras finitas y ausencia de bloqueo falso por agua o por
+  objetos del otro nivel. No prueban rendimiento GPU ni aceptación visual completa.
 - Hay capturas de Mercado, Plaza Mayor, San Telmo, Puente Chico, Remedios y pasarela
   problemática en `/tmp/chiclana-relieve-*.png`. Detectan interferencias y no prueban
   que estén corregidas. La medición inicial de cinco segundos con `measure.js` resultó
@@ -117,6 +125,13 @@ de geografía.
 - Pendientes antes de activar/publicar: perfiles de puentes y rellanos, accesos en
   pendiente, revisión visual completa y mediciones comparables. Android físico e iOS
   siguen sin comprobarse con este relieve.
+
+La copia de la primera revisión de superficies permanece congelada mientras se
+recorre. Las correcciones posteriores de máscara de agua y obstáculos por nivel se
+preparan en otra copia física; cambiar de copia exige coordinación para no alterar una
+visita en curso. `browser-smoke.mjs URL google-chrome-stable --surfaces --low` reproduce
+las comprobaciones de alturas, cámaras y transitabilidad a partir del diseño cargado,
+sin coordenadas especiales en el verificador.
 
 Las condiciones y atribución aprobada están exclusivamente en
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

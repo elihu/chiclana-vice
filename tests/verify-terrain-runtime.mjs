@@ -29,7 +29,7 @@ assert.equal(g.terrain.kind, 'grid');
 for (const p of g.people)
   assert.equal(
     p.mesh.position.y,
-    g.surfaceHeightAt(p.mesh.position.x, p.mesh.position.z),
+    g.surfaceHeightAt(p.mesh.position.x, p.mesh.position.z, p.surfaceY, p.s.roadId),
     'peatón ya colocado antes de iniciar',
   );
 for (const b of g.city.buildings) {
@@ -39,7 +39,7 @@ for (const b of g.city.buildings) {
   assert(Math.abs(b.h - (b.floors * policy.floorHeight + policy.baseOffset)) < 1e-8);
 }
 for (const c of g.vehicles) {
-  assert.equal(c.mesh.position.y, g.surfaceHeightAt(c.x, c.z));
+  assert.equal(c.mesh.position.y, g.surfaceHeightAt(c.x, c.z, c.surfaceY, c.surfaceRoad ?? null));
   assert(Math.abs(c.mesh.rotation.x) <= Math.PI / 12);
 }
 g.start();
@@ -58,7 +58,10 @@ g.player.car = null;
 for (const poi of g.pois) {
   Object.assign(g.player, g.safePoint(poi.x, poi.z));
   g.update(1 / 60);
-  assert.equal(actors.character.mesh.position.y, g.surfaceHeightAt(g.player.x, g.player.z));
+  assert.equal(
+    actors.character.mesh.position.y,
+    g.surfaceHeightAt(g.player.x, g.player.z, g.player.surfaceY),
+  );
 }
 const positions = [];
 g.scene.traverse((o) => {

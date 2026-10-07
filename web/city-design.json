@@ -5,11 +5,36 @@
   "license": "ODbL-1.0",
   "attribution": "Street names © OpenStreetMap contributors; building anchors from D.G. del Catastro INSPIRE BU",
   "zones": {
-    "frontagePilot": [-410, 110, -270, 125],
-    "frontageOriginal": [-365, 90, -230, 125],
-    "streetLamps": [-355, 90, -230, 100],
-    "pavedRoads": [-370, 100, -250, 110],
-    "pavedSquares": [-360, 100, -240, 100]
+    "frontagePilot": [
+      -410,
+      110,
+      -270,
+      125
+    ],
+    "frontageOriginal": [
+      -365,
+      90,
+      -230,
+      125
+    ],
+    "streetLamps": [
+      -355,
+      90,
+      -230,
+      100
+    ],
+    "pavedRoads": [
+      -370,
+      100,
+      -250,
+      110
+    ],
+    "pavedSquares": [
+      -360,
+      100,
+      -240,
+      100
+    ]
   },
   "frontages": {
     "streets": [
@@ -29,7 +54,9 @@
       "Calle Caraza",
       "Calle Jesús Nazareno"
     ],
-    "residentialStreets": ["Calle Constitución"],
+    "residentialStreets": [
+      "Calle Constitución"
+    ],
     "minimumEdge": 3.3,
     "sideProbe": 0.45,
     "maximumRoadDistance": 17,
@@ -38,15 +65,42 @@
   },
   "furniture": {
     "protectedPoints": [
-      [186, -156],
-      [-279, -95],
-      [133, -229],
-      [188, 185],
-      [207, 141],
-      [-95, -12],
-      [-35, -174],
-      [-99, -15],
-      [-215, -145]
+      [
+        186,
+        -156
+      ],
+      [
+        -279,
+        -95
+      ],
+      [
+        133,
+        -229
+      ],
+      [
+        188,
+        185
+      ],
+      [
+        207,
+        141
+      ],
+      [
+        -95,
+        -12
+      ],
+      [
+        -35,
+        -174
+      ],
+      [
+        -99,
+        -15
+      ],
+      [
+        -215,
+        -145
+      ]
     ],
     "protectedRadius": 5,
     "streetLamps": {
@@ -57,25 +111,68 @@
       "minimumSeparation": 14
     },
     "plazaLamps": {
-      "from": [-258, -167],
-      "to": [-192, -93],
-      "shift": [7, -6],
+      "from": [
+        -258,
+        -167
+      ],
+      "to": [
+        -192,
+        -93
+      ],
+      "shift": [
+        7,
+        -6
+      ],
       "count": 5,
       "benchEvery": 2,
-      "bench": [2.5, -2, -0.7],
-      "bin": [4.4, -1.2]
+      "bench": [
+        2.5,
+        -2,
+        -0.7
+      ],
+      "bin": [
+        4.4,
+        -1.2
+      ]
     },
     "benches": [
-      [-107, -33, 1.4],
-      [-105, 20, 1.4],
-      [-118, 45, 1.4],
-      [-48, -45, -0.7],
-      [-173, -87, -0.7],
-      [-299, -120, -0.6]
+      [
+        -107,
+        -33,
+        1.4
+      ],
+      [
+        -105,
+        20,
+        1.4
+      ],
+      [
+        -118,
+        45,
+        1.4
+      ],
+      [
+        -48,
+        -45,
+        -0.7
+      ],
+      [
+        -173,
+        -87,
+        -0.7
+      ],
+      [
+        -299,
+        -120,
+        -0.6
+      ]
     ],
     "binOffset": 2.3,
     "bollards": {
-      "streets": ["Calle Constitución", "Calle de la Plaza"],
+      "streets": [
+        "Calle Constitución",
+        "Calle de la Plaza"
+      ],
       "minimumSegment": 12,
       "start": 3,
       "endMargin": 3,
@@ -88,8 +185,17 @@
     }
   },
   "pavements": {
-    "pedestrianTypes": ["pedestrian", "footway", "path"],
-    "nonDrivableTypes": ["footway", "pedestrian", "cycleway", "path"],
+    "pedestrianTypes": [
+      "pedestrian",
+      "footway",
+      "path"
+    ],
+    "nonDrivableTypes": [
+      "footway",
+      "pedestrian",
+      "cycleway",
+      "path"
+    ],
     "minimumHalfWidth": 0.65,
     "layerHeights": {
       "asphalt": 0.028,
@@ -135,9 +241,18 @@
     "roadClearance": 2,
     "buildingClearance": 1.8,
     "marketTrees": {
-      "from": [-254, -164],
-      "to": [-195, -98],
-      "shift": [9, -8],
+      "from": [
+        -254,
+        -164
+      ],
+      "to": [
+        -195,
+        -98
+      ],
+      "shift": [
+        9,
+        -8
+      ],
       "count": 5,
       "roadClearance": 1.2,
       "buildingClearance": 1.8,
@@ -166,13 +281,19 @@
     "minimumHeights": [
       {
         "name": "Arquillo del Reloj",
-        "center": [207.09, 140.89],
+        "center": [
+          207.09,
+          140.89
+        ],
         "radius": 9,
         "height": 17
       },
       {
         "name": "Iglesia Mayor",
-        "center": [233.29, 174.98],
+        "center": [
+          233.29,
+          174.98
+        ],
         "radius": 24,
         "height": 12
       },
@@ -184,5 +305,95 @@
       }
     ],
     "wallUvWidth": 4.8
+  },
+  "terrainSurfaces": {
+    "version": 1,
+    "roads": {
+      "sampleStep": 2,
+      "smoothingRadius": 16,
+      "shoulder": 3,
+      "bridgeAnchorRadius": 4,
+      "pavementStep": 4,
+      "meshSubdivisions": 2
+    },
+    "water": {
+      "percentile": 0.2,
+      "bedDepth": 0.8,
+      "shoreWidth": 2,
+      "axis": "z",
+      "sliceLength": 50,
+      "maximumSlope": 0.003
+    },
+    "platforms": [
+      {
+        "id": "gran-plaza-iro",
+        "areaAnchor": {
+          "kind": "square",
+          "vertex": [
+            299.79,
+            -178.61
+          ],
+          "vertexCount": 7
+        },
+        "heightAnchors": [
+          {
+            "roadId": "1195660890",
+            "vertex": 0,
+            "offset": 0
+          },
+          {
+            "roadId": "1195660890",
+            "vertex": 2,
+            "offset": 0
+          }
+        ],
+        "deckRoads": [
+          "1195660889",
+          "1195660891"
+        ],
+        "lowerRoads": [
+          "142718392"
+        ],
+        "clearance": 3.2,
+        "evidence": [
+          "https://www.openstreetmap.org/way/645257882",
+          "https://www.openstreetmap.org/way/183510852",
+          "Aproximación de autor: plataforma plana entre accesos y gálibo 3,2 m; no cotas medidas."
+        ]
+      },
+      {
+        "id": "tablero-remedios",
+        "roadAnchor": {
+          "roadId": "50664224",
+          "width": 24
+        },
+        "heightAnchors": [
+          {
+            "roadId": "50664224",
+            "vertex": 0,
+            "offset": 0
+          },
+          {
+            "roadId": "50664224",
+            "vertex": 2,
+            "offset": 0
+          }
+        ],
+        "deckRoads": [
+          "50664224",
+          "759565061",
+          "759565062"
+        ],
+        "lowerRoads": [
+          "141508088"
+        ],
+        "clearance": 3.2,
+        "evidence": [
+          "https://www.openstreetmap.org/way/1109772445",
+          "https://www.openstreetmap.org/way/50664224",
+          "Aproximación de autor: tablero plano y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas."
+        ]
+      }
+    ]
   }
 }

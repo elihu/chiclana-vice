@@ -80,6 +80,7 @@ export const world = {
   streetNames: [],
   terrain: null,
   bridgeGrid: null,
+  surfaces: null,
 };
 export const gfx = {
   renderer: null,

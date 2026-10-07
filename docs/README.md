@@ -30,5 +30,7 @@ documento; los demás enlazan a él.
 
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
+- [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
+  perfiles de autor y niveles superior/inferior.
 - [Relieve provisional y reproducción](TERRENO_PILOTO.md): implementación de la rama,
   auditoría, copia local de revisión y pendientes antes de activar los datos.

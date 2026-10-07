@@ -46,6 +46,9 @@ export function createPublicApi() {
     get terrain() {
       return world.terrain;
     },
+    get surfaceModel() {
+      return world.surfaces;
+    },
     get character() {
       return actors.character;
     },

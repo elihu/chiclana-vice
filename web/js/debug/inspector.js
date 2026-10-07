@@ -88,6 +88,17 @@ export function inspectPoint(x, z, y = 0) {
   info.terrain = {
     ground: round2(groundHeightAt(x, z)),
     surface: round2(surfaceHeightAt(x, z)),
+    raw: world.surfaces ? round2(world.surfaces.rawHeightAt(x, z)) : null,
+    platforms:
+      world.surfaces?.platforms
+        .filter((p) => pInside(x, z, p.polygon))
+        .map((p) => ({
+          id: p.id,
+          height: round2(p.y),
+          clearance: p.clearance,
+          lowerRoads: p.lowerRoads,
+          evidence: p.evidence,
+        })) ?? [],
     referenceElevation: world.terrain?.manifest?.referenceElevation ?? null,
     verticalReference: world.terrain?.manifest?.verticalReference ?? 'plano',
     units: 'y relativa a referencia; x,z locales en metros',

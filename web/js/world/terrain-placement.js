@@ -2,8 +2,10 @@ import { pInside } from '../core/math.js';
 import { world } from '../core/state.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
+import { createSurfaceModel } from '../engine/surface-model.js';
 
 export function prepareTerrainPlacement() {
+  world.surfaces = createSurfaceModel(world.city, world.terrain, world.cityDesign?.terrainSurfaces);
   const bridges = new Map();
   world.bridgeGrid = bridges;
   for (const r of world.city.roads) {
@@ -11,8 +13,8 @@ export function prepareTerrainPlacement() {
     // Perfil de aproximación: une cotas de ambos accesos, sin inventar profundidad del río.
     const lengths = r.p.slice(1).map((b, i) => Math.hypot(b[0] - r.p[i][0], b[1] - r.p[i][1])),
       total = lengths.reduce((a, b) => a + b, 0),
-      y0 = groundHeightAt(...r.p[0]),
-      y1 = groundHeightAt(...r.p.at(-1));
+      y0 = world.surfaces?.profiles.get(r.id)?.[0]?.y0 ?? groundHeightAt(...r.p[0]),
+      y1 = world.surfaces?.profiles.get(r.id)?.at(-1)?.y1 ?? groundHeightAt(...r.p.at(-1));
     let along = 0;
     r.bridgeProfile = [];
     for (let i = 1; i < r.p.length; i++) {

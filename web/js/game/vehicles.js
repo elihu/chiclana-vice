@@ -137,7 +137,11 @@ export function nearestCar() {
     md = 5.5;
   for (const c of vehicles) {
     let di = d(c, player);
-    if (di < md && Math.abs(c.speed) < 3) {
+    if (
+      di < md &&
+      Math.abs(c.speed) < 3 &&
+      Math.abs((c.surfaceY ?? 0) - (player.surfaceY ?? 0)) < 2
+    ) {
       md = di;
       best = c;
     }
@@ -149,10 +153,10 @@ export function carCollision(c, x, z) {
   let f = 1.4,
     r = 0.7;
   return (
-    blocked(x, z, 0.55) ||
-    blocked(x + Math.sin(c.a) * f, z + Math.cos(c.a) * f, 0.45) ||
-    blocked(x - Math.sin(c.a) * f, z - Math.cos(c.a) * f, 0.45) ||
-    blocked(x + Math.cos(c.a) * r, z - Math.sin(c.a) * r, 0.2) ||
-    blocked(x - Math.cos(c.a) * r, z + Math.sin(c.a) * r, 0.2)
+    blocked(x, z, 0.55, c.surfaceY ?? null) ||
+    blocked(x + Math.sin(c.a) * f, z + Math.cos(c.a) * f, 0.45, c.surfaceY ?? null) ||
+    blocked(x - Math.sin(c.a) * f, z - Math.cos(c.a) * f, 0.45, c.surfaceY ?? null) ||
+    blocked(x + Math.cos(c.a) * r, z - Math.sin(c.a) * r, 0.2, c.surfaceY ?? null) ||
+    blocked(x - Math.cos(c.a) * r, z + Math.sin(c.a) * r, 0.2, c.surfaceY ?? null)
   );
 }

@@ -12,8 +12,10 @@ del IGN y una malla de aproximadamente 10 m. Edificios, fachadas, pavimentos, ob
 actores y cámaras deben compartir la referencia vertical. Conservar coordenadas en
 planta, contornos, patios, plantas, calles, misiones, controles y modo ligero.
 
-La física y las rutas seguirán en 2D. No implementar gravedad, saltos, dinámica de
-suspensión, túneles ni circulación simultánea encima y debajo de un puente. Las alturas
+La física y las rutas siguen en planta. La revisión del usuario amplía el alcance para
+permitir circulación encima y debajo de plataformas: selección por continuidad y vía,
+en un diseño validado y generalizable. No implementar gravedad, saltos ni dinámica de
+suspensión. El contrato actualizado está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Las alturas
 `b.h`, `visualH` y `renderH` siguen siendo alturas relativas del edificio; la cota del
 terreno se suma por separado. No usar `height-samples.json` como terreno: contiene
 alturas de edificios normalizadas al suelo.
@@ -186,7 +188,7 @@ interpolar longitudinalmente y revisar continuidad y pendiente. Parámetros manu
 solo en diseño validado y con justificación. La lámina de agua tiene una cota propia
 coherente por tramo, no se drapea sobre el terreno. No inventar profundidad de cauce ni
 nivel de marea como si fueran mediciones. Resolver la ambigüedad arriba/abajo dentro del
-alcance 2D antes de activar un puente como superficie transitable.
+alcance ampliado de dos niveles antes de activar un puente como superficie transitable.
 
 **Aceptación:** recorrido de ambos sentidos por los puentes, sin salto de cota, coches
 hundidos ni agua atravesando tableros. Las pendientes problemáticas bloquean el cierre
@@ -264,14 +266,17 @@ plano; no sustituir las cotas por valores inventados para cerrar los tests.
 
 La implementación y evidencia están en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 
-| Fase | Estado de aceptación                                                                      |
-| ---- | ----------------------------------------------------------------------------------------- |
-| A    | Recorte y evidencia recuperados; faltan resolver pendientes de superficies reales.        |
-| B    | Contrato, exportación reproducible y alternativas de carga comprobados.                   |
-| C    | Bases, cubiertas, muros y fachadas adaptados; accesos reales requieren revisión.          |
-| D    | Pavimentos cortados y perfiles indexados; no cerrada por pasarelas y agua.                |
-| E    | Actores, cámaras, marcadores e inspector adaptados; revisión real ligada a D.             |
-| F    | Pruebas CPU y arranque Chrome del piloto; pendientes métricas comparables y móvil físico. |
+| Fase | Estado de aceptación                                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------- |
+| A    | Recorte y evidencia recuperados; faltan resolver pendientes de superficies reales.                    |
+| B    | Contrato, exportación reproducible y alternativas de carga comprobados.                               |
+| C    | Bases, cubiertas, muros y fachadas adaptados; accesos reales requieren revisión.                      |
+| D    | Perfiles suaves, agua por tramos y plataformas en diseño; segunda revisión visual pendiente.          |
+| E    | Actores y cámaras conservan nivel inferior/superior por continuidad y ruta; pruebas sintéticas pasan. |
+| F    | Pruebas CPU y arranque Chrome del piloto; pendientes métricas comparables y móvil físico.             |
 
 El usuario ha aprobado la atribución y solicitado revisar localmente el recorte real.
 Esa revisión no autoriza publicar ni cambia los criterios de aceptación anteriores.
+El usuario confirmó las cuestas generales y pidió corregir calzadas, puentes y río;
+también exigió que la solución de plataformas y pasos inferiores sea generalizable y
+que las instancias locales permanezcan en datos, sin código específico de una plaza.

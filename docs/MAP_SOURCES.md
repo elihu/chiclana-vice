@@ -41,6 +41,11 @@ se sustituye.
   copia local de revisión, sin activar en el juego de la rama. Auditorías:
   `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
   aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+- **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del
+  puente/andén/tranvía, consultadas el 7/10/2026. Anclajes y evidencia en
+  `city-design.json.terrainSurfaces`; perfiles de calzada, lecho visual, plataformas
+  horizontales y gálibos son aproximaciones explícitas. No alteran el MDT original.
+  Procedimiento y límites en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
   https://servicios.idee.es/wcs-inspire/mdt
 - **Three.js r169** local en `web/vendor/`.
 

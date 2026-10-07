@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { SAVE_KEY } from '../web/game-data.js';
 
 const url = process.argv[2] || 'http://127.0.0.1:8080/';
 const chrome = process.argv[3] || 'google-chrome-stable';
@@ -58,6 +59,10 @@ const send = (method, params = {}) =>
 await send('Runtime.enable');
 await send('Network.enable');
 await send('Page.enable');
+if (process.argv.includes('--low'))
+  await send('Page.addScriptToEvaluateOnNewDocument', {
+    source: `localStorage.setItem(${JSON.stringify(SAVE_KEY)},JSON.stringify({cash:250,job:0,found:[],quality:'low'}))`,
+  });
 const t0 = Date.now();
 await send('Page.navigate', { url });
 let state;
@@ -86,15 +91,77 @@ const scene = (
 })()`,
   })
 ).result.result.value;
+const quality = (
+  await send('Runtime.evaluate', {
+    awaitPromise: true,
+    returnByValue: true,
+    expression: "import('./js/core/state.js').then(m=>m.gfx.quality)",
+  })
+).result.result.value;
+if (process.argv.includes('--low') && quality !== 'low') errors.push('Calidad ligera no aplicada');
 const local = requests.filter(
   (u) => u.startsWith(new URL(url).origin) && !u.endsWith('/') && !u.includes('favicon'),
 );
+const surfaceChecks = [];
+if (process.argv.includes('--surfaces') && state.game) {
+  await send('Runtime.evaluate', { expression: "document.getElementById('start').click()" });
+  const cases = (
+    await send('Runtime.evaluate', {
+      returnByValue: true,
+      expression: `(()=>{
+    const g=window.__cityGame,m=g.surfaceModel;if(!m)return [];
+    const cases=[];
+    for(const p of m.platforms) {
+      const x=p.polygon.reduce((s,q)=>s+q[0],0)/p.polygon.length,z=p.polygon.reduce((s,q)=>s+q[1],0)/p.polygon.length;
+      cases.push({id:p.id+'-upper',x,z,y:p.y,upper:true,road:null,a:0});
+      for(const road of p.lowerRoads) {
+        const s=m.profiles.get(road).find(s=>{const x=(s.a[0]+s.b[0])/2,z=(s.a[1]+s.b[1])/2;return m.surfaceHeightAt(x,z)-m.surfaceHeightAt(x,z,null,road)>2.5;});
+        if(s)cases.push({id:p.id+'-lower',x:(s.a[0]+s.b[0])/2,z:(s.a[1]+s.b[1])/2,y:(s.y0+s.y1)/2,upper:false,road,a:Math.atan2(s.dx,s.dz)});
+      }
+    }return cases;
+  })()`,
+    })
+  ).result.result.value;
+  for (const test of cases || []) {
+    const checked = await send('Runtime.evaluate', {
+      awaitPromise: true,
+      returnByValue: true,
+      expression: `(async()=>{
+      const g=window.__cityGame,test=${JSON.stringify(test)},c=g.player.car;
+      Object.assign(c,{x:test.x,z:test.z,a:test.a,speed:0,surfaceY:test.y,surfaceRoad:test.road});
+      Object.assign(g.player,{x:test.x,z:test.z,a:test.a,surfaceY:test.y});
+      const camera=await import('./js/engine/camera.js');
+      while(g.view.mode!==1)camera.cycleCamera();camera.snapCamera();
+      return {id:test.id,expected:test.y,actual:c.mesh.position.y,camera:g.view.position,ceiling:g.surfaceModel.ceilingAt(test.x,test.z,test.y),blocked:g.blocked(test.x,test.z,.3,test.y)};
+    })()`,
+    });
+    surfaceChecks.push(checked.result.result.value);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const screen = await send('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync(
+      path.join(os.tmpdir(), 'chiclana-surface-' + test.id + '.png'),
+      Buffer.from(screen.result.data, 'base64'),
+    );
+  }
+  if (
+    surfaceChecks.some(
+      (s) =>
+        !s ||
+        Math.abs(s.actual - s.expected) > 0.01 ||
+        !s.camera.every(Number.isFinite) ||
+        s.blocked,
+    )
+  )
+    errors.push('Continuidad de superficies incompatible');
+}
 console.log(
   JSON.stringify(
     {
       ms: Date.now() - t0,
       state,
       scene,
+      quality,
+      surfaceChecks,
       errors,
       requests: local.length,
       unversioned: local.filter((u) => !/[?&]v=/.test(u)),

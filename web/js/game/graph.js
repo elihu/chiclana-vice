@@ -21,7 +21,18 @@ export function buildRoadGraph() {
       if (length < 0.2) continue;
       let ai = node(a),
         bi = node(b);
-      let s = { a, b, ai, bi, length, name: r.name, width: r.w, bridge: r.bridge, drive };
+      let s = {
+        a,
+        b,
+        ai,
+        bi,
+        length,
+        name: r.name,
+        width: r.w,
+        bridge: r.bridge,
+        drive,
+        roadId: r.id,
+      };
       // OSM oneway=yes follows the vertex order; walking ignores it (edge.drive only).
       s.oneway = drive && !!r.oneway;
       s.forward = { to: bi, length, drive, s };

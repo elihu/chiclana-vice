@@ -87,11 +87,19 @@ export function nearestRoad(x, z, driveOnly = false) {
   return best && { x: bx, z: bz, d: md, u: bu, s: best };
 }
 
-export function blocked(x, z, r = 0.3) {
+export function blocked(x, z, r = 0.3, reference = null) {
   if (Math.abs(x) > world.worldW / 2 - 5 || Math.abs(z) > world.worldH / 2 - 5) return true;
   if (inBuilding(x, z, r)) return true;
-  if (streetEnvironment.colliders.some((p) => Math.hypot(x - p.x, z - p.z) < p.r + r)) return true;
+  if (
+    streetEnvironment.colliders.some(
+      (p) =>
+        Math.hypot(x - p.x, z - p.z) < p.r + r &&
+        (reference === null || p.y === undefined || Math.abs(p.y - reference) < 2),
+    )
+  )
+    return true;
   if (waterAreas.some((a) => pInside(x, z, a.p))) {
+    if (world.surfaces?.drySurfaceAt(x, z, reference)) return false;
     let n = nearestRoad(x, z);
     if (!n || !n.s.bridge || n.d > n.s.width * 0.55) return true;
   }

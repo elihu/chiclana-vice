@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
+import { validateSurfaceDesign } from '../web/js/engine/surface-model.js';
 import { KIT_PIECES } from '../web/js/world/facade-kit.js';
 import {
   validateCityDesign,
@@ -92,6 +93,11 @@ for (const f of catalog.fronts) {
       frontRecipes: [city.frontages.recipe],
     });
   assert.deepEqual(cityErrors, [], 'city design valid:\n' + cityErrors.join('\n'));
+  assert.deepEqual(
+    validateSurfaceDesign(city.terrainSurfaces, readWorld()),
+    [],
+    'anclajes verticales vigentes',
+  );
   assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
   const inside = (p) =>
     Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;

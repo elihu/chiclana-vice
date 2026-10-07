@@ -12,7 +12,7 @@ import {
 } from '../core/state.js';
 import { lerp, pInside, pointSeg } from '../core/math.js';
 import { toast } from '../ui/feedback.js';
-import { surfaceHeightAt, placeVehicle } from './terrain-sampling.js';
+import { surfaceHeightAt, surfaceCeilingAt, placeVehicle } from './terrain-sampling.js';
 
 export function updateCameraVisibility() {
   if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
@@ -23,15 +23,27 @@ export function updateCameraVisibility() {
   actors.character.mesh.visible = !player.car && view.mode !== 1;
 }
 
-export function snapCamera() {
+export function snapCamera(resetSurface = false) {
+  if (resetSurface) {
+    player.surfaceY = undefined;
+    if (player.car) {
+      player.car.surfaceY = undefined;
+      player.car.surfaceRoad = undefined;
+    }
+  }
   if (player.car) placeVehicle(player.car);
-  else actors.character.mesh.position.set(player.x, surfaceHeightAt(player.x, player.z), player.z);
+  else {
+    player.surfaceY = surfaceHeightAt(player.x, player.z, player.surfaceY ?? null);
+    actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
+  }
   view.orbit = 0;
   view.lookPitch = 0;
   updateCamera(1);
 }
 
 // Sweep against cadastral volumes at the ray height; camera only, no physics changes.
+const actorSurface = () => player.car?.surfaceY ?? player.surfaceY ?? null;
+
 export function cameraSweep(position) {
   let dx = position.x - player.x,
     dz = position.z - player.z,
@@ -41,9 +53,10 @@ export function cameraSweep(position) {
     let u = i / steps,
       x = player.x + dx * u,
       z = player.z + dz * u,
-      y = lerp(surfaceHeightAt(player.x, player.z) + 1.1, position.y, u),
+      y = lerp(surfaceHeightAt(player.x, player.z, actorSurface()) + 1.1, position.y, u),
       pad = 0.18;
-    if (y < surfaceHeightAt(x, z) + pad) return Math.max(0, (i - 1) / steps);
+    if (y < surfaceHeightAt(x, z, actorSurface()) + pad) return Math.max(0, (i - 1) / steps);
+    if (y > surfaceCeilingAt(x, z, actorSurface()) - pad) return Math.max(0, (i - 1) / steps);
     const seen = new Set();
     for (let gx = Math.floor((x - pad) / 25); gx <= Math.floor((x + pad) / 25); gx++)
       for (let gz = Math.floor((z - pad) / 25); gz <= Math.floor((z + pad) / 25); gz++)
@@ -75,11 +88,15 @@ function constrainCamera(position) {
     position.x = lerp(player.x, position.x, u);
     position.z = lerp(player.z, position.z, u);
   }
-  position.y = Math.max(position.y, surfaceHeightAt(position.x, position.z) + 0.25);
+  position.y = Math.max(position.y, surfaceHeightAt(position.x, position.z, actorSurface()) + 0.25);
+  position.y = Math.min(
+    position.y,
+    surfaceCeilingAt(position.x, position.z, actorSurface()) - 0.15,
+  );
 }
 
 export function updateCamera(dt) {
-  const ground = surfaceHeightAt(player.x, player.z);
+  const ground = surfaceHeightAt(player.x, player.z, actorSurface());
   let heading = player.a + view.orbit,
     follow = player.car ? 9.7 : 5.9,
     y = player.car ? 4.7 : 3.2,

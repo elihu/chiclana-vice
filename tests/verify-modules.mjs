@@ -44,7 +44,7 @@ const expected = [
 assert.deepEqual(Object.keys(imports).sort(), expected, 'el importmap lista todos los módulos');
 for (const [k, v] of Object.entries(imports))
   assert.equal(v, k + '?v=' + version, 'versión común en ' + k);
-const preload = [...html.matchAll(/<link rel="modulepreload" href="([^"]+)"/g)].map(
+const preload = [...html.matchAll(/<link\s+rel="modulepreload"\s+href="([^"]+)"/g)].map(
   (m) => './' + m[1],
 );
 assert.deepEqual(

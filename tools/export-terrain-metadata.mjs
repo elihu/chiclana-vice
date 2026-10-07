@@ -18,7 +18,7 @@ createTerrain(
   manifest,
 );
 manifest.meta.terrain = terrain.preview
-  ? 'Relieve MDT provisional: puentes y accesos pendientes de validación.'
+  ? 'Relieve MDT provisional: superficies y accesos pendientes de validación.'
   : 'Relieve de juego derivado del MDT IGN; superficies y accesos aproximados.';
 fs.writeFileSync(directory + '/world.json', JSON.stringify(manifest) + '\n');
 if (baseline)

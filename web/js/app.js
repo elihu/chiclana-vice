@@ -85,10 +85,10 @@ async function init() {
   [world.worldW, world.worldH] = world.city.size;
   loadProgress('Preparando el mundo 3D…', 25);
   setupRenderer();
-  addGroundPlanes(terrainGeometry(terrain), terrainExterior(terrain));
   buildRoadGraph();
   indexBuildings();
   prepareTerrainPlacement();
+  addGroundPlanes(terrainGeometry(terrain), terrainExterior(terrain));
   connectOpenSpaces();
   orientDriveGraph();
   applyHeightSamples(heightSamples);

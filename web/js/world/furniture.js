@@ -47,7 +47,7 @@ export function buildUrbanFurniture() {
     return g;
   }
   function collider(x, z, r) {
-    streetEnvironment.colliders.push({ x, z, r });
+    streetEnvironment.colliders.push({ x, z, r, y: surfaceHeightAt(x, z) });
   }
   function lamp(x, z, modern = false) {
     if (!clear(x, z, 0.32)) return;

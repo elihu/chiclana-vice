@@ -154,13 +154,15 @@ las alturas relativas de edificios; la física y las rutas siguen en planta.
 | `world/terrain-placement.js` | Bases de edificios y monumentos, perfiles e índice estático de puentes.        |
 | `engine/terrain-sampling.js` | Terreno, superficie transitable y colocación/inclinación de vehículos.         |
 | `engine/terrain-drape.js`    | Cortes de aristas y pavimentos contra celdas y diagonales.                     |
+| `engine/surface-model.js`    | Diseño validado de perfiles, agua, plataformas y continuidad entre niveles.    |
 | Constructores y juego        | Bases, objetos, cámaras, actores y marcadores relativos a la misma superficie. |
 
 `app` pasa la geometría del suelo al renderizador; `engine` no importa constructores
 `world`. `reloadGroundTexture` actualiza los materiales sin mover la geometría.
 `cameraSweep` conserva los márgenes de patios y compara con `baseY + renderH`, además
 de comprobar terreno/tableros. El inspector selecciona el suelo real e informa de cotas
-relativas y referencia.
+relativas, referencia y datos de la plataforma seleccionada. El contrato editable
+está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
 
 La implementación y los límites del recorte provisional están en
 [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles reales de varias pasarelas, accesos

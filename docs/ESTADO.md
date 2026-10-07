@@ -50,8 +50,11 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ni integrar el código hasta su revisión. En `feat/relieve-terreno` está implementada
 la carga, malla, bases, pavimentos, actores e inspector; el recorte real se revisa en
 una copia local provisional. La rama conserva el modo plano por defecto. Pendientes:
-perfiles de pasarelas y rellanos, accesos en pendientes, agua, mediciones comparables
+segunda revisión de perfiles, plataformas/pasos inferiores y agua, accesos en pendientes, mediciones comparables
 y móvil físico. Auditoría y comandos: [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+Contrato generalizable y evidencia de las superficies de autor:
+[SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Cuestas generales confirmadas en la
+revisión local del usuario; el motor mantiene ambos niveles por continuidad y ruta.
 
 ## Pendientes
 

@@ -184,7 +184,7 @@ export async function loadLayers() {
     cityDesign,
     terrain,
     warning: terrain.manifest?.preview
-      ? 'Relieve provisional: puentes y accesos pendientes de revisión'
+      ? 'Relieve provisional: superficies y accesos pendientes de revisión'
       : warning,
   };
 }

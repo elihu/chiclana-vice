@@ -1,4 +1,4 @@
-import { groundHeightAt } from '../engine/terrain-sampling.js';
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, lerp, pInside } from '../core/math.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
@@ -113,7 +113,7 @@ export function buildTrees() {
   points.forEach((p, i) => {
     let size = 0.8 + rnd() * 0.55,
       h = 3.3 * size,
-      baseY = groundHeightAt(...p);
+      baseY = surfaceHeightAt(...p);
     dummy.position.set(p[0], baseY + h / 2, p[1]);
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(size, size, size);
@@ -151,7 +151,12 @@ export function buildTrees() {
       branches.setMatrixAt(bk++, dummy.matrix);
     }
     if (!streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
-      streetEnvironment.colliders.push({ x: p[0], z: p[1], r: 0.23 * size });
+      streetEnvironment.colliders.push({
+        x: p[0],
+        z: p[1],
+        r: 0.23 * size,
+        y: surfaceHeightAt(...p),
+      });
   });
   trunk.castShadow = branches.castShadow = crowns.castShadow = true;
   crowns.receiveShadow = true;
@@ -183,7 +188,7 @@ export function buildTrees() {
     shrubs.length,
   );
   shrubs.forEach((p, i) => {
-    dummy.position.set(p[0], groundHeightAt(...p) + 0.42, p[1]);
+    dummy.position.set(p[0], surfaceHeightAt(...p) + 0.42, p[1]);
     dummy.rotation.set(0, i, 0);
     dummy.scale.set(0.8, 0.55, 0.75);
     dummy.updateMatrix();
