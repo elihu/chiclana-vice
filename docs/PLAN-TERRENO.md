@@ -1,6 +1,6 @@
 # Plan de implementación del relieve del terreno
 
-Fecha: 7/10/2026. Base revisada: `main` en `8a8caba`. Estado: **plan, no
+Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **plan, no
 implementado**. Este documento permite ejecutar la incorporación del terreno tras la
 fase 3 del [plan modular](PLAN-MODULAR.md). Complementa el inventario de
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md); en las decisiones de implementación
@@ -19,13 +19,20 @@ suspensión, túneles ni circulación simultánea encima y debajo de un puente. 
 terreno se suma por separado. No usar `height-samples.json` como terreno: contiene
 alturas de edificios normalizadas al suelo.
 
-La ejecución de este plan requiere una tarea de implementación posterior. No autoriza
+La ejecución está solicitada el 7/10/2026, en una rama y worktree propios. No autoriza
 push, etiquetas, publicación, nuevas dependencias ni cambios de atribuciones. Preparar
 las propuestas concretas y pedir las autorizaciones que exige `AGENTS.md` cuando
 corresponda. Los textos legales se mantienen exclusivamente en
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
 
 ## 2. Datos comprobados y decisiones
+
+Revisión contra la versión 1.1.0: conservar `crossesWall` al salir del coche, los
+márgenes de colisión de patios también en `cameraSweep`, la optimización de
+`nearestRoad` y `reloadGroundTexture` al cambiar de calidad. No reintroducir FrontSide
+en los muros: la decisión vigente mantiene DoubleSide. La CI y el despliegue ya se han
+verificado en GitHub; Android ha probado la versión plana, sin FPS medidos. Eso no
+acredita el futuro relieve ni iOS.
 
 El [MDT de PNOA](https://pnoa.ign.es/pnoa-lidar/modelo-digital-del-terreno) representa el
 terreno sin edificios ni vegetación. El [catálogo de servicios del
@@ -127,6 +134,9 @@ coincidentes con los triángulos. La implementación no depende del MDT remoto e
 `world/buildings.js`, `world/facades.js`, `world/facade-kit.js`,
 `world/facade-composer.js` y validadores de diseño cuando haga falta.
 
+- Mantener la integración con `reloadGroundTexture`: los materiales nuevos deben
+  participar en su actualización; cambiar calidad actualiza todo el suelo sin perder
+  alturas ni dejar materiales con texturas liberadas.
 - Crear una malla indexada con normales y UV de la ortofoto en planta. Un material;
   dividir en celdas compartiendo exactamente los vértices de frontera solo si mejora
   una medición. No convertir cada celda de la rejilla en una malla.

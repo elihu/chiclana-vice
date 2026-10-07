@@ -23,13 +23,13 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-| Script                 | Qué hace                                                          |
-| ---------------------- | ----------------------------------------------------------------- |
-| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                 |
-| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración      |
-| `npm run format`       | Aplica el formato                                                 |
-| `npm test`             | `verify-world.mjs` (datos), `verify-modules.mjs` y `verify3d.mjs` |
-| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                      |
+| Script                 | Qué hace                                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                                                |
+| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración                                     |
+| `npm run format`       | Aplica el formato                                                                                |
+| `npm test`             | `verify-world.mjs` (datos), `verify-modules.mjs`, `verify-design.mjs` (diseños) y `verify3d.mjs` |
+| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                                                     |
 
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
@@ -138,7 +138,7 @@ calle a menos de 3 m, el monumento que lo contiene y la posición y el rumbo del
 «Copiar anclaje» y «Copiar corrección» ponen el fragmento JSON en el portapapeles
 (también queda en un cuadro de texto, porque el portapapeles exige un contexto seguro: HTTPS
 o `localhost`). El procedimiento de edición está en [DATOS.md](DATOS.md#diseños-y-correcciones-a-mano).
-No se ha probado en un móvil físico.
+Probado a mano en un móvil Android; no en iOS.
 
 ## Terreno
 
@@ -182,11 +182,14 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
 - Oculta las celdas más allá del final de la niebla.
 - Al arrancar en ligero o en un dispositivo táctil, carga la ortofoto reducida
-  `aerial-2048.jpg`; cambiar la calidad durante la partida no la recarga.
+  `aerial-2048.jpg`. Al cambiar la calidad durante la partida se carga la que toca (la
+  completa solo en calidad normal sin pantalla táctil), se sustituye en el suelo y las
+  cubiertas y se libera la anterior.
 
 La elección se guarda en el navegador (`chiclana-real-v2`) y nunca se activa sola.
 
-No se ha medido todavía su efecto en un móvil físico.
+Funciona en un móvil Android (comprobado a mano); su efecto en el rendimiento no se ha
+medido en un móvil físico.
 
 ## Medir en el navegador
 

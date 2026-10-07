@@ -1,3 +1,4 @@
+import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { applyCorrections } from './corrections.js';
 import { gfx, world } from '../core/state.js';
@@ -91,15 +92,55 @@ export async function loadWorld() {
   };
 }
 
+// Light mode and touch devices use the 2048×1536 derivative (same extent).
+export const aerialFile = () =>
+  gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg';
+
+let aerialPending = null; // { file, promise }: carga en curso, para no pedirla dos veces
+
+// Al cambiar de calidad en caliente: carga la ortofoto que toca, la pone en los materiales
+// que usaban la anterior (suelo y cubiertas) y libera esta. Sin ortofoto inicial no hace nada.
+export function reloadGroundTexture() {
+  const file = aerialFile();
+  if (aerialPending?.file === file) return aerialPending.promise;
+  if (!world.groundTexture || world.groundTextureFile === file) return Promise.resolve(false);
+  const pending = { file },
+    done = (tex) => {
+      if (aerialPending === pending) aerialPending = null;
+      if (!tex) return false;
+      // La calidad ha vuelto a cambiar mientras cargaba: se descarta.
+      if (aerialFile() !== file || !world.groundTexture) {
+        tex.dispose();
+        return false;
+      }
+      const old = world.groundTexture;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      gfx.scene.traverse((o) => {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material])
+          if (m?.map === old) m.map = tex;
+      });
+      world.groundTexture = tex;
+      world.groundTextureFile = file;
+      old.dispose();
+      gfx.needsRender = true;
+      return true;
+    };
+  pending.promise = new gfx.platform.TextureLoader()
+    .loadAsync(asset(file))
+    .catch(() => null)
+    .then(done);
+  aerialPending = pending;
+  return pending.promise;
+}
+
 export async function loadLayers() {
+  const aerial = aerialFile();
   const [res, tex, heightSamples, profiles, streetObjects, designs, cityDesign] = await Promise.all(
     [
       loadWorld(),
-      // Light mode and touch devices start with the 2048×1536 derivative (same extent).
-      // Toggling quality later does not reload it. Without the orthophoto, plain colours.
-      new gfx.platform.TextureLoader()
-        .loadAsync(asset(gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg'))
-        .catch(() => null),
+      // Without the orthophoto, plain colours (reloadGroundTexture then does nothing).
+      new gfx.platform.TextureLoader().loadAsync(asset(aerial)).catch(() => null),
       fetch(asset('height-samples.json'))
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
@@ -121,5 +162,5 @@ export async function loadLayers() {
       }),
     ],
   );
-  return { res, tex, heightSamples, profiles, streetObjects, designs, cityDesign };
+  return { res, tex, aerial, heightSamples, profiles, streetObjects, designs, cityDesign };
 }

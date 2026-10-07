@@ -13,8 +13,9 @@ compacta.
 ## Cambios
 
 - Juego: editar directamente `web/`. No hay compilación ni frameworks.
-- Datos: regenerarlos con `tools/`, nunca a mano (ver
-  [docs/DATOS.md](docs/DATOS.md)).
+- Datos: regenerarlos con `tools/`, nunca a mano. Excepción: los diseños de autor
+  (`facade-designs.json`, `city-design.json` y `map-corrections.json`), que se editan a
+  mano y se validan con `npm test` (ver [docs/DATOS.md](docs/DATOS.md)).
 - Fuentes y aproximaciones: [docs/MAP_SOURCES.md](docs/MAP_SOURCES.md). Licencias:
   [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Ejecutar `npm run check` antes de cada commit que cierre trabajo. Si el cambio afecta a

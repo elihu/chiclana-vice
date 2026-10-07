@@ -27,8 +27,8 @@ Siempre:
 - Agrupa geometría y materiales repetidos; piensa en móviles modestos.
 - Los JSON de datos de `web/` se generan con `tools/`; no los edites a mano (ver
   `tools/AGENTS.md`). Excepción: los archivos de diseño de autor `facade-designs.json`,
-  `city-design.json` y `map-corrections.json` se editan a mano y los valida
-  `tests/verify-world.mjs` (procedimiento en `docs/DATOS.md`); `facade-profiles.json`
+  `city-design.json` y `map-corrections.json` se editan a mano y los validan
+  `tests/verify-design.mjs` y `tests/verify-world.mjs` (procedimiento en `docs/DATOS.md`); `facade-profiles.json`
   conserva solo paleta, celda de lotes y política de alturas.
 - Edita `LICENSE` y `THIRD_PARTY_NOTICES.md` en la raíz; las copias de `web/` se
   regeneran con `node tools/export-provenance.mjs`.
