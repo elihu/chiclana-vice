@@ -27,3 +27,6 @@ documento; los demás enlazan a él.
   ejecutado (fases 0 a 3). Se conserva como registro; la referencia vigente está en
   [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md), salvo el formato de recetas y
   correcciones de [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
+
+- [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
+  puentes, actores y validación por fases; pendiente de implementación.
