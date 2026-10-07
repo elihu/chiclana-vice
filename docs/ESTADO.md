@@ -6,11 +6,10 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.0.0` (6/10/2026). La CI (`ci.yml`) y Dependabot ya se han
-  ejecutado en GitHub sin errores.
-- `main` local lleva, sin publicar, lo que irá en `v1.1.0` (ver «Desde `v1.0.0`»).
+  Actions. Última release: `v1.1.0` (7/10/2026). La CI (`ci.yml`), el despliegue y
+  Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
-  (SwiftShader) arranca sin errores en la raíz y bajo `/chiclana-vice/`. El usuario lo ha
+  (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario lo ha
   probado el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android.
 - No verificado: iOS y FPS medidos en un móvil físico.
 
@@ -29,7 +28,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
-## Desde `v1.0.0`
+## Novedades de `v1.1.0`
 
 - **Juego en módulos ES** bajo `web/js/`, sin cambios de escena ni de comportamiento
   ([DESARROLLO.md](DESARROLLO.md#módulos-del-juego)).
