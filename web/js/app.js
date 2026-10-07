@@ -38,6 +38,7 @@ import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
 import { spawnTraffic } from './game/traffic.js';
+import { flatTerrain } from './world/terrain.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -45,6 +46,7 @@ async function init() {
   const { res, tex, heightSamples, profiles, streetObjects, designs, cityDesign } =
     await loadLayers();
   world.city = res;
+  world.terrain = flatTerrain;
   world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   world.facadeProfiles = profiles;

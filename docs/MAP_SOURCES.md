@@ -58,7 +58,7 @@ se sustituye.
 
 ## Aproximaciones
 
-- Terreno plano. Monumentos simplificados; cubiertas e interiores incompletos.
+- [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.
 - Árboles: puntos de OSM más una plantación aproximada y determinista.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
