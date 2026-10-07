@@ -314,7 +314,9 @@
       "shoulder": 3,
       "bridgeAnchorRadius": 4,
       "pavementStep": 4,
-      "meshSubdivisions": 2
+      "meshSubdivisions": 2,
+      "accessRadius": 6,
+      "maximumAccessStep": 0.75
     },
     "water": {
       "percentile": 0.2,
@@ -322,7 +324,25 @@
       "shoreWidth": 2,
       "axis": "z",
       "sliceLength": 50,
-      "maximumSlope": 0.003
+      "maximumSlope": 0.003,
+      "features": [
+        {
+          "id": "cubeta-alameda",
+          "kind": "basin",
+          "areaAnchor": {
+            "kind": "water",
+            "vertex": [
+              136.05,
+              -194.64
+            ],
+            "vertexCount": 5
+          },
+          "evidence": [
+            "https://www.openstreetmap.org/way/184499839",
+            "OSM water=pond; cubeta horizontal de autor, no nivel medido ni cauce."
+          ]
+        }
+      ]
     },
     "platforms": [
       {
@@ -330,10 +350,10 @@
         "areaAnchor": {
           "kind": "square",
           "vertex": [
-            299.79,
-            -178.61
+            268.23,
+            -130.06
           ],
-          "vertexCount": 7
+          "vertexCount": 9
         },
         "heightAnchors": [
           {
@@ -359,13 +379,15 @@
           "https://www.openstreetmap.org/way/645257882",
           "https://www.openstreetmap.org/way/183510852",
           "Aproximación de autor: plataforma plana entre accesos y gálibo 3,2 m; no cotas medidas."
-        ]
+        ],
+        "thickness": 0.8
       },
       {
         "id": "tablero-remedios",
         "roadAnchor": {
           "roadId": "50664224",
-          "width": 24
+          "width": 24,
+          "lateralOffset": -4
         },
         "heightAnchors": [
           {
@@ -391,7 +413,21 @@
         "evidence": [
           "https://www.openstreetmap.org/way/1109772445",
           "https://www.openstreetmap.org/way/50664224",
-          "Aproximación de autor: tablero plano y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas."
+          "Aproximación de autor: tablero plano y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas.",
+          "https://www.openstreetmap.org/way/759565059",
+          "Desplazamiento y grosor de autor aproximados; reserva de tranvía diferenciada sin simular la línea."
+        ],
+        "thickness": 0.8,
+        "bands": [
+          {
+            "id": "reserva-tranvia",
+            "material": "slabs",
+            "roadAnchor": {
+              "roadId": "50664224",
+              "width": 6,
+              "lateralOffset": -13
+            }
+          }
         ]
       }
     ]

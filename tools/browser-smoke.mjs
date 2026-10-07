@@ -104,6 +104,25 @@ const local = requests.filter(
 );
 const surfaceChecks = [];
 if (process.argv.includes('--surfaces') && state.game) {
+  const walking = await send('Runtime.evaluate', {
+    returnByValue: true,
+    expression: `(()=>{
+    const g=window.__cityGame,m=g.surfaceModel;if(!m)return [];
+    return g.city.roads.filter(r=>r.bridge&&['pedestrian','footway','path'].includes(r.type)).map(r=>{
+      const list=m.profiles.get(r.id),actor={surfaceY:list[0].y0};let wrong=0,blocked=0,count=0,outside=0;
+      for(const s of list)for(const t of [0,.25,.5,.75,1]){
+        const x=s.a[0]+s.dx*t,z=s.a[1]+s.dz*t,y=m.actorHeightAt(actor,x,z);
+        if(Math.abs(x)>g.terrain.manifest.size[0]/2-5||Math.abs(z)>g.terrain.manifest.size[1]/2-5){outside++;continue;}
+        if(Math.abs(y-(s.y0+(s.y1-s.y0)*t))>.1)wrong++;
+        if(g.blocked(x,z,.28,y))blocked++;actor.surfaceY=y;count++;
+      }return {road:r.id,count,wrong,blocked,outside};
+    });
+  })()`,
+  });
+  const rows = walking.result.result.value;
+  surfaceChecks.push(...rows.map((r) => ({ id: 'walking-' + r.road, walking: r })));
+  if (rows.some((r) => r.wrong || r.blocked))
+    errors.push('Acceso peatonal al tablero incompatible');
   await send('Runtime.evaluate', { expression: "document.getElementById('start').click()" });
   const cases = (
     await send('Runtime.evaluate', {
@@ -146,10 +165,11 @@ if (process.argv.includes('--surfaces') && state.game) {
   if (
     surfaceChecks.some(
       (s) =>
-        !s ||
-        Math.abs(s.actual - s.expected) > 0.01 ||
-        !s.camera.every(Number.isFinite) ||
-        s.blocked,
+        !s.walking &&
+        (!s ||
+          Math.abs(s.actual - s.expected) > 0.01 ||
+          !s.camera.every(Number.isFinite) ||
+          s.blocked),
     )
   )
     errors.push('Continuidad de superficies incompatible');

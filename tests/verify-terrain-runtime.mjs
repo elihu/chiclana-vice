@@ -1,3 +1,4 @@
+import { rescue } from '../web/js/game/player.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -76,3 +77,7 @@ assert(!session.paused);
 console.log(
   'Synthetic ramp: building bases, vehicle tilt, walking, cameras, POIs and quality passed',
 );
+
+assert.doesNotThrow(() => rescue(), 'rescate a pie sin acceder a un coche ausente');
+assert.equal(g.player.car, null);
+assert(Number.isFinite(g.player.surfaceY), 'rescate a pie vuelve a una superficie válida');

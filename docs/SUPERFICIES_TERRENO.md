@@ -89,3 +89,47 @@ La auditoría reproducible compara MDT y superficie construida. Las muestras de 
 con pendiente mayor del 20% pasan de 148 a 43; ese umbral sirve para localizar zonas,
 no prueba realismo ni impone un límite físico. La revisión visual y las mediciones en
 dispositivos físicos siguen siendo necesarias antes de activar datos por defecto.
+
+## Revisión de accesos y recubrimientos
+
+La segunda revisión confirmó el relieve general y la lámina del Iro. Sus cotas se
+conservan: comparación exacta de 2.173 muestras entre las dos revisiones. El estanque
+pequeño de Alameda figura en OSM como `water=pond` (way 184499839); el conversor había
+perdido ese subtipo. `water.features` permite declarar una cubeta mediante anclaje al
+área existente y evidencia. Su lámina horizontal usa el máximo del borde del MDT más
+4 cm; es una aproximación de autor, no una cota medida. No se excava como río ni se
+cambia el perfil del cauce principal.
+
+Cada plataforma puede declarar `thickness`: cara inferior y caras laterales comparten
+ese grosor y el techo para la cámara. `clearance` se mide desde la cara inferior hasta
+el paso inferior. Los 0,8 m del piloto son una aproximación de autor. El anclaje de
+Gran Plaza usa el contorno amplio ya presente en el mapa. `roadAnchor.lateralOffset`
+permite desplazar una estructura respecto al eje de su calzada; evita imponer una
+huella simétrica cuando el tablero incluye un andén lateral.
+
+`bands` define recubrimientos independientes mediante una vía existente, anchura,
+desplazamiento y material. La reserva del tranvía en Remedios se distingue de la
+calzada con losas; no incorpora vías, circulación ni una línea completa. Esos elementos
+quedan para una futura función propia del tranvía. Se toma como evidencia la huella
+OSM 759565059; anchuras, desplazamiento y grosor siguen siendo parámetros de autor.
+El motor no reconoce nombres de lugares ni IDs específicos.
+
+Los actores retienen su soporte mientras permanecen en su huella. Pueden adquirir un
+puente por un extremo cuando la diferencia de altura cumple `maximumAccessStep`,
+dentro de `accessRadius`. Una ruta declarada conserva su nivel. Salir de un vehículo
+transfiere el soporte al peatón; una teleportación lo reinicia. La adquisición busca
+puentes separadamente de calzadas próximas para evitar perder un acceso compartido.
+Las pasarelas fuera de una plataforma conservan perfil, tablero y barandillas propios;
+las piezas dentro de la plataforma no se duplican.
+
+El problema de ortofoto visible en algunas vías procedía de dos triangulaciones
+incompatibles. Ahora dibujo, consultas y recorte de pavimento comparten una rejilla
+construida de 5 m. Solo bajo corredores se rebaja el terreno con un margen equivalente
+a la diagonal de una celda y `coverageGap` (15 cm por defecto); los pavimentos opacos
+conservan su perfil suave. Es una construcción visual de autor, no un tratamiento de
+la imagen. Una muestra de 344.100 puntos, incluidos bordes de calzada, pasó de 5.963
+protrusiones a cero. No elimina sombras horneadas fuera de las superficies recubiertas.
+
+Los fixtures independientes prueban soporte persistente, paso inferior, grosor,
+recubrimiento y precisión Float32. El humo en Chrome con SwiftShader recorre los
+perfiles peatonales y comprueba los dos niveles; no acredita GPU física ni móvil.

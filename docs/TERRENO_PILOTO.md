@@ -135,3 +135,20 @@ sin coordenadas especiales en el verificador.
 
 Las condiciones y atribución aprobada están exclusivamente en
 [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
+### Tercera revisión del piloto
+
+Tras confirmar el usuario el relieve general y la lámina del Iro se corrigen cubeta
+Alameda, continuidad del Puente Chico y pasarelas, grosor de plataformas,
+recubrimiento de calzadas y separación de la reserva del tranvía. La copia local
+`/tmp/chiclana-terrain-preview-v4` usa la versión `2026-10-07-terreno-accesos`.
+Conserva exactamente 2.173 muestras de cota del río respecto a la revisión anterior.
+La construcción local del suelo deja cero protrusiones en 344.100 muestras de vías.
+Los perfiles peatonales conservan soporte y pasan colisiones dentro del límite
+jugable; dos pasarelas meridionales están recortadas por el borde del mapa y sus
+extremos exteriores permanecen fuera de ese límite. El humo en Chrome con
+SwiftShader pasa en modo normal y ligero; las capturas no sustituyen la revisión
+humana ni acreditan GPU o móvil físicos. La escena del piloto ronda 1,47 millones de
+triángulos y 112 llamadas de dibujo en esta comprobación, pendiente de medir en
+dispositivos físicos. El contrato y las aproximaciones están en
+`SUPERFICIES_TERRENO.md`. La activación publicada sigue pendiente.

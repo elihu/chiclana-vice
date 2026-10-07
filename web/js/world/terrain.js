@@ -53,20 +53,24 @@ export function createTerrain(m, buffer, city) {
     data,
     heightAt(x, z) {
       if (!Number.isFinite(x) || !Number.isFinite(z)) throw Error('Consulta de terreno no finita');
-      const gx = Math.max(0, Math.min(m.columns - 1, (x + m.size[0] / 2) / m.step[0])),
-        gz = Math.max(0, Math.min(m.rows - 1, (z + m.size[1] / 2) / m.step[1])),
-        i = Math.min(m.columns - 2, Math.floor(gx)),
-        j = Math.min(m.rows - 2, Math.floor(gz)),
-        u = gx - i,
-        v = gz - j,
-        k = j * m.columns + i,
-        a = data[k],
-        b = data[k + 1],
-        c = data[k + m.columns],
-        d = data[k + m.columns + 1];
-      return u >= v ? a * (1 - u) + b * (u - v) + d * v : a * (1 - v) + d * u + c * (v - u);
+      return gridHeightAt(m, data, x, z);
     },
   };
+}
+
+export function gridHeightAt(m, data, x, z) {
+  const gx = Math.max(0, Math.min(m.columns - 1, (x + m.size[0] / 2) / m.step[0])),
+    gz = Math.max(0, Math.min(m.rows - 1, (z + m.size[1] / 2) / m.step[1])),
+    i = Math.min(m.columns - 2, Math.floor(gx)),
+    j = Math.min(m.rows - 2, Math.floor(gz)),
+    u = gx - i,
+    v = gz - j,
+    k = j * m.columns + i,
+    a = data[k],
+    b = data[k + 1],
+    c = data[k + m.columns],
+    d = data[k + m.columns + 1];
+  return u >= v ? a * (1 - u) + b * (u - v) + d * v : a * (1 - v) + d * u + c * (v - u);
 }
 
 export async function loadTerrain(read, city, digest) {

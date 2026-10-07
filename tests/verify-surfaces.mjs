@@ -102,6 +102,35 @@ assert.equal(model.surfaceHeightAt(0, 0, null, 'lower'), 0, 'anclaje de ruta inf
 assert.equal(model.surfaceHeightAt(0, 0, null, 'upper'), 4, 'anclaje de ruta superior');
 assert.equal(model.ceilingAt(0, 0, 0), 3.88);
 assert.equal(model.ceilingAt(0, 0, 4), Infinity);
+const retained = { surfaceY: 0, surfaceSupport: 'road:upper' };
+assert.equal(
+  model.actorHeightAt(retained, 0, 0),
+  4,
+  'soporte persistente no salta al paso inferior',
+);
+const lowerActor = { surfaceY: 0 };
+assert.equal(
+  model.actorHeightAt(lowerActor, 0, 0),
+  0,
+  'cruce inferior no adquiere tablero por proximidad',
+);
+const thick = structuredClone(design);
+thick.platforms[0].thickness = 0.8;
+const thickModel = createSurfaceModel(city, terrain, thick);
+assert.equal(thickModel.ceilingAt(0, 0, 0), 3.2, 'techo coincide con cara inferior estructural');
+for (const list of model.profiles.values())
+  for (const s of list) {
+    if (s.bridge) continue;
+    for (const t of [0, 0.25, 0.5, 0.75, 1])
+      for (const side of [-0.98, 0, 0.98]) {
+        const x = s.a[0] + s.dx * t - (((s.dz / s.length) * s.width) / 2) * side;
+        const z = s.a[1] + s.dz * t + (((s.dx / s.length) * s.width) / 2) * side;
+        assert(
+          model.groundHeightAt(x, z) < s.y0 + (s.y1 - s.y0) * t,
+          'suelo y ortofoto debajo del pavimento opaco',
+        );
+      }
+  }
 let previous = 0;
 for (let x = -25; x <= 25; x += 0.25) {
   const y = model.surfaceHeightAt(x, 0, previous, 'lower');
@@ -113,7 +142,10 @@ const samples = Array.from({ length: 41 }, (_, i) => i - 20),
   original = samples.map((z) => raw(-20, z) + 0.2),
   filtered = samples.map((z) => model.surfaceHeightAt(-20, z, null, 'road') + 0.2);
 assert(oscillation(filtered) < oscillation(original) * 0.4, 'se atenúan bultos de la calzada');
-assert.equal(model.groundHeightAt(-35, -35), raw(-35, -35), 'conserva terreno fuera de corredores');
+assert(
+  Math.abs(model.groundHeightAt(-35, -35) - raw(-35, -35)) < 1e-6,
+  'conserva terreno fuera de corredores en la rejilla Float32',
+);
 assert(model.groundHeightAt(23, -10) < model.waterHeightAt(23, -10), 'lecho debajo del agua');
 assert(
   Math.abs(model.waterHeightAt(23, -10) - model.waterHeightAt(23, 0)) <= 0.051,

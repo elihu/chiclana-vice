@@ -26,9 +26,16 @@ export function surfaceHeightAt(x, z, reference = null, roadId = null) {
   return y;
 }
 
+export function actorHeightAt(actor, x = actor.x, z = actor.z) {
+  return (
+    world.surfaces?.actorHeightAt(actor, x, z, actor.surfaceRoad ?? null) ??
+    surfaceHeightAt(x, z, actor.surfaceY ?? null, actor.surfaceRoad ?? null)
+  );
+}
+
 // Euler YXZ mantiene rumbo; inclinación visual limitada a 15° (sin física nueva).
 export function placeVehicle(c) {
-  const y = surfaceHeightAt(c.x, c.z, c.surfaceY ?? null, c.surfaceRoad ?? null),
+  const y = actorHeightAt(c),
     sin = Math.sin(c.a),
     cos = Math.cos(c.a);
   c.surfaceY = y;

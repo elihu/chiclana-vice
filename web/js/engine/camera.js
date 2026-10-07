@@ -12,7 +12,12 @@ import {
 } from '../core/state.js';
 import { lerp, pInside, pointSeg } from '../core/math.js';
 import { toast } from '../ui/feedback.js';
-import { surfaceHeightAt, surfaceCeilingAt, placeVehicle } from './terrain-sampling.js';
+import {
+  actorHeightAt,
+  surfaceHeightAt,
+  surfaceCeilingAt,
+  placeVehicle,
+} from './terrain-sampling.js';
 
 export function updateCameraVisibility() {
   if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
@@ -26,14 +31,16 @@ export function updateCameraVisibility() {
 export function snapCamera(resetSurface = false) {
   if (resetSurface) {
     player.surfaceY = undefined;
+    player.surfaceSupport = null;
     if (player.car) {
       player.car.surfaceY = undefined;
+      player.car.surfaceSupport = null;
       player.car.surfaceRoad = undefined;
     }
   }
   if (player.car) placeVehicle(player.car);
   else {
-    player.surfaceY = surfaceHeightAt(player.x, player.z, player.surfaceY ?? null);
+    player.surfaceY = actorHeightAt(player);
     actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
   }
   view.orbit = 0;

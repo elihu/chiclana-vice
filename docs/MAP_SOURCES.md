@@ -85,3 +85,13 @@ se sustituye.
   `no/0/false` lo desactiva. No se han regenerado las vías publicadas en esta revisión.
   Semántica: https://wiki.openstreetmap.org/wiki/Key:oneway
 - Sin precisión fotogramétrica ni validez catastral; no son medidas arquitectónicas.
+
+La revisión de terreno separa el estanque `water=pond` de OSM 184499839 de la
+lámina del Iro mediante un anclaje de autor al área existente. La cubeta horizontal,
+el grosor de 0,8 m de las plataformas y la reserva lateral del tranvía son
+aproximaciones editables en `terrainSurfaces`; no representan mediciones de obra.
+La reserva usa como evidencia OSM 759565059 y no incorpora una línea de tranvía.
+La construcción del suelo bajo pavimentos usa un margen local de una diagonal de
+celda y 15 cm de separación para evitar que la ortofoto atraviese el recubrimiento;
+el ráster original no se modifica. Véase `SUPERFICIES_TERRENO.md` para el contrato,
+los límites de estas aproximaciones y las verificaciones.

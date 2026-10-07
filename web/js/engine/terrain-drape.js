@@ -3,7 +3,7 @@ import { world } from '../core/state.js';
 import { surfaceHeightAt } from './terrain-sampling.js';
 
 export function terrainEdge(a, b) {
-  const m = world.terrain?.manifest;
+  const m = (world.surfaces?.meshTerrain ?? world.terrain)?.manifest;
   if (!m) return [a, b];
   const ts = [0, 1],
     dx = b[0] - a[0],
@@ -57,7 +57,7 @@ function clip(poly, a, b) {
 
 export function drapeTriangles(position, uv = null, heightSampler = surfaceHeightAt) {
   if (world.terrain?.kind !== 'grid') return { position, uv };
-  const m = world.terrain.manifest,
+  const m = (world.surfaces?.meshTerrain ?? world.terrain).manifest,
     result = [],
     tex = uv ? [] : null;
   for (let k = 0; k < position.length; k += 9) {

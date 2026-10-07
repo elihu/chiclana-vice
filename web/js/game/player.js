@@ -1,4 +1,4 @@
-import { surfaceHeightAt } from '../engine/terrain-sampling.js';
+import { actorHeightAt } from '../engine/terrain-sampling.js';
 import {
   actors,
   base,
@@ -35,7 +35,11 @@ export function rescue() {
   }
   Object.assign(player, p);
   player.surfaceY = undefined;
-  if (player.car) player.car.surfaceY = undefined;
+  player.surfaceSupport = null;
+  if (player.car) {
+    player.car.surfaceY = undefined;
+    player.car.surfaceSupport = null;
+  }
   state.health = 100;
   snapCamera();
   toast('Traslado a la Alameda y reparación · 100 €', 4);
@@ -67,6 +71,7 @@ export function interact() {
     }
     player.car = null;
     player.surfaceY = c.surfaceY;
+    player.surfaceSupport = c.surfaceSupport;
     Object.assign(player, exit);
     player.speed = 0;
     toast('A pie · Usa el joystick. Arrastra la escena para mirar.', 3);
@@ -168,7 +173,7 @@ export function updatePlayer(dt) {
       actors.character.mesh.rotation.y = a;
     }
     player.speed = v;
-    player.surfaceY = surfaceHeightAt(player.x, player.z, player.surfaceY ?? null);
+    player.surfaceY = actorHeightAt(player);
     actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
     actors.character.limbs.forEach(
       (l, i) =>

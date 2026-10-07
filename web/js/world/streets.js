@@ -10,7 +10,7 @@ import { pInside, pointSeg } from '../core/math.js';
 const pointSegDistance = (q, polygon) =>
   Math.min(...polygon.map((p, i) => pointSeg(...q, p, polygon[(i + 1) % polygon.length]).d));
 
-function platformGeometry(polygon) {
+function platformGeometry(polygon, thickness = 0.12) {
   const top = flatGeometry(polygon),
     flat = top.toNonIndexed(),
     a = flat.getAttribute('position').array,
@@ -18,7 +18,7 @@ function platformGeometry(polygon) {
   for (let i = 0; i < a.length; i += 9) {
     positions.push(...a.slice(i, i + 9));
     for (const k of [2, 1, 0])
-      positions.push(a[i + k * 3], a[i + k * 3 + 1] - 0.12, a[i + k * 3 + 2]);
+      positions.push(a[i + k * 3], a[i + k * 3 + 1] - thickness, a[i + k * 3 + 2]);
   }
   for (let i = 0; i < polygon.length; i++) {
     const p = polygon[i],
@@ -26,8 +26,8 @@ function platformGeometry(polygon) {
       v = [
         [p[0], 0, p[1]],
         [q[0], 0, q[1]],
-        [q[0], -0.12, q[1]],
-        [p[0], -0.12, p[1]],
+        [q[0], -thickness, q[1]],
+        [p[0], -thickness, p[1]],
       ];
     for (const k of [0, 1, 2, 0, 2, 3]) positions.push(...v[k]);
   }
@@ -88,7 +88,8 @@ export function buildRoadDetails() {
     // Aproximación visual por tramo: lámina horizontal en la cota mínima del borde.
     const y = world.terrain.kind === 'flat' ? 0 : Math.min(...a.p.map((p) => groundHeightAt(...p)));
     let geometry = flatGeometry(a.p);
-    if (world.surfaces) {
+    const basin = world.surfaces?.basins.find((b) => b.area === a);
+    if (world.surfaces && !basin) {
       const positions = geometry.toNonIndexed().getAttribute('position').array;
       geometry.dispose();
       geometry = new THREE.BufferGeometry();
@@ -101,19 +102,41 @@ export function buildRoadDetails() {
       );
       geometry.computeVertexNormals();
     }
-    water.push({ geometry, matrix: at(0, world.surfaces ? heights.water : y + heights.water, 0) });
+    water.push({
+      geometry,
+      matrix: at(
+        0,
+        basin ? basin.y + heights.water : world.surfaces ? heights.water : y + heights.water,
+        0,
+      ),
+    });
   }
   for (const p of world.surfaces?.platforms || []) {
-    decks.push({ geometry: platformGeometry(p.polygon), matrix: at(0, p.y + heights.deck, 0) });
+    decks.push({
+      geometry: platformGeometry(p.polygon, p.thickness),
+      matrix: at(0, p.y + heights.deck, 0),
+    });
   }
   for (const r of world.city.roads) {
     if (!r.bridge) continue;
-    for (let i = 1; i < r.p.length; i++) {
-      let a = r.p[i - 1],
-        b = r.p[i],
+    const pieces =
+      world.surfaces?.profiles.get(r.id) ??
+      r.p.slice(1).map((b, i) => ({ a: r.p[i], b, ...r.bridgeProfile[i] }));
+    for (const piece of pieces) {
+      const middle = [(piece.a[0] + piece.b[0]) / 2, (piece.a[1] + piece.b[1]) / 2];
+      if (
+        world.surfaces?.platforms.some(
+          (p) =>
+            p.deckRoads.includes(r.id) &&
+            (pInside(...middle, p.polygon) || pointSegDistance(middle, p.polygon) < 0.05),
+        )
+      )
+        continue;
+      let a = piece.a,
+        b = piece.b,
         length = Math.hypot(b[0] - a[0], b[1] - a[1]),
         angle = Math.atan2(b[0] - a[0], b[1] - a[1]),
-        profile = r.bridgeProfile[i - 1],
+        profile = piece,
         y = profile ? (profile.y0 + profile.y1) / 2 : 0,
         slope = profile ? -Math.atan2(profile.y1 - profile.y0, length) : 0,
         matrix = (x, yy, z) =>
@@ -172,6 +195,22 @@ export function buildStreetSurfaces() {
     stone: { p: [], uv: [], tex: stone },
     slabs: { p: [], uv: [], tex: slabs, roughness: 0.98 },
   };
+  const bands = Object.fromEntries(
+    Object.entries(groups).map(([k, g]) => [k, { ...g, p: [], uv: [] }]),
+  );
+  for (const platform of world.surfaces?.platforms || [])
+    for (const band of platform.bands) {
+      const original = flatGeometry(band.polygon),
+        geo = original.toNonIndexed(),
+        output = bands[band.material];
+      original.dispose();
+      const a = geo.getAttribute('position');
+      for (let i = 0; i < a.count; i++) {
+        output.p.push(a.getX(i), platform.y + heights.slabs, a.getZ(i));
+        output.uv.push(a.getX(i) / 4, -a.getZ(i) / 4);
+      }
+      geo.dispose();
+    }
   function tri(g, pts, uv) {
     for (let i of [0, 1, 2, 0, 2, 3]) {
       g.p.push(...pts[i]);
@@ -179,7 +218,7 @@ export function buildStreetSurfaces() {
     }
   }
   for (const road of world.city.roads) {
-    if (road.bridge) continue;
+    if (road.bridge && !world.surfaces) continue;
     let pedestrian = paved.pedestrianTypes.includes(road.type),
       local = road.p.some(
         (p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ,
@@ -262,11 +301,11 @@ export function buildStreetSurfaces() {
     geo.dispose();
     streetEnvironment.surfaces++;
   }
-  for (const g of Object.values(groups)) {
+  for (const g of [...Object.values(groups), ...Object.values(bands)]) {
     if (!g.p.length) continue;
     let geo = new THREE.BufferGeometry();
     const draped =
-      world.surfaces && g !== groups.slabs
+      (world.surfaces && g !== groups.slabs) || Object.values(bands).includes(g)
         ? { position: g.p, uv: g.uv }
         : drapeTriangles(g.p, g.uv);
     geo.setAttribute('position', new THREE.Float32BufferAttribute(draped.position, 3));
