@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { POPULATION } from '../../game-data.js';
 import { blocked, inBuilding, safePoint } from '../world/spatial.js';
 import { cars, graph, people, player, segments, session, traffic } from '../core/state.js';
@@ -20,6 +21,7 @@ export function spawnTraffic() {
       next: s.bi,
       cruise: 6 + rnd() * 4,
       progress: 0,
+      surfaceRoad: s.roadId,
     });
     traffic.push(car);
   }
@@ -66,8 +68,10 @@ export function stepAgent(c, dt, isCop = false) {
       if (c.path.length) next = { to: c.path.shift() };
     }
     if (!next) next = candidates[Math.floor(rnd() * candidates.length)];
-    if (next) c.next = next.to;
-    else c.next = undefined;
+    if (next) {
+      c.next = next.to;
+      c.surfaceRoad = next.s?.roadId ?? graph[c.node].adj.find((e) => e.to === next.to)?.s?.roadId;
+    } else c.next = undefined;
     return;
   }
   let a = Math.atan2(n.x - c.x, n.z - c.z),
@@ -105,7 +109,8 @@ export function updatePedestrians(dt) {
     x += Math.cos(a) * (p.s.width / 2 + 0.5);
     z -= Math.sin(a) * (p.s.width / 2 + 0.5);
     p.mesh.visible = !inBuilding(x, z, 0.2) && Math.hypot(x - player.x, z - player.z) < 140;
-    p.mesh.position.set(x, 0, z);
+    p.surfaceY = surfaceHeightAt(x, z, p.surfaceY ?? null, p.s.roadId);
+    p.mesh.position.set(x, p.surfaceY, z);
     p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
     p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(session.t * 7 + (i % 2) * Math.PI) * 0.35));
   }

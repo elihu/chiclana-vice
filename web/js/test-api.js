@@ -37,9 +37,18 @@ import { stepAgent } from './game/traffic.js';
 import { target } from './game/jobs.js';
 import { update } from './game/update.js';
 import { updateHUD } from './ui/hud.js';
+import { groundHeightAt, surfaceHeightAt, placeVehicle } from './engine/terrain-sampling.js';
 
 export function createPublicApi() {
   return {
+    groundHeightAt,
+    surfaceHeightAt,
+    get terrain() {
+      return world.terrain;
+    },
+    get surfaceModel() {
+      return world.surfaces;
+    },
     get character() {
       return actors.character;
     },
@@ -79,6 +88,7 @@ export function createPublicApi() {
 
 export function createTestApi(frame) {
   const extra = {
+    placeVehicle,
     inBuilding,
     pInside,
     pointSeg,

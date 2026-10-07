@@ -1,4 +1,5 @@
-import { actors, player, pois, session, state } from '../core/state.js';
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
+import { actors, player, pois, session, state, world } from '../core/state.js';
 import { d } from '../core/math.js';
 import { JOBS as jobs } from '../../game-data.js';
 import { save } from './save.js';
@@ -66,12 +67,32 @@ export function updateMissions(dt) {
 export function updateMarkers(goal) {
   if (goal && !goal.escape) {
     actors.ring.visible = actors.beam.visible = true;
-    actors.ring.position.set(goal.x, 0.16, goal.z);
+    actors.ring.position.set(goal.x, surfaceHeightAt(goal.x, goal.z) + 0.16, goal.z);
     actors.ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
-    actors.beam.position.set(goal.x, 2, goal.z);
+    if (world.terrain.kind === 'grid') {
+      const ring = actors.ring,
+        positions = ring.geometry.getAttribute('position');
+      // Geometría original en XY; el grupo gira alrededor de X para situarla sobre XZ.
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i) * ring.scale.x,
+          z = -positions.getY(i) * ring.scale.z;
+        positions.setZ(
+          i,
+          -(surfaceHeightAt(goal.x + x, goal.z + z) - surfaceHeightAt(goal.x, goal.z)) /
+            ring.scale.y,
+        );
+      }
+      positions.needsUpdate = true;
+      ring.geometry.computeBoundingSphere();
+    }
+    actors.beam.position.set(goal.x, surfaceHeightAt(goal.x, goal.z) + 2, goal.z);
     actors.beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
     actors.arrow.visible = true;
-    actors.arrow.position.set(goal.x, 6 + Math.sin(session.t * 2) * 0.4, goal.z);
+    actors.arrow.position.set(
+      goal.x,
+      surfaceHeightAt(goal.x, goal.z) + 6 + Math.sin(session.t * 2) * 0.4,
+      goal.z,
+    );
     actors.arrow.rotation.z = Math.PI;
     actors.arrow.rotation.y = session.t * 0.7;
   } else actors.ring.visible = actors.beam.visible = actors.arrow.visible = false;

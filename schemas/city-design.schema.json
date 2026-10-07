@@ -593,6 +593,292 @@
           "description": "Metros de pared por repetición horizontal de la textura de fachada."
         }
       }
+    },
+    "terrainSurfaces": {
+      "type": "object",
+      "description": "Superficies verticales de autor. Contrato normativo validateSurfaceDesign en engine/surface-model.js; anclajes se comprueban contra el mundo cargado.",
+      "required": ["version", "roads", "water", "platforms"],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "roads": {
+          "type": "object",
+          "required": [
+            "sampleStep",
+            "smoothingRadius",
+            "shoulder",
+            "bridgeAnchorRadius",
+            "pavementStep",
+            "meshSubdivisions"
+          ],
+          "properties": {
+            "sampleStep": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "smoothingRadius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "shoulder": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "bridgeAnchorRadius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "pavementStep": {
+              "type": "number",
+              "minimum": 1
+            },
+            "meshSubdivisions": {
+              "enum": [1, 2, 4]
+            },
+            "accessRadius": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20
+            },
+            "maximumAccessStep": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20
+            },
+            "coverageGap": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20
+            },
+            "groundMargin": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20
+            }
+          }
+        },
+        "water": {
+          "type": "object",
+          "required": [
+            "percentile",
+            "bedDepth",
+            "shoreWidth",
+            "axis",
+            "sliceLength",
+            "maximumSlope"
+          ],
+          "properties": {
+            "percentile": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "bedDepth": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "shoreWidth": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "axis": {
+              "enum": ["x", "z"]
+            },
+            "sliceLength": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "maximumSlope": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "kind", "areaAnchor", "evidence"],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "basin"
+                  },
+                  "areaAnchor": {
+                    "type": "object",
+                    "required": ["kind", "vertex", "vertexCount"],
+                    "properties": {
+                      "kind": {
+                        "type": "string"
+                      },
+                      "vertex": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "vertexCount": {
+                        "type": "integer",
+                        "minimum": 3
+                      }
+                    }
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "heightAnchors", "deckRoads", "lowerRoads", "clearance", "evidence"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "areaAnchor": {
+                "type": "object",
+                "required": ["kind", "vertex", "vertexCount"],
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "vertex": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "vertexCount": {
+                    "type": "integer",
+                    "minimum": 3
+                  }
+                }
+              },
+              "roadAnchor": {
+                "type": "object",
+                "required": ["roadId", "width"],
+                "properties": {
+                  "roadId": {
+                    "type": "string"
+                  },
+                  "width": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "lateralOffset": {
+                    "type": "number"
+                  }
+                }
+              },
+              "heightAnchors": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "object",
+                  "required": ["roadId", "vertex", "offset"],
+                  "properties": {
+                    "roadId": {
+                      "type": "string"
+                    },
+                    "vertex": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "offset": {
+                      "type": "number"
+                    }
+                  }
+                }
+              },
+              "deckRoads": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "lowerRoads": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "clearance": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "evidence": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 9
+                }
+              },
+              "thickness": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 3
+              },
+              "bands": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "material", "roadAnchor"],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "material": {
+                      "enum": ["asphalt", "stone", "slabs"]
+                    },
+                    "roadAnchor": {
+                      "type": "object",
+                      "required": ["roadId", "width"],
+                      "properties": {
+                        "roadId": {
+                          "type": "string"
+                        },
+                        "width": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        "lateralOffset": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "required": ["areaAnchor"]
+              },
+              {
+                "required": ["roadAnchor"]
+              }
+            ]
+          }
+        }
+      }
     }
   },
   "$defs": {

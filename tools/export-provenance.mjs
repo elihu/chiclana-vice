@@ -1,12 +1,15 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 
-const heights = JSON.parse(fs.readFileSync('web/height-samples.json', 'utf8'));
-fs.copyFileSync('THIRD_PARTY_NOTICES.md', 'web/THIRD_PARTY_NOTICES.md');
-fs.copyFileSync('LICENSE', 'web/LICENSE');
+const index = process.argv.indexOf('--directory');
+const directory = index < 0 ? 'web' : process.argv[index + 1];
+if (!directory) throw Error('Falta directorio de datos');
+const heights = JSON.parse(fs.readFileSync(directory + '/height-samples.json', 'utf8'));
+fs.copyFileSync('THIRD_PARTY_NOTICES.md', directory + '/THIRD_PARTY_NOTICES.md');
+fs.copyFileSync('LICENSE', directory + '/LICENSE');
 const hash = (file) =>
   createHash('sha256')
-    .update(fs.readFileSync('web/' + file))
+    .update(fs.readFileSync(directory + '/' + file))
     .digest('hex');
 const records = [
   {
@@ -88,10 +91,27 @@ const records = [
     transformation: 'Guarded edits of road attributes and vertices; base layers unchanged',
   },
 ];
+if (fs.existsSync(directory + '/terrain.json')) {
+  const terrain = JSON.parse(fs.readFileSync(directory + '/terrain.json', 'utf8'));
+  if (!terrain.attribution || !terrain.license || !terrain.licenseUrl)
+    throw Error('Terreno sin atribución aprobada: no se publica su procedencia');
+  records.push({
+    files: ['terrain.json', 'terrain.bin'],
+    source: terrain.source,
+    date: terrain.accessDate,
+    attribution: terrain.attribution,
+    conditions: terrain.license,
+    licenseUrl: terrain.licenseUrl,
+    sourceUrls: terrain.sourceUrls,
+    sourceSha256: terrain.sourceSha256,
+    transformation: terrain.method,
+    limits: terrain.limits,
+  });
+}
 for (const record of records)
   record.sha256 = Object.fromEntries(record.files.map((file) => [file, hash(file)]));
 fs.writeFileSync(
-  'web/data-sources.json',
+  directory + '/data-sources.json',
   JSON.stringify(
     {
       version: 1,

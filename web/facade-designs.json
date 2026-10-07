@@ -946,7 +946,7 @@
       ]
     },
     "cupula-san-juan-bautista": {
-      "description": "Blue-ribbed dome in absolute world coordinates (anchor world), behind the facade of San Juan Bautista.",
+      "description": "Cúpula en coordenadas globales en planta (anclaje world), detrás de San Juan Bautista; alturas relativas a la base del monumento.",
       "params": {},
       "body": [
         {

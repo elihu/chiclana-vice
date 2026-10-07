@@ -37,16 +37,29 @@ import { installControls, installTouchDetection } from './ui/controls.js';
 import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
-import { spawnTraffic } from './game/traffic.js';
-import { flatTerrain } from './world/terrain.js';
+import { spawnTraffic, updatePedestrians } from './game/traffic.js';
+import { terrainGeometry, terrainExterior } from './world/terrain-mesh.js';
+import { prepareTerrainPlacement } from './world/terrain-placement.js';
+import { surfaceHeightAt, placeVehicle } from './engine/terrain-sampling.js';
 import { update } from './game/update.js';
 
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
-  const { res, tex, aerial, heightSamples, profiles, streetObjects, designs, cityDesign } =
-    await loadLayers();
+  const {
+    res,
+    tex,
+    aerial,
+    heightSamples,
+    profiles,
+    streetObjects,
+    designs,
+    cityDesign,
+    terrain,
+    warning,
+  } = await loadLayers();
   world.city = res;
-  world.terrain = flatTerrain;
+  world.terrain = terrain;
+  if (warning) toast(warning, 5);
   world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
   if (profiles.version !== 1) throw Error('Perfiles incompatibles');
   world.facadeProfiles = profiles;
@@ -72,9 +85,10 @@ async function init() {
   [world.worldW, world.worldH] = world.city.size;
   loadProgress('Preparando el mundo 3D…', 25);
   setupRenderer();
-  addGroundPlanes();
   buildRoadGraph();
   indexBuildings();
+  prepareTerrainPlacement();
+  addGroundPlanes(terrainGeometry(terrain), terrainExterior(terrain));
   connectOpenSpaces();
   orientDriveGraph();
   applyHeightSamples(heightSamples);
@@ -99,10 +113,12 @@ async function init() {
   actors.character = createPerson('#d7d5b0');
   actors.character.mesh.visible = false;
   spawnTraffic();
+  if (terrain.kind === 'grid') updatePedestrians(0);
   vehicles.push(...cars, ...traffic);
   createMissionMarkers();
-  camPos.set(player.x - 15, 12, player.z - 15);
-  camTarget.set(player.x, 1, player.z);
+  for (const c of vehicles) placeVehicle(c);
+  camPos.set(player.x - 15, surfaceHeightAt(player.x, player.z) + 12, player.z - 15);
+  camTarget.set(player.x, surfaceHeightAt(player.x, player.z) + 1, player.z);
   gfx.camera.position.copy(camPos);
   gfx.camera.lookAt(camTarget);
   $('streetCount').textContent =
@@ -128,15 +144,14 @@ function frame(now) {
     session.t += dt;
     gfx.camera.position.set(
       player.x + Math.sin(session.t * 0.075) * 36,
-      22,
+      surfaceHeightAt(player.x, player.z) + 22,
       player.z + Math.cos(session.t * 0.075) * 36,
     );
-    gfx.camera.lookAt(player.x, 0, player.z);
-    gfx.sun.target.position.set(player.x, 0, player.z);
-    gfx.sun.position.set(player.x - 85, 125, player.z + 60);
+    gfx.camera.lookAt(player.x, surfaceHeightAt(player.x, player.z), player.z);
+    gfx.sun.target.position.set(player.x, surfaceHeightAt(player.x, player.z), player.z);
+    gfx.sun.position.set(player.x - 85, surfaceHeightAt(player.x, player.z) + 125, player.z + 60);
     for (let c of vehicles) {
-      c.mesh.position.set(c.x, 0, c.z);
-      c.mesh.rotation.y = c.a;
+      placeVehicle(c);
     }
   }
   // While paused (map, modal), the last frame stays on screen; redraw only on demand.

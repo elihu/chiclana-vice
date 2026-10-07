@@ -5,7 +5,7 @@ import * as Real from '../web/vendor/three.module.min.js';
 
 // Un mismo entorno CPU para verificadores y exportadores; no ejecuta GPU. Los módulos ES
 // se evalúan una vez por proceso, así que el juego solo puede arrancarse una vez.
-export async function createRuntime({ progress = null } = {}) {
+export async function createRuntime({ progress = null, terrain = null } = {}) {
   assert(!globalThis.__chiclanaRuntime, 'createRuntime: una sola vez por proceso');
   globalThis.__chiclanaRuntime = true;
   const noop = () => {};
@@ -89,9 +89,19 @@ export async function createRuntime({ progress = null } = {}) {
   const requested = [];
   globalThis.fetch = async (url) => {
     requested.push(url);
+    if (terrain && url.split('?')[0] === 'terrain.json')
+      return { ok: true, status: 200, json: async () => terrain.manifest };
+    if (terrain && url.split('?')[0] === 'terrain.bin')
+      return { ok: true, status: 200, arrayBuffer: async () => terrain.buffer };
+    const file = 'web/' + url.split('?')[0];
     return {
-      ok: true,
-      json: async () => JSON.parse(fs.readFileSync('web/' + url.split('?')[0], 'utf8')),
+      ok: fs.existsSync(file),
+      status: fs.existsSync(file) ? 200 : 404,
+      json: async () => JSON.parse(fs.readFileSync(file, 'utf8')),
+      arrayBuffer: async () => {
+        const b = fs.readFileSync(file);
+        return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+      },
     };
   };
   class Renderer {

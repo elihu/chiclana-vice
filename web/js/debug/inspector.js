@@ -6,6 +6,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { buildingGrid, chunks, facadeWork, gfx, player, world } from '../core/state.js';
 import { pInside, pointSeg } from '../core/math.js';
 import { sha256Hex } from '../world/corrections.js';
+import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 
 // Un toque: mismo puntero, menos de 6 px de desplazamiento y menos de 350 ms.
 export const TAP_MAX_DISTANCE = 6;
@@ -84,6 +85,24 @@ function findRoad(x, z) {
 // Información del punto local (x, z), sin DOM: la usan el panel y los tests.
 export function inspectPoint(x, z, y = 0) {
   const info = { point: { x: round2(x), y: round2(y), z: round2(z) } };
+  info.terrain = {
+    ground: round2(groundHeightAt(x, z)),
+    surface: round2(surfaceHeightAt(x, z)),
+    raw: world.surfaces ? round2(world.surfaces.rawHeightAt(x, z)) : null,
+    platforms:
+      world.surfaces?.platforms
+        .filter((p) => pInside(x, z, p.polygon))
+        .map((p) => ({
+          id: p.id,
+          height: round2(p.y),
+          clearance: p.clearance,
+          lowerRoads: p.lowerRoads,
+          evidence: p.evidence,
+        })) ?? [],
+    referenceElevation: world.terrain?.manifest?.referenceElevation ?? null,
+    verticalReference: world.terrain?.manifest?.verticalReference ?? 'plano',
+    units: 'y relativa a referencia; x,z locales en metros',
+  };
   const hit = findBuilding(x, z);
   if (hit) {
     const index = world.city.buildings.indexOf(hit.b),
@@ -145,10 +164,15 @@ function pickPoint(event, scene) {
     ray = new THREE.Raycaster();
   ray.setFromCamera(ndc, gfx.camera);
   const targets = [...chunks];
+  const terrain = scene.getObjectByName('terrain-ground');
+  if (terrain) targets.push(terrain);
+  const decks = scene.getObjectByName('bridge-decks');
+  if (decks) targets.push(decks);
   const facades = scene.getObjectByName('reference-led-facades');
   if (facades) targets.push(facades);
   const hit = ray.intersectObjects(targets, true)[0];
   if (hit) return hit.point;
+  if (world.terrain?.kind === 'grid') return null;
   const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
     point = ray.ray.intersectPlane(ground, new THREE.Vector3());
   return point;
@@ -156,6 +180,11 @@ function pickPoint(event, scene) {
 
 export function formatInfo(info) {
   const rows = [['Punto', `x ${info.point.x}  y ${info.point.y}  z ${info.point.z}`]];
+  if (info.terrain)
+    rows.push([
+      'Terreno / paso',
+      `${info.terrain.ground} / ${info.terrain.surface} m relativos; referencia ${info.terrain.referenceElevation ?? 'plana'} (${info.terrain.verticalReference})`,
+    ]);
   rows.push([
     'Edificio',
     info.building

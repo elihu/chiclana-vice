@@ -34,6 +34,19 @@ se sustituye.
   Parámetros, URL y checksums en `web/height-samples.json` y
   `source-data/height-audit-ign.json`; detalle en [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
+- **MDT IGN de paso nominal 5 m, provisional**: servicio WCS `Elevacion4258_5`,
+  consulta del 7/10/2026, ASCII multipart en EPSG:4326 según DescribeCoverage.
+  Transformación local existente, remuestreo a unos 10 m, referencia fija en el origen
+  y cuantización a 0,1 m. El original permanece fuera de Git; rejilla real solo en la
+  copia local de revisión, sin activar en el juego de la rama. Auditorías:
+  `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
+  aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+- **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del
+  puente/andén/tranvía, consultadas el 7/10/2026. Anclajes y evidencia en
+  `city-design.json.terrainSurfaces`; perfiles de calzada, lecho visual, plataformas
+  horizontales y gálibos son aproximaciones explícitas. No alteran el MDT original.
+  Procedimiento y límites en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
+  https://servicios.idee.es/wcs-inspire/mdt
 - **Three.js r169** local en `web/vendor/`.
 
 ## Fachadas y monumentos
@@ -72,3 +85,13 @@ se sustituye.
   `no/0/false` lo desactiva. No se han regenerado las vías publicadas en esta revisión.
   Semántica: https://wiki.openstreetmap.org/wiki/Key:oneway
 - Sin precisión fotogramétrica ni validez catastral; no son medidas arquitectónicas.
+
+La revisión de terreno separa el estanque `water=pond` de OSM 184499839 de la
+lámina del Iro mediante un anclaje de autor al área existente. La cubeta horizontal,
+el grosor de 0,8 m de las plataformas y la reserva lateral del tranvía son
+aproximaciones editables en `terrainSurfaces`; no representan mediciones de obra.
+La reserva usa como evidencia OSM 759565059 y no incorpora una línea de tranvía.
+La construcción del suelo bajo pavimentos usa un margen local de una diagonal de
+celda y 15 cm de separación para evitar que la ortofoto atraviese el recubrimiento;
+el ráster original no se modifica. Véase `SUPERFICIES_TERRENO.md` para el contrato,
+los límites de estas aproximaciones y las verificaciones.

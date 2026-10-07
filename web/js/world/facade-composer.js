@@ -5,6 +5,9 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { evaluate } from '../engine/expr.js';
 import { flatPolygon } from '../engine/materials.js';
 import { outwardOf } from './facade-kit.js';
+import { world } from '../core/state.js';
+import { groundHeightAt } from '../engine/terrain-sampling.js';
+import { pInside, pointSeg } from '../core/math.js';
 
 const MAX_ITERATIONS = 10000,
   HEX = /^#[0-9a-f]{6}$/;
@@ -111,8 +114,10 @@ function run(body, scope, g, env) {
 // mismo hash determinista por frente, `street` el nombre de la calle y `commercialStreet` que
 // esa calle no figura en `context.residentialStreets` (city-design.json, frontages).
 function frontWall(kit, f, context) {
+  const w = kit.wall(f.a, f.q, [f.nx, f.nz]);
+  w.g.position.y = f.baseY ?? 0;
   return {
-    ...kit.wall(f.a, f.q, [f.nx, f.nz]),
+    ...w,
     extra: {
       h: f.h,
       floors: f.floors,
@@ -164,6 +169,7 @@ function* walls(anchor, kit, context, env) {
           nz: out[1],
           h: b.visualH ?? b.h,
           floors: b.floors,
+          baseY: b.baseY,
           seed: Math.abs(Math.round(cx * 7 + cz * 13)),
           street: '',
         },
@@ -185,6 +191,42 @@ export function composeBuilding(kit, designs, id, context = {}) {
   const building = designs.buildings.find((b) => b.id === id);
   if (!building) throw new Error(`Diseño de fachada desconocido: ${id}`);
   const groups = [];
+  // Base común del conjunto según sus anclajes; las coordenadas y alturas del diseño son relativas.
+  let baseY = world.terrain?.kind === 'grid' ? -Infinity : 0;
+  if (world.terrain?.kind === 'grid') {
+    const mark = world.city.landmarks.find(
+      (l) => building.landmark && l.name.includes(building.landmark),
+    );
+    if (Number.isFinite(mark?.baseY)) baseY = mark.baseY;
+    for (const f of building.fronts) {
+      const a = f.anchor;
+      const point = a.center ?? (a.a ? [(a.a[0] + a.b[0]) / 2, (a.a[1] + a.b[1]) / 2] : null);
+      if (point) {
+        const mark = world.city.landmarks.find(
+          (l) =>
+            Array.isArray(l.outline) &&
+            (pInside(...point, l.outline) ||
+              l.outline.some(
+                (p, i) => pointSeg(...point, p, l.outline[(i + 1) % l.outline.length]).d < 0.5,
+              )),
+        );
+        if (Number.isFinite(mark?.baseY)) {
+          baseY = Math.max(baseY, mark.baseY);
+          continue;
+        }
+      }
+      if (a.front)
+        baseY = Math.max(baseY, world.city.buildings[Number(a.front.split('-')[1])]?.baseY ?? 0);
+      else if (a.landmarkRing)
+        baseY = Math.max(
+          baseY,
+          world.city.landmarks.find((l) => l.name.includes(a.landmarkRing))?.baseY ?? 0,
+        );
+      else if (a.ring) baseY = Math.max(baseY, ...a.ring.map((p) => groundHeightAt(...p)));
+      else if (a.a) baseY = Math.max(baseY, groundHeightAt(...a.a), groundHeightAt(...a.b));
+    }
+  }
+  if (!Number.isFinite(baseY)) baseY = 0;
   let roofRing = null,
     roofScope = null;
   try {
@@ -192,6 +234,7 @@ export function composeBuilding(kit, designs, id, context = {}) {
       const recipe = designs.recipes[front.recipe],
         env = { kit, designs, palette: kit.palette, ring: null };
       for (const w of walls(front.anchor, kit, context, env)) {
+        w.g.position.y = baseY;
         const scope = Object.create(null);
         if (w.len !== undefined) scope.len = w.len;
         Object.assign(scope, w.extra);
@@ -217,7 +260,7 @@ export function composeBuilding(kit, designs, id, context = {}) {
     if (building.roof && roofRing) {
       const y = value(building.roof.y, roofScope, kit.palette),
         c = color(building.roof.color, roofScope, kit.palette);
-      kit.staging.add(flatPolygon(roofRing, y, kit.material(c)));
+      kit.staging.add(flatPolygon(roofRing, baseY + y, kit.material(c)));
     }
   } catch (e) {
     throw new Error(`Diseño de fachada «${id}»: ${e.message}`, { cause: e });

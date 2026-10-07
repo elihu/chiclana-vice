@@ -63,6 +63,7 @@ export function prepareFacades() {
       facadeWork.fronts.push({
         id: `building-${buildingIndex}-edge-${i}`,
         buildingIndex,
+        baseY: b.baseY,
         edgeIndex: i,
         a,
         q,

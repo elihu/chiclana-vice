@@ -161,7 +161,7 @@ export function listStreets() {
       view.mode = 0;
       session.routeClock = 0;
       closeMap();
-      snapCamera();
+      snapCamera(true);
       toast(view.name, 3);
     };
     list.appendChild(b);
@@ -182,7 +182,7 @@ export function listStreets() {
       player.speed = 0;
       session.routeClock = 0;
       closeMap();
-      snapCamera();
+      snapCamera(true);
       toast(n, 3);
     };
     list.appendChild(b);

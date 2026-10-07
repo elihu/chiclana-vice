@@ -12,6 +12,12 @@ import {
 } from '../core/state.js';
 import { lerp, pInside, pointSeg } from '../core/math.js';
 import { toast } from '../ui/feedback.js';
+import {
+  actorHeightAt,
+  surfaceHeightAt,
+  surfaceCeilingAt,
+  placeVehicle,
+} from './terrain-sampling.js';
 
 export function updateCameraVisibility() {
   if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
@@ -22,13 +28,29 @@ export function updateCameraVisibility() {
   actors.character.mesh.visible = !player.car && view.mode !== 1;
 }
 
-export function snapCamera() {
+export function snapCamera(resetSurface = false) {
+  if (resetSurface) {
+    player.surfaceY = undefined;
+    player.surfaceSupport = null;
+    if (player.car) {
+      player.car.surfaceY = undefined;
+      player.car.surfaceSupport = null;
+      player.car.surfaceRoad = undefined;
+    }
+  }
+  if (player.car) placeVehicle(player.car);
+  else {
+    player.surfaceY = actorHeightAt(player);
+    actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
+  }
   view.orbit = 0;
   view.lookPitch = 0;
   updateCamera(1);
 }
 
 // Sweep against cadastral volumes at the ray height; camera only, no physics changes.
+const actorSurface = () => player.car?.surfaceY ?? player.surfaceY ?? null;
+
 export function cameraSweep(position) {
   let dx = position.x - player.x,
     dz = position.z - player.z,
@@ -38,8 +60,10 @@ export function cameraSweep(position) {
     let u = i / steps,
       x = player.x + dx * u,
       z = player.z + dz * u,
-      y = lerp(1.1, position.y, u),
+      y = lerp(surfaceHeightAt(player.x, player.z, actorSurface()) + 1.1, position.y, u),
       pad = 0.18;
+    if (y < surfaceHeightAt(x, z, actorSurface()) + pad) return Math.max(0, (i - 1) / steps);
+    if (y > surfaceCeilingAt(x, z, actorSurface()) - pad) return Math.max(0, (i - 1) / steps);
     const seen = new Set();
     for (let gx = Math.floor((x - pad) / 25); gx <= Math.floor((x + pad) / 25); gx++)
       for (let gz = Math.floor((z - pad) / 25); gz <= Math.floor((z + pad) / 25); gz++)
@@ -47,7 +71,7 @@ export function cameraSweep(position) {
           if (seen.has(b)) continue;
           seen.add(b);
           if (
-            y > (b.renderH ?? b.h) + pad ||
+            y > (b.baseY ?? 0) + (b.renderH ?? b.h) + pad ||
             x < b.minX - pad ||
             x > b.maxX + pad ||
             z < b.minZ - pad ||
@@ -71,9 +95,15 @@ function constrainCamera(position) {
     position.x = lerp(player.x, position.x, u);
     position.z = lerp(player.z, position.z, u);
   }
+  position.y = Math.max(position.y, surfaceHeightAt(position.x, position.z, actorSurface()) + 0.25);
+  position.y = Math.min(
+    position.y,
+    surfaceCeilingAt(position.x, position.z, actorSurface()) - 0.15,
+  );
 }
 
 export function updateCamera(dt) {
+  const ground = surfaceHeightAt(player.x, player.z, actorSurface());
   let heading = player.a + view.orbit,
     follow = player.car ? 9.7 : 5.9,
     y = player.car ? 4.7 : 3.2,
@@ -84,9 +114,13 @@ export function updateCamera(dt) {
       side = player.car ? 0.38 : 0;
     desired = camDesired.set(
       player.x + Math.sin(player.a) * ahead + Math.cos(player.a) * side,
-      player.car ? 1.2 : 1.61,
+      ground + (player.car ? 1.2 : 1.61),
       player.z + Math.cos(player.a) * ahead - Math.sin(player.a) * side,
     );
+    if (player.car) {
+      player.car.mesh.updateMatrixWorld(true);
+      camDesired.set(side, 1.2, ahead).applyMatrix4(player.car.mesh.matrixWorld);
+    }
     target = camLook.set(
       desired.x + Math.sin(heading) * Math.cos(view.lookPitch) * 18,
       desired.y + Math.sin(view.lookPitch) * 18,
@@ -102,12 +136,12 @@ export function updateCamera(dt) {
     }
     desired = camDesired.set(
       player.x - Math.sin(heading) * follow,
-      y,
+      ground + y,
       player.z - Math.cos(heading) * follow,
     );
     target = camLook.set(
       player.x + Math.sin(heading) * look,
-      view.mode === 2 ? 0 : 1.1 + Math.tan(view.lookPitch) * look,
+      ground + (view.mode === 2 ? 0 : 1.1 + Math.tan(view.lookPitch) * look),
       player.z + Math.cos(heading) * look,
     );
     if (view.mode === 0) constrainCamera(desired);
@@ -118,8 +152,8 @@ export function updateCamera(dt) {
   updateCameraVisibility();
   gfx.camera.position.copy(camPos);
   gfx.camera.lookAt(camTarget);
-  gfx.sun.position.set(player.x - 85, 125, player.z + 60);
-  gfx.sun.target.position.set(player.x, 0, player.z);
+  gfx.sun.position.set(player.x - 85, ground + 125, player.z + 60);
+  gfx.sun.target.position.set(player.x, ground, player.z);
   gfx.sun.target.updateMatrixWorld();
   // In light mode, chunks beyond the fog end are culled (measured from the camera).
   const low = gfx.quality === 'low',

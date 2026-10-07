@@ -1,3 +1,4 @@
+import { placeVehicle } from '../engine/terrain-sampling.js';
 import { blocked } from '../world/spatial.js';
 import { clamp, d } from '../core/math.js';
 import { createCar } from './vehicles.js';
@@ -63,8 +64,7 @@ export function updatePolice(dt) {
       p.think = 3;
     }
     stepAgent(p, dt, true);
-    p.mesh.position.set(p.x, 0, p.z);
-    p.mesh.rotation.y = p.a;
+    placeVehicle(p);
     if (p.siren) p.siren.visible = Math.sin(session.t * 14) > -0.5;
     if (d(p, player) < 9) {
       close = true;

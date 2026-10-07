@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
+import { validateSurfaceDesign } from '../web/js/engine/surface-model.js';
 import { KIT_PIECES } from '../web/js/world/facade-kit.js';
 import {
   validateCityDesign,
@@ -11,6 +12,7 @@ import {
   validateFacadeDesigns,
 } from '../web/js/world/design-validate.js';
 import { applyCorrections } from '../web/js/world/corrections.js';
+import { createTerrain } from '../web/js/world/terrain.js';
 
 const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
@@ -91,6 +93,11 @@ for (const f of catalog.fronts) {
       frontRecipes: [city.frontages.recipe],
     });
   assert.deepEqual(cityErrors, [], 'city design valid:\n' + cityErrors.join('\n'));
+  assert.deepEqual(
+    validateSurfaceDesign(city.terrainSurfaces, readWorld()),
+    [],
+    'anclajes verticales vigentes',
+  );
   assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
   const inside = (p) =>
     Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;
@@ -211,6 +218,24 @@ for (const file of [
   );
 }
 const sources = read('web/data-sources.json');
+if (fs.existsSync('web/terrain.json')) {
+  const terrain = read('web/terrain.json'),
+    bytes = fs.readFileSync('web/terrain.bin');
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), terrain.sha256);
+  createTerrain(
+    terrain,
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    world,
+  );
+  const record = sources.records.find((r) => r.files.includes('terrain.json'));
+  assert(record && record.files.includes('terrain.bin'), 'both terrain files registered');
+  assert.equal(record.attribution, terrain.attribution);
+  assert.equal(
+    read('source-data/terrain-baseline.json').sha256,
+    terrain.sha256,
+    'independent terrain fingerprint',
+  );
+}
 for (const record of sources.records)
   for (const file of record.files) {
     assert.equal(

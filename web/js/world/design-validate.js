@@ -2,6 +2,7 @@
 // tests/verify-world.mjs. Devuelve una lista de errores con la ruta JSON; vacía si todo cuadra.
 // Referencia normativa: docs/plan-modular/KIT-FACHADAS.md (K3 y K5).
 import { freeNames } from '../engine/expr.js';
+import { validateSurfaceDesign } from '../engine/surface-model.js';
 
 // Argumentos de cada pieza tras el grupo `g`: [mínimo, máximo].
 export const PIECE_ARITY = {
@@ -515,7 +516,11 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'vegetation',
     'buildings',
   ];
-  onlyKeys(json, ['$schema', 'version', 'description', 'license', 'attribution', ...sections], '$');
+  onlyKeys(
+    json,
+    ['$schema', 'version', 'description', 'license', 'attribution', 'terrainSurfaces', ...sections],
+    '$',
+  );
   if (json.version !== 1) fail('version', 'debe ser 1');
   for (const k of ['description', 'license', 'attribution'])
     if (k in json && typeof json[k] !== 'string') fail(k, 'se esperaba texto');
@@ -679,6 +684,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     },
     'buildings',
   );
+  errors.push(...validateSurfaceDesign(json.terrainSurfaces));
   return errors;
 }
 

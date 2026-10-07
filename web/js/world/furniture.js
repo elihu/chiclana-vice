@@ -1,3 +1,4 @@
+import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { inBuilding } from './spatial.js';
@@ -40,13 +41,13 @@ export function buildUrbanFurniture() {
   }
   function group(x, z, a = 0) {
     let g = new THREE.Group();
-    g.position.set(x, 0, z);
+    g.position.set(x, surfaceHeightAt(x, z), z);
     g.rotation.y = a;
     staging.add(g);
     return g;
   }
   function collider(x, z, r) {
-    streetEnvironment.colliders.push({ x, z, r });
+    streetEnvironment.colliders.push({ x, z, r, y: surfaceHeightAt(x, z) });
   }
   function lamp(x, z, modern = false) {
     if (!clear(x, z, 0.32)) return;

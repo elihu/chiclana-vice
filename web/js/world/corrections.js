@@ -12,11 +12,12 @@ const K = new Uint32Array([
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
 ]);
 
-// SHA-256 síncrono de un texto ASCII. `crypto.subtle` no existe fuera de contextos seguros
+// SHA-256 síncrono de texto ASCII o Uint8Array. `crypto.subtle` no existe fuera de contextos seguros
 // (por ejemplo, el juego servido por HTTP en la red local), así que no se usa.
 export function sha256Hex(text) {
-  const bytes = [];
-  for (let i = 0; i < text.length; i++) bytes.push(text.charCodeAt(i) & 0xff);
+  const bytes = text instanceof Uint8Array ? Array.from(text) : [];
+  if (typeof text === 'string')
+    for (let i = 0; i < text.length; i++) bytes.push(text.charCodeAt(i) & 0xff);
   const bits = bytes.length * 8;
   bytes.push(0x80);
   while (bytes.length % 64 !== 56) bytes.push(0);

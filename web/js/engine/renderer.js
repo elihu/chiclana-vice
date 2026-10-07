@@ -38,21 +38,26 @@ export function setupRenderer() {
   applyQuality();
 }
 
-export function addGroundPlanes() {
+export function addGroundPlanes(geometry, exterior) {
   let g = new THREE.Mesh(
-    new THREE.PlaneGeometry(world.worldW, world.worldH),
+    geometry,
     new THREE.MeshStandardMaterial(
       world.groundTexture
         ? { map: world.groundTexture, roughness: 1 }
         : { color: '#9a9b86', roughness: 1 },
     ),
   );
-  g.rotation.x = -Math.PI / 2;
+  g.name = 'terrain-ground';
   g.receiveShadow = true;
   gfx.scene.add(g);
-  let outer = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), mat('#9a9b86'));
-  outer.rotation.x = -Math.PI / 2;
-  outer.position.y = -0.1;
+  let outer = new THREE.Mesh(
+    exterior || new THREE.PlaneGeometry(8000, 8000),
+    mat('#9a9b86', exterior ? { side: THREE.DoubleSide } : {}),
+  );
+  if (!exterior) {
+    outer.rotation.x = -Math.PI / 2;
+    outer.position.y = -0.1;
+  }
   gfx.scene.add(outer);
 }
 
