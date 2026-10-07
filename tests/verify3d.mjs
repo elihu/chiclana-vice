@@ -630,6 +630,23 @@ console.log('Pedestrians', g.people.length);
   }
   console.log('Accent-insensitive search and drive-safe teleport passed');
 }
+// nearestRoad coincide con el mínimo de pointSeg sobre todos los tramos.
+{
+  for (const [x, z, drive] of [
+    [g.player.x, g.player.z, false],
+    [0, 0, true],
+    [-180, 95, false],
+    [240, -160, true],
+  ]) {
+    let want = null;
+    for (const s of g.segments) {
+      if (drive && !s.drive) continue;
+      const p = g.pointSeg(x, z, s.a, s.b);
+      if (!want || p.d < want.d) want = { ...p, s };
+    }
+    assert.deepEqual(g.nearestRoad(x, z, drive), want, 'nearestRoad matches pointSeg');
+  }
+}
 // Escape closes the map even while typing in the search field.
 {
   g.openMap();

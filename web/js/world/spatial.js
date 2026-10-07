@@ -6,7 +6,7 @@ import {
   waterAreas,
   world,
 } from '../core/state.js';
-import { pInside, pointSeg } from '../core/math.js';
+import { clamp, pInside, pointSeg } from '../core/math.js';
 
 export function inBuilding(x, z, pad = 0.3) {
   const seen = new Set();
@@ -26,18 +26,31 @@ export function inBuilding(x, z, pad = 0.3) {
   return false;
 }
 
+// Misma aritmética que pointSeg, en línea para no crear un objeto por tramo; solo se crea
+// el resultado (quien llama puede conservarlo).
 export function nearestRoad(x, z, driveOnly = false) {
   let best = null,
-    md = Infinity;
+    md = Infinity,
+    bx = 0,
+    bz = 0,
+    bu = 0;
   for (const s of segments) {
     if (driveOnly && !s.drive) continue;
-    let p = pointSeg(x, z, s.a, s.b);
-    if (p.d < md) {
-      md = p.d;
-      best = { ...p, s };
+    const a = s.a,
+      b = s.b,
+      dx = b[0] - a[0],
+      dz = b[1] - a[1],
+      u = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1),
+      d = Math.hypot(x - a[0] - dx * u, z - a[1] - dz * u);
+    if (d < md) {
+      md = d;
+      best = s;
+      bx = a[0] + dx * u;
+      bz = a[1] + dz * u;
+      bu = u;
     }
   }
-  return best;
+  return best && { x: bx, z: bz, d: md, u: bu, s: best };
 }
 
 export function blocked(x, z, r = 0.3) {
