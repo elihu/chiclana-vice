@@ -66,13 +66,25 @@ constructor lo usa ([DESARROLLO.md](DESARROLLO.md#terreno)).
   (`status: "approximate"`); el reanclaje a las aristas catastrales queda descartado por
   ahora.
 
+## Pendientes de la auditoría resueltos (`perf/pendientes-auditoria`)
+
+- `nearestRoad` ya no crea objetos por tramo en cada frame.
+- La ortofoto se recarga al cambiar de calidad en caliente y libera la anterior (en
+  pantallas táctiles siempre se usa la reducida).
+- Al bajar del coche la puerta no puede atravesar un muro: en 11 patios cerrados se podía
+  aparecer dentro; ahora 0. Los muros de los patios tienen el mismo margen de colisión que
+  los exteriores, también para la cámara.
+- Huella de escena, rutas y simulación idénticas a `main`; revisado por el usuario en
+  Chrome de escritorio el 7/10/2026.
+- Descartado: muros de `buildBuildings` en FrontSide. La orientación es correcta, pero con
+  la cámara pegada a un muro o en pantallas de proporción 2,4 o más se vería a través de
+  los edificios; exigiría rehacer las colisiones de la cámara.
+
 ## Pendientes
 
 Los identificadores remiten a la auditoría del 6/10/2026.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
-- Recargar la ortofoto al cambiar de calidad en caliente; muros de `buildBuildings` aún
-  en DoubleSide; `nearestRoad` crea objetos por tramo en cada frame.
 - Verificación en iOS, revisión visual de fachadas FrontSide y primera ejecución real de
   `ci.yml` en GitHub.
 - Repaso de toda la documentación contra el código antes del push y la release.
