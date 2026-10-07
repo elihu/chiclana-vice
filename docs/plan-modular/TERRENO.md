@@ -7,6 +7,9 @@ módulo destino tras la fase 1.
 
 ## T1. Dónde se supone suelo plano
 
+Tabla del plan, con las rutas anteriores a la fase 2. La versión vigente está en
+[DESARROLLO.md](../DESARROLLO.md#terreno).
+
 | Módulo destino                                         | Función                                   | Supuesto actual                                                                                                                      | Con terreno                                                                                                                          |
 | ------------------------------------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `engine/renderer.js`                                   | `addGroundPlanes`                         | Suelo: `PlaneGeometry` horizontal en `y = 0`; exterior en `y = -0,1`                                                                 | Malla de terreno con la ortofoto; el plano exterior, en la cota del borde                                                            |

@@ -1,5 +1,9 @@
 # Propuesta de convenciones: agentes, documentación, estructura, Git y CI
 
+> **Aplicada.** Se conserva como registro de las decisiones; las reglas vigentes están en
+> [AGENTS.md](../AGENTS.md), [GIT_WORKFLOW.md](GIT_WORKFLOW.md) y
+> [PUBLICACION.md](PUBLICACION.md).
+
 Rama `docs/convenciones-agentes`, creada desde `main` (5c727d1). Fecha: 6/10/2026.
 
 ## Resumen
