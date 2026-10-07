@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Revisión: 6/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 7/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
@@ -50,6 +50,21 @@ y las correcciones manuales del mapa están en `web/facade-designs.json`,
 ([DATOS.md](DATOS.md#diseños-y-correcciones-a-mano)). Verificado en CPU (`npm run check`,
 huella de escena idéntica a `main`) y en Chrome sin interfaz con SwiftShader; no en GPU
 real ni en móvil.
+
+## Fases 1 y 2 del plan modular
+
+Integradas en `main` local, sin publicar: juego en módulos ES (`refactor/modulos`) y
+diseño desde datos (`feat/diseno-datos`): fachadas, reglas de calle y correcciones del
+mapa en JSON, y modo `?debug`.
+
+- La huella de escena, rutas y comportamiento es idéntica a la fase 1; solo se añaden las
+  descargas de `facade-designs.json`, `city-design.json` y `map-corrections.json`.
+- Chrome sin interfaz (SwiftShader), en raíz y bajo `/chiclana-vice/`: arranque sin
+  errores, 1421 mallas y 917 276 triángulos como antes. Una corrección válida se aplica y
+  una con guarda falsa detiene la carga con «Corrección fix-001 no aplicable».
+- El usuario ha revisado el 7/10/2026 en Chrome de escritorio con GPU la comparación visual con la fase 1, la
+  fluidez, el modo ligero, `?debug` y las correcciones, y en su móvil por la red local
+  los controles táctiles, el modo ligero y `?debug`, sin incidencias.
 
 ## Pendientes
 
