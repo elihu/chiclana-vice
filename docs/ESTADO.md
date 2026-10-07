@@ -9,7 +9,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   Actions.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Comprobado en Chrome de
   escritorio con GPU, incluida una copia servida bajo `/chiclana-vice/` como en Pages.
-- No verificado: móvil físico, FPS estable conduciendo y la primera ejecución en GitHub
+- No verificado: iOS, FPS estable conduciendo y la primera ejecución en GitHub
   del workflow `ci.yml`.
 
 ## Decisiones vigentes
@@ -42,29 +42,29 @@ Las medidas de las portadas, los campanarios y las naves de iglesia están en
 `web/facade-designs.json` (recetas editables sin tocar el código), con lo que se cierra
 el pendiente SP-5 de la auditoría.
 
-## Diseño desde datos (rama `feat/diseno-datos`)
+## Plan modular (fases 0 a 3)
 
-Pendiente de revisión visual del usuario e integración. Las fachadas, las reglas de calle
-y las correcciones manuales del mapa están en `web/facade-designs.json`,
-`web/city-design.json` y `web/map-corrections.json`; el modo `?debug` ayuda a editarlos
-([DATOS.md](DATOS.md#diseños-y-correcciones-a-mano)). Verificado en CPU (`npm run check`,
-huella de escena idéntica a `main`) y en Chrome sin interfaz con SwiftShader; no en GPU
-real ni en móvil.
-
-## Fases 1 y 2 del plan modular
-
-Integradas en `main` local, sin publicar: juego en módulos ES (`refactor/modulos`) y
-diseño desde datos (`feat/diseno-datos`): fachadas, reglas de calle y correcciones del
-mapa en JSON, y modo `?debug`.
+Integrado en `main` local, sin publicar: juego en módulos ES (`refactor/modulos`),
+diseño desde datos (`feat/diseno-datos`) e interfaz de terreno plano
+(`refactor/terreno-interfaz`). Las fachadas, las reglas de calle y las correcciones del
+mapa están en `web/facade-designs.json`, `web/city-design.json` y
+`web/map-corrections.json`; el modo `?debug` ayuda a editarlos
+([DATOS.md](DATOS.md#diseños-y-correcciones-a-mano)). `world.terrain` existe pero ningún
+constructor lo usa ([DESARROLLO.md](DESARROLLO.md#terreno)).
 
 - La huella de escena, rutas y comportamiento es idéntica a la fase 1; solo se añaden las
   descargas de `facade-designs.json`, `city-design.json` y `map-corrections.json`.
 - Chrome sin interfaz (SwiftShader), en raíz y bajo `/chiclana-vice/`: arranque sin
   errores, 1421 mallas y 917 276 triángulos como antes. Una corrección válida se aplica y
   una con guarda falsa detiene la carga con «Corrección fix-001 no aplicable».
-- El usuario ha revisado el 7/10/2026 en Chrome de escritorio con GPU la comparación visual con la fase 1, la
-  fluidez, el modo ligero, `?debug` y las correcciones, y en su móvil por la red local
-  los controles táctiles, el modo ligero y `?debug`, sin incidencias.
+- El usuario revisó el 7/10/2026 la fase 2 en Chrome de escritorio con GPU (comparación
+  visual, fluidez, modo ligero, `?debug` y correcciones) y en un móvil Android por la red
+  local (controles táctiles, modo ligero y `?debug`), sin incidencias. No se ha probado
+  en iOS.
+- Mercado: la fachada sigue el anillo simplificado de 4 esquinas; una está a 6,1 m del
+  vértice catastral más cercano del edificio 2615. Se mantiene como aproximación
+  (`status: "approximate"`); el reanclaje a las aristas catastrales queda descartado por
+  ahora.
 
 ## Pendientes
 
@@ -73,8 +73,9 @@ Los identificadores remiten a la auditoría del 6/10/2026.
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Recargar la ortofoto al cambiar de calidad en caliente; muros de `buildBuildings` aún
   en DoubleSide; `nearestRoad` crea objetos por tramo en cada frame.
-- Verificación en móvil físico (iOS y Android), revisión visual de fachadas FrontSide y
-  primera ejecución real de `ci.yml` en GitHub.
+- Verificación en iOS, revisión visual de fachadas FrontSide y primera ejecución real de
+  `ci.yml` en GitHub.
+- Repaso de toda la documentación contra el código antes del push y la release.
 
 ## Al terminar de integrar las ramas en curso
 
