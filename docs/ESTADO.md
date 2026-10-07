@@ -43,6 +43,12 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   para la cámara; la ortofoto se recarga al cambiar de calidad en caliente; `nearestRoad`
   no crea objetos por tramo en cada frame.
 
+## Relieve del terreno
+
+[Plan de implementación](PLAN-TERRENO.md) revisado contra `v1.1.0` e integrado en
+`main` local. Implementación solicitada en una rama y worktree propios, sin publicar
+ni integrar el código hasta su revisión.
+
 ## Pendientes
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
