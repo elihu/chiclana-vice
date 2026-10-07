@@ -4,6 +4,7 @@ import { applyQuality } from '../engine/renderer.js';
 import { audio, gfx, pois, session, state, world } from '../core/state.js';
 import { clearInput } from './input.js';
 import { mute, toggleAudio } from '../engine/audio.js';
+import { reloadGroundTexture } from '../world/loader.js';
 import { rescue } from '../game/player.js';
 import { save } from '../game/save.js';
 import { toast } from './feedback.js';
@@ -87,6 +88,7 @@ export function pauseMenu() {
   $('quality').onclick = () => {
     gfx.quality = gfx.quality === 'low' ? 'auto' : 'low';
     applyQuality();
+    reloadGroundTexture();
     save();
     closeModal();
     toast(gfx.quality === 'low' ? 'Modo ligero activado' : 'Calidad normal', 2);

@@ -182,7 +182,9 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
 - Oculta las celdas más allá del final de la niebla.
 - Al arrancar en ligero o en un dispositivo táctil, carga la ortofoto reducida
-  `aerial-2048.jpg`; cambiar la calidad durante la partida no la recarga.
+  `aerial-2048.jpg`. Al cambiar la calidad durante la partida se carga la que toca (la
+  completa solo en calidad normal sin pantalla táctil), se sustituye en el suelo y las
+  cubiertas y se libera la anterior.
 
 La elección se guarda en el navegador (`chiclana-real-v2`) y nunca se activa sola.
 

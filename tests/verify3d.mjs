@@ -452,6 +452,51 @@ assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto')
 assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'auto');
 console.log('Light mode shadows, persistence and fog culling passed');
 
+// Cambio de calidad en caliente: con puntero fino se carga la ortofoto que toca una sola
+// vez, se sustituye en suelo y cubiertas y se libera la anterior.
+{
+  const usersOf = (tex) => {
+    let n = 0;
+    g.scene.traverse((o) => {
+      for (const m of [o.material].flat()) if (m?.map === tex) n++;
+    });
+    return n;
+  };
+  const toggle = () => (g.pauseMenu(), els.quality.onclick());
+  const disposed = new Set(),
+    watch = (tex) => tex.addEventListener('dispose', () => disposed.add(tex)),
+    full = 'aerial.jpg?v=' + assetVersion,
+    reduced = 'aerial-2048.jpg?v=' + assetVersion,
+    count = (u) => requested.filter((r) => r === u).length;
+  const first = g.groundTexture,
+    users = usersOf(first),
+    reducedBefore = count(reduced);
+  assert(users >= 2, 'orthophoto on ground and roofs');
+  watch(first);
+  g.setCoarse(false);
+  toggle(); // ligero: ya está la reducida
+  assert.equal(await g.reloadGroundTexture(), false);
+  toggle(); // normal: pide la completa
+  toggle(); // ligero mientras carga: no pide nada
+  toggle(); // normal otra vez: reutiliza la carga en curso
+  assert.equal(await g.reloadGroundTexture(), true, 'full orthophoto swapped in');
+  assert.equal(count(full), 1, 'full orthophoto requested once');
+  const second = g.groundTexture;
+  assert(second !== first && disposed.has(first), 'previous orthophoto disposed');
+  assert.equal(usersOf(first), 0);
+  assert.equal(usersOf(second), users, 'every orthophoto material updated');
+  watch(second);
+  toggle(); // ligero: vuelve la reducida
+  assert.equal(await g.reloadGroundTexture(), true);
+  assert(disposed.has(second) && usersOf(g.groundTexture) === users);
+  assert.equal(count(reduced), reducedBefore + 1);
+  g.setCoarse(true);
+  toggle(); // normal en táctil: sigue la reducida
+  assert.equal(await g.reloadGroundTexture(), false);
+  assert(g.quality === 'auto' && count(full) === 1 && count(reduced) === reducedBefore + 1);
+  console.log('Hot quality change swaps and disposes the orthophoto passed');
+}
+
 // Paused frames reuse the last image unless something requests a redraw.
 g.pauseMenu();
 assert(g.paused);

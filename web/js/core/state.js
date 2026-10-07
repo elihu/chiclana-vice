@@ -72,6 +72,7 @@ export const world = {
   facadeDesigns: null,
   cityDesign: null,
   groundTexture: null,
+  groundTextureFile: null,
   worldW: 0,
   worldH: 0,
   // Mapped OSM street objects (crossings, lamps, benches…) loaded from street-objects.json.
