@@ -30,7 +30,7 @@ import { findRoute, nearestNode } from './game/graph.js';
 import { interact } from './game/player.js';
 import { JOBS as jobs } from '../game-data.js';
 import { listStreets, openMap } from './ui/map.js';
-import { loadWorld } from './world/loader.js';
+import { loadWorld, reloadGroundTexture } from './world/loader.js';
 import { pInside, pointSeg } from './core/math.js';
 import { start } from './game/flow.js';
 import { stepAgent } from './game/traffic.js';
@@ -120,6 +120,14 @@ export function createTestApi(frame) {
     },
     get quality() {
       return gfx.quality;
+    },
+    get groundTexture() {
+      return world.groundTexture;
+    },
+    reloadGroundTexture,
+    // Simula un puntero fino para probar la ortofoto completa (el arnés es táctil).
+    setCoarse: (v) => {
+      gfx.coarse = v;
     },
     get paused() {
       return session.paused;

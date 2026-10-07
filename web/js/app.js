@@ -43,7 +43,7 @@ import { update } from './game/update.js';
 
 async function init() {
   loadProgress('Descargando el trazado y los edificios reales…', 8);
-  const { res, tex, heightSamples, profiles, streetObjects, designs, cityDesign } =
+  const { res, tex, aerial, heightSamples, profiles, streetObjects, designs, cityDesign } =
     await loadLayers();
   world.city = res;
   world.terrain = flatTerrain;
@@ -64,6 +64,7 @@ async function init() {
   world.facadeDesigns = designs;
   world.cityDesign = cityDesign;
   world.groundTexture = tex;
+  world.groundTextureFile = tex ? aerial : null;
   if (world.groundTexture) {
     world.groundTexture.colorSpace = THREE.SRGBColorSpace;
     world.groundTexture.anisotropy = 4;
