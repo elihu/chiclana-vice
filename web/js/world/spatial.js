@@ -18,10 +18,44 @@ export function inBuilding(x, z, pad = 0.3) {
         if (x < b.minX - pad || x > b.maxX + pad || z < b.minZ - pad || z > b.maxZ + pad) continue;
         let inside = pInside(x, z, b.p) && !b.holes.some((h) => pInside(x, z, h));
         if (inside) return true;
-        if (pad > 0) {
-          for (let i = 0; i < b.p.length; i++)
-            if (pointSeg(x, z, b.p[i], b.p[(i + 1) % b.p.length]).d < pad) return true;
-        }
+        // El margen vale también para los muros de los patios.
+        if (pad > 0)
+          for (const r of [b.p, ...b.holes])
+            for (let i = 0; i < r.length; i++)
+              if (pointSeg(x, z, r[i], r[(i + 1) % r.length]).d < pad) return true;
+      }
+  return false;
+}
+
+const side = (a, b, x, z) => (b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0]);
+
+// ¿Corta el segmento (x0, z0)–(x1, z1) algún muro (contorno o patio) de un edificio?
+export function crossesWall(x0, z0, x1, z1) {
+  const seen = new Set(),
+    p = [x0, z0],
+    q = [x1, z1];
+  for (let gx = Math.floor(Math.min(x0, x1) / 25); gx <= Math.floor(Math.max(x0, x1) / 25); gx++)
+    for (let gz = Math.floor(Math.min(z0, z1) / 25); gz <= Math.floor(Math.max(z0, z1) / 25); gz++)
+      for (const b of buildingGrid.get(gx + ',' + gz) || []) {
+        if (seen.has(b)) continue;
+        seen.add(b);
+        if (
+          Math.max(x0, x1) < b.minX ||
+          Math.min(x0, x1) > b.maxX ||
+          Math.max(z0, z1) < b.minZ ||
+          Math.min(z0, z1) > b.maxZ
+        )
+          continue;
+        for (const r of [b.p, ...b.holes])
+          for (let i = 0; i < r.length; i++) {
+            const a = r[i],
+              c = r[(i + 1) % r.length];
+            if (
+              side(a, c, x0, z0) * side(a, c, x1, z1) <= 0 &&
+              side(p, q, a[0], a[1]) * side(p, q, c[0], c[1]) <= 0
+            )
+              return true;
+          }
       }
   return false;
 }

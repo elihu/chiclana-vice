@@ -195,6 +195,72 @@ console.log(
     ],
   }),
 );
+// Patios cerrados: bajar del coche no puede dejar al jugador al otro lado de un muro fino.
+// Un punto de cada patio al que se llegaba así antes del arreglo.
+{
+  const car = g.player.car,
+    saved = { x: car.x, z: car.z, a: car.a, px: g.player.x, pz: g.player.z };
+  const courtyards = [
+    [-514.69, 413.26], // Calle Loira
+    [-513.89, 249.9], // Residencial Huerta Alta
+    [-523.62, 245.65],
+    [-527.71, 243.98],
+    [-541.29, 238.84],
+    [-564.47, 229.26],
+    [-380.18, 195.7], // Calle Gustavo Adolfo Bécquer
+    [45.28, -151.89], // Calle de la Vega
+    [273.39, 70.86], // Calle de la Plata
+    [262.09, -249.15], // Calle Virgen del Carmen
+    [489.6, -485.15], // Calle Calderón de la Barca
+  ].map(([x, z]) => {
+    const b = g.city.buildings.find((b) => b.holes.some((h) => g.pInside(x, z, h)));
+    assert(b, 'courtyard at ' + x + ',' + z);
+    return b.holes.find((h) => g.pInside(x, z, h));
+  });
+  // El coche cabe: a 0,9 m de los contornos exteriores (criterio previo al arreglo).
+  const fits = (x, z) =>
+    !g.city.buildings.some(
+      (b) =>
+        x > b.minX - 1 &&
+        x < b.maxX + 1 &&
+        z > b.minZ - 1 &&
+        z < b.maxZ + 1 &&
+        b.p.some((p, i) => g.pointSeg(x, z, p, b.p[(i + 1) % b.p.length]).d < 0.9),
+    );
+  let tried = 0;
+  for (const hole of courtyards) {
+    const xs = hole.map((p) => p[0]),
+      zs = hole.map((p) => p[1]),
+      candidates = [];
+    for (let x = Math.min(...xs); x <= Math.max(...xs); x += 0.5)
+      for (let z = Math.min(...zs); z <= Math.max(...zs); z += 0.5) {
+        if (!g.pInside(x, z, hole) || g.inBuilding(x, z, 0)) continue;
+        for (let t = 0; t < 360; t += 10) {
+          // Coche a 2,2 m fuera del patio, con la puerta derecha hacia (x, z).
+          const a = (t * Math.PI) / 180 + Math.PI,
+            cx = x - Math.cos(a) * 2.2,
+            cz = z + Math.sin(a) * 2.2;
+          if (!g.pInside(cx, cz, hole) && !g.inBuilding(cx, cz, 0) && fits(cx, cz))
+            candidates.push({ cx, cz, a });
+        }
+      }
+    assert(candidates.length, 'a car fits next to the courtyard wall');
+    for (const c of candidates.filter((_, i) => i % Math.ceil(candidates.length / 12) === 0)) {
+      Object.assign(car, { x: c.cx, z: c.cz, a: c.a, speed: 0 });
+      Object.assign(g.player, { x: c.cx, z: c.cz, car });
+      g.interact();
+      assert(!g.pInside(g.player.x, g.player.z, hole), 'exit never lands inside a courtyard');
+      tried++;
+    }
+  }
+  Object.assign(car, { x: saved.x, z: saved.z, a: saved.a, speed: 0 });
+  Object.assign(g.player, { x: saved.px, z: saved.pz, car });
+  g.interact();
+  assert(!g.player.car, 'exit car on a normal street');
+  g.interact();
+  assert(g.player.car === car, 'enter car again');
+  console.log('Car exit never crosses into closed courtyards (' + tried + ' placements)');
+}
 console.log(
   'Facade work',
   JSON.stringify({

@@ -13,7 +13,7 @@ import {
   vehicles,
   view,
 } from '../core/state.js';
-import { blocked, safePoint } from '../world/spatial.js';
+import { blocked, crossesWall, safePoint } from '../world/spatial.js';
 import { carCollision, nearestCar } from './vehicles.js';
 import { clamp, d, lerp } from '../core/math.js';
 import { dropPolice, setHeat } from './police.js';
@@ -52,7 +52,8 @@ export function interact() {
     for (const sign of [1, -1]) {
       let x = c.x + Math.cos(c.a) * 2.2 * sign,
         z = c.z - Math.sin(c.a) * 2.2 * sign;
-      if (!blocked(x, z, 0.35)) {
+      // La puerta no puede atravesar un muro (p. ej., hacia un patio cerrado).
+      if (!blocked(x, z, 0.35) && !crossesWall(c.x, c.z, x, z)) {
         exit = { x, z };
         break;
       }

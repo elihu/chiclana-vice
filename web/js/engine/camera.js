@@ -56,11 +56,9 @@ export function cameraSweep(position) {
             continue;
           let hit = pInside(x, z, b.p) && !b.holes.some((h) => pInside(x, z, h));
           if (!hit)
-            for (let k = 0; k < b.p.length; k++)
-              if (pointSeg(x, z, b.p[k], b.p[(k + 1) % b.p.length]).d < pad) {
-                hit = true;
-                break;
-              }
+            for (const r of [b.p, ...b.holes])
+              for (let k = 0; k < r.length && !hit; k++)
+                if (pointSeg(x, z, r[k], r[(k + 1) % r.length]).d < pad) hit = true;
           if (hit) return Math.max(0, (i - 1) / steps - 0.2 / (length || 1));
         }
   }
