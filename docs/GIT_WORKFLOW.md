@@ -111,15 +111,18 @@ Para deshacer una tarea ya integrada sin reescribir historial:
 - Crear la release con notas generadas a partir de los commits:
 
 ```fish
-git tag -a v1.0.0 -m 'Descripción y validación realizada'
-git push origin v1.0.0
-gh release create v1.0.0 --verify-tag --generate-notes
+git tag -a vX.Y.Z -m 'Descripción y validación realizada'
+git push origin vX.Y.Z
+gh release create vX.Y.Z --verify-tag --notes-file notas.md
 ```
 
 - Una etiqueta no despliega nada y no implica una prueba en móvil.
-- Primera etiqueta: `v1.0.0` (coincide con `package.json`), que crea el integrador al
-  final, cuando todas las ramas en curso estén integradas, `npm run check` pase en `main`
-  y el despliegue haya terminado. Ver [ESTADO.md](ESTADO.md).
+- La versión de `package.json` coincide con la etiqueta y se sube en un commit
+  `chore: preparar la versión X.Y.Z` antes del push, junto con la versión de los
+  recursos (`?v=`, ver [DESARROLLO.md](DESARROLLO.md#módulos-del-juego)). La etiqueta se
+  crea cuando `npm run check` pasa en `main` y el despliegue ha terminado.
+- Las notas resumen los cambios para quien juega y lo verificado; `--generate-notes`
+  solo lista pull requests, y aquí se integra en local.
 - No hay `CHANGELOG.md`: las notas de cada release y el historial de Conventional Commits
   cumplen esa función sin provocar conflictos entre ramas paralelas.
 
@@ -141,6 +144,5 @@ de terceros que deba retirarse. En ese caso:
 GitHub puede conservar un tiempo los commits antiguos accesibles por su SHA; si hace falta
 purgarlos, hay que pedirlo a su soporte.
 
-Situación actual: el historial local se ha reescrito para quitar el nombre «Gerion Dev
-Team» de versiones antiguas de `LICENSE` y `THIRD_PARTY_NOTICES.md`. El push forzado a
-`origin` está pendiente de decisión del usuario (ver [ESTADO.md](ESTADO.md)).
+La única reescritura hasta ahora quitó el nombre «Gerion Dev Team» de versiones antiguas
+de `LICENSE` y `THIRD_PARTY_NOTICES.md`; se publicó antes de `v1.0.0`.

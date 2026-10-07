@@ -1,5 +1,10 @@
 # Plan de implementación: motor modular y ciudad desde datos
 
+> **Ejecutado.** Las fases 0 a 3 están integradas en `main` (7/10/2026). Se conserva como
+> registro de decisiones: las rutas, nombres y cifras de los pasos son las de su momento.
+> La referencia vigente es [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md); el
+> formato de recetas y correcciones, [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
+
 Fecha: 6/10/2026. Rama `docs/plan-modular`, creada desde `main` (5666928). Este documento
 es un plan: no cambia el juego. Lo ejecuta un agente sin posibilidad de preguntar, así que
 cada paso dice qué tocar, cómo comprobarlo y qué hacer si falla. Las decisiones ya están

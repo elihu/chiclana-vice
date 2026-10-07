@@ -45,6 +45,9 @@ se sustituye.
   edificio real a partir de las referencias citadas en los avisos de terceros. No se
   distribuyen fotos ni planos como texturas.
 - Las alturas de iglesias y Ayuntamiento son aproximaciones visuales, no mediciones LiDAR.
+- La fachada del Mercado sigue un rectángulo simplificado de cuatro esquinas, no el
+  contorno catastral de 22 vértices de su parte (2615): tres esquinas son vértices
+  catastrales y la cuarta queda a unos 6 m del más cercano, y no reproduce los entrantes.
 - Paleta, celda de lotes y política de alturas en `web/facade-profiles.json`; recetas de
   geometría en `web/facade-designs.json`; reglas de selección de calles, zonas, mobiliario,
   pavimentos, vegetación y edificios genéricos (paleta, colores y alturas mínimas) en

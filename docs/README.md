@@ -22,6 +22,8 @@ documento; los demás enlazan a él.
 
 - [Estado actual y pendientes](ESTADO.md).
 - [Propuesta de convenciones](PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
-  documentación, Git y CI.
-- [Plan de modularización y diseño desde datos](PLAN-MODULAR.md): plan por fases; las
-  fases 0 a 2 están ejecutadas y falta la 3 (terreno).
+  documentación, Git y CI, ya aplicadas; se conserva como registro.
+- [Plan de modularización y diseño desde datos](PLAN-MODULAR.md): plan por fases, ya
+  ejecutado (fases 0 a 3). Se conserva como registro; la referencia vigente está en
+  [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md), salvo el formato de recetas y
+  correcciones de [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
