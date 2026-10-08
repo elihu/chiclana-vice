@@ -151,34 +151,13 @@ una segunda copia.
 La política común de alturas se publica en los perfiles con
 `node tools/export-height-policy.mjs`; la consumen también los conversores Python.
 
-## 4. Procedencia y comprobación (siempre)
-
-```fish
-node tools/export-provenance.mjs
-npm test
-```
-
-`verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
-overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
-`web/` coinciden y que las licencias están incluidas. Además compara una huella fija de
-la geografía (origen, límites, contornos, patios, plantas, vías con anchura y sentido,
-áreas, monumentos y árboles) con `source-data/geometry-baseline.json`;
-un cambio deliberado de geometría actualiza esa huella en su propio commit
-(`node tools/export-geometry-baseline.mjs`, solo después de revisar el cambio).
-
-Los casos de conversión de sentidos OSM se comprueban además con
-`uv run --no-project python tests/verify-tools.py`.
-
-Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
-probar el juego en un navegador.
-
-## Ortofoto por teselas (fase 2)
+## 4. Ortofoto por teselas (opcional)
 
 ```sh
 uv run --no-project --with pillow python tools/aerial-tiles.py
-node tools/export-provenance.mjs
-npm run check
 ```
+
+Después, el paso 5.
 
 El generador lee `world.json.bounds` y usa su unión para seleccionar la rejilla de
 255 m anclada al origen. Guarda respuestas originales del WMS y GetFeatureInfo en
@@ -204,11 +183,32 @@ recompresión (296 m de lado con margen de 20,5 m); `lo/` deriva 592 × 592 con 
 y JPEG calidad 82. `general.jpg` cubre la caja envolvente a aproximadamente 1 m/píxel,
 con dimensiones redondeadas hacia arriba y máximo de 2048 por lado.
 
-Estos datos todavía no los carga el juego. Se conservan `aerial.jpg`,
-`aerial-2048.jpg` y sus registros de procedencia hasta la fase 3. El verificador
-comprueba cobertura, inventario de archivos, SHA-256 y dimensiones JPEG.
+El juego todavía no carga estas teselas: sigue usando `aerial.jpg` y `aerial-2048.jpg`,
+con sus registros de procedencia. `verify-world` comprueba cobertura, inventario de
+archivos, SHA-256 y dimensiones JPEG.
 
-## 5. Terreno
+## 5. Procedencia y comprobación (siempre)
+
+```fish
+node tools/export-provenance.mjs
+npm test
+```
+
+`verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
+overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
+`web/` coinciden y que las licencias están incluidas. Además compara una huella fija de
+la geografía (origen, límites, contornos, patios, plantas, vías con anchura y sentido,
+áreas, monumentos y árboles) con `source-data/geometry-baseline.json`;
+un cambio deliberado de geometría actualiza esa huella en su propio commit
+(`node tools/export-geometry-baseline.mjs`, solo después de revisar el cambio).
+
+Los casos de conversión de sentidos OSM se comprueban además con
+`uv run --no-project python tests/verify-tools.py`.
+
+Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
+probar el juego en un navegador.
+
+## 6. Terreno
 
 `audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
 `export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
