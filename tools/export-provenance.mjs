@@ -31,20 +31,6 @@ const records = [
       'Local game extraction; all used roads/areas/landmarks/trees/objects made available',
   },
   {
-    files: ['aerial.jpg', 'aerial-2048.jpg'],
-    source: '© IGN / PNOA / SCNE',
-    date: '2026-10-04',
-    conditions: 'CC-BY-4.0 compatible IGN terms',
-    licenseUrl: 'https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf',
-    sourceUrl: 'https://www.ign.es/wms-inspire/pnoa-ma',
-    attribution: 'Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)',
-    acquisitionDate: '2022-07',
-    acquisitionDateEvidence:
-      'WMS OI.MosaicElement GetFeatureInfo at playable-area centre on 2026-10-06; current GetMap SHA256 equals distributed aerial.jpg',
-    transformation:
-      '4096x3072 playable-area orthophoto crop used for ground and roofs; aerial-2048.jpg is the same crop and extent resampled to 2048x1536 (Lanczos, JPEG q82, tools/reduce-aerial.py) for light mode and touch devices',
-  },
-  {
     files: ['height-samples.json'],
     source: heights.source,
     date: heights.accessDate,
@@ -93,11 +79,14 @@ const records = [
 ];
 if (fs.existsSync(directory + '/aerial/index.json')) {
   const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
-  const original = records.find((record) => record.files.includes('aerial.jpg'));
   records.push({
-    ...original,
     files: ['aerial/index.json', ...Object.keys(aerial.sha256).map((file) => 'aerial/' + file)],
+    source: '© IGN / PNOA / SCNE',
     date: aerial.consulted,
+    conditions: 'CC-BY-4.0 compatible IGN terms',
+    licenseUrl: 'https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf',
+    sourceUrl: aerial.source,
+    attribution: 'Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)',
     acquisitionDate: aerial.acquisition,
     acquisitionDateEvidence:
       'WMS OI.MosaicElement GetFeatureInfo at every tile centre; tools/aerial-tiles.py',
