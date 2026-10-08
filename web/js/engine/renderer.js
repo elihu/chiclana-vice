@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { $ } from '../core/dom.js';
-import { gfx, world } from '../core/state.js';
+import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 
 export function setupRenderer() {
@@ -38,18 +38,16 @@ export function setupRenderer() {
   applyQuality();
 }
 
-export function addGroundPlanes(geometry, exterior) {
-  let g = new THREE.Mesh(
-    geometry,
-    new THREE.MeshStandardMaterial(
-      world.groundTexture
-        ? { map: world.groundTexture, roughness: 1 }
-        : { color: '#9a9b86', roughness: 1 },
-    ),
-  );
-  g.name = 'terrain-ground';
-  g.receiveShadow = true;
-  gfx.scene.add(g);
+export function addGroundPlanes(tiles, exterior) {
+  const ground = new THREE.Group();
+  ground.name = 'terrain-ground';
+  for (const { geometry, material, i, j } of tiles) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.aerialTile = [i, j];
+    mesh.receiveShadow = true;
+    ground.add(mesh);
+  }
+  gfx.scene.add(ground);
   let outer = new THREE.Mesh(
     exterior || new THREE.PlaneGeometry(8000, 8000),
     mat('#9a9b86', exterior ? { side: THREE.DoubleSide } : {}),

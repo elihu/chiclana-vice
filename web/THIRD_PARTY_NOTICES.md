@@ -45,18 +45,17 @@ https://opendatacommons.org/licenses/odbl/1-0/
 ## IGN / PNOA / SCNE: imagen y alturas
 
 Obra derivada de PNOA 2022-07,
-CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 4/10/2026.
+CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 8/10/2026.
 Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es.
 La fecha de consulta no sustituye a la fecha de adquisición del producto.
-Ortofoto: GetFeatureInfo OI.MosaicElement indica 2022-07 en el centro del sector;
-GetMap comprobado el 6/10/2026 coincide por SHA256 con aerial.jpg distribuida
-(98d78226512a164a76c244c9925ecc1e01a145f7fcc189a396aaf253151752af).
-`aerial.jpg`: ortofoto PNOA máxima actualidad consultada 4/10/2026,
-WMS IGN, recorte 4096 × 3072 de la zona jugable; usado en suelo y tejados.
-`aerial-2048.jpg`: obra derivada de `aerial.jpg` (PNOA 2022-07, CC BY 4.0
-IGN / PNOA / SCNE, scne.es) con el mismo recorte y georreferencia, remuestreada
-a 2048 × 1536 (Lanczos, JPEG calidad 82) con `tools/reduce-aerial.py`; la cargan
-el modo ligero y los dispositivos táctiles. Misma atribución y condiciones.
+Ortofoto: GetFeatureInfo OI.MosaicElement indica 2022-07 en el centro de cada
+tesela. `aerial/`: ortofoto PNOA máxima actualidad consultada 8/10/2026, WMS IGN,
+en teselas de 255 m con 20,5 m de margen; usada en suelo, tejados y mapa.
+`aerial/hi/` conserva los JPEG del WMS (0,25 m/píxel); `aerial/lo/` son obras
+derivadas remuestreadas a 0,5 m/píxel (Lanczos, JPEG calidad 82) con
+`tools/aerial-tiles.py`, que cargan el modo ligero y los dispositivos táctiles;
+`aerial/general.jpg` es una vista general del WMS a 1 m/píxel. SHA-256 de cada
+archivo en `aerial/index.json`. Misma atribución y condiciones.
 `height-samples.json` y auditoría IGN: derivados independientes del producto
 MDSnE2,5 de PRIMERA cobertura PNOA-LiDAR (2008–2015), consultado 5/10/2026.
 El servicio WCS declara CC BY 4.0 scne.es. Se seleccionó una ventana local y

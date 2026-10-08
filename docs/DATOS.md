@@ -14,7 +14,8 @@ rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene solo
 mientras que mapa y cobertura del terreno usan la caja envolvente. `prepare-world.mjs`
 genera este formato y admite también entradas antiguas con `size`; el cargador
 conserva esa compatibilidad para copias locales. Carga además la
-ortofoto `aerial.jpg`, `facade-profiles.json` (paleta y política de alturas propias,
+ortofoto por teselas de `aerial/` (índice y vista general al arrancar, teselas alrededor
+del jugador), `facade-profiles.json` (paleta y política de alturas propias,
 obligatorio), `facade-designs.json` (recetas y composiciones de fachada, obligatorio),
 `city-design.json` (zonas, reglas de calle, mobiliario, pavimentos, vegetación y edificios
 genéricos, obligatorio), `map-corrections.json` (correcciones manuales sobre la base,
@@ -168,13 +169,13 @@ los demás errores HTTP se propagan sin reintento. No añade dependencias
 al proyecto. Si falla una consulta, se puede repetir el comando usando la caché.
 
 Antes de escribir datos comprueba que todos los centros declaran vuelo `2022-07` y
-que las imágenes se alinean con `aerial.jpg`. Reduce cada tesela con Lanczos a la
-resolución de referencia y compara la intersección, dejando ocho píxeles de margen.
-Busca el máximo de correlación normalizada de luminancia en ±2 píxeles y estima el
-pico subpíxel mediante parábolas por eje. Exige desplazamiento menor de un píxel y
-diferencia absoluta media RGB menor o igual a 20 sobre 255. Son comprobaciones de
-coincidencia de imágenes, no de precisión topográfica. El informe por tesela queda en
-`/tmp/chiclana-aerial-alignment.json`.
+que cada par de teselas vecinas se alinea en su franja común (41 m, 164 píxeles a
+0,25 m). Busca el máximo de correlación normalizada de luminancia en ±2 píxeles y
+estima el pico subpíxel mediante parábolas por eje. Exige desplazamiento menor de
+0,25 píxeles y diferencia absoluta media menor o igual a 20 sobre 255; un píxel de
+desplazamiento se rechaza. No depende de otra ortofoto, así que sirve para teselas
+nuevas fuera del área actual. Son comprobaciones de coincidencia de imágenes, no de
+precisión topográfica. El informe queda en `/tmp/chiclana-aerial-alignment.json`.
 
 `web/aerial/index.json` declara rejilla, margen, resoluciones, coordenadas de teselas,
 recuadro y dimensiones de la vista general, fecha de vuelo, fecha de consulta,
@@ -183,9 +184,8 @@ recompresión (296 m de lado con margen de 20,5 m); `lo/` deriva 592 × 592 con 
 y JPEG calidad 82. `general.jpg` cubre la caja envolvente a aproximadamente 1 m/píxel,
 con dimensiones redondeadas hacia arriba y máximo de 2048 por lado.
 
-El juego todavía no carga estas teselas: sigue usando `aerial.jpg` y `aerial-2048.jpg`,
-con sus registros de procedencia. `verify-world` comprueba cobertura, inventario de
-archivos, SHA-256 y dimensiones JPEG.
+`verify-world` comprueba cobertura, inventario de archivos, SHA-256 y dimensiones JPEG.
+Con la caché completa, regenerar da los mismos bytes.
 
 ## 5. Procedencia y comprobación (siempre)
 

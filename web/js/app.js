@@ -39,9 +39,10 @@ import { loadProgress, toast } from './ui/feedback.js';
 import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
 import { spawnTraffic, updatePedestrians } from './game/traffic.js';
-import { terrainGeometry, terrainExterior } from './world/terrain-mesh.js';
+import { terrainTiles, terrainExterior } from './world/terrain-mesh.js';
 import { prepareTerrainPlacement } from './world/terrain-placement.js';
 import { surfaceHeightAt, placeVehicle, placeVehicleIfChanged } from './engine/terrain-sampling.js';
+import { aerialMaterial, updateAerialTiles } from './world/aerial-tiles.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -50,6 +51,7 @@ async function init() {
     res,
     tex,
     aerial,
+    aerialIndex,
     heightSamples,
     profiles,
     streetObjects,
@@ -83,13 +85,26 @@ async function init() {
     world.groundTexture.colorSpace = THREE.SRGBColorSpace;
     world.groundTexture.anisotropy = 4;
   } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
-  world.aerialBox = boundsBox();
+  world.aerialIndex = aerialIndex;
+  world.aerialBox = aerialIndex?.general.box ?? boundsBox();
   loadProgress('Preparando el mundo 3D…', 25);
   setupRenderer();
   buildRoadGraph();
   indexBuildings();
   prepareTerrainPlacement();
-  addGroundPlanes(terrainGeometry(terrain), terrainExterior(terrain));
+  const indexedTiles = new Set((aerialIndex?.tiles ?? []).map(([i, j]) => i + '_' + j));
+  addGroundPlanes(
+    terrainTiles(terrain).map((tile) => ({
+      ...tile,
+      material: indexedTiles.has(tile.i + '_' + tile.j)
+        ? aerialMaterial(tile.i, tile.j, { roughness: 1 })
+        : new THREE.MeshStandardMaterial({
+            ...(world.groundTexture ? { map: world.groundTexture } : { color: '#9a9b86' }),
+            roughness: 1,
+          }),
+    })),
+    terrainExterior(terrain),
+  );
   connectOpenSpaces();
   orientDriveGraph();
   applyHeightSamples(heightSamples);
@@ -111,6 +126,7 @@ async function init() {
   cars.push(car);
   Object.assign(player, spawn);
   player.car = car;
+  updateAerialTiles(player.x, player.z);
   actors.character = createPerson('#d7d5b0');
   actors.character.mesh.visible = false;
   spawnTraffic();

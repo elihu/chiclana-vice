@@ -21,24 +21,21 @@ se sustituye.
   inferidas donde OSM no las indica. Capas: `web/osm-world.json` y
   `web/street-objects.json`.
   https://www.openstreetmap.org/api/0.6/map?bbox=-6.156,36.415,-6.141,36.424
-- **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa OI.OrthoimageCoverage,
-  EPSG:4326, mismos límites, 4096 × 3072 JPEG para suelo y tejados; consulta del 4/10/2026.
-  La fecha de vuelo en el centro del sector es 2022-07 (GetFeatureInfo
-  OI.MosaicElement, comprobado el 6/10/2026). Archivo: `web/aerial.jpg`; `web/aerial-2048.jpg` es el mismo recorte
-  remuestreado a 2048 × 1536 para el modo ligero y los táctiles (`tools/reduce-aerial.py`).
+- **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa `OI.OrthoimageCoverage`,
+  EPSG:4326, por teselas en `web/aerial/` (`tools/aerial-tiles.py`); consulta del
+  8/10/2026. 24 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
+  recomprimir a 0,25 m/píxel (`hi/`) y derivados a 0,5 m/píxel (`lo/`) para el modo
+  ligero y los táctiles, más una vista general de la caja envolvente en 1344 × 1002. El
+  recuadro local pasa a longitud y latitud con la inversa exacta de la proyección de
+  `rebuild-map.py` (`lon = -6.1485 + x / (111320 · cos 36.4195°)`,
+  `lat = 36.4195 − z / 111320`). Los 24 centros declaran vuelo 2022-07 (GetFeatureInfo
+  `OI.MosaicElement`). Las franjas comunes de los 38 pares de teselas vecinas coinciden
+  con un desplazamiento máximo de 0,005 píxeles de 0,25 m. Al generarlas, además,
+  coincidían con la ortofoto única anterior (`aerial.jpg`, 4096 × 3072, consulta del
+  4/10/2026, retirada después) con un desplazamiento máximo de 0,091 píxeles de esa
+  imagen. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
+  Método en [DATOS.md](DATOS.md#4-ortofoto-por-teselas-opcional).
   https://www.ign.es/wms-inspire/pnoa-ma
-- **Ortofoto PNOA por teselas** (`web/aerial/`, `tools/aerial-tiles.py`): el mismo
-  servicio y capa, consulta del 8/10/2026. 24 teselas de 255 m con 20,5 m de margen por
-  lado, JPEG del WMS sin recomprimir a 0,25 m/píxel (`hi/`) y derivados a 0,5 m/píxel
-  (`lo/`), más una vista general de la caja envolvente en 1344 × 1002. El recuadro local
-  pasa a longitud y latitud con la inversa exacta de la proyección de `rebuild-map.py`
-  (`lon = -6.1485 + x / (111320 · cos 36.4195°)`, `lat = 36.4195 − z / 111320`).
-  Los 24 centros declaran vuelo 2022-07 (GetFeatureInfo `OI.MosaicElement`). Frente a
-  `aerial.jpg`, desplazamiento máximo de 0,091 píxeles de la referencia (unos 3 cm),
-  correlación de luminancia ≥ 0,990 y diferencia media RGB de 4,1 a 6,2 sobre 255; las
-  franjas comunes de teselas vecinas coinciden con 0,014 píxeles de 0,25 m. Son
-  comprobaciones de coincidencia de imágenes, no de precisión topográfica. Método en
-  [DATOS.md](DATOS.md#4-ortofoto-por-teselas-opcional).
 - **PNOA-LiDAR, primera cobertura 2008–2015** (IGN): MDSnE2,5 por WCS, consulta del
   5/10/2026. Recorte local EPSG:3042 de unos 2,5 m por píxel con valores enteros en
   metros, ya normalizado al terreno. De 1.399 candidatos, 274 tienen al menos 12 muestras

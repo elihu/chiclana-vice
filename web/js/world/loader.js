@@ -1,7 +1,7 @@
 import { validBounds, worldBounds } from './bounds.js';
-import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { applyCorrections, sha256Hex } from './corrections.js';
+import { reloadAerialTiles } from './aerial-tiles.js';
 import { gfx, world } from '../core/state.js';
 import { validateCorrections } from './design-validate.js';
 import { loadTerrain } from './terrain.js';
@@ -95,76 +95,51 @@ export async function loadWorld() {
   };
 }
 
-// Light mode and touch devices use the 2048×1536 derivative (same extent).
-export const aerialFile = () =>
-  gfx.quality === 'low' || gfx.coarse ? 'aerial-2048.jpg' : 'aerial.jpg';
-
-let aerialPending = null; // { file, promise }: carga en curso, para no pedirla dos veces
-
-// Al cambiar de calidad en caliente: carga la ortofoto que toca, la pone en los materiales
-// que usaban la anterior (suelo y cubiertas) y libera esta. Sin ortofoto inicial no hace nada.
-export function reloadGroundTexture() {
-  const file = aerialFile();
-  if (aerialPending?.file === file) return aerialPending.promise;
-  if (!world.groundTexture || world.groundTextureFile === file) return Promise.resolve(false);
-  const pending = { file },
-    done = (tex) => {
-      if (aerialPending === pending) aerialPending = null;
-      if (!tex) return false;
-      // La calidad ha vuelto a cambiar mientras cargaba: se descarta.
-      if (aerialFile() !== file || !world.groundTexture) {
-        tex.dispose();
-        return false;
-      }
-      const old = world.groundTexture;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = 4;
-      gfx.scene.traverse((o) => {
-        for (const m of Array.isArray(o.material) ? o.material : [o.material])
-          if (m?.map === old) m.map = tex;
-      });
-      world.groundTexture = tex;
-      world.groundTextureFile = file;
-      old.dispose();
-      gfx.needsRender = true;
-      return true;
-    };
-  pending.promise = new gfx.platform.TextureLoader()
-    .loadAsync(asset(file))
-    .catch(() => null)
-    .then(done);
-  aerialPending = pending;
-  return pending.promise;
-}
+// Compatibilidad con los controles y el API de pruebas: ahora recarga solo teselas.
+export const reloadGroundTexture = reloadAerialTiles;
 
 export async function loadLayers() {
-  const aerial = aerialFile();
-  const [res, tex, heightSamples, profiles, streetObjects, designs, cityDesign] = await Promise.all(
-    [
-      loadWorld(),
-      // Without the orthophoto, plain colours (reloadGroundTexture then does nothing).
-      new gfx.platform.TextureLoader().loadAsync(asset(aerial)).catch(() => null),
-      fetch(asset('height-samples.json'))
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-      fetch(asset('facade-profiles.json')).then((r) => {
-        if (!r.ok) throw Error('No se han podido cargar los perfiles');
-        return r.json();
-      }),
-      // Optional layer: without it there are no mapped crossings or street furniture.
-      fetch(asset('street-objects.json'))
-        .then((r) => (r.ok ? r.json() : []))
-        .catch(() => []),
-      fetch(asset('facade-designs.json')).then((r) => {
-        if (!r.ok) throw Error('No se han podido cargar los diseños de fachada');
-        return r.json();
-      }),
-      fetch(asset('city-design.json')).then((r) => {
-        if (!r.ok) throw Error('No se ha podido cargar el diseño de la ciudad');
-        return r.json();
-      }),
-    ],
-  );
+  const orthophoto = fetch(asset('aerial/index.json'))
+    .then(async (response) => {
+      if (!response.ok) throw Error('Índice de ortofoto no disponible');
+      const aerialIndex = await response.json();
+      if (aerialIndex.version !== 1) throw Error('Índice de ortofoto incompatible');
+      const aerial = 'aerial/' + aerialIndex.general.file;
+      const tex = await new gfx.platform.TextureLoader().loadAsync(asset(aerial)).catch(() => null);
+      return { aerialIndex, aerial, tex };
+    })
+    .catch(() => ({ aerialIndex: null, aerial: null, tex: null }));
+  const [
+    res,
+    { tex, aerial, aerialIndex },
+    heightSamples,
+    profiles,
+    streetObjects,
+    designs,
+    cityDesign,
+  ] = await Promise.all([
+    loadWorld(),
+    orthophoto,
+    fetch(asset('height-samples.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
+    fetch(asset('facade-profiles.json')).then((r) => {
+      if (!r.ok) throw Error('No se han podido cargar los perfiles');
+      return r.json();
+    }),
+    // Optional layer: without it there are no mapped crossings or street furniture.
+    fetch(asset('street-objects.json'))
+      .then((r) => (r.ok ? r.json() : []))
+      .catch(() => []),
+    fetch(asset('facade-designs.json')).then((r) => {
+      if (!r.ok) throw Error('No se han podido cargar los diseños de fachada');
+      return r.json();
+    }),
+    fetch(asset('city-design.json')).then((r) => {
+      if (!r.ok) throw Error('No se ha podido cargar el diseño de la ciudad');
+      return r.json();
+    }),
+  ]);
   const { terrain, warning } = await loadTerrain(
     (file) => fetch(asset(file)),
     res,
@@ -179,6 +154,7 @@ export async function loadLayers() {
     res,
     tex,
     aerial,
+    aerialIndex,
     heightSamples,
     profiles,
     streetObjects,

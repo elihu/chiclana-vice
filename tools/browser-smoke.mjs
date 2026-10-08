@@ -99,9 +99,35 @@ const quality = (
   })
 ).result.result.value;
 if (process.argv.includes('--low') && quality !== 'low') errors.push('Calidad ligera no aplicada');
+const aerialChecks = (
+  await send('Runtime.evaluate', {
+    awaitPromise: true,
+    returnByValue: true,
+    expression: `Promise.all([import('./js/world/aerial-tiles.js'),import('./js/core/state.js')]).then(async ([m,s])=>{
+      await m.reloadAerialTiles();
+      return {...m.aerialTileStatus(), general:s.world.groundTextureFile,
+        generalIdentity:s.world.groundTexture?.repeat.toArray().join(',')==='1,1' &&
+          s.world.groundTexture?.offset.toArray().join(',')==='0,0'};
+    })`,
+  })
+).result.result.value;
+if (
+  !aerialChecks ||
+  aerialChecks.pending.length ||
+  aerialChecks.failed.length ||
+  aerialChecks.loaded.length !== aerialChecks.desired.length ||
+  aerialChecks.loaded.length > (aerialChecks.level === 'lo' ? 9 : 12) ||
+  aerialChecks.general !== 'aerial/general.jpg' ||
+  !aerialChecks.generalIdentity
+)
+  errors.push('Carga de teselas incompatible');
 const local = requests.filter(
   (u) => u.startsWith(new URL(url).origin) && !u.endsWith('/') && !u.includes('favicon'),
 );
+const aerialRequests = local.filter((u) => /\/aerial\//.test(u));
+if (aerialRequests.some((u) => !/[?&]v=/.test(u))) errors.push('Ortofoto sin versión de recurso');
+if (process.argv.includes('--low') && aerialRequests.some((u) => /\/hi\//.test(u)))
+  errors.push('Modo ligero pide teselas hi');
 const surfaceChecks = [];
 if (process.argv.includes('--surfaces') && state.game) {
   const walking = await send('Runtime.evaluate', {
@@ -182,6 +208,7 @@ console.log(
       state,
       scene,
       quality,
+      aerialChecks,
       surfaceChecks,
       errors,
       requests: local.length,

@@ -5,7 +5,7 @@ import * as Real from '../web/vendor/three.module.min.js';
 
 // Un mismo entorno CPU para verificadores y exportadores; no ejecuta GPU. Los módulos ES
 // se evalúan una vez por proceso, así que el juego solo puede arrancarse una vez.
-export async function createRuntime({ progress = null, terrain = null } = {}) {
+export async function createRuntime({ progress = null, terrain = null, failedAssets = [] } = {}) {
   assert(!globalThis.__chiclanaRuntime, 'createRuntime: una sola vez por proceso');
   globalThis.__chiclanaRuntime = true;
   const noop = () => {};
@@ -89,6 +89,7 @@ export async function createRuntime({ progress = null, terrain = null } = {}) {
   const requested = [];
   globalThis.fetch = async (url) => {
     requested.push(url);
+    if (failedAssets.includes(url.split('?')[0])) throw Error('fallo de recurso simulado');
     if (terrain && url.split('?')[0] === 'terrain.json')
       return { ok: true, status: 200, json: async () => terrain.manifest };
     if (terrain && url.split('?')[0] === 'terrain.bin')
@@ -122,6 +123,8 @@ export async function createRuntime({ progress = null, terrain = null } = {}) {
     loadAsync(url) {
       globalThis.__aerialUrl = url;
       requested.push(url);
+      if (failedAssets.includes(url.split('?')[0]))
+        return Promise.reject(Error('fallo de textura simulado'));
       return Promise.resolve(new Real.Texture({ width: 4096, height: 3072 }));
     }
   }

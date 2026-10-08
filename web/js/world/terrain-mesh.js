@@ -49,6 +49,69 @@ export function terrainGeometry(terrain) {
   return g;
 }
 
+// Las normales proceden de la malla completa: duplicar vértices de borde no cambia
+// su posición ni su iluminación. Cada triángulo pertenece a una única tesela.
+export function terrainTiles(terrain) {
+  const size = world.aerialIndex?.tile ?? 255;
+  if (terrain.kind === 'flat') {
+    const [x0, x1, z0, z1] = boundsBox(),
+      tiles = [];
+    const [ax0, ax1, az0, az1] = world.aerialBox;
+    for (let j = Math.floor(z0 / size); j < Math.ceil(z1 / size); j++)
+      for (let i = Math.floor(x0 / size); i < Math.ceil(x1 / size); i++) {
+        const left = Math.max(x0, i * size),
+          right = Math.min(x1, (i + 1) * size);
+        const top = Math.max(z0, j * size),
+          bottom = Math.min(z1, (j + 1) * size);
+        const geometry = new THREE.PlaneGeometry(right - left, bottom - top);
+        geometry.rotateX(-Math.PI / 2);
+        geometry.translate((left + right) / 2, 0, (top + bottom) / 2);
+        const pos = geometry.getAttribute('position'),
+          uv = geometry.getAttribute('uv');
+        for (let k = 0; k < pos.count; k++)
+          uv.setXY(k, (pos.getX(k) - ax0) / (ax1 - ax0), 1 - (pos.getZ(k) - az0) / (az1 - az0));
+        geometry.computeBoundingSphere();
+        tiles.push({ i, j, geometry });
+      }
+    return tiles;
+  }
+  const full = terrainGeometry(terrain),
+    groups = new Map();
+  const position = full.getAttribute('position'),
+    index = full.index;
+  for (let k = 0; k < index.count; k += 3) {
+    const vertices = [index.getX(k), index.getX(k + 1), index.getX(k + 2)];
+    const i = Math.floor(vertices.reduce((s, v) => s + position.getX(v), 0) / 3 / size);
+    const j = Math.floor(vertices.reduce((s, v) => s + position.getZ(v), 0) / 3 / size);
+    const key = `${i}_${j}`;
+    if (!groups.has(key)) groups.set(key, { i, j, vertices: [] });
+    groups.get(key).vertices.push(...vertices);
+  }
+  const tiles = [];
+  for (const { i, j, vertices } of groups.values()) {
+    const geometry = new THREE.BufferGeometry(),
+      remap = new Map(),
+      indices = [];
+    for (const v of vertices) {
+      if (!remap.has(v)) remap.set(v, remap.size);
+      indices.push(remap.get(v));
+    }
+    for (const name of ['position', 'normal', 'uv']) {
+      const attribute = full.getAttribute(name),
+        values = [];
+      for (const v of remap.keys())
+        for (let component = 0; component < attribute.itemSize; component++)
+          values.push(attribute.array[v * attribute.itemSize + component]);
+      geometry.setAttribute(name, new THREE.Float32BufferAttribute(values, attribute.itemSize));
+    }
+    geometry.setIndex(indices);
+    geometry.computeBoundingSphere();
+    tiles.push({ i, j, geometry });
+  }
+  full.dispose();
+  return tiles;
+}
+
 export function terrainExterior(terrain) {
   const g = new THREE.BufferGeometry(),
     positions = [],

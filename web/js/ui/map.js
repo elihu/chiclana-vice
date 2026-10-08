@@ -70,7 +70,7 @@ export function drawMap(canvas, mini = false) {
   c.save();
   c.translate(ox + x0 * scale, oy + z0 * scale);
   c.scale(scale, scale);
-  // The 2D orthophoto reuses the image already loaded for the ground texture.
+  // La vista general permanece cargada aunque se liberen las teselas del suelo.
   if (session.mapAerial && !mini && world.groundTexture?.image) {
     const [ax0, ax1, az0, az1] = world.aerialBox;
     c.drawImage(world.groundTexture.image, ax0 - x0, az0 - z0, ax1 - ax0, az1 - az0);

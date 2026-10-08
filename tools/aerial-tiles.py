@@ -71,55 +71,49 @@ def tile_box(tile):
             TILE * j - MARGIN, TILE * (j + 1) + MARGIN]
 
 
-def alignment(data, box, reference, reference_box):
-    # Centros de píxel: EXTENT usa bordes, sin sumar medio píxel.
-    x0, x1, z0, z1 = reference_box
-    w, h = reference.size
-    left = max(0, math.ceil((box[0] - x0) * w / (x1 - x0)) + 8)
-    right = min(w, math.floor((box[1] - x0) * w / (x1 - x0)) - 8)
-    top = max(0, math.ceil((box[2] - z0) * h / (z1 - z0)) + 8)
-    bottom = min(h, math.floor((box[3] - z0) * h / (z1 - z0)) - 8)
-    crop = reference.crop((left, top, right, bottom)).convert("RGB")
-    with Image.open(io.BytesIO(data)) as hi:
-        # Primero reducir a la resolución de referencia con Lanczos.
-        reduced = hi.resize((round(296 * w / (x1 - x0)),
-                             round(296 * h / (z1 - z0))), Image.Resampling.LANCZOS)
-        rw, rh = reduced.size
-        extent = ((x0 + left * (x1 - x0) / w - box[0]) * rw / 296,
-                  (z0 + top * (z1 - z0) / h - box[2]) * rh / 296,
-                  (x0 + right * (x1 - x0) / w - box[0]) * rw / 296,
-                  (z0 + bottom * (z1 - z0) / h - box[2]) * rh / 296)
-        scores = {}
-        for dy in range(-2, 3):
-            for dx in range(-2, 3):
-                shifted = tuple(v + (dx if k % 2 == 0 else dy)
-                                for k, v in enumerate(extent))
-                sample = reduced.transform(crop.size, Image.Transform.EXTENT,
-                                           shifted, Image.Resampling.BICUBIC).convert("RGB")
-                # Correlación normalizada de luminancia, sin depender de NumPy.
-                a, b = crop.convert("L"), sample.convert("L")
-                ma, mb = ImageStat.Stat(a).mean[0], ImageStat.Stat(b).mean[0]
-                va, vb = ImageStat.Stat(a).var[0], ImageStat.Stat(b).var[0]
-                mse = ImageStat.Stat(ImageChops.difference(a, b)).sum2[0] / (a.width * a.height)
-                corr = (va + vb + (ma - mb) ** 2 - mse) / (2 * math.sqrt(va * vb))
-                scores[dx, dy] = corr
-                if dx == dy == 0:
-                    difference = sum(ImageStat.Stat(ImageChops.difference(crop, sample)).mean) / 3
-        dx, dy = max(scores, key=scores.get)
-        def peak(axis):
-            before = scores[dx - 1, dy] if axis == 0 else scores[dx, dy - 1]
-            after = scores[dx + 1, dy] if axis == 0 else scores[dx, dy + 1]
-            centre = scores[dx, dy]
-            return 0.5 * (before - after) / (before - 2 * centre + after)
+def correlation(a, b):
+    # Correlación normalizada de luminancia, sin depender de NumPy.
+    ma, mb = ImageStat.Stat(a).mean[0], ImageStat.Stat(b).mean[0]
+    va, vb = ImageStat.Stat(a).var[0], ImageStat.Stat(b).var[0]
+    mse = ImageStat.Stat(ImageChops.difference(a, b)).sum2[0] / (a.width * a.height)
+    return (va + vb + (ma - mb) ** 2 - mse) / (2 * math.sqrt(va * vb))
 
-        if abs(dx) == 2 or abs(dy) == 2:
-            raise ValueError(f"Pico de correlación fuera del intervalo: {box}")
-        shift = [dx + peak(0), dy + peak(1)]
-        result = dict(shift=[round(v, 6) for v in shift], correlation=round(scores[dx, dy], 6),
-                      meanAbsoluteDifference=round(difference, 6))
-        if math.hypot(*shift) >= 1 or difference > 20:
-            raise ValueError(f"Alineación incompatible en {box}: {result}")
-        return result
+
+def strip_alignment(first, second, east):
+    # Franja común de dos teselas vecinas: los 2·MARGIN finales de la primera son los
+    # iniciales de la segunda (164 píxeles a 0,25 m). Se busca el máximo de
+    # correlación en ±2 píxeles y el pico subpíxel por parábolas en cada eje.
+    width = round(2 * MARGIN / 0.25)
+    with Image.open(io.BytesIO(first)) as a, Image.open(io.BytesIO(second)) as b:
+        size = a.width
+        a, b = a.convert("L"), b.convert("L")
+        if east:
+            a = a.crop((size - width, 0, size, size))
+            b = b.crop((0, 0, width, size))
+        else:
+            a = a.crop((0, size - width, size, size))
+            b = b.crop((0, 0, size, width))
+        w, h = a.size
+        inner = a.crop((2, 2, w - 2, h - 2))
+        scores = {(dx, dy): correlation(inner, b.crop((2 + dx, 2 + dy, w - 2 + dx, h - 2 + dy)))
+                  for dx in range(-2, 3) for dy in range(-2, 3)}
+        difference = ImageStat.Stat(ImageChops.difference(inner, b.crop((2, 2, w - 2, h - 2)))).mean[0]
+    dx, dy = max(scores, key=scores.get)
+    if abs(dx) == 2 or abs(dy) == 2:
+        raise ValueError("Pico de correlación fuera del intervalo")
+
+    def peak(axis):
+        before = scores[dx - 1, dy] if axis == 0 else scores[dx, dy - 1]
+        after = scores[dx + 1, dy] if axis == 0 else scores[dx, dy + 1]
+        centre = scores[dx, dy]
+        return 0.5 * (before - after) / (before - 2 * centre + after)
+
+    shift = [dx + peak(0), dy + peak(1)]
+    result = dict(shift=[round(v, 6) for v in shift], correlation=round(scores[dx, dy], 6),
+                  meanAbsoluteDifference=round(difference, 6))
+    if math.hypot(*shift) >= 0.25 or difference > 20:
+        raise ValueError(f"Alineación incompatible: {result}")
+    return result
 
 
 def main():
@@ -140,22 +134,30 @@ def main():
             print(f"Fecha {tile}: {found}", flush=True)
             if found != ["2022-07"]:
                 raise ValueError(f"Fecha incompatible en {tile}: {found}; se detiene sin publicar")
-    report = {}
     images = {}
-    with Image.open(ROOT / "web/aerial.jpg") as reference:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-            responses = pool.map(lambda t: request(tile_box(t), 1184, 1184), tiles)
-            for tile, data in zip(tiles, responses):
-                name = f"{tile[0]}_{tile[1]}"
-                result = alignment(data, tile_box(tile), reference, general_box)
-                report[name] = dict(acquisition=dates[name][0], **result)
-                print(f"Alineación {name}: {result}", flush=True)
-                images[f"hi/{name}.jpg"] = data
-                with Image.open(io.BytesIO(data)) as hi:
-                    output = io.BytesIO()
-                    hi.convert("RGB").resize((592, 592), Image.Resampling.LANCZOS).save(
-                        output, "JPEG", quality=82, optimize=True)
-                    images[f"lo/{name}.jpg"] = output.getvalue()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        responses = pool.map(lambda t: request(tile_box(t), 1184, 1184), tiles)
+        for tile, data in zip(tiles, responses):
+            name = f"{tile[0]}_{tile[1]}"
+            images[f"hi/{name}.jpg"] = data
+            with Image.open(io.BytesIO(data)) as hi:
+                output = io.BytesIO()
+                hi.convert("RGB").resize((592, 592), Image.Resampling.LANCZOS).save(
+                    output, "JPEG", quality=82, optimize=True)
+                images[f"lo/{name}.jpg"] = output.getvalue()
+    # Alineación entre vecinas: no depende de otra ortofoto y vale para los anexos.
+    report = dict(dates=dates, neighbours={})
+    for i, j in tiles:
+        for east, (ni, nj) in [(True, (i + 1, j)), (False, (i, j + 1))]:
+            if (ni, nj) not in tiles:
+                continue
+            pair = f"{i}_{j}|{ni}_{nj}"
+            try:
+                result = strip_alignment(images[f"hi/{i}_{j}.jpg"], images[f"hi/{ni}_{nj}.jpg"], east)
+            except ValueError as error:
+                raise ValueError(f"{pair}: {error}") from None
+            report["neighbours"][pair] = result
+            print(f"Alineación {pair}: {result}", flush=True)
     width, height = general_box[1] - general_box[0], general_box[3] - general_box[2]
     scale = max(1, width / 2048, height / 2048)
     size = [math.ceil(width / scale), math.ceil(height / scale)]
