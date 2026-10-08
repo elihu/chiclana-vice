@@ -14,8 +14,10 @@ en `docs/DATOS.md`.
   `audit-ign-heights.py` o `export-facades.mjs`), después `node tools/export-provenance.mjs`
   y al final `npm test`. Sin `export-provenance`, los checksums y las copias de `web/`
   quedan desfasados y `tests/verify-world.mjs` falla.
-- Las descargas originales (Catastro, OSM, recortes IGN) van a una caché fuera del
-  repositorio, por ejemplo `/tmp/chiclana-ign`. Nunca a Git.
+- Las descargas originales (Catastro, OSM, recortes IGN, ortofotos) van a la caché
+  persistente `~/.cache/chiclana-vice/`, con una subcarpeta por fuente (`ign/`, `mdt/`,
+  `pnoa/`…), nunca a Git ni a `/tmp`, que se borra al reiniciar. Los resultados
+  intermedios y las huellas de revisión sí pueden ir a `/tmp`.
 - Python: `uv run --no-project --with pyproj --with shapely python tools/…`; cuatro
   espacios en código nuevo. No reformatees en bloque los scripts existentes.
 - Node: módulos ES `.mjs`, sin dependencias de ejecución nuevas.

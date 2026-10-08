@@ -7,8 +7,8 @@ documento; los demás enlazan a él.
 
 - [Desarrollo, estructura y convenciones](DESARROLLO.md): ejecutar, comprobar, modo ligero,
   herramientas de medición.
-- [Flujo de Git](GIT_WORKFLOW.md): ramas, worktrees por agente, commits, etiquetas e
-  historial.
+- [Flujo de Git](GIT_WORKFLOW.md): ramas, varios agentes, revisión, planes para otro
+  agente, integración, commits, etiquetas e historial.
 - [Publicación y CI](PUBLICACION.md): GitHub Actions, Pages y ajustes del repositorio.
 - [Reproducir los datos](DATOS.md): conversores y orden de los pasos.
 
@@ -31,7 +31,7 @@ documento; los demás enlazan a él.
 - [Estudio de ampliación y ortofoto por teselas](ESTUDIO-AMPLIACION.md): Santa Ana, Puente VII
   Centenario, ferial y carga de la ortofoto alrededor del jugador; preliminar.
 - [Plan de ampliación y ortofoto por teselas](PLAN-AMPLIACION.md): relieve anclado al
-  origen, límites con rectángulos, teselas, anexos y modelos; pendiente de implementación.
+  origen, límites con rectángulos, teselas, anexos y modelos; fases 0 y 1 integradas.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,

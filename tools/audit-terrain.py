@@ -17,9 +17,11 @@ parser.add_argument("--out", default="source-data/terrain-audit.json")
 parser.add_argument("--decision", help="Texto de la decisión; con --decision-date y --decision-note")
 parser.add_argument("--decision-date")
 parser.add_argument("--decision-note")
-parser.add_argument("--capabilities", default="/tmp/chiclana-mdt-capabilities.xml")
-parser.add_argument("--description", default="/tmp/chiclana-mdt-description.xml")
-parser.add_argument("--headers", default="/tmp/chiclana-mdt-headers.txt")
+# Originales en la caché persistente fuera del repositorio (tools/AGENTS.md).
+cache = Path.home() / ".cache/chiclana-vice/mdt"
+parser.add_argument("--capabilities", default=str(cache / "capabilities.xml"))
+parser.add_argument("--description", default=str(cache / "description.xml"))
+parser.add_argument("--headers", default=str(cache / "headers.txt"))
 args = parser.parse_args()
 if args.decision:
     if not args.decision_date or not args.decision_note:

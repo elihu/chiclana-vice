@@ -115,7 +115,7 @@ quedan idénticos.
 - **Terreno**: `web/js/world/terrain.js:26-31` exige que el terreno cubra la caja
   envolvente y compara `manifest.size` con el tamaño de esa caja. `tools/export-terrain.py`
   toma la caja de `bounds` en lugar de `size`. Reexportar a `/tmp` desde el original
-  (`/tmp/chiclana-mdt-original.bin`, SHA-256 `71572c05…`) debe dar exactamente los bytes
+  (`~/.cache/chiclana-vice/mdt/original.bin`, SHA-256 `71572c05…`) debe dar exactamente los bytes
   de `web/terrain.bin` y `web/terrain.json`; si el original no está, informar sin
   descargarlo. `web/terrain.*` no se regenera.
 - **Sin tocar**: `terrainExterior` (`web/js/world/terrain-mesh.js:41-64`) sigue en el
@@ -154,7 +154,7 @@ Rama `feat/teselas-ortofoto` (fases 2 y 3).
   y `web/aerial/index.json`. El índice recoge tamaño de tesela, margen, resoluciones,
   lista de teselas, recuadro de la vista general, fecha de vuelo y de consulta, URL,
   atribución y SHA-256.
-- **Caché** de descargas fuera del repositorio (`/tmp/chiclana-pnoa`). Comprobar con
+- **Caché** de descargas fuera del repositorio (`~/.cache/chiclana-vice/pnoa`). Comprobar con
   GetFeatureInfo la fecha y la resolución en el centro de cada tesela, y registrarlas.
 - Registrar `aerial/index.json` y sus imágenes con `node tools/export-provenance.mjs`.
   Las condiciones y la atribución PNOA no cambian; si hiciera falta otro texto,

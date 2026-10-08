@@ -26,7 +26,7 @@ from shapely.geometry import Point, Polygon, mapping
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--download', action='store_true')
-parser.add_argument('--raster-dir', default='/tmp/chiclana-ign')
+parser.add_argument('--raster-dir', default=str(Path.home() / '.cache/chiclana-vice/ign'))
 parser.add_argument('--output', default='source-data/height-audit-ign.json')
 parser.add_argument('--overlay', help='Optional runtime overlay, without audit rows')
 parser.add_argument('--bounds', nargs=4, type=float, default=[-410, 110, -270, 125])

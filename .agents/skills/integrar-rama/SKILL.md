@@ -19,6 +19,9 @@ Sigue `docs/GIT_WORKFLOW.md`. Resumen verificable:
 
 ## 2. Integración (solo con petición explícita del usuario)
 
+Excepción: una rama `docs/` con un plan que va a ejecutar otro agente se integra al
+terminarla, sin esperar petición (`docs/GIT_WORKFLOW.md`, «Planes para otro agente»).
+
 En el repositorio principal (si la rama tiene worktree, desde el principal, no desde él):
 
 ```fish

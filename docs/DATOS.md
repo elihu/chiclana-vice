@@ -125,7 +125,7 @@ checksums; no las regenera desde originales.
 ## 2. Alturas IGN (opcional)
 
 Descarga solo un recorte WCS pequeño de la zona (nunca el mosaico nacional) a una caché
-fuera del repositorio, por defecto `/tmp/chiclana-ign`:
+fuera del repositorio, por defecto `~/.cache/chiclana-vice/ign`:
 
 ```fish
 uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay web/height-samples.json
