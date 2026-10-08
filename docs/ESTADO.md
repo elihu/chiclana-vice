@@ -6,12 +6,13 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.1.0` (7/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.2.0` (8/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
-  (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario lo ha
-  probado el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android.
-- No verificado: iOS y FPS medidos en un móvil físico.
+  (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
+  la `v1.1.0` el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android, y el
+  relieve de la `v1.2.0` el 8/10/2026 en el navegador de escritorio.
+- No verificado: iOS, FPS medidos en un móvil físico y el relieve en móvil.
 
 ## Decisiones vigentes
 
@@ -28,28 +29,21 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
-## Novedades de `v1.1.0`
+## Novedades de `v1.2.0`
 
-- **Juego en módulos ES** bajo `web/js/`, sin cambios de escena ni de comportamiento
-  ([DESARROLLO.md](DESARROLLO.md#módulos-del-juego)).
-- **Diseño desde datos**: fachadas, reglas de calle y correcciones del mapa en
-  `facade-designs.json`, `city-design.json` y `map-corrections.json`, con un modo
-  `?debug` para editarlos ([DATOS.md](DATOS.md#diseños-y-correcciones-a-mano)). La escena
-  es idéntica a la anterior.
-- **Interfaz de terreno** plano (`world.terrain`), todavía sin usar
-  ([DESARROLLO.md](DESARROLLO.md#terreno)).
-- **Correcciones**: al bajar del coche ya no se puede aparecer dentro de un patio
-  cerrado (había 11 casos); los muros de los patios tienen margen de colisión, también
-  para la cámara; la ortofoto se recarga al cambiar de calidad en caliente; `nearestRoad`
-  no crea objetos por tramo en cada frame.
+- **Relieve real del terreno** a partir del MDT de 5 m del IGN, remuestreado a unos
+  10 m: calles, edificios, vegetación, mobiliario, vehículos, peatones, cámaras y
+  marcadores siguen las cuestas ([TERRENO_PILOTO.md](TERRENO_PILOTO.md)).
+- **Plataformas con paso inferior** (Gran Plaza sobre el Iro y tablero de Remedios
+  sobre San Sebastián), lámina de agua por tramos y estanque de la Alameda, declarados
+  en `city-design.json` ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)).
+- **Créditos** con la atribución del MDT del IGN.
 
 ## Relieve del terreno
 
-Integrado en `main` local desde `feat/relieve-terreno`, `fix/relieve-datos`,
-`fix/superficies-terreno` y `chore/validar-relieve`, sin publicar. **Validado para el
-juego el 8/10/2026** tras la revisión visual del usuario, que lo considera realista con
-pequeños defectos visuales. La capa (`web/terrain.json` y `web/terrain.bin`) está en Git
-y activa por defecto; un push la publica. Sin esos dos archivos se vuelve al modo plano.
+Publicado en la `v1.2.0`. **Validado para el juego el 8/10/2026** tras la revisión
+visual del usuario, que lo considera realista con pequeños defectos visuales. La capa
+(`web/terrain.json` y `web/terrain.bin`) está en Git y activa por defecto. Sin esos dos archivos se vuelve al modo plano.
 
 Implementados la carga, malla, bases, pavimentos, actores, cámaras e inspector, con
 superficies y niveles declarados en diseño. La auditoría del 8/10/2026 dejó las uniones
