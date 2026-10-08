@@ -52,6 +52,27 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+### Ortofoto por teselas: fase 2
+
+`tools/aerial-tiles.py` genera `web/aerial/` sin cambiar la ortofoto que usa el juego.
+Consulta el mismo WMS 1.1.1, `OI.OrthoimageCoverage`, `STYLES=`, `SRS=EPSG:4326`,
+`FORMAT=image/jpeg`, con BBOX en orden longitud mínima, latitud mínima, longitud
+máxima, latitud máxima. La inversa de la proyección local es
+`lon = -6.1485 + x / (111320 · cos(36.4195°))`,
+`lat = 36.4195 − z / 111320`; no cambia el origen ni la geografía.
+
+Son 24 teselas de 255 m con margen de 20,5 m por lado: JPEG originales a
+0,25 m/píxel y derivados a 0,5 m/píxel. La vista general cubre
+`[-671.835, 671.835, -500.94, 500.94]` en 1344 × 1002 píxeles.
+Cada centro se consulta con GetFeatureInfo de `OI.MosaicElement`; el generador
+detiene la publicación si alguna fecha difiere de `2022-07`.
+La alineación se comprueba contra la intersección de cada tesela con `aerial.jpg`,
+por correlación y diferencia media; el método y la reproducción están en
+[DATOS.md](DATOS.md#ortofoto-por-teselas-fase-2).
+Consulta del 8/10/2026: los 24 centros declaran `2022-07`, desplazamiento estimado
+máximo de 0,091 píxeles de la referencia, correlación entre 0,990868 y 0,995192
+y diferencia absoluta media RGB entre 4,114931 y 6,181112 sobre 255.
+
 - 276 frentes en 243 partes catalogados en `web/frontages.json` (Constitución,
   La Vega, La Plaza, Caraza, Jesús Nazareno, Álamo, García Gutiérrez, Corredera Baja…).
   Son fachadas genéricas generadas por reglas, no cada vivienda fotografiada.
