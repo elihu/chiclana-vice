@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Revisión: 7/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 8/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
@@ -45,16 +45,22 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Relieve del terreno
 
-Integrado en `main` local desde `feat/relieve-terreno`, sin publicar. Implementados
-la carga opcional, malla, bases, pavimentos, actores, cámaras e inspector, con
-superficies y niveles declarados en diseño. El recorte real sigue fuera de Git y el
-modo plano permanece por defecto; las previsualizaciones se conservan en /tmp.
+Integrado en `main` local desde `feat/relieve-terreno`, `fix/relieve-datos` y
+`fix/superficies-terreno`, sin publicar. El recorte provisional del MDT
+(`web/terrain.json` y `web/terrain.bin`, `preview: true`) está en Git y el relieve
+queda **activo por defecto**: un push publicaría esta versión provisional. Sin esos
+dos archivos se vuelve al modo plano, que conserva la escena anterior.
 
-El usuario confirmó cuestas generales y río; se han corregido después cubeta Alameda,
-grosor de plataformas, accesos de puentes, recubrimientos y separación de la reserva
-del tranvía. La última revisión visual de esos ajustes y las mediciones en móvil
-siguen pendientes. Pasan las pruebas del juego, terreno, superficies y exportadores
-Python; las comprobaciones de Chrome con SwiftShader no acreditan GPU física.
+Implementados la carga, malla, bases, pavimentos, actores, cámaras e inspector, con
+superficies y niveles declarados en diseño. La auditoría del 8/10/2026 dejó las uniones
+entre vías sin saltos (límite de 5 cm en `npm run check`) y un único modelo de puentes.
+También permitió varias plataformas por vía y láminas de agua por polígono, y redujo
+el coste de construcción y de consultas por frame.
+
+Pendientes antes de publicar: revisión visual del usuario de los últimos ajustes,
+zócalos y accesos de edificios en pendiente (`baseY` máximo) y mediciones en móvil
+físico. Siguen como límites documentados los tableros horizontales y el eje de agua
+común. Las comprobaciones de Chrome con SwiftShader no acreditan GPU física.
 
 Auditoría y reproducción: [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Contrato genérico
 y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
