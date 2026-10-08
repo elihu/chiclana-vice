@@ -72,6 +72,46 @@ for (const file of files) {
   }
   graph.set(path.normalize(file), deps);
 }
+// Comprueba también imports dinámicos: las excepciones son archivos concretos.
+const layers = new Map(
+  ['core', 'engine', 'world', 'game', 'ui', 'debug'].map((name, rank) => [name, rank]),
+);
+const layerOf = (file) => layers.get(file.split(path.sep)[2]);
+const allowedDependency = (file, dependency) => {
+  const rank = layerOf(file),
+    dependencyRank = layerOf(dependency);
+  if (rank === undefined || dependencyRank === undefined || dependencyRank <= rank) return true;
+  if (dependency === path.normalize('web/js/ui/feedback.js')) return true;
+  return (
+    file.startsWith(path.normalize('web/js/game/')) &&
+    dependency === path.normalize('web/js/ui/hud.js')
+  );
+};
+assert(
+  !allowedDependency('web/js/engine/example.js', 'web/js/world/terrain.js'),
+  'rechaza engine -> world',
+);
+assert(
+  !allowedDependency('web/js/core/example.js', 'web/js/ui/hud.js'),
+  'no amplía la excepción HUD a core',
+);
+for (const [file, dependencies] of graph) {
+  const source = fs.readFileSync(file, 'utf8');
+  const dynamic = [...source.matchAll(/import\(\s*'([^']+)'\s*\)/g)].map(([, spec]) =>
+    path.normalize(path.join(path.dirname(file), spec)),
+  );
+  for (const dependency of [...dependencies, ...dynamic])
+    assert(
+      allowedDependency(file, dependency),
+      'dirección de capas: ' + file + ' -> ' + dependency,
+    );
+  if (file === path.normalize('web/js/ui/feedback.js'))
+    assert(
+      dependencies.every((dep) => layerOf(dep) === 0),
+      'feedback solo depende de core',
+    );
+}
+
 const state = new Map();
 const visit = (node, trail) => {
   if (state.get(node) === 'done') return;

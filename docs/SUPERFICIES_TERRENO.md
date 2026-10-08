@@ -8,7 +8,7 @@ Los datos reales continúan en la copia de revisión, sin activación pública.
 
 ## Contrato editable
 
-`engine/surface-model.js` contiene `validateSurfaceDesign` y `createSurfaceModel`.
+`world/surface-model.js` contiene `validateSurfaceDesign` y `createSurfaceModel`.
 El esquema de editor está en `schemas/city-design.schema.json`; el validador es la
 referencia normativa y comprueba también los anclajes contra las capas cargadas.
 

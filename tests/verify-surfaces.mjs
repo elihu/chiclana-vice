@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createSurfaceModel, validateSurfaceDesign } from '../web/js/engine/surface-model.js';
+import { createSurfaceModel, validateSurfaceDesign } from '../web/js/world/surface-model.js';
 import { placeVehicle } from '../web/js/engine/terrain-sampling.js';
 import { world, waterAreas, streetEnvironment } from '../web/js/core/state.js';
 import { blocked } from '../web/js/world/spatial.js';

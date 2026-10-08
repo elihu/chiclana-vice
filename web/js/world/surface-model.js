@@ -1,6 +1,6 @@
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
 import { pInside } from '../core/math.js';
-import { gridHeightAt } from '../world/terrain.js';
+import { gridHeightAt } from './terrain.js';
 
 const key = (x, z) => Math.floor(x / 25) * 65536 + Math.floor(z / 25);
 const mix = (a, b, t) => a + (b - a) * t;

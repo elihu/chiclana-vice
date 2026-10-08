@@ -99,7 +99,8 @@ Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← 
 excepciones: `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
 puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudReadouts`),
 que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
-ciclo.
+ciclo o una dependencia en dirección contraria a las capas, salvo las dos excepciones
+explícitas de interfaz.
 
 - **Fachadas desde datos**: las fachadas detalladas (Ayuntamiento, Mercado, naves y
   portadas de iglesia, frentes genéricos de calle) son recetas de `web/facade-designs.json`
@@ -154,7 +155,7 @@ las alturas relativas de edificios; la física y las rutas siguen en planta.
 | `world/terrain-placement.js` | Bases de edificios y monumentos, perfiles e índice estático de puentes.        |
 | `engine/terrain-sampling.js` | Terreno, superficie transitable y colocación/inclinación de vehículos.         |
 | `engine/terrain-drape.js`    | Cortes de aristas y pavimentos contra celdas y diagonales.                     |
-| `engine/surface-model.js`    | Diseño validado de perfiles, agua, plataformas y continuidad entre niveles.    |
+| `world/surface-model.js`     | Diseño validado de perfiles, agua, plataformas y continuidad entre niveles.    |
 | Constructores y juego        | Bases, objetos, cámaras, actores y marcadores relativos a la misma superficie. |
 
 `app` pasa la geometría del suelo al renderizador; `engine` no importa constructores

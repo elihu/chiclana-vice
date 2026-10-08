@@ -5,7 +5,7 @@ import { readWorld } from '../tools/world-files.mjs';
 import { surfaceJunctions } from '../tools/surface-junctions.mjs';
 import { applyCorrections } from '../web/js/world/corrections.js';
 import { createTerrain } from '../web/js/world/terrain.js';
-import { createSurfaceModel } from '../web/js/engine/surface-model.js';
+import { createSurfaceModel } from '../web/js/world/surface-model.js';
 if (fs.existsSync('web/terrain.json')) {
   const city = readWorld();
   applyCorrections(city, JSON.parse(fs.readFileSync('web/map-corrections.json')));

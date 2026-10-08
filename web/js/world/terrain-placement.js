@@ -2,7 +2,7 @@ import { pInside } from '../core/math.js';
 import { world } from '../core/state.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
-import { createSurfaceModel } from '../engine/surface-model.js';
+import { createSurfaceModel } from './surface-model.js';
 
 export function prepareTerrainPlacement() {
   world.surfaces = createSurfaceModel(world.city, world.terrain, world.cityDesign?.terrainSurfaces);
