@@ -1,8 +1,8 @@
 # Plan: ortofoto por teselas y ampliación del mapa
 
 Fecha: 8/10/2026. Desarrolla [ESTUDIO-AMPLIACION.md](ESTUDIO-AMPLIACION.md). Las
-referencias de línea de las fases pendientes son de `main` en `0dea8f5`, con la fase 0 ya
-integrada.
+referencias de línea de las fases pendientes son de `main` en `981f25b`, con las fases 0
+y 1 ya integradas.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.md`,
 `tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md) y
@@ -33,16 +33,17 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
   de `buildBuildings` (`web/js/world/buildings.js:35`), así que cada grupo de edificios
   pertenece a una sola tesela. La misma rejilla servirá para cargar edificios por zonas.
 - **D2. Ortofoto PNOA a 0,25 m/píxel**, la resolución real del vuelo de 2022-07. Cada
-  tesela de escritorio cubre 255 m más un margen de 20 m por lado (295 m), en
-  1184 × 1184 píxeles; la de móvil y modo ligero, en 592 × 592. JPEG, con la calidad
-  fijada por medición.
+  tesela de escritorio cubre 255 m más un margen de 20,5 m por lado (296 m), en
+  1184 × 1184 píxeles; la de móvil y modo ligero, en 592 × 592 (0,5 m/píxel). Así el
+  interior de la tesela empieza en un píxel entero (82 y 41) y los lados son múltiplos
+  de 16, el bloque de JPEG.
 - **D3. Vista general siempre cargada**: una imagen de todo el mapa a ~1 m/píxel
   (máximo 2048 × 2048). Hace de fondo mientras llegan las teselas, se usa en el mapa (M)
   y sirve de respaldo si una tesela falla. Sustituye a `aerial.jpg` y `aerial-2048.jpg`.
 - **D4. UV de mundo**: el suelo y los tejados conservan las UV de mundo. Cada tesela es
   una textura con `offset` y `repeat` que lleva esas UV a su recuadro.
 - **D5. Tejados que sobresalen** de su tesela (525 de 7.448 partes con un margen de
-  20 m; máximo 40,6 m, medido el 7/10/2026): las partes que superan el margen van a un
+  20 m, algo menos con 20,5 m; máximo 40,6 m, medido el 7/10/2026): las partes que superan el margen van a un
   grupo aparte que usa siempre la vista general. La herramienta lo comprueba.
 - **D6. Carga por radio** con presupuesto: se cargan las teselas a menos de R del
   jugador (300 m en escritorio, 220 m en móvil), con el centro adelantado
@@ -140,31 +141,76 @@ quedan idénticos.
 
 ## Fase 2: herramientas de teselas
 
-Rama `feat/teselas-ortofoto` (fases 2 y 3).
+Rama `feat/teselas-datos`. Añade datos que el juego aún no usa; la fase 3 los usa en su
+propia rama.
 
 ### Paso 2.1: generar teselas y vista general
 
-- **Archivos**: `tools/aerial-tiles.py` (nuevo), `web/aerial/` (nuevo), `docs/DATOS.md`
-  y `docs/MAP_SOURCES.md`.
-- **Descarga**: para cada tesela que toque un rectángulo de `bounds`, pedir al WMS PNOA
-  del IGN (`OI.OrthoimageCoverage`, la misma consulta que hoy) el recuadro con margen a
-  la resolución de escritorio. La de móvil se obtiene reduciendo. El recuadro local se
-  proyecta a EPSG:4326 con la transformación de `rebuild-map.py` (`proj`).
-- **Salida**: `web/aerial/hi/i_j.jpg`, `web/aerial/lo/i_j.jpg`, `web/aerial/general.jpg`
-  y `web/aerial/index.json`. El índice recoge tamaño de tesela, margen, resoluciones,
-  lista de teselas, recuadro de la vista general, fecha de vuelo y de consulta, URL,
-  atribución y SHA-256.
-- **Caché** de descargas fuera del repositorio (`~/.cache/chiclana-vice/pnoa`). Comprobar con
-  GetFeatureInfo la fecha y la resolución en el centro de cada tesela, y registrarlas.
-- Registrar `aerial/index.json` y sus imágenes con `node tools/export-provenance.mjs`.
-  Las condiciones y la atribución PNOA no cambian; si hiciera falta otro texto,
-  preguntar antes.
-- **Verificación**: un test en `tests/verify-world.mjs` comprueba que `index.json` cubre
-  todos los rectángulos, que los archivos existen con su checksum y que la vista general
-  cubre la caja de `bounds`. Revisar a ojo la vista general y dos teselas vecinas.
-- **Commit**: `feat(datos): generar la ortofoto por teselas a 0,25 m`.
+- **Archivos**: `tools/aerial-tiles.py` (nuevo), `web/aerial/` (nuevo),
+  `tools/export-provenance.mjs`, `tests/verify-world.mjs`, `docs/DATOS.md` y
+  `docs/MAP_SOURCES.md`. Lee antes `tools/AGENTS.md`.
+- **Consulta**: la de `aerial.jpg`, descrita en `docs/MAP_SOURCES.md:24-29`; ninguna
+  herramienta la tiene hoy. WMS 1.1.1 de `https://www.ign.es/wms-inspire/pnoa-ma`,
+  `LAYERS=OI.OrthoimageCoverage`, `STYLES=`, `SRS=EPSG:4326`, `FORMAT=image/jpeg` y
+  `BBOX=lon_min,lat_min,lon_max,lat_max`. El recuadro local pasa a longitud y latitud
+  con la inversa exacta de `proj` de `tools/rebuild-map.py:15-19`:
+  `lon = LON + x / SX` y `lat = LAT − z / SZ`, con `SX = 111320 · cos(LAT)` y
+  `SZ = 111320`. Es lineal, así que el recuadro de la imagen coincide con el local.
+- **Teselas**: las de D1 que tocan algún rectángulo de `world.json` (`bounds`). Hoy son
+  24: `i` de −3 a 2 y `j` de −2 a 1. Cada una pide su recuadro con margen D2
+  (`[255·i − 20,5, 255·(i+1) + 20,5]` en x, igual en z) a 1184 × 1184.
+  - `hi`: el JPEG del WMS tal cual llega, sin recomprimir.
+  - `lo`: `hi` reducido a 592 × 592 con Lanczos y JPEG calidad 82, como
+    `tools/reduce-aerial.py`.
+  - Vista general (D3): una petición del recuadro envolvente de `bounds` a 1 m/píxel,
+    redondeado hacia arriba (hoy 1344 × 1002); si un lado pasa de 2048, se reduce la
+    resolución por igual en ambos ejes.
+- **Salida**: `web/aerial/hi/i_j.jpg`, `web/aerial/lo/i_j.jpg` (por ejemplo `-3_-2.jpg`),
+  `web/aerial/general.jpg` y `web/aerial/index.json`:
+
+  ```json
+  {
+    "version": 1,
+    "tile": 255,
+    "margin": 20.5,
+    "levels": { "hi": [1184, 0.25], "lo": [592, 0.5] },
+    "tiles": [[-3, -2], …],
+    "general": { "file": "general.jpg", "box": [x0, x1, z0, z1], "size": [1344, 1002] },
+    "acquisition": "2022-07",
+    "consulted": "AAAA-MM-DD",
+    "source": "https://www.ign.es/wms-inspire/pnoa-ma",
+    "sha256": { "hi/-3_-2.jpg": "…", "lo/-3_-2.jpg": "…", "general.jpg": "…" }
+  }
+  ```
+
+- **Caché**: las respuestas del WMS van a `~/.cache/chiclana-vice/pnoa/`. La herramienta
+  solo descarga lo que falta, así que la fase 4 la vuelve a ejecutar para los anexos.
+  Como mucho dos peticiones a la vez.
+- **Fecha de vuelo**: GetFeatureInfo de la capa `OI.MosaicElement` (la misma evidencia
+  que hoy) en el centro de cada tesela. Si alguna no es 2022-07, **parar e informar**: la
+  atribución dice «PNOA 2022-07» y cambiarla requiere preguntar.
+- **Alineación con la ortofoto actual**: la herramienta reduce cada tesela `hi` a la
+  resolución de `aerial.jpg` (unos 0,33 m/píxel) y la compara con su zona de
+  `aerial.jpg`. Debe dar un desplazamiento menor de un píxel (por correlación) y una
+  diferencia media baja; informar las cifras por tesela. Así se descartan errores de
+  orden de ejes, de signo en z o de medio píxel.
+- **Procedencia**: en `tools/export-provenance.mjs`, un registro nuevo para
+  `aerial/index.json` y las imágenes, leídas del índice; mismos `source`, `conditions`,
+  `licenseUrl` y `attribution` que `aerial.jpg`. Después,
+  `node tools/export-provenance.mjs`. El registro de `aerial.jpg` sigue hasta el paso 3.3.
+- **Verificación**:
+  - test en `tests/verify-world.mjs`: el índice cubre con sus teselas todos los
+    rectángulos, los archivos existen con su SHA-256 y sus dimensiones, y la vista general
+    cubre la caja de `bounds`;
+  - las cifras de alineación y fecha, en el informe;
+  - tamaño total de `web/aerial/` (estimado: unos 9 MB `hi`, 2–3 MB `lo`);
+  - `npm run check`.
+- **Commit**: `feat(datos): generar la ortofoto por teselas a 0,25 m`. Un solo commit con
+  los datos definitivos: cada regeneración confirmada queda para siempre en el historial.
 
 ## Fase 3: ortofoto por teselas en el juego
+
+Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
 
 ### Paso 3.1: gestor de teselas
 
