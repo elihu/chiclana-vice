@@ -66,14 +66,16 @@ aproximaciones de autor explícitas, pendientes de revisión; no se cambia el tr
 
 ## Reproducción
 
-Descargar originales únicamente fuera del repositorio:
+Descargar originales únicamente fuera del repositorio, en la caché persistente
+`~/.cache/chiclana-vice/mdt` (las rutas de `audit-terrain.py` apuntan ahí por defecto):
 
 ```sh
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCapabilities' -o /tmp/chiclana-mdt-capabilities.xml
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=DescribeCoverage&coverageId=Elevacion4258_5' -o /tmp/chiclana-mdt-description.xml
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc' -D /tmp/chiclana-mdt-headers.txt -o /tmp/chiclana-mdt-original.bin
-uv run --no-project python tools/audit-terrain.py /tmp/chiclana-mdt-original.bin --date 2026-10-07 --url 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc'
-uv run --no-project python tools/export-terrain.py /tmp/chiclana-mdt-original.bin --preview
+mkdir -p ~/.cache/chiclana-vice/mdt
+curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCapabilities' -o ~/.cache/chiclana-vice/mdt/capabilities.xml
+curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=DescribeCoverage&coverageId=Elevacion4258_5' -o ~/.cache/chiclana-vice/mdt/description.xml
+curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc' -D ~/.cache/chiclana-vice/mdt/headers.txt -o ~/.cache/chiclana-vice/mdt/original.bin
+uv run --no-project python tools/audit-terrain.py ~/.cache/chiclana-vice/mdt/original.bin --date 2026-10-07 --url 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc'
+uv run --no-project python tools/export-terrain.py ~/.cache/chiclana-vice/mdt/original.bin --preview
 node tools/audit-terrain-surfaces.mjs /tmp/chiclana-terrain-export
 ```
 
