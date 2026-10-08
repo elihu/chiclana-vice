@@ -1,8 +1,8 @@
 # Plan: ortofoto por teselas y ampliación del mapa
 
 Fecha: 8/10/2026. Desarrolla [ESTUDIO-AMPLIACION.md](ESTUDIO-AMPLIACION.md). Las
-referencias de línea de las fases pendientes son de `main` en `a61971d`, con las fases 0
-a 2 ya integradas.
+referencias de línea de las fases pendientes son de `main` en `37e751b`, con las fases 0
+a 3 ya integradas.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.md`,
 `tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md) y
@@ -291,20 +291,67 @@ Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
 
 Rama `feat/anexos-santa-ana-norte`.
 
+### Paso 4.0: reproducir el mapa actual antes de ampliarlo
+
+Comprobado el 8/10/2026: con los originales de la caché
+(`~/.cache/chiclana-vice/sources/catastro-chiclana.zip`, Catastro del 4/10, y
+`osm-center.xml`) y el recuadro actual, `rebuild-map.py` reproduce los datos publicados
+salvo en dos cosas, ambas anteriores a este plan:
+
+- **44 vías con sentido único** (27 `secondary`, 7 `tertiary`, 10 `residential`) que OSM
+  marca como `oneway` y las capas publicadas no. El conversor de sentidos se corrigió el
+  6/10 sin regenerar las vías (`MAP_SOURCES.md` lo indica). Cambia el tráfico.
+- **Un edificio** (índice 3314): la versión actual de shapely conserva un patio que la
+  publicada había fundido con el contorno.
+
+Con esas dos diferencias, y regenerando frentes (276 → 277) y la capa de alturas, pasan
+todos los tests. Este paso adopta la reconstrucción para que el diff de 4.1 muestre solo
+la ampliación:
+
+- **`rebuild-map.py`**: el texto `meta.terrain` (:82) dice «Plano…»; debe conservar el
+  vigente de `world.json`. Anotar en `DATOS.md` las versiones de shapely y pyproj usadas
+  (2.2.0 y 3.8.0 en la comprobación del 8/10) y fijarlas en el comando (`--with shapely==…`): de ellas depende la
+  geometría exacta.
+- **Capa de alturas IGN**: `height-samples.json` enlaza los edificios por índice y por
+  la huella SHA-256 de `buildings.json`, así que se regenera con
+  `audit-ign-heights.py --download --overlay web/height-samples.json`. El recorte del
+  IGN ya no está guardado: se descarga a `~/.cache/chiclana-vice/ign` (la ruta por
+  defecto). Deben salir las mismas 15 entradas con las mismas alturas; si no, parar.
+- Después: `prepare-world.mjs`, `export-facades.mjs`, `export-provenance.mjs`,
+  `export-geometry-baseline.mjs` y `npm run check`.
+- **Verificación**: diff por capa contra `main`: solo los 44 `oneway`, el edificio 3314,
+  su frente nuevo y las sumas de control. Humo en Chrome.
+- **Revisión del usuario**: el tráfico en las calles con sentido nuevo.
+- **Commit**: `fix(datos): regenerar las capas desde los originales con los sentidos de OSM`.
+
 ### Paso 4.1: reconstrucción con varios rectángulos e IDs de área
 
-- **Archivos**: `tools/rebuild-map.py`, capas de `web/`,
+- **Archivos**: `tools/rebuild-map.py`, capas de `web/`, `web/height-samples.json`,
   `source-data/geometry-baseline.json`, `web/frontages.json`, `web/city-design.json`,
   `web/js/world/surface-model.js` y su esquema, y teselas nuevas de `web/aerial/`.
 - **`rebuild-map.py`**:
   - acepta `--bounds` con varios rectángulos y recorta con su unión. Hoy tiene fijos
-    `W` y `H` (:17-18) y el filtro geográfico de Catastro (:72): ambos deben salir de
-    `--bounds`;
+    `W` y `H` (:17-18), el filtro geográfico rápido de Catastro (:72) y la salida `size`
+    (:22): los tres deben salir de `--bounds`, y la salida pasa a `bounds`. Árboles e
+    hitos (:25 y :47) usan la unión;
   - escribe `id` (ID de OSM) en cada área (:32 y :43; D11).
-- **Datos**: descargar de nuevo Catastro y OSM a una caché fuera del repositorio,
-  reconstruir, revisar y adoptar con `prepare-world.mjs`. Los edificios y vías cortados
-  hoy por los bordes sur y norte se completan, y pueden desaparecer IDs de vía duplicados
-  por el recorte (hoy hay 5): revisar con un diff por parte que el resto del mapa no cambia.
+- **Datos**:
+  - **Catastro**: reutilizar el ZIP de la caché. Es el del municipio entero, así que ya
+    cubre los anexos, y una descarga nueva cambiaría también edificios del centro.
+  - **OSM**: descargar con la API `map` el recuadro envolvente de `bounds` (unos 0,017 ×
+    0,016 grados, dentro de sus límites) a `~/.cache/chiclana-vice/sources/`. Al ser un
+    extracto más reciente, el centro puede traer ediciones de OSM posteriores al 5/10:
+    listarlas en el informe con el diff contra el paso 4.0, limitado al rectángulo
+    actual.
+  - Reconstruir, revisar y adoptar con `prepare-world.mjs`. Los edificios y vías
+    cortados hoy por los bordes sur y norte se completan, y pueden desaparecer IDs de vía
+    duplicados por el recorte (hoy hay 5).
+- **Capa de alturas**: los índices de edificio cambian; volver a ejecutar
+  `audit-ign-heights.py --overlay web/height-samples.json` con el recorte del paso 4.0.
+  Las mismas 15 entradas, con índices nuevos.
+- **Ortofoto**: `aerial-tiles.py` añade las 14 teselas de los anexos y rehace la vista
+  general para la caja nueva (unos 1500 × 1770 a 1 m/píxel). Si alguna tesela no es de
+  2022-07, parar. La alineación entre vecinas cubre también las nuevas.
 - **Anclajes (D11)**: migrar en el mismo commit los `areaAnchor` de
   `terrainSurfaces.platforms` y `water.features` a `areaId`. El validador acepta `areaId`
   y mantiene la comprobación de forma.
@@ -317,7 +364,10 @@ Rama `feat/anexos-santa-ana-norte`.
 ### Paso 4.2: relieve de los anexos
 
 - Descargar el MDT de la caja envolvente de `bounds` con 20 m de margen, con los
-  comandos de `TERRENO_PILOTO.md` y las coordenadas nuevas. Después:
+  comandos de `TERRENO_PILOTO.md` y las coordenadas nuevas, a
+  `~/.cache/chiclana-vice/mdt/` con otro nombre (no sobrescribir `original.bin`). La
+  malla del suelo cubrirá toda esa caja (D9): unos 107.000 vértices y 212.000
+  triángulos, frente a 56.000 y 111.000 hoy. Después:
   - `audit-terrain.py`, con decisión pendiente;
   - `export-terrain.py --preview --out web`;
   - metadatos y procedencia.
