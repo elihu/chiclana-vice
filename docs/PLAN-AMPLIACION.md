@@ -1,8 +1,8 @@
 # Plan: ortofoto por teselas y ampliación del mapa
 
 Fecha: 8/10/2026. Desarrolla [ESTUDIO-AMPLIACION.md](ESTUDIO-AMPLIACION.md). Las
-referencias de línea de las fases pendientes son de `main` en `981f25b`, con las fases 0
-y 1 ya integradas.
+referencias de línea de las fases pendientes son de `main` en `a61971d`, con las fases 0
+a 2 ya integradas.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.md`,
 `tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md) y
@@ -42,9 +42,11 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
   y sirve de respaldo si una tesela falla. Sustituye a `aerial.jpg` y `aerial-2048.jpg`.
 - **D4. UV de mundo**: el suelo y los tejados conservan las UV de mundo. Cada tesela es
   una textura con `offset` y `repeat` que lleva esas UV a su recuadro.
-- **D5. Tejados que sobresalen** de su tesela (525 de 7.448 partes con un margen de
-  20 m, algo menos con 20,5 m; máximo 40,6 m, medido el 7/10/2026): las partes que superan el margen van a un
-  grupo aparte que usa siempre la vista general. La herramienta lo comprueba.
+- **D5. Tejados que sobresalen** de su tesela: con la regla de reparto de
+  `buildBuildings` (celda de 85 m por el centro del recuadro) y 20,5 m de margen, solo 6
+  de 7.448 partes se salen, con un exceso máximo de 20,1 m (medido el 8/10/2026; la
+  cifra anterior de 525 no correspondía a esa regla). Esas partes van a un grupo aparte
+  que usa siempre la vista general. La herramienta lo comprueba.
 - **D6. Carga por radio** con presupuesto: se cargan las teselas a menos de R del
   jugador (300 m en escritorio, 220 m en móvil), con el centro adelantado
   velocidad × 2 s en la dirección de marcha. Máximo 12 teselas en escritorio y 9 en
@@ -55,9 +57,15 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
 - **D8. Anexos de la primera ampliación**: Santa Ana `[-420, -60, 500.94, 650]` y norte
   (Puente VII Centenario y ferial) `[-820, -380, -1120, -500.94]`. Se pueden recortar
   tras revisar la ortofoto.
-- **D9. Terreno troceado por teselas**: la malla del relieve se construye por teselas D1,
+- **D9. Terreno troceado por teselas**: la malla del relieve se construye por teselas D1
+  sobre toda la rejilla del terreno (la caja envolvente de `bounds` redondeada a 10 m),
   con los vértices de borde compartidos, y cada trozo usa el material de su tesela (D4).
-  Solo se construyen los trozos que tocan algún rectángulo.
+  Donde no hay tesela, porque ningún rectángulo la toca, el trozo usa la vista general.
+  El faldón exterior sigue en el borde de la rejilla: es un rectángulo, así que su
+  extrusión radial no se solapa. (Antes se proponía construir solo los trozos que tocan
+  un rectángulo y llevar el faldón al contorno de la unión; con anexos ese contorno no
+  es convexo, la extrusión radial se cruzaría con el terreno y quedarían huecos entre
+  el faldón y los trozos.)
 - **D10. Rejilla del relieve anclada al origen** (nueva). El paso de datos es exacto,
   10 m, y la malla construida mide 5 m (`meshSubdivisions: 2`). Ambos son múltiplos
   desde el origen, así que los bordes de tesela de 255 m (51 celdas de malla) caen sobre
@@ -120,8 +128,7 @@ quedan idénticos.
   de `web/terrain.bin` y `web/terrain.json`; si el original no está, informar sin
   descargarlo. `web/terrain.*` no se regenera.
 - **Sin tocar**: `terrainExterior` (`web/js/world/terrain-mesh.js:41-64`) sigue en el
-  borde de la rejilla del terreno; seguir el contorno de los rectángulos es parte del
-  paso 3.2.
+  borde de la rejilla del terreno, y ahí se queda (D9).
 - **Tests y herramientas** que usan el tamaño del mundo: `tests/verify-world.mjs:103`,
   `tests/verify-geography.mjs:9`, `tests/verify-surfaces.mjs:163`,
   `tests/verify-terrain.mjs:133`, `tests/verify-terrain-runtime.mjs:11` y `:27`, y
@@ -215,11 +222,16 @@ Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
 ### Paso 3.1: gestor de teselas
 
 - **Archivos**: `web/js/world/aerial-tiles.js` (nuevo), `web/js/core/state.js`,
-  `web/js/world/loader.js` (`aerialFile` y `reloadGroundTexture` :97-136),
-  `web/index.html` (importmap y `modulepreload`).
-- `loadLayers` carga `aerial/index.json` y la vista general.
+  `web/js/world/loader.js` (`aerialFile` y `reloadGroundTexture` :98-138),
+  `web/js/app.js` (:78-86), `web/index.html` (importmap y `modulepreload`).
+- `loadLayers` carga `aerial/index.json` y la vista general, y espera a ambas como hoy a
+  `aerial.jpg`. `world.aerialBox` pasa a ser `index.general.box`: las UV de mundo se
+  refieren a la vista general, que se usa con su transformación identidad.
+- Todas las peticiones pasan por `asset()` (con `?v=`); `browser-smoke` lo comprueba.
 - `updateAerialTiles(x, z, vx, vz)`:
-  - calcula las teselas deseadas (D6);
+  - calcula las teselas deseadas (D6): las del índice cuyo recuadro sin margen está a
+    menos de R del punto adelantado, ordenadas por esa distancia y recortadas al
+    presupuesto;
   - pide las que faltan con `TextureLoader`, con `offset`/`repeat` (D4), espacio de
     color sRGB y anisotropía;
   - libera las sobrantes. Una carga que ya no hace falta cuando termina se libera al llegar.
@@ -233,16 +245,17 @@ Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
 - **Archivos**: `web/js/engine/renderer.js` (`addGroundPlanes`),
   `web/js/world/terrain-mesh.js`, `web/js/world/buildings.js`, `web/js/game/update.js`
   y `web/js/ui/map.js`.
-- **Suelo**: un trozo de malla por tesela D9, cortado de `world.surfaces.meshTerrain`.
-  Gracias a D10, sus vértices de borde son los mismos que los de la tesela vecina. Cada
-  trozo tiene su material, que empieza con la vista general. Sin relieve, un plano por
-  tesela. Pavimentos, bases y consultas no cambian: siguen leyendo la malla completa en
-  memoria.
-- **Faldón exterior**: `terrainExterior` deja el borde de la rejilla del terreno y sigue
-  el contorno de la unión de rectángulos de `bounds`, a la cota del suelo en ese contorno.
-  Los trozos de malla fuera de todo rectángulo no se construyen (D9).
-- **Tejados**: un material por tesela, compartido por los grupos de sus nueve celdas. El
-  grupo aparte de D5 usa siempre la vista general.
+- **Suelo**: un trozo de malla por tesela D1 que corta la rejilla de
+  `world.surfaces.meshTerrain` (D9), con `computeBoundingSphere` para el recorte por
+  frustum. Gracias a D10, sus vértices de borde son los mismos que los del trozo vecino.
+  Las **normales** se calculan una vez sobre la malla completa (como hoy en
+  `terrainGeometry`) y se copian a los trozos: calcularlas por trozo marcaría una línea de
+  sombreado cada 255 m. Cada trozo tiene su material, que empieza con la vista general.
+  Sin relieve, un plano por tesela recortado a la caja envolvente. Pavimentos, bases y
+  consultas no cambian: siguen leyendo la malla completa en memoria.
+- **Faldón exterior**: sin cambios, en el borde de la rejilla del terreno (D9).
+- **Tejados**: un material por tesela, compartido por los grupos de sus nueve celdas. Las
+  6 partes de D5 van a un grupo aparte con la vista general.
 - `update` llama a `updateAerialTiles` en cada frame; es barato si no cambia de tesela.
   El mapa (M) dibuja la vista general.
 - **Verificación**:
@@ -252,7 +265,8 @@ Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
       presupuesto;
     - una tesela que falla deja la vista general;
     - cambiar de calidad recarga sin duplicar peticiones.
-  - Test de costuras: los vértices de borde de trozos vecinos coinciden exactamente.
+  - Test de costuras: los vértices de borde de trozos vecinos coinciden exactamente en
+    posición y normal, y la suma de triángulos de los trozos es la de la malla completa.
   - Huella de escena nueva: es un cambio deliberado y se documenta.
   - Humo en Chrome en la raíz y bajo `/chiclana-vice/`, con relieve y en modo ligero.
 - **Revisión del usuario**: nitidez de suelo y tejados, costuras, paso de vista general
@@ -262,8 +276,15 @@ Rama `feat/teselas-juego`, desde `main` con la fase 2 integrada.
 ### Paso 3.3: retirar la ortofoto única
 
 - Borrar `web/aerial.jpg`, `web/aerial-2048.jpg` y `tools/reduce-aerial.py`, y actualizar
-  `data-sources.json`, `MAP_SOURCES.md`, `DATOS.md` y `DESARROLLO.md` (modo ligero).
+  `tools/export-provenance.mjs` (registro de `aerial.jpg`), `MAP_SOURCES.md`, `DATOS.md`,
+  `DESARROLLO.md` (modo ligero) y las referencias de `tests/verify3d.mjs`.
   **Borrar datos publicados requiere confirmación del usuario.**
+- **`tools/aerial-tiles.py`** deja de depender de `aerial.jpg`, que desaparece y no cubre
+  los anexos de la fase 4. La alineación pasa a comprobarse en la franja común de cada
+  par de teselas vecinas (41 m a 0,25 m/píxel): correlación de fase con pico subpíxel,
+  desplazamiento menor de 0,25 píxeles y diferencia media de luminancia baja. Con los
+  datos actuales da como máximo 0,014 píxeles (revisión de la fase 2). Con la caché
+  existente, regenerar debe dar los mismos bytes en `web/aerial/`.
 - **Commit**: `chore(datos): retirar la ortofoto única`.
 
 ## Fase 4: anexos
