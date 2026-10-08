@@ -242,6 +242,7 @@ export function createSurfaceModel(city, terrain, design) {
     roadMap = new Map(city.roads.map((r) => [r.id, r])),
     grid = new Map(),
     profiles = new Map(),
+    roadPoints = new Map(),
     platforms = [],
     water = [],
     cfg = design.roads;
@@ -441,7 +442,7 @@ export function createSurfaceModel(city, terrain, design) {
           blend = 1 - smooth(Math.min(1, distance / cfg.smoothingRadius));
         y = mix(y, Math.min(y, lower.y - lower.thickness - lower.clearance), blend);
       }
-      points.push({ p, y });
+      points.push({ p, y, distance });
     }
     const list = [];
     for (let i = 1; i < points.length; i++) {
@@ -467,39 +468,103 @@ export function createSurfaceModel(city, terrain, design) {
       list.push(s);
       add(s);
     }
-    profiles.set(r.id, list);
+    roadPoints.set(r, { points, lengths, list });
+    profiles.set(r.id, [...(profiles.get(r.id) ?? []), ...list]);
   }
-  // Un cruce real comparte cota: propaga extremos del acceso inferior a vías conectadas.
-  const controls = new Map();
-  for (const [id, list] of profiles)
-    if (list[0]?.lower) {
-      const r = roadMap.get(id);
-      controls.set(r.p[0].join(','), list[0].y0);
-      controls.set(r.p.at(-1).join(','), list.at(-1).y1);
+  // Resuelve el grafo completo antes de corregir perfiles: independiente del orden,
+  // sin relajaciones iterativas ni propagación de un solo salto.
+  const nodes = new Map();
+  for (const [road, { points, lengths }] of roadPoints) {
+    for (let i = 0; i < road.p.length; i++) {
+      const coordinate = road.p[i].join(',');
+      if (!nodes.has(coordinate)) nodes.set(coordinate, { entries: [], neighbours: new Map() });
+      const node = nodes.get(coordinate),
+        point = points.find((p) => p.distance === lengths[i]);
+      node.entries.push({
+        road,
+        point,
+        end: i === 0 || i === road.p.length - 1,
+        priority: platforms.some((p) => p.deckRoads.includes(road.id))
+          ? 3
+          : platforms.some((p) => p.lowerRoads.includes(road.id))
+            ? 2
+            : road.bridge
+              ? 1
+              : 0,
+      });
+      if (i) {
+        const previous = nodes.get(road.p[i - 1].join(',')),
+          distance = lengths[i] - lengths[i - 1];
+        node.neighbours.set(
+          previous,
+          Math.min(node.neighbours.get(previous) ?? Infinity, distance),
+        );
+        previous.neighbours.set(
+          node,
+          Math.min(previous.neighbours.get(node) ?? Infinity, distance),
+        );
+      }
     }
-  for (const [id, list] of profiles)
-    if (list[0]?.bridge) {
-      const r = roadMap.get(id);
-      controls.set(r.p[0].join(','), list[0].y0);
-      controls.set(r.p.at(-1).join(','), list.at(-1).y1);
+  }
+  const mean = (entries) => {
+    const values = entries.map((e) => e.point.y).sort((a, b) => a - b);
+    return values.reduce((sum, y) => sum + y, 0) / values.length;
+  };
+  for (const node of nodes.values()) {
+    node.priority = Math.max(...node.entries.map((e) => e.priority));
+    node.y = mean(node.entries.filter((e) => e.priority === node.priority));
+    const ordinary = node.entries.filter((e) => e.priority === 0);
+    node.delta = ordinary.length ? node.y - mean(ordinary) : 0;
+    node.influence = 0;
+    node.weight = 0;
+  }
+  // Un acceso estructural alcanza también cadenas de vías cortas, limitado por el
+  // radio longitudinal. Cada origen se recorre una vez; nunca retroalimenta su cota.
+  for (const seed of nodes.values()) {
+    if (!seed.priority || !seed.delta) continue;
+    const distances = new Map([[seed, 0]]),
+      pending = [{ node: seed, distance: 0 }];
+    while (pending.length) {
+      pending.sort((a, b) => b.distance - a.distance);
+      const { node, distance } = pending.pop();
+      if (distance !== distances.get(node)) continue;
+      if (!node.priority) {
+        const weight = 1 - smooth(distance / cfg.smoothingRadius);
+        node.influence += seed.delta * weight;
+        node.weight += weight;
+      }
+      for (const [next, length] of node.neighbours) {
+        const candidate = distance + length;
+        if (candidate >= cfg.smoothingRadius || candidate >= (distances.get(next) ?? Infinity))
+          continue;
+        distances.set(next, candidate);
+        pending.push({ node: next, distance: candidate });
+      }
     }
-  for (const [id, list] of profiles) {
-    if (!list.length || list[0].bridge || list[0].lower) continue;
-    const r = roadMap.get(id),
-      d0 = (controls.get(r.p[0].join(',')) ?? list[0].y0) - list[0].y0,
-      d1 = (controls.get(r.p.at(-1).join(',')) ?? list.at(-1).y1) - list.at(-1).y1,
-      total = list.reduce((n, s) => n + s.length, 0);
-    if (!d0 && !d1) continue;
-    const correction = (distance) =>
-      total < 2 * cfg.smoothingRadius
-        ? mix(d0, d1, distance / total)
-        : d0 * (1 - smooth(Math.min(1, distance / cfg.smoothingRadius))) +
-          d1 * (1 - smooth(Math.min(1, (total - distance) / cfg.smoothingRadius)));
-    let distance = 0;
-    for (const s of list) {
-      s.y0 += correction(distance);
-      distance += s.length;
-      s.y1 += correction(distance);
+  }
+  for (const node of nodes.values())
+    if (node.weight) node.y += node.influence / Math.max(1, node.weight);
+  for (const [road, { points, lengths, list }] of roadPoints) {
+    const deltas = road.p.map(
+      (p, i) => nodes.get(p.join(',')).y - points.find((q) => q.distance === lengths[i]).y,
+    );
+    let interval = 1;
+    for (const point of points) {
+      while (interval < lengths.length - 1 && point.distance > lengths[interval]) interval++;
+      const start = lengths[interval - 1],
+        end = lengths[interval],
+        span = end - start;
+      const from = point.distance - start,
+        to = end - point.distance;
+      point.y +=
+        span < 2 * cfg.smoothingRadius
+          ? mix(deltas[interval - 1], deltas[interval], smooth(from / (span || 1)))
+          : deltas[interval - 1] * (1 - smooth(Math.min(1, from / cfg.smoothingRadius))) +
+            deltas[interval] * (1 - smooth(Math.min(1, to / cfg.smoothingRadius)));
+    }
+    for (let i = 0; i < list.length; i++) {
+      list[i].y0 = points[i].y;
+      list[i].y1 = points[i + 1].y;
     }
   }
   const roadAt = (x, z, id = null, includeDeck = true, bridgesOnly = false) => {

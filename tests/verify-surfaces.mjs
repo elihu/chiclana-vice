@@ -183,3 +183,101 @@ assert(validateSurfaceDesign(design, changed).some((e) => e.includes('área modi
 assert.throws(() => createSurfaceModel(changed, terrain, design), /Diseño vertical incompatible/);
 assert.equal(createSurfaceModel(city, { kind: 'flat' }, design), null, 'modo plano intacto');
 console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/superior pasaron');
+
+// Una T interior y una cadena corta heredan el acceso estructural sin depender del orden.
+{
+  const junctionCity = {
+    roads: [
+      {
+        id: 'deck',
+        bridge: true,
+        w: 2,
+        p: [
+          [-8, 0],
+          [0, 0],
+        ],
+      },
+      {
+        id: 'tee',
+        w: 2,
+        p: [
+          [0, -10],
+          [0, 0],
+          [0, 10],
+        ],
+      },
+      {
+        id: 'chain-a',
+        w: 2,
+        p: [
+          [0, 0],
+          [3, 0],
+        ],
+      },
+      {
+        id: 'chain-b',
+        w: 2,
+        p: [
+          [3, 0],
+          [6, 0],
+        ],
+      },
+      {
+        id: 'chain-c',
+        w: 2,
+        p: [
+          [6, 0],
+          [9, 0],
+        ],
+      },
+      {
+        id: 'split',
+        w: 2,
+        p: [
+          [9, 0],
+          [12, 0],
+        ],
+      },
+      {
+        id: 'split',
+        w: 2,
+        p: [
+          [12, 0],
+          [15, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const fixtureDesign = structuredClone(design);
+  fixtureDesign.platforms = [];
+  const fixtureTerrain = { ...terrain, heightAt: (x, z) => Math.sin(x * 0.3) + Math.cos(z * 0.5) };
+  const a = createSurfaceModel(junctionCity, fixtureTerrain, fixtureDesign);
+  const b = createSurfaceModel(
+    { ...junctionCity, roads: [...junctionCity.roads].reverse() },
+    fixtureTerrain,
+    fixtureDesign,
+  );
+  for (const [x, z, ids] of [
+    [0, 0, ['deck', 'tee', 'chain-a']],
+    [3, 0, ['chain-a', 'chain-b']],
+    [6, 0, ['chain-b', 'chain-c']],
+    [9, 0, ['chain-c', 'split']],
+  ]) {
+    const ys = ids.map((id) => a.roadAt(x, z, id).y);
+    assert(Math.max(...ys) - Math.min(...ys) < 1e-9, 'unión al mismo nivel');
+    for (const id of ids)
+      assert(
+        Math.abs(a.roadAt(x, z, id).y - b.roadAt(x, z, id).y) < 1e-9,
+        'orden de vías independiente',
+      );
+  }
+  assert(
+    a.roadAt(6, 0, 'chain-b').y !== fixtureTerrain.heightAt(6, 0),
+    'propaga más allá de un salto',
+  );
+  assert(a.roadAt(14, 0, 'split'), 'no sobrescribe la primera aparición de una vía dividida');
+  const list = a.profiles.get('chain-a');
+  for (const segment of list)
+    assert(Math.abs(segment.y1 - segment.y0) < 1, 'transición de cadena acotada');
+}
