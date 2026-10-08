@@ -34,11 +34,12 @@ se sustituye.
   Parámetros, URL y checksums en `web/height-samples.json` y
   `source-data/height-audit-ign.json`; detalle en [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
-- **MDT IGN de paso nominal 5 m, provisional**: servicio WCS `Elevacion4258_5`,
+- **MDT IGN de paso nominal 5 m, validado para el juego**: servicio WCS `Elevacion4258_5`,
   consulta del 7/10/2026, ASCII multipart en EPSG:4326 según DescribeCoverage.
   Transformación local existente, remuestreo a unos 10 m, referencia fija en el origen
-  y cuantización a 0,1 m. El original permanece fuera de Git; rejilla real solo en la
-  copia local de revisión, sin activar en el juego de la rama. Auditorías:
+  y cuantización a 0,1 m. El original permanece fuera de Git; la rejilla derivada
+  (`terrain.json`, `terrain.bin`) está activa en el juego desde la validación visual del
+  8/10/2026. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
   `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
   aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 - **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del
@@ -96,8 +97,7 @@ celda y 15 cm de separación para evitar que la ortofoto atraviese el recubrimie
 el ráster original no se modifica. Véase `SUPERFICIES_TERRENO.md` para el contrato,
 los límites de estas aproximaciones y las verificaciones.
 
-Desde el 8/10/2026, `fix/relieve-datos` conserva la rejilla derivada provisional
-(`terrain.json` y `terrain.bin`) en Git para su revisión local persistente.
+La rejilla derivada (`terrain.json` y `terrain.bin`) está en Git desde el 8/10/2026.
 El original recuperado coincide con la auditoría del 7/10/2026 y el exportador
-existente reproduce las cotas. No se modifica la decisión de validación ni se
-publica esta rama; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+reproduce las cotas. Tras la revisión visual del usuario, la auditoría registra la
+decisión `validado para el juego`; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md#validación-8102026).

@@ -1,6 +1,6 @@
 # Plan de implementación del relieve del terreno
 
-Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **implementación provisional en rama; datos reales pendientes de validación**. Este documento permite ejecutar la incorporación del terreno tras la
+Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **implementado y validado para el juego el 8/10/2026** (revisión visual del usuario; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md#validación-8102026)). Este documento permite ejecutar la incorporación del terreno tras la
 fase 3 del [plan modular](PLAN-MODULAR.md). Complementa el inventario de
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md); en las decisiones de implementación
 que difieran, seguir este documento y actualizar después el inventario.

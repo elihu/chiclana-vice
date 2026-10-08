@@ -32,5 +32,5 @@ documento; los demás enlazan a él.
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
   perfiles de autor y niveles superior/inferior.
-- [Relieve provisional y reproducción](TERRENO_PILOTO.md): implementación de la rama,
-  auditoría, copia local de revisión y pendientes antes de activar los datos.
+- [Relieve: implementación, validación y reproducción](TERRENO_PILOTO.md): historia del
+  piloto, auditoría, validación del 8/10/2026 y pendientes.
