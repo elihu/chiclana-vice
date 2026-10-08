@@ -149,7 +149,9 @@ conservan, con un solo rectángulo `[-671.835, 671.835, -500.94, 500.94]`.
 El cargador convierte también el antiguo `size` de copias locales a un rectángulo.
 
 `world/bounds.js` centraliza pertenencia, margen interior, proximidad al borde y caja
-envolvente. Colisiones, aviso de salida, mobiliario y vegetación consultan los límites;
+envolvente. Los márgenes se miden hasta el borde de la unión: la costura entre rectángulos
+contiguos o solapados no bloquea ni avisa. Colisiones, aviso de salida, mobiliario y
+vegetación consultan los límites;
 el mapa, minimapa y suelo plano usan su caja envolvente. El recuadro de la ortofoto
 (`world.aerialBox`) es independiente, aunque hoy coincide con esa caja: fija las UV de
 suelo y tejados y la posición de la imagen en el mapa. El faldón del relieve sigue

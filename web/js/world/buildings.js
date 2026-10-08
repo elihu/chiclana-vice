@@ -8,6 +8,10 @@ import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
 
 export async function buildBuildings() {
+  // UV de tejados en el recuadro de la ortofoto.
+  const [ax0, ax1, az0, az1] = world.aerialBox,
+    aw = ax1 - ax0,
+    ah = az1 - az0;
   let groups = new Map(),
     facade = facadeTexture(),
     wallMat = new THREE.MeshStandardMaterial({
@@ -90,8 +94,7 @@ export async function buildBuildings() {
       for (const i of tr) {
         let p = all[i];
         g.r.push(p.x, b.baseY + h + 0.02, p.y);
-        const [x0, x1, z0, z1] = world.aerialBox;
-        g.ru.push(p.x / (x1 - x0) - x0 / (x1 - x0), -z0 / (z1 - z0) - p.y / (z1 - z0));
+        g.ru.push(p.x / aw - ax0 / aw, -az0 / ah - p.y / ah);
       }
     if (++count % 900 === 0) {
       loadProgress(

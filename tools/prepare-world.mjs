@@ -1,6 +1,6 @@
-import { validBounds, worldBounds } from '../web/js/world/bounds.js';
 // Split the transformed snapshot; originals are never inputs to the browser.
 // node tools/prepare-world.mjs [local city.json]
+import { validBounds, worldBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readWorld } from './world-files.mjs';
