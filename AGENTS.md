@@ -10,8 +10,8 @@ algo en `tools/`, lee `tools/AGENTS.md`.
 
 ## Comandos
 
-- Instalar herramientas: `npm ci --ignore-scripts`. En worktrees, `node_modules` puede ser
-  un enlace simbólico a otra copia: no ejecutes `npm install`.
+- Instalar herramientas: `npm ci --ignore-scripts`. En un worktree, `node_modules` es un
+  enlace simbólico al repositorio principal: no ejecutes `npm install`.
 - Comprobar todo (lint, formato y verificadores): `npm run check`. Debe pasar antes del
   commit que cierra el trabajo y antes de integrar.
 - Aplicar formato, incluido Markdown: `npm run format`.
@@ -68,8 +68,10 @@ Nunca:
 
 ## Git
 
-- Una rama corta y un worktree por agente: `feat/…`, `fix/…`, `perf/…`, `docs/…`,
-  `chore/…`, `ci/…`, `test/…`. Trabaja solo en tu worktree.
+- Una rama corta por tarea en el repositorio principal: `feat/…`, `fix/…`, `perf/…`,
+  `docs/…`, `chore/…`, `ci/…`, `test/…`, `refactor/…`. Créala desde `main` limpio con
+  `git switch -c`. Si el árbol tiene cambios o hay otra rama en curso, pregunta antes de
+  cambiar de rama. Worktree solo si el usuario pide agentes en paralelo.
 - Conventional Commits en español: `tipo(ámbito opcional): descripción en minúscula`.
 - No hagas merge, rebase ni push salvo que te lo pidan. El flujo completo y la integración
   están en `docs/GIT_WORKFLOW.md`.
