@@ -462,7 +462,8 @@ g.updateCamera(0.016);
 const ownCar = g.player.car;
 assert(ownCar.mesh.visible);
 assert(ownCar.firstPersonOccluders.every((m) => !m.visible));
-assert.equal(g.view.position[1], 1.2);
+const driverEye = new Real.Vector3(0.38, 1.2, -0.15).applyMatrix4(ownCar.mesh.matrixWorld);
+assert.deepEqual(g.view.position, driverEye.toArray(), 'driver eye follows vehicle pose');
 const eye = [...g.view.position],
   world = els.world;
 world.onpointerdown({ pointerId: 91, clientX: 200, clientY: 200 });
@@ -484,7 +485,11 @@ assert(
   'cabin restored after exit',
 );
 assert(!g.character.mesh.visible, 'own head/body hidden');
-assert.equal(g.view.position[1], 1.61);
+assert.equal(
+  g.view.position[1],
+  g.surfaceHeightAt(g.player.x, g.player.z, g.player.surfaceY ?? null) + 1.61,
+  'walking eye stays 1.61 m above the selected surface',
+);
 world.onpointerdown({ pointerId: 92, clientX: 200, clientY: 200 });
 world.onpointermove({ pointerId: 92, clientX: 200, clientY: -10000 });
 g.updateCamera(0.016);
@@ -724,7 +729,12 @@ console.log('Pedestrians', g.people.length);
   if (!g.player.car) g.interact();
   if (!g.player.car) {
     const car = g.cars[0];
-    Object.assign(g.player, { x: car.x, z: car.z });
+    Object.assign(g.player, {
+      x: car.x,
+      z: car.z,
+      surfaceY: car.surfaceY,
+      surfaceSupport: car.surfaceSupport,
+    });
     car.speed = 0;
     g.interact();
   }

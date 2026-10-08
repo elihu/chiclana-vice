@@ -152,3 +152,17 @@ humana ni acreditan GPU o móvil físicos. La escena del piloto ronda 1,47 millo
 triángulos y 112 llamadas de dibujo en esta comprobación, pendiente de medir en
 dispositivos físicos. El contrato y las aproximaciones están en
 `SUPERFICIES_TERRENO.md`. La activación publicada sigue pendiente.
+
+### Copia persistente para revisión (8/10/2026)
+
+La rama `fix/relieve-datos` conserva en Git `web/terrain.json`,
+`web/terrain.bin` y `source-data/terrain-baseline.json`, junto con los metadatos
+regenerados de mundo y procedencia. El recorte recuperado coincide con el SHA-256
+del original auditado el 7/10/2026; la rejilla se regenera con el exportador existente.
+No se conservan originales en el repositorio. Los diseños de superficies y los
+ajustes de accesos son los integrados en `main`.
+
+La capa mantiene `preview: true` y la decisión de auditoría pendiente: se activa
+para la revisión local de esta rama, sin declarar validación ni publicar.
+La copia de prueba ya no depende de `/tmp`: se sirve directamente `web/` del
+worktree persistente de la rama. La huella de geografía no cambia.
