@@ -96,7 +96,7 @@ export function buildRoadDetails() {
       geometry.setAttribute(
         'position',
         new THREE.Float32BufferAttribute(
-          drapeTriangles(positions, null, world.surfaces.waterHeightAt).position,
+          drapeTriangles(positions, null, (x, z) => world.surfaces.waterHeightAt(x, z, a)).position,
           3,
         ),
       );

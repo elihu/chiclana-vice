@@ -18,6 +18,10 @@ if (fs.existsSync('web/terrain.json')) {
   );
   const design = JSON.parse(fs.readFileSync('web/city-design.json')).terrainSurfaces;
   const model = createSurfaceModel(city, terrain, design);
+  const waterSamples = JSON.parse(fs.readFileSync('source-data/auditoria-relieve/agua-antes.json'));
+  assert.equal(waterSamples.length, 2173);
+  for (const [x, z, y] of waterSamples)
+    assert.equal(model.waterHeightAt(x, z), y, 'lámina del río invariable');
   const report = surfaceJunctions(city, model);
   console.log('Uniones reales: ', JSON.stringify(report));
   for (const group of [report.shared, report.tees])

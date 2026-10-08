@@ -634,6 +634,7 @@
               "minimum": 1
             },
             "meshSubdivisions": {
+              "description": "Divisiones por celda MDT en cada eje; 1 conserva el paso fuente, 2 lo reduce a la mitad y 4 a un cuarto.",
               "enum": [1, 2, 4]
             },
             "accessRadius": {

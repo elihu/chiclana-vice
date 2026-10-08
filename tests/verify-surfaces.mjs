@@ -310,3 +310,180 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
   );
   assert.equal(createSurfaceModel(bridgeCity, { kind: 'flat' }, undefined), null);
 }
+
+// Dos plataformas en medio de una vía y dos pasos inferiores en la misma polilínea.
+{
+  const squares = [
+    [-18, -10],
+    [8, 16],
+  ].map(([a, b]) => ({
+    kind: 'square',
+    p: [
+      [-5, a],
+      [5, a],
+      [5, b],
+      [-5, b],
+    ],
+  }));
+  const multiCity = {
+    roads: [
+      {
+        id: 'deck',
+        bridge: true,
+        w: 2,
+        p: [
+          [0, -30],
+          [0, 30],
+        ],
+      },
+      {
+        id: 'under',
+        w: 2,
+        p: [
+          [-25, -14],
+          [25, -14],
+          [25, 12],
+          [-25, 12],
+        ],
+      },
+    ],
+    areas: squares,
+  };
+  const multiDesign = structuredClone(design);
+  multiDesign.platforms = squares.map((a, i) => ({
+    id: 'platform-' + i,
+    areaAnchor: { kind: 'square', vertex: a.p[0], vertexCount: 4 },
+    heightAnchors: [
+      { roadId: 'deck', vertex: 0, offset: 4 + i * 3 },
+      { roadId: 'deck', vertex: 1, offset: 4 + i * 3 },
+    ],
+    deckRoads: ['deck'],
+    lowerRoads: ['under'],
+    clearance: 12,
+    evidence: ['dos plataformas sintéticas'],
+  }));
+  const flatGrid = { ...terrain, heightAt: () => 10 };
+  const multi = createSurfaceModel(multiCity, flatGrid, multiDesign);
+  assert.equal(multi.roadAt(0, -14, 'deck').y, 14);
+  assert.equal(multi.roadAt(0, 12, 'deck').y, 17);
+  assert.equal(multi.roadAt(0, -30, 'deck').y, 10, 'salida hacia el extremo anterior');
+  assert.equal(multi.roadAt(0, 30, 'deck').y, 10, 'salida hacia el extremo posterior');
+  assert(
+    multi.roadAt(0, 0, 'deck').y > 14 && multi.roadAt(0, 0, 'deck').y < 17,
+    'transición entre plataformas',
+  );
+  assert(multi.roadAt(0, -14, 'under').y <= 14 - 0.12 - 12 + 1e-9);
+  assert(multi.roadAt(0, 12, 'under').y <= 17 - 0.12 - 12 + 1e-9);
+}
+
+// La huella de un corredor sigue un giro en L, sin atajo por la cuerda.
+{
+  const curveCity = {
+    roads: [
+      {
+        id: 'curve',
+        bridge: true,
+        w: 2,
+        p: [
+          [0, -20],
+          [0, 0],
+          [20, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const curveDesign = structuredClone(design);
+  curveDesign.platforms = [
+    {
+      id: 'curve-deck',
+      roadAnchor: { roadId: 'curve', width: 4 },
+      heightAnchors: [
+        { roadId: 'curve', vertex: 0, offset: 4 },
+        { roadId: 'curve', vertex: 2, offset: 4 },
+      ],
+      deckRoads: ['curve'],
+      lowerRoads: [],
+      clearance: 3,
+      evidence: ['corredor sintético en L'],
+    },
+  ];
+  const curve = createSurfaceModel(curveCity, { ...terrain, heightAt: () => 0 }, curveDesign);
+  assert.equal(curve.surfaceHeightAt(0, -10), 4);
+  assert.equal(curve.surfaceHeightAt(10, 0), 4);
+  assert.equal(curve.surfaceHeightAt(8, -8), 0, 'no crea una diagonal entre extremos');
+  const invalidCurve = structuredClone(curveCity);
+  invalidCurve.roads[0].p = [
+    [0, 0],
+    [10, 0],
+    [0, 0],
+  ];
+  assert(
+    validateSurfaceDesign(curveDesign, invalidCurve).some((e) => e.includes('giro de retorno')),
+  );
+}
+
+// Dos aguas en el mismo tramo longitudinal no comparten percentiles ni cotas.
+{
+  const waterCity = {
+    roads: [],
+    areas: [
+      {
+        kind: 'water',
+        p: [
+          [-30, -30],
+          [-20, -30],
+          [-20, 30],
+          [-30, 30],
+        ],
+      },
+      {
+        kind: 'water',
+        p: [
+          [20, -30],
+          [30, -30],
+          [30, 30],
+          [20, 30],
+        ],
+      },
+      {
+        kind: 'water',
+        p: [
+          [0, -5],
+          [5, -5],
+          [5, 5],
+          [0, 5],
+        ],
+      },
+    ],
+  };
+  const waterDesign = structuredClone(design);
+  waterDesign.platforms = [];
+  waterDesign.water.features = [
+    {
+      id: 'basin',
+      kind: 'basin',
+      areaAnchor: { kind: 'water', vertex: [0, -5], vertexCount: 4 },
+      evidence: ['cubeta independiente sintética'],
+    },
+  ];
+  const waterModel = createSurfaceModel(
+    waterCity,
+    { ...terrain, heightAt: (x) => (x < 0 ? -4 : x > 10 ? 7 : 30) },
+    waterDesign,
+  );
+  assert.equal(waterModel.waterHeightAt(-25, 0), -3.96);
+  assert.equal(waterModel.waterHeightAt(25, 0), 7.04);
+  assert.equal(waterModel.waterHeightAt(2, 0), 30.04, 'cubeta excluida del cauce');
+}
+
+// La subdivisión cambia de verdad el paso de la malla y conserva el MDT fuera del corredor.
+{
+  const coarseDesign = structuredClone(design);
+  coarseDesign.roads.meshSubdivisions = 1;
+  const coarse = createSurfaceModel(city, terrain, coarseDesign);
+  assert.equal(coarse.meshTerrain.manifest.columns, 17);
+  assert.equal(model.meshTerrain.manifest.columns, 33);
+  assert.equal(coarse.meshTerrain.manifest.rows, 17);
+  assert.equal(model.meshTerrain.manifest.rows, 33);
+}
