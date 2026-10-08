@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { geographicHash } from '../tools/geographic-fingerprint.mjs';
 import './verify-geography.mjs';
 import { readWorld } from '../tools/world-files.mjs';
-import { validateSurfaceDesign } from '../web/js/engine/surface-model.js';
+import { validateSurfaceDesign } from '../web/js/world/surface-model.js';
 import { KIT_PIECES } from '../web/js/world/facade-kit.js';
 import {
   validateCityDesign,

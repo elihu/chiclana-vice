@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { createSurfaceModel, validateSurfaceDesign } from '../web/js/engine/surface-model.js';
-import { placeVehicle } from '../web/js/engine/terrain-sampling.js';
+import { createSurfaceModel, validateSurfaceDesign } from '../web/js/world/surface-model.js';
+import { placeVehicle, placeVehicleIfChanged } from '../web/js/engine/terrain-sampling.js';
 import { world, waterAreas, streetEnvironment } from '../web/js/core/state.js';
 import { blocked } from '../web/js/world/spatial.js';
 import * as THREE from '../web/vendor/three.module.min.js';
@@ -183,3 +183,396 @@ assert(validateSurfaceDesign(design, changed).some((e) => e.includes('área modi
 assert.throws(() => createSurfaceModel(changed, terrain, design), /Diseño vertical incompatible/);
 assert.equal(createSurfaceModel(city, { kind: 'flat' }, design), null, 'modo plano intacto');
 console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/superior pasaron');
+
+// Una T interior y una cadena corta heredan el acceso estructural sin depender del orden.
+{
+  const junctionCity = {
+    roads: [
+      {
+        id: 'deck',
+        bridge: true,
+        w: 2,
+        p: [
+          [-8, 0],
+          [0, 0],
+        ],
+      },
+      {
+        id: 'tee',
+        w: 2,
+        p: [
+          [0, -10],
+          [0, 0],
+          [0, 10],
+        ],
+      },
+      {
+        id: 'chain-a',
+        w: 2,
+        p: [
+          [0, 0],
+          [3, 0],
+        ],
+      },
+      {
+        id: 'chain-b',
+        w: 2,
+        p: [
+          [3, 0],
+          [6, 0],
+        ],
+      },
+      {
+        id: 'chain-c',
+        w: 2,
+        p: [
+          [6, 0],
+          [9, 0],
+        ],
+      },
+      {
+        id: 'split',
+        w: 2,
+        p: [
+          [9, 0],
+          [12, 0],
+        ],
+      },
+      {
+        id: 'split',
+        w: 2,
+        p: [
+          [12, 0],
+          [15, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const fixtureDesign = structuredClone(design);
+  fixtureDesign.platforms = [];
+  const fixtureTerrain = { ...terrain, heightAt: (x, z) => Math.sin(x * 0.3) + Math.cos(z * 0.5) };
+  const a = createSurfaceModel(junctionCity, fixtureTerrain, fixtureDesign);
+  const b = createSurfaceModel(
+    { ...junctionCity, roads: [...junctionCity.roads].reverse() },
+    fixtureTerrain,
+    fixtureDesign,
+  );
+  for (const [x, z, ids] of [
+    [0, 0, ['deck', 'tee', 'chain-a']],
+    [3, 0, ['chain-a', 'chain-b']],
+    [6, 0, ['chain-b', 'chain-c']],
+    [9, 0, ['chain-c', 'split']],
+  ]) {
+    const ys = ids.map((id) => a.roadAt(x, z, id).y);
+    assert(Math.max(...ys) - Math.min(...ys) < 1e-9, 'unión al mismo nivel');
+    for (const id of ids)
+      assert(
+        Math.abs(a.roadAt(x, z, id).y - b.roadAt(x, z, id).y) < 1e-9,
+        'orden de vías independiente',
+      );
+  }
+  assert(
+    a.roadAt(6, 0, 'chain-b').y !== fixtureTerrain.heightAt(6, 0),
+    'propaga más allá de un salto',
+  );
+  assert.equal(a.roadAt(11, 0, 'split').d, 0, 'conserva la primera aparición de una vía dividida');
+  assert.equal(a.roadAt(14, 0, 'split').d, 0, 'conserva la segunda aparición');
+  assert.equal(a.profiles.get('split').length, 4, 'agrega segmentos de ambas apariciones');
+  const firstHit = a.roadAt(0, 0, 'tee'),
+    firstY = firstHit.y;
+  assert.notEqual(a.roadAt(0, 5, 'tee'), firstHit, 'consulta pública entrega un objeto propio');
+  assert.equal(firstHit.y, firstY, 'una consulta posterior no modifica un resultado público');
+  const list = a.profiles.get('chain-a');
+  for (const segment of list)
+    assert(Math.abs(segment.y1 - segment.y0) < 1, 'transición de cadena acotada');
+}
+
+// El tablero no usa max(MDT, perfil): un bulto original no lo eleva.
+{
+  const bridgeCity = {
+    roads: [
+      {
+        id: 'crest',
+        bridge: true,
+        w: 2,
+        p: [
+          [-30, 0],
+          [30, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const bridgeDesign = structuredClone(design);
+  bridgeDesign.platforms = [];
+  const crestTerrain = { ...terrain, heightAt: (x) => (Math.abs(x) < 10 ? 20 : 2) };
+  const bridgeModel = createSurfaceModel(bridgeCity, crestTerrain, bridgeDesign);
+  assert.equal(bridgeModel.surfaceHeightAt(0, 0), 2);
+  assert.equal(crestTerrain.heightAt(0, 0), 20);
+  assert.throws(
+    () => createSurfaceModel(bridgeCity, crestTerrain, undefined),
+    /requiere terrainSurfaces/,
+  );
+  assert.equal(createSurfaceModel(bridgeCity, { kind: 'flat' }, undefined), null);
+}
+
+// Dos plataformas en medio de una vía y dos pasos inferiores en la misma polilínea.
+{
+  const squares = [
+    [-18, -10],
+    [8, 16],
+  ].map(([a, b]) => ({
+    kind: 'square',
+    p: [
+      [-5, a],
+      [5, a],
+      [5, b],
+      [-5, b],
+    ],
+  }));
+  const multiCity = {
+    roads: [
+      {
+        id: 'deck',
+        bridge: true,
+        w: 2,
+        p: [
+          [0, -30],
+          [0, 30],
+        ],
+      },
+      {
+        id: 'under',
+        w: 2,
+        p: [
+          [-25, -14],
+          [25, -14],
+          [25, 12],
+          [-25, 12],
+        ],
+      },
+    ],
+    areas: squares,
+  };
+  const multiDesign = structuredClone(design);
+  multiDesign.platforms = squares.map((a, i) => ({
+    id: 'platform-' + i,
+    areaAnchor: { kind: 'square', vertex: a.p[0], vertexCount: 4 },
+    heightAnchors: [
+      { roadId: 'deck', vertex: 0, offset: 4 + i * 3 },
+      { roadId: 'deck', vertex: 1, offset: 4 + i * 3 },
+    ],
+    deckRoads: ['deck'],
+    lowerRoads: ['under'],
+    clearance: 12,
+    evidence: ['dos plataformas sintéticas'],
+  }));
+  const flatGrid = { ...terrain, heightAt: () => 10 };
+  const multi = createSurfaceModel(multiCity, flatGrid, multiDesign);
+  assert.equal(multi.roadAt(0, -14, 'deck').y, 14);
+  assert.equal(multi.roadAt(0, 12, 'deck').y, 17);
+  assert.equal(multi.roadAt(0, -30, 'deck').y, 10, 'salida hacia el extremo anterior');
+  assert.equal(multi.roadAt(0, 30, 'deck').y, 10, 'salida hacia el extremo posterior');
+  assert(
+    multi.roadAt(0, 0, 'deck').y > 14 && multi.roadAt(0, 0, 'deck').y < 17,
+    'transición entre plataformas',
+  );
+  assert(multi.roadAt(0, -14, 'under').y <= 14 - 0.12 - 12 + 1e-9);
+  assert(multi.roadAt(0, 12, 'under').y <= 17 - 0.12 - 12 + 1e-9);
+}
+
+// La huella de un corredor sigue un giro en L, sin atajo por la cuerda.
+{
+  const curveCity = {
+    roads: [
+      {
+        id: 'curve',
+        bridge: true,
+        w: 2,
+        p: [
+          [0, -20],
+          [0, 0],
+          [20, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const curveDesign = structuredClone(design);
+  curveDesign.platforms = [
+    {
+      id: 'curve-deck',
+      roadAnchor: { roadId: 'curve', width: 4 },
+      heightAnchors: [
+        { roadId: 'curve', vertex: 0, offset: 4 },
+        { roadId: 'curve', vertex: 2, offset: 4 },
+      ],
+      deckRoads: ['curve'],
+      lowerRoads: [],
+      clearance: 3,
+      evidence: ['corredor sintético en L'],
+    },
+  ];
+  const curve = createSurfaceModel(curveCity, { ...terrain, heightAt: () => 0 }, curveDesign);
+  assert.equal(curve.surfaceHeightAt(0, -10), 4);
+  assert.equal(curve.surfaceHeightAt(10, 0), 4);
+  assert.equal(curve.surfaceHeightAt(8, -8), 0, 'no crea una diagonal entre extremos');
+  const invalidCurve = structuredClone(curveCity);
+  invalidCurve.roads[0].p = [
+    [0, 0],
+    [10, 0],
+    [0, 0],
+  ];
+  assert(
+    validateSurfaceDesign(curveDesign, invalidCurve).some((e) => e.includes('giro de retorno')),
+  );
+}
+
+// Dos aguas en el mismo tramo longitudinal no comparten percentiles ni cotas.
+{
+  const waterCity = {
+    roads: [],
+    areas: [
+      {
+        kind: 'water',
+        p: [
+          [-30, -30],
+          [-20, -30],
+          [-20, 30],
+          [-30, 30],
+        ],
+      },
+      {
+        kind: 'water',
+        p: [
+          [20, -30],
+          [30, -30],
+          [30, 30],
+          [20, 30],
+        ],
+      },
+      {
+        kind: 'water',
+        p: [
+          [0, -5],
+          [5, -5],
+          [5, 5],
+          [0, 5],
+        ],
+      },
+    ],
+  };
+  const waterDesign = structuredClone(design);
+  waterDesign.platforms = [];
+  waterDesign.water.features = [
+    {
+      id: 'basin',
+      kind: 'basin',
+      areaAnchor: { kind: 'water', vertex: [0, -5], vertexCount: 4 },
+      evidence: ['cubeta independiente sintética'],
+    },
+  ];
+  const waterModel = createSurfaceModel(
+    waterCity,
+    { ...terrain, heightAt: (x) => (x < 0 ? -4 : x > 10 ? 7 : 30) },
+    waterDesign,
+  );
+  assert.equal(waterModel.waterHeightAt(-25, 0), -3.96);
+  assert.equal(waterModel.waterHeightAt(25, 0), 7.04);
+  assert.equal(waterModel.waterHeightAt(2, 0), 30.04, 'cubeta excluida del cauce');
+}
+
+// La subdivisión cambia de verdad el paso de la malla y conserva el MDT fuera del corredor.
+{
+  const coarseDesign = structuredClone(design);
+  coarseDesign.roads.meshSubdivisions = 1;
+  const coarse = createSurfaceModel(city, terrain, coarseDesign);
+  assert.equal(coarse.meshTerrain.manifest.columns, 17);
+  assert.equal(model.meshTerrain.manifest.columns, 33);
+  assert.equal(coarse.meshTerrain.manifest.rows, 17);
+  assert.equal(model.meshTerrain.manifest.rows, 33);
+}
+
+// Vehículos parados no muestrean cada frame; cualquier cambio de pose/soporte invalida.
+{
+  const oldModel = world.surfaces,
+    oldTerrain = world.terrain;
+  let samples = 0;
+  const cachedModel = {
+    actorHeightAt: (c) => {
+      samples++;
+      return c.surfaceY ?? 0;
+    },
+    surfaceHeightAt: () => {
+      samples++;
+      return 0;
+    },
+  };
+  world.surfaces = cachedModel;
+  const parked = { x: 0, z: 0, a: 0, mesh: new THREE.Group() };
+  assert(placeVehicleIfChanged(parked));
+  assert.equal(samples, 5);
+  for (let i = 0; i < 120; i++) assert.equal(placeVehicleIfChanged(parked), false);
+  assert.equal(samples, 5, 'cero consultas del vehículo parado');
+  for (const [field, value] of [
+    ['x', 1],
+    ['a', 1],
+    ['bank', 0.02],
+    ['surfaceSupport', 'road:changed'],
+    ['surfaceRoad', 'changed'],
+    ['surfaceY', 3],
+  ]) {
+    parked[field] = value;
+    assert(placeVehicleIfChanged(parked), field + ' invalida la pose');
+  }
+  world.surfaces = { ...cachedModel };
+  assert(placeVehicleIfChanged(parked), 'modelo nuevo invalida');
+  world.terrain = { kind: 'flat' };
+  assert(placeVehicleIfChanged(parked), 'terreno nuevo invalida');
+  world.surfaces = oldModel;
+  world.terrain = oldTerrain;
+}
+
+// Una unión entre pasos inferiores conserva el gálibo más restrictivo.
+{
+  const lowerCity = structuredClone(city);
+  lowerCity.roads[0].p = [
+    [-30, 0],
+    [0, 0],
+    [30, 0],
+  ];
+  lowerCity.roads.push({
+    id: 'under-other',
+    w: 2,
+    p: [
+      [-20, -20],
+      [0, 0],
+      [20, 20],
+    ],
+  });
+  const lowerDesign = structuredClone(design);
+  lowerDesign.platforms.push({
+    ...structuredClone(design.platforms[0]),
+    id: 'higher',
+    lowerRoads: ['under-other'],
+    deckRoads: [],
+    heightAnchors: [
+      { roadId: 'upper', vertex: 0, offset: 7 },
+      { roadId: 'upper', vertex: 1, offset: 7 },
+    ],
+  });
+  const lowerModel = createSurfaceModel(
+    lowerCity,
+    { ...terrain, heightAt: (x, z) => (Math.abs(z) < 10 ? 20 : 2) },
+    lowerDesign,
+  );
+  const a = lowerModel.roadAt(0, 0, 'lower').y,
+    b = lowerModel.roadAt(0, 0, 'under-other').y;
+  assert.equal(a, b, 'misma cota de unión inferior');
+  assert(a <= 6 - 0.12 - 3.2 + 1e-9, 'respeta el gálibo más restrictivo');
+  // El validador informa errores sin lanzar por una banda de tipo incorrecto.
+  const malformed = structuredClone(lowerDesign);
+  malformed.platforms[0].bands = {};
+  assert(validateSurfaceDesign(malformed, lowerCity).length > 0);
+}

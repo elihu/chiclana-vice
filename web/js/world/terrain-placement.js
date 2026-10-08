@@ -2,54 +2,10 @@ import { pInside } from '../core/math.js';
 import { world } from '../core/state.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
-import { createSurfaceModel } from '../engine/surface-model.js';
+import { createSurfaceModel } from './surface-model.js';
 
 export function prepareTerrainPlacement() {
   world.surfaces = createSurfaceModel(world.city, world.terrain, world.cityDesign?.terrainSurfaces);
-  const bridges = new Map();
-  world.bridgeGrid = bridges;
-  for (const r of world.city.roads) {
-    if (!r.bridge) continue;
-    // Perfil de aproximación: une cotas de ambos accesos, sin inventar profundidad del río.
-    const lengths = r.p.slice(1).map((b, i) => Math.hypot(b[0] - r.p[i][0], b[1] - r.p[i][1])),
-      total = lengths.reduce((a, b) => a + b, 0),
-      y0 = world.surfaces?.profiles.get(r.id)?.[0]?.y0 ?? groundHeightAt(...r.p[0]),
-      y1 = world.surfaces?.profiles.get(r.id)?.at(-1)?.y1 ?? groundHeightAt(...r.p.at(-1));
-    let along = 0;
-    r.bridgeProfile = [];
-    for (let i = 1; i < r.p.length; i++) {
-      const a = r.p[i - 1],
-        b = r.p[i],
-        length = lengths[i - 1];
-      if (!length) continue;
-      const s = {
-        a,
-        b,
-        dx: b[0] - a[0],
-        dz: b[1] - a[1],
-        length,
-        width: r.w,
-        y0: y0 + ((y1 - y0) * along) / total,
-        y1: y0 + ((y1 - y0) * (along + length)) / total,
-      };
-      along += length;
-      r.bridgeProfile.push(s);
-      for (
-        let x = Math.floor((Math.min(a[0], b[0]) - r.w) / 25);
-        x <= Math.floor((Math.max(a[0], b[0]) + r.w) / 25);
-        x++
-      )
-        for (
-          let z = Math.floor((Math.min(a[1], b[1]) - r.w) / 25);
-          z <= Math.floor((Math.max(a[1], b[1]) + r.w) / 25);
-          z++
-        ) {
-          const key = x * 65536 + z;
-          if (!bridges.has(key)) bridges.set(key, []);
-          bridges.get(key).push(s);
-        }
-    }
-  }
   for (const b of world.city.buildings) {
     let high = -Infinity,
       low = Infinity;

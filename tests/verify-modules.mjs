@@ -72,6 +72,53 @@ for (const file of files) {
   }
   graph.set(path.normalize(file), deps);
 }
+// Comprueba también imports dinámicos: las excepciones son archivos concretos.
+const layers = new Map(
+  ['core', 'engine', 'world', 'game', 'ui', 'debug'].map((name, rank) => [name, rank]),
+);
+const layerOf = (file) => {
+  const parts = file.split(path.sep);
+  if (parts[0] === 'web' && parts[1] === 'js') return layers.get(parts[2]) ?? 6;
+  if (file === path.normalize('web/game-data.js') || file === path.normalize('web/progress.js'))
+    return 0;
+  return undefined; // Three.js externo no pertenece a las capas del juego.
+};
+const allowedDependency = (file, dependency) => {
+  const rank = layerOf(file),
+    dependencyRank = layerOf(dependency);
+  if (rank === undefined || dependencyRank === undefined || dependencyRank <= rank) return true;
+  if (dependency === path.normalize('web/js/ui/feedback.js')) return true;
+  return (
+    file.startsWith(path.normalize('web/js/game/')) &&
+    dependency === path.normalize('web/js/ui/hud.js')
+  );
+};
+assert(
+  !allowedDependency('web/js/engine/example.js', 'web/js/world/terrain.js'),
+  'rechaza engine -> world',
+);
+assert(!allowedDependency('web/js/engine/example.js', 'web/js/app.js'), 'rechaza engine -> app');
+assert(
+  !allowedDependency('web/js/core/example.js', 'web/js/ui/hud.js'),
+  'no amplía la excepción HUD a core',
+);
+for (const [file, dependencies] of graph) {
+  const source = fs.readFileSync(file, 'utf8');
+  const dynamic = [...source.matchAll(/import\(\s*'([^']+)'\s*\)/g)].map(([, spec]) =>
+    path.normalize(path.join(path.dirname(file), spec)),
+  );
+  for (const dependency of [...dependencies, ...dynamic])
+    assert(
+      allowedDependency(file, dependency),
+      'dirección de capas: ' + file + ' -> ' + dependency,
+    );
+  if (file === path.normalize('web/js/ui/feedback.js'))
+    assert(
+      dependencies.every((dep) => layerOf(dep) === 0),
+      'feedback solo depende de core',
+    );
+}
+
 const state = new Map();
 const visit = (node, trail) => {
   if (state.get(node) === 'done') return;

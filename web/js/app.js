@@ -40,7 +40,7 @@ import { setAssetVersion } from './core/assets.js';
 import { spawnTraffic, updatePedestrians } from './game/traffic.js';
 import { terrainGeometry, terrainExterior } from './world/terrain-mesh.js';
 import { prepareTerrainPlacement } from './world/terrain-placement.js';
-import { surfaceHeightAt, placeVehicle } from './engine/terrain-sampling.js';
+import { surfaceHeightAt, placeVehicle, placeVehicleIfChanged } from './engine/terrain-sampling.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -142,16 +142,17 @@ function frame(now) {
   if (session.started && !session.paused) update(dt);
   else if (!session.started) {
     session.t += dt;
+    const ground = surfaceHeightAt(player.x, player.z);
     gfx.camera.position.set(
       player.x + Math.sin(session.t * 0.075) * 36,
-      surfaceHeightAt(player.x, player.z) + 22,
+      ground + 22,
       player.z + Math.cos(session.t * 0.075) * 36,
     );
-    gfx.camera.lookAt(player.x, surfaceHeightAt(player.x, player.z), player.z);
-    gfx.sun.target.position.set(player.x, surfaceHeightAt(player.x, player.z), player.z);
-    gfx.sun.position.set(player.x - 85, surfaceHeightAt(player.x, player.z) + 125, player.z + 60);
+    gfx.camera.lookAt(player.x, ground, player.z);
+    gfx.sun.target.position.set(player.x, ground, player.z);
+    gfx.sun.position.set(player.x - 85, ground + 125, player.z + 60);
     for (let c of vehicles) {
-      placeVehicle(c);
+      placeVehicleIfChanged(c);
     }
   }
   // While paused (map, modal), the last frame stays on screen; redraw only on demand.

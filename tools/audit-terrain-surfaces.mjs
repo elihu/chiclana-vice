@@ -38,7 +38,7 @@ for (const r of world.city.roads) {
   if (r.bridge) {
     let minimumDeckClearance = Infinity,
       maximumSlope = 0;
-    for (const s of r.bridgeProfile) {
+    for (const s of world.surfaces.profiles.get(r.id) ?? []) {
       maximumSlope = Math.max(maximumSlope, Math.abs(s.y1 - s.y0) / s.length);
       for (let k = 0; k <= Math.ceil(s.length); k++) {
         const u = k / Math.ceil(s.length),

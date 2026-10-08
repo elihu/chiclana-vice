@@ -64,35 +64,41 @@ export function updateMissions(dt) {
   return goal;
 }
 
+const markerSurfaces = new WeakMap();
+
 export function updateMarkers(goal) {
   if (goal && !goal.escape) {
     actors.ring.visible = actors.beam.visible = true;
-    actors.ring.position.set(goal.x, surfaceHeightAt(goal.x, goal.z) + 0.16, goal.z);
-    actors.ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
-    if (world.terrain.kind === 'grid') {
-      const ring = actors.ring,
-        positions = ring.geometry.getAttribute('position');
-      // Geometría original en XY; el grupo gira alrededor de X para situarla sobre XZ.
-      for (let i = 0; i < positions.count; i++) {
-        const x = positions.getX(i) * ring.scale.x,
-          z = -positions.getY(i) * ring.scale.z;
-        positions.setZ(
-          i,
-          -(surfaceHeightAt(goal.x + x, goal.z + z) - surfaceHeightAt(goal.x, goal.z)) /
-            ring.scale.y,
-        );
+    const ring = actors.ring;
+    let cached = markerSurfaces.get(ring);
+    if (
+      !cached ||
+      cached.x !== goal.x ||
+      cached.z !== goal.z ||
+      cached.model !== world.surfaces ||
+      cached.terrain !== world.terrain
+    ) {
+      const ground = surfaceHeightAt(goal.x, goal.z);
+      cached = { x: goal.x, z: goal.z, ground, model: world.surfaces, terrain: world.terrain };
+      markerSurfaces.set(ring, cached);
+      if (world.terrain.kind === 'grid') {
+        const positions = ring.geometry.getAttribute('position');
+        // Conforma el anillo una vez por objetivo. La animación solo cambia escala.
+        for (let i = 0; i < positions.count; i++) {
+          const x = positions.getX(i),
+            z = -positions.getY(i);
+          positions.setZ(i, -(surfaceHeightAt(goal.x + x, goal.z + z) - ground));
+        }
+        positions.needsUpdate = true;
+        ring.geometry.computeBoundingSphere();
       }
-      positions.needsUpdate = true;
-      ring.geometry.computeBoundingSphere();
     }
-    actors.beam.position.set(goal.x, surfaceHeightAt(goal.x, goal.z) + 2, goal.z);
+    ring.position.set(goal.x, cached.ground + 0.16, goal.z);
+    ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
+    actors.beam.position.set(goal.x, cached.ground + 2, goal.z);
     actors.beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
     actors.arrow.visible = true;
-    actors.arrow.position.set(
-      goal.x,
-      surfaceHeightAt(goal.x, goal.z) + 6 + Math.sin(session.t * 2) * 0.4,
-      goal.z,
-    );
+    actors.arrow.position.set(goal.x, cached.ground + 6 + Math.sin(session.t * 2) * 0.4, goal.z);
     actors.arrow.rotation.z = Math.PI;
     actors.arrow.rotation.y = session.t * 0.7;
   } else actors.ring.visible = actors.beam.visible = actors.arrow.visible = false;

@@ -6,7 +6,7 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node tests/verify-world.mjs && node tests/verify-modules.mjs && node tests/verify-design.mjs && node tests/verify-terrain.mjs && node tests/verify-surfaces.mjs && node tests/verify-terrain-runtime.mjs && node tests/verify3d.mjs",
+    "test": "node tests/verify-world.mjs && node tests/verify-modules.mjs && node tests/verify-design.mjs && node tests/verify-terrain.mjs && node tests/verify-surfaces.mjs && node tests/verify-surface-junctions.mjs && node tests/verify-terrain-runtime.mjs && node tests/verify3d.mjs",
     "check": "npm run lint && npm run format:check && npm test"
   },
   "repository": {

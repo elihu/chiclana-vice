@@ -2,7 +2,7 @@
 // tests/verify-world.mjs. Devuelve una lista de errores con la ruta JSON; vacía si todo cuadra.
 // Referencia normativa: docs/plan-modular/KIT-FACHADAS.md (K3 y K5).
 import { freeNames } from '../engine/expr.js';
-import { validateSurfaceDesign } from '../engine/surface-model.js';
+import { validateSurfaceDesign } from './surface-model.js';
 
 // Argumentos de cada pieza tras el grupo `g`: [mínimo, máximo].
 export const PIECE_ARITY = {

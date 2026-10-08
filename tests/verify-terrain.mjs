@@ -152,6 +152,7 @@ world.city = {
   ...city,
   roads: [
     {
+      id: 'bridge',
       bridge: true,
       p: [
         [-5, 0],
@@ -162,13 +163,42 @@ world.city = {
   ],
   buildings: [],
   landmarks: [],
+  areas: [],
 };
 const bridgeBuffer = new ArrayBuffer(8),
   bridgeView = new DataView(bridgeBuffer);
 [100, 100, 100, 0].forEach((v, i) => bridgeView.setInt16(i * 2, v, true));
 world.terrain = createTerrain(manifest, bridgeBuffer, city);
+assert.throws(() => prepareTerrainPlacement(), /Terreno real requiere terrainSurfaces/);
+world.cityDesign = {
+  terrainSurfaces: {
+    version: 1,
+    roads: {
+      sampleStep: 2,
+      pavementStep: 4,
+      meshSubdivisions: 2,
+      smoothingRadius: 12,
+      shoulder: 3,
+      bridgeAnchorRadius: 2,
+    },
+    water: {
+      percentile: 0.2,
+      bedDepth: 0.8,
+      shoreWidth: 2,
+      axis: 'z',
+      sliceLength: 10,
+      maximumSlope: 0.005,
+    },
+    platforms: [],
+  },
+};
 prepareTerrainPlacement();
-assert.equal(surfaceHeightAt(0, 0), 7.5, 'tablero independiente interpolado entre accesos');
-assert.equal(groundHeightAt(0, 0), 5);
+assert(
+  Math.abs(surfaceHeightAt(0, 0) - 43 / 6) < 1e-12,
+  'tablero interpolado entre accesos estabilizados',
+);
+assert(groundHeightAt(0, 0) < surfaceHeightAt(0, 0), 'terreno construido bajo tablero');
 assert.equal(surfaceHeightAt(0, 4), groundHeightAt(0, 4));
-console.log('Terrain contract, triangular interpolation, clipping, errors and bridge index passed');
+console.log(
+  'Terrain contract, triangular interpolation, clipping, errors and single surface model passed',
+);

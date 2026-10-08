@@ -95,3 +95,9 @@ La construcción del suelo bajo pavimentos usa un margen local de una diagonal d
 celda y 15 cm de separación para evitar que la ortofoto atraviese el recubrimiento;
 el ráster original no se modifica. Véase `SUPERFICIES_TERRENO.md` para el contrato,
 los límites de estas aproximaciones y las verificaciones.
+
+Desde el 8/10/2026, `fix/relieve-datos` conserva la rejilla derivada provisional
+(`terrain.json` y `terrain.bin`) en Git para su revisión local persistente.
+El original recuperado coincide con la auditoría del 7/10/2026 y el exportador
+existente reproduce las cotas. No se modifica la decisión de validación ni se
+publica esta rama; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md).

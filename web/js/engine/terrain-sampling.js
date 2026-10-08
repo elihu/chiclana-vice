@@ -1,4 +1,4 @@
-// Referencia vertical compartida; sin DOM, geometrías ni asignaciones por actor.
+// Referencia vertical compartida; sin DOM ni creación de geometría.
 import { world } from '../core/state.js';
 
 const tilt = (value) => Math.max(-Math.PI / 12, Math.min(Math.PI / 12, value));
@@ -14,16 +14,7 @@ export function groundHeightAt(x, z) {
 
 export function surfaceHeightAt(x, z, reference = null, roadId = null) {
   if (world.surfaces) return world.surfaces.surfaceHeightAt(x, z, reference, roadId);
-  let y = groundHeightAt(x, z);
-  const cell = world.bridgeGrid?.get(Math.floor(x / 25) * 65536 + Math.floor(z / 25));
-  if (!cell) return y;
-  for (const s of cell) {
-    const u = ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length);
-    if (u < 0 || u > 1) continue;
-    const distance = Math.abs((x - s.a[0]) * s.dz - (z - s.a[1]) * s.dx) / s.length;
-    if (distance <= s.width / 2) y = Math.max(y, s.y0 + u * (s.y1 - s.y0));
-  }
-  return y;
+  return groundHeightAt(x, z);
 }
 
 export function actorHeightAt(actor, x = actor.x, z = actor.z) {
@@ -31,6 +22,28 @@ export function actorHeightAt(actor, x = actor.x, z = actor.z) {
     world.surfaces?.actorHeightAt(actor, x, z, actor.surfaceRoad ?? null) ??
     surfaceHeightAt(x, z, actor.surfaceY ?? null, actor.surfaceRoad ?? null)
   );
+}
+
+// Caché por vehículo: invalida posición, rumbo, balanceo, ruta, soporte o modelo.
+const placements = new WeakMap();
+export function placeVehicleIfChanged(c) {
+  const previous = placements.get(c);
+  if (
+    previous &&
+    previous.x === c.x &&
+    previous.z === c.z &&
+    previous.a === c.a &&
+    previous.bank === c.bank &&
+    previous.surfaceY === c.surfaceY &&
+    previous.support === c.surfaceSupport &&
+    previous.road === c.surfaceRoad &&
+    previous.model === world.surfaces &&
+    previous.terrain === world.terrain &&
+    previous.mesh === c.mesh
+  )
+    return false;
+  placeVehicle(c);
+  return true;
 }
 
 // Euler YXZ mantiene rumbo; inclinación visual limitada a 15° (sin física nueva).
@@ -50,4 +63,19 @@ export function placeVehicle(c) {
     tilt(Math.atan2(right - left, 1.4) + (c.bank ?? 0)),
     'YXZ',
   );
+  let placement = placements.get(c);
+  if (!placement) {
+    placement = {};
+    placements.set(c, placement);
+  }
+  placement.x = c.x;
+  placement.z = c.z;
+  placement.a = c.a;
+  placement.bank = c.bank;
+  placement.surfaceY = c.surfaceY;
+  placement.support = c.surfaceSupport;
+  placement.road = c.surfaceRoad;
+  placement.model = world.surfaces;
+  placement.terrain = world.terrain;
+  placement.mesh = c.mesh;
 }
