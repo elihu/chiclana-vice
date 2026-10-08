@@ -9,14 +9,29 @@ from pathlib import Path
 
 source = runpy.run_path(str(Path(__file__).with_name("terrain-source.py")))
 parser = argparse.ArgumentParser()
-parser.add_argument("original")
-parser.add_argument("--date", required=True)
-parser.add_argument("--url", required=True)
+parser.add_argument("original", nargs="?")
+parser.add_argument("--date")
+parser.add_argument("--url")
 parser.add_argument("--out", default="source-data/terrain-audit.json")
+# Registra la decisión sobre una auditoría existente sin rehacerla: conserva su evidencia.
+parser.add_argument("--decision", help="Texto de la decisión; con --decision-date y --decision-note")
+parser.add_argument("--decision-date")
+parser.add_argument("--decision-note")
 parser.add_argument("--capabilities", default="/tmp/chiclana-mdt-capabilities.xml")
 parser.add_argument("--description", default="/tmp/chiclana-mdt-description.xml")
 parser.add_argument("--headers", default="/tmp/chiclana-mdt-headers.txt")
 args = parser.parse_args()
+if args.decision:
+    if not args.decision_date or not args.decision_note:
+        parser.error("--decision requiere --decision-date y --decision-note")
+    result = json.loads(Path(args.out).read_text())
+    result["decision"] = args.decision
+    result["decisionDate"] = args.decision_date
+    result["decisionNote"] = args.decision_note
+    Path(args.out).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    raise SystemExit(0)
+if not args.original or not args.date or not args.url:
+    parser.error("se requieren original, --date y --url")
 header, values, checksum = source["read_ascii"](args.original)
 ordered = sorted(values)
 columns, rows = int(header["ncols"]), int(header["nrows"])

@@ -45,11 +45,11 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Relieve del terreno
 
-Integrado en `main` local desde `feat/relieve-terreno`, `fix/relieve-datos` y
-`fix/superficies-terreno`, sin publicar. El recorte provisional del MDT
-(`web/terrain.json` y `web/terrain.bin`, `preview: true`) está en Git y el relieve
-queda **activo por defecto**: un push publicaría esta versión provisional. Sin esos
-dos archivos se vuelve al modo plano, que conserva la escena anterior.
+Integrado en `main` local desde `feat/relieve-terreno`, `fix/relieve-datos`,
+`fix/superficies-terreno` y `chore/validar-relieve`, sin publicar. **Validado para el
+juego el 8/10/2026** tras la revisión visual del usuario, que lo considera realista con
+pequeños defectos visuales. La capa (`web/terrain.json` y `web/terrain.bin`) está en Git
+y activa por defecto; un push la publica. Sin esos dos archivos se vuelve al modo plano.
 
 Implementados la carga, malla, bases, pavimentos, actores, cámaras e inspector, con
 superficies y niveles declarados en diseño. La auditoría del 8/10/2026 dejó las uniones
@@ -57,16 +57,19 @@ entre vías sin saltos (límite de 5 cm en `npm run check`) y un único modelo d
 También permitió varias plataformas por vía y láminas de agua por polígono, y redujo
 el coste de construcción y de consultas por frame.
 
-Pendientes antes de publicar: revisión visual del usuario de los últimos ajustes,
-zócalos y accesos de edificios en pendiente (`baseY` máximo) y mediciones en móvil
-físico. Siguen como límites documentados los tableros horizontales y el eje de agua
-común. Las comprobaciones de Chrome con SwiftShader no acreditan GPU física.
+Es una validación de juego, no topográfica: referencia vertical y fecha de adquisición
+del MDT sin confirmar. Siguen como límites documentados los tableros horizontales y el
+eje de agua común.
 
 Auditoría y reproducción: [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Contrato genérico
 y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 [PLAN-TERRENO.md](PLAN-TERRENO.md).
 
 ## Pendientes
+
+- Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
+  del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
+  en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Verificación en iOS y revisión visual de las fachadas en FrontSide.

@@ -1,11 +1,11 @@
 # Relieve: implementación y revisión local
 
 Implementación original en `feat/relieve-terreno`, base `0b4859d` (7/10/2026).
-**La capa real sigue siendo provisional y no se publica.** Desde `fix/relieve-datos`
-(`02a5420`) se conserva en Git y se activa por defecto para revisión local.
-`fix/superficies-terreno` parte de esa rama y corrige la auditoría sin regenerar cotas.
-Sin la capa se conserva el mundo plano anterior. No se acredita el cierre de la fase D
-del [plan](PLAN-TERRENO.md). Las copias en `/tmp` descritas abajo son históricas.
+**Validado para el juego el 8/10/2026** tras la revisión visual del usuario (véase
+[Validación](#validación-8102026)); activo por defecto en `web/`. Desde `fix/relieve-datos`
+(`02a5420`) se conserva en Git y `fix/superficies-terreno` corrigió la auditoría sin
+regenerar cotas. Sin la capa se conserva el mundo plano anterior. Las secciones
+siguientes describen la historia del piloto; las copias en `/tmp` son históricas.
 
 ## Implementación
 
@@ -240,3 +240,19 @@ muestras fuera del límite, que no se convierte en un pendiente de ampliación.
 `npm run check` pasa con el relieve activo. Estos verificadores y SwiftShader no
 acreditan revisión visual completa, GPU física ni móvil; sigue pendiente la prueba del
 usuario y las mediciones en dispositivos físicos.
+
+## Validación (8/10/2026)
+
+El usuario revisó el relieve en el navegador y lo considera realista respecto al
+terreno real, con pequeños defectos visuales pendientes de localizar. Con esa revisión,
+`source-data/terrain-audit.json` registra la decisión `validado para el juego`, con fecha
+y nota, mediante `audit-terrain.py --decision`; la evidencia de servicio se conserva.
+`export-terrain.py` regeneró la capa en `web/` sin `--preview`: `terrain.bin` es idéntico
+(SHA-256 `4fce7079…`) y solo cambia `preview` en el manifiesto, lo que retira el aviso de
+relieve provisional. Se regeneraron metadatos, huella independiente, procedencia y la
+auditoría de superficies.
+
+La validación es de juego, no topográfica: la referencia vertical y la fecha de
+adquisición del MDT siguen sin confirmar y las cotas estructurales son aproximaciones
+de autor. Quedan pendientes los defectos visuales menores, zócalos y accesos de edificios
+en pendiente (`baseY` máximo) y la prueba en un móvil físico.

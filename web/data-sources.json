@@ -136,7 +136,7 @@
       "transformation": "Centros ASCII, remuestreo bilineal a 10 m efectivos; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
       "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
       "sha256": {
-        "terrain.json": "2daacdca9c4c81f33b55a4c42730db14bf4ac9d9a1aadf36bb32474aa51d5188",
+        "terrain.json": "1c40b0ea7e92ddecc9a29af2866bf08dcaa6f99873501e847da929d171111fd5",
         "terrain.bin": "4fce70794b5a5d53aac5e3feb8429303d80c1851339ccb342a19a626b0f4ce4e"
       }
     }

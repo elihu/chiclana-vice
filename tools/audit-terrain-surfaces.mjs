@@ -91,13 +91,18 @@ steep.sort((a, b) => b.slope - a.slope);
 const buildings = world.city.buildings
   .map((b, index) => ({ index, baseY: b.baseY, spread: b.terrainSpread }))
   .sort((a, b) => b.spread - a.spread);
+const terrainAudit = JSON.parse(fs.readFileSync('source-data/terrain-audit.json', 'utf8'));
+if (!manifest.preview && terrainAudit.decision !== 'validado para el juego')
+  throw Error('Terreno sin --preview y auditoría del MDT sin validar');
 const report = {
   version: 1,
   terrainSha256: manifest.sha256,
   sourceSha256: manifest.sourceSha256,
   accessDate: manifest.accessDate,
-  decision:
-    'provisional; perfiles y plataformas de autor generalizables; revisión visual y móvil pendientes',
+  // La decisión procede de la auditoría del MDT; una copia provisional no la hereda.
+  decision: manifest.preview
+    ? 'provisional; perfiles y plataformas de autor generalizables; revisión visual y móvil pendientes'
+    : `${terrainAudit.decision} (${terrainAudit.decisionDate}); defectos visuales menores y móvil físico pendientes`,
   reviewSlope: 0.2,
   steepSamples: steep.length,
   rawSteepSamples: rawSteep.length,

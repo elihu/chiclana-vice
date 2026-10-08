@@ -31,7 +31,7 @@
   "acquisitionDate": "sin confirmar",
   "verticalReference": "sin confirmar para este recorte",
   "metadataWarning": "DescribeCoverage publica unidades W.m-2.Sr-1 impropias del MDT: no utilizarlas como evidencia vertical.",
-  "decision": "no activar hasta revisar perfiles transitables y referencia vertical",
+  "decision": "validado para el juego",
   "serviceEvidence": {
     "capabilitiesSha256": "30c95575991611cd15924369d2a3ad5066aa9a81ff68f8e549c71bdc6c638d3f",
     "descriptionSha256": "cfb3a677580104eca03fedef17ef8a36027b651cf8d0973b48d9fa5516aab6e0",
@@ -52,5 +52,7 @@
       "date": "Wed, 07 Oct 2026 11:32:24 GMT",
       "content-type": "multipart/related; boundary=wcs"
     }
-  }
+  },
+  "decisionDate": "2026-10-08",
+  "decisionNote": "Revisión visual del usuario en navegador: el relieve se considera realista respecto al terreno real; quedan pequeños defectos visuales. Referencia vertical y fecha de adquisición siguen sin confirmar; no es una validación topográfica."
 }

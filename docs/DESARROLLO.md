@@ -143,7 +143,8 @@ Probado a mano en un móvil Android; no en iOS.
 
 ## Terreno
 
-El modo plano sigue siendo la alternativa por defecto mientras se valida el piloto.
+El relieve real está activo con `web/terrain.json` y `web/terrain.bin`, validados para el
+juego el 8/10/2026. Sin esos archivos se usa el modo plano, que conserva la escena anterior.
 La carga opcional de `terrain.json` y `terrain.bin` se resuelve antes de construir la
 escena. Una capa presente pero incompatible detiene el arranque; un 404 usa terreno
 plano y un fallo de red añade un aviso. La referencia vertical se suma por separado a
@@ -166,10 +167,9 @@ de comprobar terreno/tableros. El inspector selecciona el suelo real e informa d
 relativas, referencia y datos de la plataforma seleccionada. El contrato editable
 está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
 
-La implementación y los límites del recorte provisional están en
-[TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles reales de varias pasarelas, accesos
-y agua siguen pendientes de validación; la interfaz nueva no acredita que hayan quedado
-resueltos. El inventario anterior se conserva como historia en
+La implementación, la validación y los límites del recorte están en
+[TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles de pasarelas, accesos y agua son
+aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
 ## Modo ligero
