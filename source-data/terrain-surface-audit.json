@@ -5,36 +5,9 @@
   "accessDate": "2026-10-07",
   "decision": "validado para el juego (2026-10-08); defectos visuales menores y móvil físico pendientes",
   "reviewSlope": 0.2,
-  "steepSamples": 44,
+  "steepSamples": 42,
   "rawSteepSamples": 152,
   "steepest": [
-    {
-      "id": "759565062",
-      "name": "",
-      "type": "footway",
-      "bridge": true,
-      "x": 337.485,
-      "z": -155.765,
-      "slope": 0.5394403017703819
-    },
-    {
-      "id": "1195660891",
-      "name": "",
-      "type": "footway",
-      "bridge": true,
-      "x": 277.46,
-      "z": -115.68,
-      "slope": 0.5168017650919182
-    },
-    {
-      "id": "1195660891",
-      "name": "",
-      "type": "footway",
-      "bridge": true,
-      "x": 278.68,
-      "z": -117.21,
-      "slope": 0.44644324659575463
-    },
     {
       "id": "1195660891",
       "name": "",
@@ -42,7 +15,7 @@
       "bridge": true,
       "x": 276.24,
       "z": -114.15,
-      "slope": 0.38781924751948027
+      "slope": 0.4183323938820997
     },
     {
       "id": "141768877",
@@ -61,6 +34,15 @@
       "x": 605.946,
       "z": 330.3804,
       "slope": 0.3402902305594329
+    },
+    {
+      "id": "1195660891",
+      "name": "",
+      "type": "footway",
+      "bridge": true,
+      "x": 277.46,
+      "z": -115.68,
+      "slope": 0.33033134946676473
     },
     {
       "id": "141768877",
@@ -115,15 +97,6 @@
       "x": 593.202,
       "z": 350.3868,
       "slope": 0.27215579744287555
-    },
-    {
-      "id": "1195660891",
-      "name": "",
-      "type": "footway",
-      "bridge": true,
-      "x": 279.9,
-      "z": -118.74,
-      "slope": 0.26850073949091513
     },
     {
       "id": "53650596",
@@ -232,6 +205,15 @@
       "x": -268.794,
       "z": 449.298,
       "slope": 0.222652508549174
+    },
+    {
+      "id": "1195660891",
+      "name": "",
+      "type": "footway",
+      "bridge": true,
+      "x": 278.68,
+      "z": -117.21,
+      "slope": 0.2224412749454792
     },
     {
       "id": "53650596",
@@ -492,8 +474,8 @@
           -154.23
         ]
       ],
-      "minimumDeckClearance": 2.4624964976053914,
-      "maximumSlope": 2.4422386980008555
+      "minimumDeckClearance": 2.2221580999137407,
+      "maximumSlope": 0.0032476623284126882
     },
     {
       "id": "760833292",
@@ -564,8 +546,8 @@
           -120.27
         ]
       ],
-      "minimumDeckClearance": 0.5369218050045386,
-      "maximumSlope": 0.5168017650919232
+      "minimumDeckClearance": 1.1951695565903044,
+      "maximumSlope": 0.41833239388209614
     }
   ],
   "authoredPlatforms": [

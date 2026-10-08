@@ -382,6 +382,65 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
   assert(multi.roadAt(0, 12, 'under').y <= 17 - 0.12 - 12 + 1e-9);
 }
 
+// Un acceso de tablero más corto que smoothingRadius no comprime la rampa en un escalón:
+// la continúa la calle a la que se une.
+{
+  const square = {
+    kind: 'square',
+    p: [
+      [-5, -8],
+      [5, -8],
+      [5, 8],
+      [-5, 8],
+    ],
+  };
+  const accessCity = {
+    roads: [
+      {
+        id: 'street',
+        w: 2,
+        p: [
+          [0, -40],
+          [0, -8.3],
+        ],
+      },
+      {
+        id: 'access',
+        w: 2,
+        p: [
+          [0, -8.3],
+          [0, -5],
+        ],
+      },
+    ],
+    areas: [square],
+  };
+  const accessDesign = structuredClone(design);
+  accessDesign.platforms = [
+    {
+      id: 'platform',
+      areaAnchor: { kind: 'square', vertex: [-5, -8], vertexCount: 4 },
+      heightAnchors: [
+        { roadId: 'access', vertex: 0, offset: 2 },
+        { roadId: 'access', vertex: 1, offset: 2 },
+      ],
+      deckRoads: ['access'],
+      lowerRoads: [],
+      clearance: 3.2,
+      evidence: ['acceso sintético a 0,3 m de la plataforma'],
+    },
+  ];
+  const access = createSurfaceModel(accessCity, { ...terrain, heightAt: () => 10 }, accessDesign);
+  const along = [];
+  for (let z = -40; z <= -5; z += 0.25)
+    along.push(access.roadAt(0, z, z < -8.3 ? 'street' : 'access').y);
+  let step = 0;
+  for (let i = 4; i < along.length; i++) step = Math.max(step, Math.abs(along[i] - along[i - 4]));
+  assert(step <= 0.3, 'rampa de acceso sin escalón: ' + step);
+  assert(access.roadAt(0, -8.3, 'access').y > 11.9, 'el extremo del acceso queda junto al tablero');
+  assert.equal(access.roadAt(0, -40, 'street').y, 10, 'la calle recupera el suelo fuera del radio');
+}
+
 // La huella de un corredor sigue un giro en L, sin atajo por la cuerda.
 {
   const curveCity = {

@@ -593,29 +593,20 @@ export function createSurfaceModel(city, terrain, design) {
               smooth((distance - left.end) / (right.start - left.end)),
             );
           else {
+            // La rampa mide siempre smoothingRadius aunque la vía sea más corta: su extremo
+            // queda cerca de la plataforma y la resolución de uniones la continúa por las
+            // vías vecinas, en lugar de comprimirla en un escalón.
             if (left)
               y = mix(
                 y,
                 left.platform.y,
-                1 -
-                  smooth(
-                    Math.min(
-                      1,
-                      (distance - left.end) / Math.min(cfg.smoothingRadius, total - left.end),
-                    ),
-                  ),
+                1 - smooth(Math.min(1, (distance - left.end) / cfg.smoothingRadius)),
               );
             if (right)
               y = mix(
                 y,
                 right.platform.y,
-                1 -
-                  smooth(
-                    Math.min(
-                      1,
-                      (right.start - distance) / Math.min(cfg.smoothingRadius, right.start),
-                    ),
-                  ),
+                1 - smooth(Math.min(1, (right.start - distance) / cfg.smoothingRadius)),
               );
           }
         }

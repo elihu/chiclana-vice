@@ -308,10 +308,22 @@ tablero–suelo y pendiente máxima, calculadas por la misma auditoría:
 | 1195660889 |         2.796687 / 2.700113 |     0.000000 / 0.000000 |
 | 1195660891 |         0.505360 / 0.536922 |     0.514738 / 0.516802 |
 
-Puente Chico registra −0,061123 m de separación mínima: revisar visualmente
-ese contacto, junto con la pendiente de la vía 759565062 (2,442239). No se
-ajusta el diseño para ocultar estos resultados. El informe generado vigente
-es `source-data/terrain-surface-audit.json`.
+Puente Chico registra −0,061123 m de separación mínima, medida en los bordes del
+tablero junto al estribo de x 121, z −209; en el eje es +0,025 m. Es el apoyo del
+tablero en el suelo, no un cruce en el vano. No se ajusta el diseño para ocultarlo.
+
+**Escalones de acceso (corregido en esta fase).** La pendiente 2,44 de la vía 759565062
+era un escalón de 0,83 m en 0,34 m en el acceso peatonal al tablero de Remedios (x 337,4,
+z −157,3), ya presente antes de la fase (0,59 m). La transición hacia una plataforma se
+recortaba a la longitud de la propia vía. Ahora mide siempre `smoothingRadius` y la
+rampa sigue por la acera vecina; cambian 9 de 609 perfiles. La pendiente máxima de esa
+vía pasa a 0,003. La pasarela 1195660891 de la Gran Plaza baja de 1,01 m a 0,82 m en
+2 m: lo que queda es el desnivel de diseño entre la orilla (−2,5 m) y la plataforma
+(+1,0 m) repartido en el radio de 16 m, no un escalón. Suavizarlo más es una decisión de
+diseño (radio o acceso de autor). `verify-surface-junctions.mjs` impone ahora como
+máximo 0,3 m de desnivel en 1 m de perfil con los datos reales (máximo actual 0,196 m,
+cuesta del MDT en la vía 53650596), y `verify-surfaces.mjs` cubre un acceso más corto
+que el radio. El informe generado vigente es `source-data/terrain-surface-audit.json`.
 
 Comprobaciones: contrato, cobertura y anclaje, interpolación, recorte de
 pavimentos, superficies sintéticas, uniones reales, runtime y escena;
