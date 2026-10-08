@@ -64,7 +64,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 - Ampliación del mapa y ortofoto por teselas: plan en
   [PLAN-AMPLIACION.md](PLAN-AMPLIACION.md). Fase 0 integrada el 8/10/2026 (rejilla del
   relieve anclada al origen, revisada por el usuario, y rampas de acceso a plataformas
-  sin escalones); sigue la fase 1 (límites con rectángulos).
+  sin escalones) y fase 1 el 8/10/2026 (límites del mundo como lista de rectángulos en
+  `world.json`, con márgenes medidos sobre la unión; escena idéntica). Sigue la fase 2
+  (herramientas de teselas).
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
