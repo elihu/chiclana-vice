@@ -1,3 +1,4 @@
+import { gridX, gridZ, gridColumn, gridRow } from '../core/math.js';
 import { pInside } from '../core/math.js';
 import { world } from '../core/state.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
@@ -26,17 +27,17 @@ export function prepareTerrainPlacement() {
     const m = world.terrain.manifest;
     if (m)
       for (
-        let j = Math.max(0, Math.ceil((b.minZ + m.size[1] / 2) / m.step[1]));
-        j <= Math.min(m.rows - 1, Math.floor((b.maxZ + m.size[1] / 2) / m.step[1]));
+        let j = Math.max(0, Math.ceil(gridRow(m, b.minZ)));
+        j <= Math.min(m.rows - 1, Math.floor(gridRow(m, b.maxZ)));
         j++
       )
         for (
-          let i = Math.max(0, Math.ceil((b.minX + m.size[0] / 2) / m.step[0]));
-          i <= Math.min(m.columns - 1, Math.floor((b.maxX + m.size[0] / 2) / m.step[0]));
+          let i = Math.max(0, Math.ceil(gridColumn(m, b.minX)));
+          i <= Math.min(m.columns - 1, Math.floor(gridColumn(m, b.maxX)));
           i++
         ) {
-          const x = -m.size[0] / 2 + i * m.step[0],
-            z = -m.size[1] / 2 + j * m.step[1];
+          const x = gridX(m, i),
+            z = gridZ(m, j);
           if (pInside(x, z, b.p) && !b.holes.some((h) => pInside(x, z, h))) sample(x, z);
         }
     b.baseY = high;

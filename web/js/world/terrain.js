@@ -1,3 +1,5 @@
+export { gridX, gridZ, gridColumn, gridRow } from '../core/math.js';
+import { gridColumn, gridRow } from '../core/math.js';
 // Muestreo puro; diagonal NW→SE compartida con el dibujo.
 export const flatTerrain = Object.freeze({
   kind: 'flat',
@@ -59,8 +61,8 @@ export function createTerrain(m, buffer, city) {
 }
 
 export function gridHeightAt(m, data, x, z) {
-  const gx = Math.max(0, Math.min(m.columns - 1, (x + m.size[0] / 2) / m.step[0])),
-    gz = Math.max(0, Math.min(m.rows - 1, (z + m.size[1] / 2) / m.step[1])),
+  const gx = Math.max(0, Math.min(m.columns - 1, gridColumn(m, x))),
+    gz = Math.max(0, Math.min(m.rows - 1, gridRow(m, z))),
     i = Math.min(m.columns - 2, Math.floor(gx)),
     j = Math.min(m.rows - 2, Math.floor(gz)),
     u = gx - i,

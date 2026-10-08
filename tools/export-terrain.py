@@ -26,11 +26,12 @@ width, height = city["size"]
 sx = 111320 * math.cos(math.radians(lat))
 columns, rows = math.ceil(width / 10) + 1, math.ceil(height / 10) + 1
 dx, dz = width / (columns - 1), height / (rows - 1)
+bounds = [-width / 2, width / 2, -height / 2, height / 2]
 reference = source["sample"](header, values, lon, lat)
 quantized = []
 for j in range(rows):
     for i in range(columns):
-        x, z = -width / 2 + i * dx, -height / 2 + j * dz
+        x, z = bounds[0] + i * dx, bounds[2] + j * dz
         y = source["sample"](header, values, lon + x / sx, lat - z / 111320)
         q = round((y - reference) * 10)
         if not -32768 <= q <= 32767:
@@ -40,7 +41,7 @@ binary = struct.pack("<" + "h" * len(quantized), *quantized)
 manifest = {
     "version": 1, "origin": city["origin"], "size": city["size"],
     "columns": columns, "rows": rows, "step": [dx, dz],
-    "bounds": [-width / 2, width / 2, -height / 2, height / 2],
+    "bounds": bounds,
     "encoding": "int16-le", "scale": 0.1, "rowOrder": "north-to-south",
     "diagonal": "nw-se", "file": "terrain.bin",
     "sha256": hashlib.sha256(binary).hexdigest(), "referenceElevation": reference,

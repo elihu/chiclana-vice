@@ -59,7 +59,7 @@ const raw = (x, z) => x * 0.01 + (x < -15 ? Math.sin(z * 0.8) : 0) - (x > 20 && 
   terrain = {
     kind: 'grid',
     heightAt: raw,
-    manifest: { size: [80, 80], columns: 17, rows: 17, step: [5, 5] },
+    manifest: { bounds: [-40, 40, -40, 40], size: [80, 80], columns: 17, rows: 17, step: [5, 5] },
   };
 const design = {
   version: 1,

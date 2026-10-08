@@ -202,3 +202,14 @@ assert.equal(surfaceHeightAt(0, 4), groundHeightAt(0, 4));
 console.log(
   'Terrain contract, triangular interpolation, clipping, errors and single surface model passed',
 );
+
+const { gridX, gridZ, gridColumn, gridRow } = await import('../web/js/world/terrain.js');
+const shifted = { bounds: [20, 40, -30, -10], step: [10, 10] };
+assert.equal(gridX(shifted, 1), 30);
+assert.equal(gridZ(shifted, 1), -20);
+assert.equal(gridColumn(shifted, 25), 0.5);
+assert.equal(gridRow(shifted, -15), 1.5);
+assert.throws(
+  () => createTerrain({ ...manifest, bounds: [0, 10, 0, 10] }, buffer, city),
+  /incompatible/,
+);

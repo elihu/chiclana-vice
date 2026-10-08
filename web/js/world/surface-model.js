@@ -1,3 +1,4 @@
+import { gridX, gridZ } from '../core/math.js';
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
 import { pInside, boundaryDistance } from '../core/math.js';
 import { gridHeightAt } from './terrain.js';
@@ -427,8 +428,8 @@ export function createSurfaceModel(city, terrain, design) {
       levels = new Map();
     for (let j = 0; j < wm.rows; j++)
       for (let i = 0; i < wm.columns; i++) {
-        const x = -wm.size[0] / 2 + i * wm.step[0],
-          z = -wm.size[1] / 2 + j * wm.step[1];
+        const x = gridX(wm, i),
+          z = gridZ(wm, j);
         if (!waterShapes.get(area).contains(x, z)) continue;
         const k = Math.floor((axis === 0 ? x : z) / sliceLength);
         if (!slices.has(k)) slices.set(k, []);
@@ -847,8 +848,8 @@ export function createSurfaceModel(city, terrain, design) {
   const meshData = new Float32Array(meshManifest.columns * meshManifest.rows);
   for (let j = 0; j < meshManifest.rows; j++)
     for (let i = 0; i < meshManifest.columns; i++) {
-      const x = -original.size[0] / 2 + i * meshManifest.step[0],
-        z = -original.size[1] / 2 + j * meshManifest.step[1];
+      const x = gridX(meshManifest, i),
+        z = gridZ(meshManifest, j);
       let y = constructedHeightAt(x, z);
       const margin = Math.hypot(...meshManifest.step);
       for (const s of grid.get(key(x, z)) ?? empty) {
