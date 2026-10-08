@@ -109,10 +109,12 @@ Solo si hay que reconstruir el mapa desde originales descargados con las URL de
 [MAP_SOURCES.md](MAP_SOURCES.md):
 
 ```fish
-uv run --no-project --with pyproj --with shapely python tools/rebuild-map.py --catastro /ruta/local/catastro.zip --osm /ruta/local/osm.xml
+uv run --no-project --with pyproj==3.8.0 --with shapely==2.2.0 python tools/rebuild-map.py --catastro ~/.cache/chiclana-vice/sources/catastro-chiclana.zip --osm ~/.cache/chiclana-vice/sources/osm-center.xml
 ```
 
-Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
+Las versiones van fijadas porque de ellas depende la geometría exacta. Con estos
+originales (Catastro del 4/10/2026 y OSM del 5/10/2026) y estas versiones se reproducen
+las capas publicadas. Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
 contornos a coordenadas de juego. Escribe `rebuilt-city.json` en la raíz (ignorado por
 Git); no sustituye el mapa. Revisarlo y, si se adopta deliberadamente:
 
@@ -129,7 +131,7 @@ Descarga solo un recorte WCS pequeño de la zona (nunca el mosaico nacional) a u
 fuera del repositorio, por defecto `~/.cache/chiclana-vice/ign`:
 
 ```fish
-uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay web/height-samples.json
+uv run --no-project --with rasterio==1.5.2 --with pyproj==3.8.0 --with shapely==2.1.2 --with numpy python tools/audit-ign-heights.py --download --overlay web/height-samples.json
 ```
 
 Escribe la auditoría completa en `source-data/height-audit-ign.json` y las entradas
@@ -139,6 +141,12 @@ partes aceptadas: [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
 
 El script escribe el campo `attribution` del overlay (CC BY 4.0) y `verify-world`
 comprueba que llega igual a `data-sources.json`.
+
+El overlay enlaza los edificios por índice y por la huella de `buildings.json`: tras
+cualquier reconstrucción hay que volver a ejecutarlo (sin `--download` si el recorte
+sigue en la caché). Si se descarga de nuevo y su SHA-256 coincide con `sourceSha256`,
+se conserva la fecha de consulta original en el archivo `.access-date` de la caché.
+Las versiones van fijadas a las registradas en el campo `versions` del overlay.
 
 ## 3. Catálogo de frentes
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "buildingsSha256": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217",
+  "buildingsSha256": "09696e8e9bf260d5763e286dac22355c2fc15e9c6e1e0986019c97193d486702",
   "origin": [
     -6.1485,
     36.4195
@@ -4858,6 +4858,31 @@
       "height": 12.6,
       "heightSource": "Catastro floor-count estimate",
       "floors": 4,
+      "street": "Calle Álamo",
+      "status": "approximate",
+      "reference": null
+    },
+    {
+      "id": "building-3314-edge-5",
+      "buildingIndex": 3314,
+      "edgeIndex": 5,
+      "footprintSha256": "b8ad32134448d10324c843c40d52f02d38ed2b030fbaae6b2241288b919e88fd",
+      "a": [
+        -14.06,
+        27.77
+      ],
+      "b": [
+        -11.87,
+        34.71
+      ],
+      "outward": [
+        0.9536449477648338,
+        -0.3009340685309779
+      ],
+      "width": 7.27734154757079,
+      "height": 3.45,
+      "heightSource": "Catastro floor-count estimate",
+      "floors": 1,
       "street": "Calle Álamo",
       "status": "approximate",
       "reference": null

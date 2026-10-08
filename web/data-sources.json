@@ -13,7 +13,7 @@
       "licenseUrl": "https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf",
       "transformation": "Clipping, 0.12m topology-preserving simplification, local coordinates, game volume reconstruction and floor-based heights",
       "sha256": {
-        "buildings.json": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217"
+        "buildings.json": "09696e8e9bf260d5763e286dac22355c2fc15e9c6e1e0986019c97193d486702"
       }
     },
     {
@@ -27,7 +27,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Local game extraction; all used roads/areas/landmarks/trees/objects made available",
       "sha256": {
-        "osm-world.json": "ec7e847431a05856381d00ddca112b85d132e72882604901d6468ea4510302ef",
+        "osm-world.json": "708527c312a19d331202006d71b39e63d1a9409c850ec6c7f4ce6178d20f2852",
         "street-objects.json": "f370556915fd38cba571294040d848fa77b71552c1226354a9a9e3ed9c5b8259"
       }
     },
@@ -48,7 +48,7 @@
       "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
       "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
       "sha256": {
-        "height-samples.json": "ddc96f070bd1f7f53dfa642a32133f818c7285fabf5a7635931d07d9bf8a7e99"
+        "height-samples.json": "313231910dacec3e2ebc2e81b64d59d16c1432d7cd9dffed8decd66580747254"
       }
     },
     {
@@ -71,7 +71,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped",
       "sha256": {
-        "frontages.json": "e3c943959efbbf3eaf63a04c7a8830ceff723678fe9deee6455a50586df37c1d"
+        "frontages.json": "67f5793f00e2722b84b7da6139120e0ff7b1ca4827472ef08be99a1c29cd46ed"
       }
     },
     {

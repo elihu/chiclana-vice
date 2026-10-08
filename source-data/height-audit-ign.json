@@ -5,7 +5,7 @@
     36.4195
   ],
   "buildingCount": 7448,
-  "buildingsSha256": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217",
+  "buildingsSha256": "09696e8e9bf260d5763e286dac22355c2fc15e9c6e1e0986019c97193d486702",
   "source": "IGN / PNOA-LiDAR first coverage, normalized building heights MDSnE2.5",
   "pilotBounds": [
     -410,
@@ -260,6 +260,7 @@
       "spread": 1.0
     }
   ],
+  "attribution": "Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es",
   "audit": [
     {
       "index": 1308,

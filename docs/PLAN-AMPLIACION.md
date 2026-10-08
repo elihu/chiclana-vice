@@ -301,8 +301,9 @@ salvo en dos cosas, ambas anteriores a este plan:
 - **44 vías con sentido único** (27 `secondary`, 7 `tertiary`, 10 `residential`) que OSM
   marca como `oneway` y las capas publicadas no. El conversor de sentidos se corrigió el
   6/10 sin regenerar las vías (`MAP_SOURCES.md` lo indica). Cambia el tráfico.
-- **Un edificio** (índice 3314): la versión actual de shapely conserva un patio que la
-  publicada había fundido con el contorno.
+- **Un edificio** (índice 3314): la reconstrucción conserva un patio que la capa
+  publicada había fundido con el contorno. No depende de la versión de shapely: 2.1.2 y
+  2.2.0 dan lo mismo; la causa no está identificada.
 
 Con esas dos diferencias, y regenerando frentes (276 → 277) y la capa de alturas, pasan
 todos los tests. Este paso adopta la reconstrucción para que el diff de 4.1 muestre solo
@@ -310,8 +311,8 @@ la ampliación:
 
 - **`rebuild-map.py`**: el texto `meta.terrain` (:82) dice «Plano…»; debe conservar el
   vigente de `world.json`. Anotar en `DATOS.md` las versiones de shapely y pyproj usadas
-  (2.2.0 y 3.8.0 en la comprobación del 8/10) y fijarlas en el comando (`--with shapely==…`): de ellas depende la
-  geometría exacta.
+  (2.2.0 y 3.8.0 en la comprobación del 8/10) y fijarlas en el comando
+  (`--with shapely==…`): de ellas depende la geometría exacta.
 - **Capa de alturas IGN**: `height-samples.json` enlaza los edificios por índice y por
   la huella SHA-256 de `buildings.json`, así que se regenera con
   `audit-ign-heights.py --download --overlay web/height-samples.json`. El recorte del

@@ -79,6 +79,7 @@ for event,e in E.iterparse(source,events=['end']):
    data['buildings'].append({'p':[rounded(v) for v in list(part.exterior.coords)[:-1]],'holes':[[rounded(v) for v in list(r.coords)[:-1]] for r in part.interiors],'h':round(floors*height_policy['floorHeight']+height_policy['baseOffset'],2),'floors':floors})
   features+=1
  e.clear()
-data['meta']={'roads':'© OpenStreetMap contributors — ODbL 1.0','buildings':'Volúmenes de juego transformados a partir de D.G. del Catastro, INSPIRE BU, descarga 2026-10-04. Alturas estimadas: plantas × 3,05 m + 0,4 m; piloto con alturas IGN/PNOA-LiDAR (height-samples.json).','aerial':'Obra derivada de PNOA 2022-07 © IGN / PNOA / SCNE — CC BY 4.0','date':'2026-10-04','terrain':'Plano. No incluye elevación real ni fachadas fotogramétricas.'}
+# El texto del relieve lo mantiene world.json; aquí no se reconstruye el terreno.
+data['meta']={'roads':'© OpenStreetMap contributors — ODbL 1.0','buildings':'Volúmenes de juego transformados a partir de D.G. del Catastro, INSPIRE BU, descarga 2026-10-04. Alturas estimadas: plantas × 3,05 m + 0,4 m; piloto con alturas IGN/PNOA-LiDAR (height-samples.json).','aerial':'Obra derivada de PNOA 2022-07 © IGN / PNOA / SCNE — CC BY 4.0','date':'2026-10-04','terrain':json.loads((Path(ROOT)/'web/world.json').read_text())['meta']['terrain']}
 with open(ROOT+'rebuilt-city.json','w')as f:json.dump(data,f,ensure_ascii=False,separators=(',',':'))
 print(json.dumps({'roads':len(data['roads']),'named_streets':len(set(r['name'] for r in data['roads'] if r['name'])),'buildings':len(data['buildings']),'areas':len(data['areas']),'size_m':data['size'],'landmarks':data['landmarks'][:2]},ensure_ascii=False))
