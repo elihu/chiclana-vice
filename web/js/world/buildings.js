@@ -1,3 +1,4 @@
+import { aerialMaterial, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
@@ -12,6 +13,9 @@ export async function buildBuildings() {
   const [ax0, ax1, az0, az1] = world.aerialBox,
     aw = ax1 - ax0,
     ah = az1 - az0;
+  const roofMaterials = new Map(),
+    overflow = { r: [], ru: [], parts: 0 };
+  const { tile: tileSize, margin } = world.aerialIndex ?? { tile: 255, margin: 20.5 };
   let groups = new Map(),
     facade = facadeTexture(),
     wallMat = new THREE.MeshStandardMaterial({
@@ -38,7 +42,18 @@ export async function buildBuildings() {
       cz = (b.minZ + b.maxZ) / 2,
       k = Math.floor(cx / 85) + ',' + Math.floor(cz / 85);
     if (!groups.has(k))
-      groups.set(k, { w: [], wu: [], wc: [], dw: [], dwu: [], dwc: [], r: [], ru: [] });
+      groups.set(k, {
+        w: [],
+        wu: [],
+        wc: [],
+        dw: [],
+        dwu: [],
+        dwc: [],
+        r: [],
+        ru: [],
+        i: Math.floor(Math.floor(cx / 85) / 3),
+        j: Math.floor(Math.floor(cz / 85) / 3),
+      });
     return groups.get(k);
   }
   let count = 0;
@@ -90,11 +105,18 @@ export async function buildBuildings() {
       holes = b.holes.map((r) => r.map((p) => new THREE.Vector2(...p))),
       all = [...outer, ...holes.flat()],
       tris = THREE.ShapeUtils.triangulateShape(outer, holes);
+    const fits =
+      b.minX >= g.i * tileSize - margin &&
+      b.maxX <= (g.i + 1) * tileSize + margin &&
+      b.minZ >= g.j * tileSize - margin &&
+      b.maxZ <= (g.j + 1) * tileSize + margin;
+    const roofs = fits ? g : overflow;
+    if (!fits) overflow.parts++;
     for (const tr of tris)
       for (const i of tr) {
         let p = all[i];
-        g.r.push(p.x, b.baseY + h + 0.02, p.y);
-        g.ru.push(p.x / aw - ax0 / aw, -az0 / ah - p.y / ah);
+        roofs.r.push(p.x, b.baseY + h + 0.02, p.y);
+        roofs.ru.push((p.x - ax0) / aw, 1 - (p.y - az0) / ah);
       }
     if (++count % 900 === 0) {
       loadProgress(
@@ -104,14 +126,20 @@ export async function buildBuildings() {
       await sleepFrame();
     }
   }
-  for (const g of groups.values()) {
+  for (const g of [...groups.values(), overflow]) {
+    const key = tileKey(g.i, g.j);
+    if (g !== overflow && !roofMaterials.has(key))
+      roofMaterials.set(
+        key,
+        aerialMaterial(g.i, g.j, { roughness: 0.98, side: THREE.DoubleSide }, '#b4a58f'),
+      );
     let group = new THREE.Group();
     for (const [pos, uv, colors, material] of [
       [g.w, g.wu, g.wc, wallMat],
       [g.dw, g.dwu, g.dwc, plainWallMat],
-      [g.r, g.ru, null, roofMat],
+      [g.r, g.ru, null, g === overflow ? roofMat : roofMaterials.get(key)],
     ]) {
-      if (!pos.length) continue;
+      if (!pos?.length) continue;
       let geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
@@ -122,6 +150,10 @@ export async function buildBuildings() {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
+    }
+    if (g === overflow) {
+      group.name = 'aerial-roofs-general';
+      group.userData.parts = overflow.parts;
     }
     gfx.scene.add(group);
     chunks.push(group);

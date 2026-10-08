@@ -1,18 +1,24 @@
+import { chunks, gfx } from '../web/js/core/state.js';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import * as Real from '../web/vendor/three.module.min.js';
 import { JOBS, PLACES, POPULATION, VIEWPOINTS, SAVE_KEY } from '../web/game-data.js';
 import './verify-progress.mjs';
 import { createRuntime } from './runtime-harness.mjs';
+import { desiredAerialTiles } from '../web/js/world/aerial-tiles.js';
 const { g, els, storage, requested, mediaQueries, windowListeners, assetVersion } =
   await createRuntime({ progress: { cash: -1, job: 1.5, found: {} } });
+const initialAerialRequests = requested.slice();
+const initialDesiredTiles = desiredAerialTiles(g.player.x, g.player.z).map((t) => t.key);
 assert.equal(g.state.job, 0, 'invalid saved job does not break initialization');
 assert.equal(g.state.found.size, 0, 'invalid found list does not break initialization');
-assert.equal(
-  globalThis.__aerialUrl,
-  'aerial-2048.jpg?v=' + assetVersion,
-  'touch devices load the reduced orthophoto',
+assert(requested.includes('aerial/general.jpg?v=' + assetVersion), 'general orthophoto loaded');
+assert(
+  requested.filter((u) => /aerial\/(hi|lo)\//.test(u)).every((u) => u.includes('/lo/')),
+  'touch devices load low-resolution tiles',
 );
+
 {
   const html = fs.readFileSync('web/index.html', 'utf8');
   assert.equal(html.match(/style\.css\?v=([^"]+)"/)[1], assetVersion, 'CSS and JS share version');
@@ -20,7 +26,8 @@ assert.equal(
     'world.json',
     'buildings.json',
     'osm-world.json',
-    'aerial-2048.jpg',
+    'aerial/index.json',
+    'aerial/general.jpg',
     'height-samples.json',
     'facade-profiles.json',
     'facade-designs.json',
@@ -523,50 +530,9 @@ assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto')
 assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'auto');
 console.log('Light mode shadows, persistence and fog culling passed');
 
-// Cambio de calidad en caliente: con puntero fino se carga la ortofoto que toca una sola
-// vez, se sustituye en suelo y cubiertas y se libera la anterior.
-{
-  const usersOf = (tex) => {
-    let n = 0;
-    g.scene.traverse((o) => {
-      for (const m of [o.material].flat()) if (m?.map === tex) n++;
-    });
-    return n;
-  };
-  const toggle = () => (g.pauseMenu(), els.quality.onclick());
-  const disposed = new Set(),
-    watch = (tex) => tex.addEventListener('dispose', () => disposed.add(tex)),
-    full = 'aerial.jpg?v=' + assetVersion,
-    reduced = 'aerial-2048.jpg?v=' + assetVersion,
-    count = (u) => requested.filter((r) => r === u).length;
-  const first = g.groundTexture,
-    users = usersOf(first),
-    reducedBefore = count(reduced);
-  assert(users >= 2, 'orthophoto on ground and roofs');
-  watch(first);
-  g.setCoarse(false);
-  toggle(); // ligero: ya está la reducida
-  assert.equal(await g.reloadGroundTexture(), false);
-  toggle(); // normal: pide la completa
-  toggle(); // ligero mientras carga: no pide nada
-  toggle(); // normal otra vez: reutiliza la carga en curso
-  assert.equal(await g.reloadGroundTexture(), true, 'full orthophoto swapped in');
-  assert.equal(count(full), 1, 'full orthophoto requested once');
-  const second = g.groundTexture;
-  assert(second !== first && disposed.has(first), 'previous orthophoto disposed');
-  assert.equal(usersOf(first), 0);
-  assert.equal(usersOf(second), users, 'every orthophoto material updated');
-  watch(second);
-  toggle(); // ligero: vuelve la reducida
-  assert.equal(await g.reloadGroundTexture(), true);
-  assert(disposed.has(second) && usersOf(g.groundTexture) === users);
-  assert.equal(count(reduced), reducedBefore + 1);
-  g.setCoarse(true);
-  toggle(); // normal en táctil: sigue la reducida
-  assert.equal(await g.reloadGroundTexture(), false);
-  assert(g.quality === 'auto' && count(full) === 1 && count(reduced) === reducedBefore + 1);
-  console.log('Hot quality change swaps and disposes the orthophoto passed');
-}
+await (
+  await import('./verify-aerial-tiles.mjs')
+).verifyAerialTiles({ g, requested, initialAerialRequests, initialDesiredTiles, assetVersion });
 
 // Paused frames reuse the last image unless something requests a redraw.
 g.pauseMenu();
@@ -943,7 +909,49 @@ assert(windowListeners.pointerdown, 'first touch enables touch mode');
   fire('pointerdown', { clientX: 100, clientY: 100 });
   fire('pointerup', { clientX: 140, clientY: 100 });
   assert.equal(panel.hidden, true, 'un arrastre no abre el panel');
+  // Rayo real contra el suelo, sin edificios que puedan ocultar una regresión.
+  const ground = g.scene.getObjectByName('terrain-ground');
+  assert(ground.isGroup && ground.children.length === 24);
+  const isolated = new Real.Scene();
+  isolated.add(ground.clone());
+  isolated.updateMatrixWorld(true);
+  const oldPosition = gfx.camera.position.clone(),
+    oldQuaternion = gfx.camera.quaternion.clone();
+  const storedChunks = chunks.splice(0);
+  const { panel: groundPanel } = installInspector({ scene: isolated }, { root });
+  try {
+    gfx.camera.position.set(600, 200, 400);
+    gfx.camera.lookAt(600, g.groundHeightAt(600, 400), 400);
+    gfx.camera.updateMatrixWorld(true);
+    fire('pointerdown', { clientX: 195, clientY: 225 });
+    fire('pointerup', { clientX: 195, clientY: 225 });
+    assert.equal(groundPanel.hidden, false, 'pinchar suelo lejos de (-3,-2) devuelve un punto');
+    const picked =
+      groundPanel.children[2].children[1].textContent.match(/x ([\d.-]+).*z ([\d.-]+)/);
+    assert(
+      picked && Math.abs(Number(picked[1]) - 600) < 0.1 && Math.abs(Number(picked[2]) - 400) < 0.1,
+    );
+  } finally {
+    chunks.push(...storedChunks);
+    gfx.camera.position.copy(oldPosition);
+    gfx.camera.quaternion.copy(oldQuaternion);
+    gfx.camera.updateMatrixWorld(true);
+  }
   console.log(
     'Debug inspector passed: point, front and road found; tap rules; no cost without ?debug',
   );
+}
+
+for (const file of ['aerial/index.json', 'aerial/general.jpg']) {
+  const child = spawnSync(process.execPath, ['tests/verify-aerial-failures.mjs', file], {
+    encoding: 'utf8',
+  });
+  assert.ifError(child.error);
+  assert.equal(child.status, 0, child.stdout + child.stderr);
+  assert.match(
+    child.stdout,
+    /Fallo .*: arranque, aviso, recuadro y colores lisos OK/,
+    child.stderr,
+  );
+  console.log(child.stdout.trim());
 }

@@ -1,3 +1,4 @@
+import { updateAerialTiles } from '../world/aerial-tiles.js';
 import { placeVehicleIfChanged } from '../engine/terrain-sampling.js';
 import { findRoute, nearestNode } from './graph.js';
 import { lerp } from '../core/math.js';
@@ -20,6 +21,12 @@ export function update(dt) {
     ui('toast').classList.remove('show');
   }
   updatePlayer(dt);
+  updateAerialTiles(
+    player.x,
+    player.z,
+    Math.sin(player.a) * player.speed,
+    Math.cos(player.a) * player.speed,
+  );
   for (const c of traffic) stepAgent(c, dt);
   for (const c of vehicles) {
     placeVehicleIfChanged(c);
