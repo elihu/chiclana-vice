@@ -28,6 +28,10 @@ documento; los demás enlazan a él.
   [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md), salvo el formato de recetas y
   correcciones de [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
 
+- [Estudio de ampliación y ortofoto por teselas](ESTUDIO-AMPLIACION.md): Santa Ana, Puente VII
+  Centenario, ferial y carga de la ortofoto alrededor del jugador; preliminar.
+- [Plan de ampliación y ortofoto por teselas](PLAN-AMPLIACION.md): relieve anclado al
+  origen, límites con rectángulos, teselas, anexos y modelos; pendiente de implementación.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
