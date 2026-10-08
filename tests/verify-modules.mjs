@@ -76,7 +76,13 @@ for (const file of files) {
 const layers = new Map(
   ['core', 'engine', 'world', 'game', 'ui', 'debug'].map((name, rank) => [name, rank]),
 );
-const layerOf = (file) => layers.get(file.split(path.sep)[2]);
+const layerOf = (file) => {
+  const parts = file.split(path.sep);
+  if (parts[0] === 'web' && parts[1] === 'js') return layers.get(parts[2]) ?? 6;
+  if (file === path.normalize('web/game-data.js') || file === path.normalize('web/progress.js'))
+    return 0;
+  return undefined; // Three.js externo no pertenece a las capas del juego.
+};
 const allowedDependency = (file, dependency) => {
   const rank = layerOf(file),
     dependencyRank = layerOf(dependency);
@@ -91,6 +97,7 @@ assert(
   !allowedDependency('web/js/engine/example.js', 'web/js/world/terrain.js'),
   'rechaza engine -> world',
 );
+assert(!allowedDependency('web/js/engine/example.js', 'web/js/app.js'), 'rechaza engine -> app');
 assert(
   !allowedDependency('web/js/core/example.js', 'web/js/ui/hud.js'),
   'no amplía la excepción HUD a core',

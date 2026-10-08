@@ -1,23 +1,10 @@
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
-import { pInside } from '../core/math.js';
+import { pInside, boundaryDistance } from '../core/math.js';
 import { gridHeightAt } from './terrain.js';
 
 const key = (x, z) => Math.floor(x / 25) * 65536 + Math.floor(z / 25);
 const mix = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
-
-function boundaryDistance(x, z, polygon) {
-  let best = Infinity;
-  for (let i = 0; i < polygon.length; i++) {
-    const a = polygon[i],
-      b = polygon[(i + 1) % polygon.length],
-      dx = b[0] - a[0],
-      dz = b[1] - a[1],
-      t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)));
-    best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz));
-  }
-  return best;
-}
 
 export function validateSurfaceDesign(design, city = null) {
   if (design === undefined) return [];
@@ -235,9 +222,10 @@ export function validateSurfaceDesign(design, city = null) {
   // cuya junta quedaría indefinida o fuera de cuatro semianchuras.
   if (roads)
     for (const p of Array.isArray(design.platforms) ? design.platforms : []) {
-      for (const anchor of [p?.roadAnchor, ...(p?.bands ?? []).map((b) => b?.roadAnchor)].filter(
-        Boolean,
-      )) {
+      for (const anchor of [
+        p?.roadAnchor,
+        ...(Array.isArray(p?.bands) ? p.bands : []).map((b) => b?.roadAnchor),
+      ].filter(Boolean)) {
         const road = roads.get(anchor.roadId);
         if (!road) continue;
         let previous = null;
@@ -268,11 +256,67 @@ export function createSurfaceModel(city, terrain, design) {
   const raw = terrain.heightAt,
     roadMap = new Map(city.roads.map((r) => [r.id, r])),
     grid = new Map(),
+    bridgeSegments = new Map(),
+    ordinarySegments = new Map(),
     profiles = new Map(),
     roadPoints = new Map(),
     platforms = [],
     water = [],
+    waterGrid = new Map(),
+    platformGrid = new Map(),
+    supportRoads = new Map(),
     cfg = design.roads;
+  const empty = [];
+  const indexBounds = (index, value, minX, maxX, minZ, maxZ, padding = 0) => {
+    for (let i = Math.floor((minX - padding) / 25); i <= Math.floor((maxX + padding) / 25); i++)
+      for (let j = Math.floor((minZ - padding) / 25); j <= Math.floor((maxZ + padding) / 25); j++) {
+        const cell = i * 65536 + j;
+        if (!index.has(cell)) index.set(cell, []);
+        index.get(cell).push(value);
+      }
+  };
+  const waterShapes = new Map();
+  const waterShape = (area) => {
+    const polygon = area.p,
+      rows = new Map(),
+      shores = new Map();
+    for (let i = 0; i < polygon.length; i++) {
+      const a = polygon[i],
+        b = polygon[(i + polygon.length - 1) % polygon.length],
+        edge = [a, b];
+      for (
+        let row = Math.floor(Math.min(a[1], b[1]) / 25);
+        row <= Math.floor(Math.max(a[1], b[1]) / 25);
+        row++
+      ) {
+        if (!rows.has(row)) rows.set(row, []);
+        rows.get(row).push(edge);
+      }
+      indexBounds(
+        shores,
+        edge,
+        Math.min(a[0], b[0]),
+        Math.max(a[0], b[0]),
+        Math.min(a[1], b[1]),
+        Math.max(a[1], b[1]),
+        design.water.shoreWidth,
+      );
+    }
+    const contains = (x, z) => {
+      let inside = false;
+      for (const [a, b] of rows.get(Math.floor(z / 25)) ?? empty)
+        if (a[1] > z !== b[1] > z && x < ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]) + a[0])
+          inside = !inside;
+      return inside;
+    };
+    const shoreDistance = (x, z) => {
+      let distance = design.water.shoreWidth;
+      for (const edge of shores.get(key(x, z)) ?? empty)
+        distance = Math.min(distance, boundaryDistance(x, z, edge));
+      return distance;
+    };
+    return { contains, shoreDistance };
+  };
   const average = (x, z, radius) => {
     let sum = 0;
     for (let j = -1; j <= 1; j++)
@@ -331,8 +375,18 @@ export function createSurfaceModel(city, terrain, design) {
       maxZ: Math.max(...polygon.map((v) => v[1])),
     });
   }
+  for (const platform of platforms)
+    indexBounds(
+      platformGrid,
+      platform,
+      platform.minX,
+      platform.maxX,
+      platform.minZ,
+      platform.maxZ,
+      cfg.shoulder,
+    );
   const atPlatform = (x, z) =>
-    platforms.find(
+    (platformGrid.get(key(x, z)) ?? empty).find(
       (p) =>
         x >= p.minX - 1e-6 &&
         x <= p.maxX + 1e-6 &&
@@ -344,6 +398,15 @@ export function createSurfaceModel(city, terrain, design) {
     if (a.kind !== 'water') continue;
     // El cauce sigue su MDT local, no el mínimo de un polígono de kilómetros.
     water.push(a);
+    waterShapes.set(a, waterShape(a));
+    indexBounds(
+      waterGrid,
+      a,
+      Math.min(...a.p.map((p) => p[0])),
+      Math.max(...a.p.map((p) => p[0])),
+      Math.min(...a.p.map((p) => p[1])),
+      Math.max(...a.p.map((p) => p[1])),
+    );
   }
   const basins = (design.water.features ?? []).map((f) => {
     const area = city.areas.find(
@@ -366,7 +429,7 @@ export function createSurfaceModel(city, terrain, design) {
       for (let i = 0; i < wm.columns; i++) {
         const x = -wm.size[0] / 2 + i * wm.step[0],
           z = -wm.size[1] / 2 + j * wm.step[1];
-        if (!pInside(x, z, area.p)) continue;
+        if (!waterShapes.get(area).contains(x, z)) continue;
         const k = Math.floor((axis === 0 ? x : z) / sliceLength);
         if (!slices.has(k)) slices.set(k, []);
         slices.get(k).push(raw(x, z));
@@ -385,7 +448,10 @@ export function createSurfaceModel(city, terrain, design) {
     waterLevels.set(area, levels);
   }
   const waterHeightAt = (x, z, area = null) => {
-    if (!area) area = water.find((a) => pInside(x, z, a.p) || boundaryDistance(x, z, a.p) < 1e-6);
+    if (!area)
+      area = (waterGrid.get(key(x, z)) ?? empty).find(
+        (a) => waterShapes.get(a).contains(x, z) || waterShapes.get(a).shoreDistance(x, z) < 1e-6,
+      );
     const basin = basins.find((b) => b.area === area);
     if (basin) return basin.y;
     const levels = waterLevels.get(area);
@@ -450,6 +516,9 @@ export function createSurfaceModel(city, terrain, design) {
         const k = i * 65536 + j;
         if (!grid.has(k)) grid.set(k, []);
         grid.get(k).push(s);
+        const index = s.bridge ? bridgeSegments : ordinarySegments;
+        if (!index.has(k)) index.set(k, []);
+        index.get(k).push(s);
       }
   };
   for (const r of city.roads) {
@@ -558,7 +627,9 @@ export function createSurfaceModel(city, terrain, design) {
       }
       points.push({ p, y, distance });
     }
-    const list = [];
+    const list = [],
+      supportId = `road:${r.id}`;
+    supportRoads.set(supportId, r.id);
     for (let i = 1; i < points.length; i++) {
       const a = points[i - 1],
         b = points[i],
@@ -576,6 +647,9 @@ export function createSurfaceModel(city, terrain, design) {
         y0: a.y,
         y1: b.y,
         roadId: r.id,
+        supportId,
+        accessStart: r.p[0],
+        accessEnd: r.p.at(-1),
         bridge: !!r.bridge || !!decks.length,
         lower: !!lowers.length,
       };
@@ -626,7 +700,9 @@ export function createSurfaceModel(city, terrain, design) {
   };
   for (const node of nodes.values()) {
     node.priority = Math.max(...node.entries.map((e) => e.priority));
-    node.y = mean(node.entries.filter((e) => e.priority === node.priority));
+    const selected = node.entries.filter((e) => e.priority === node.priority);
+    // Dos pasos inferiores comparten la cota menor: promediar podría reducir el gálibo.
+    node.y = node.priority === 2 ? Math.min(...selected.map((e) => e.point.y)) : mean(selected);
     const ordinary = node.entries.filter((e) => e.priority === 0);
     node.delta = ordinary.length ? node.y - mean(ordinary) : 0;
     node.influence = 0;
@@ -681,11 +757,12 @@ export function createSurfaceModel(city, terrain, design) {
       list[i].y1 = points[i + 1].y;
     }
   }
-  const roadAt = (x, z, id = null, includeDeck = true, bridgesOnly = false) => {
+  const roadAt = (x, z, id = null, includeDeck = true, bridgesOnly = false, result = null) => {
     let segment = null,
       distance2 = Infinity,
       y = 0;
-    for (const s of grid.get(key(x, z)) || []) {
+    const index = bridgesOnly ? bridgeSegments : includeDeck ? grid : ordinarySegments;
+    for (const s of index.get(key(x, z)) ?? empty) {
       if ((id && s.roadId !== id) || (!includeDeck && s.bridge)) continue;
       if (bridgesOnly && !s.bridge) continue;
       const t = Math.max(
@@ -702,14 +779,23 @@ export function createSurfaceModel(city, terrain, design) {
         y = mix(s.y0, s.y1, t);
       }
     }
-    return segment ? { s: segment, d: Math.sqrt(distance2), y } : null;
+    if (!segment) return null;
+    const hit = result ?? {};
+    hit.s = segment;
+    hit.d = Math.sqrt(distance2);
+    hit.y = y;
+    return hit;
   };
+  const constructedRoad = {},
+    constructedDeck = {};
   const constructedHeightAt = (x, z) => {
     let y = raw(x, z);
+    const cell = key(x, z);
+    if (!grid.has(cell) && !platformGrid.has(cell) && !waterGrid.has(cell)) return y;
     const p = atPlatform(x, z);
     if (p) y = Math.min(y, p.y - p.thickness - p.clearance);
     else
-      for (const platform of platforms) {
+      for (const platform of platformGrid.get(cell) ?? empty) {
         if (
           x < platform.minX - cfg.shoulder ||
           x > platform.maxX + cfg.shoulder ||
@@ -725,21 +811,21 @@ export function createSurfaceModel(city, terrain, design) {
             1 - smooth(distance / cfg.shoulder),
           );
       }
-    for (const a of water)
-      if (!basins.some((b) => b.area === a) && pInside(x, z, a.p)) {
+    for (const a of waterGrid.get(cell) ?? empty)
+      if (!basins.some((b) => b.area === a) && waterShapes.get(a).contains(x, z)) {
         const depth =
           design.water.bedDepth *
-          Math.min(1, boundaryDistance(x, z, a.p) / design.water.shoreWidth);
+          Math.min(1, waterShapes.get(a).shoreDistance(x, z) / design.water.shoreWidth);
         y = Math.min(y, waterHeightAt(x, z, a) - depth);
       }
-    const r = roadAt(x, z, null, false);
+    const r = roadAt(x, z, null, false, false, constructedRoad);
     if (r) {
       const blend = 1 - smooth(Math.max(0, Math.min(1, (r.d - r.s.width / 2) / cfg.shoulder)));
       y = mix(y, r.y, blend);
     }
     // La malla del MDT representa el nivel inferior; el tablero se dibuja aparte.
     if (p) y = Math.min(y, p.y - p.thickness - p.clearance);
-    const deck = roadAt(x, z);
+    const deck = roadAt(x, z, null, true, false, constructedDeck);
     if (deck?.s.bridge) {
       const blend =
         1 - smooth(Math.max(0, Math.min(1, (deck.d - deck.s.width / 2) / cfg.shoulder)));
@@ -765,7 +851,7 @@ export function createSurfaceModel(city, terrain, design) {
         z = -original.size[1] / 2 + j * meshManifest.step[1];
       let y = constructedHeightAt(x, z);
       const margin = Math.hypot(...meshManifest.step);
-      for (const s of grid.get(key(x, z)) || []) {
+      for (const s of grid.get(key(x, z)) ?? empty) {
         if (s.bridge) continue;
         const t = Math.max(
           0,
@@ -784,12 +870,19 @@ export function createSurfaceModel(city, terrain, design) {
     heightAt: (x, z) => gridHeightAt(meshManifest, meshData, x, z),
   };
   const groundHeightAt = meshTerrain.heightAt;
+  // Resultados privados reutilizados: roadAt público sigue devolviendo un objeto propio.
+  const surfaceRoad = {},
+    surfaceLower = {},
+    actorRoad = {},
+    actorBridge = {},
+    ceilingRoad = {},
+    dryRoad = {};
   const surfaceHeightAt = (x, z, reference = null, roadId = null) => {
-    const r = roadAt(x, z, roadId),
-      p = atPlatform(x, z),
-      lower = roadAt(x, z, null, false),
-      ground = lower && lower.d <= lower.s.width / 2 ? lower.y : groundHeightAt(x, z);
+    const r = roadAt(x, z, roadId, true, false, surfaceRoad);
     if (roadId && r) return r.y;
+    const p = atPlatform(x, z),
+      lower = r?.s.bridge ? roadAt(x, z, null, false, false, surfaceLower) : r,
+      ground = lower && lower.d <= lower.s.width / 2 ? lower.y : groundHeightAt(x, z);
     let upper = p ? p.y : null;
     if (r?.s.bridge && r.d <= r.s.width / 2) upper = r.y;
     if (upper === null) return r && r.d <= r.s.width / 2 ? r.y : ground;
@@ -799,29 +892,30 @@ export function createSurfaceModel(city, terrain, design) {
   };
   const actorHeightAt = (actor, x, z, roadId = null) => {
     const previous = actor.surfaceY ?? null;
-    const retained = actor.surfaceSupport?.startsWith('road:')
-      ? actor.surfaceSupport.slice(5)
-      : null;
-    const road = roadAt(x, z, roadId ?? retained);
+    const retained = supportRoads.get(actor.surfaceSupport) ?? null;
+    const requested = roadId ?? retained;
+    const road = requested ? roadAt(x, z, requested, true, false, actorRoad) : null;
     const platform = atPlatform(x, z);
     if (roadId && road) {
-      actor.surfaceSupport = `road:${roadId}`;
+      actor.surfaceSupport = road.s.supportId;
       return road.y;
     }
     if (retained && road && road.d <= road.s.width / 2 + 0.3) return road.y;
     if (platform && actor.surfaceSupport === platform.supportId) return platform.y;
     actor.surfaceSupport = null;
-    const bridge = roadAt(x, z, null, true, true);
+    const bridge = roadAt(x, z, null, true, true, actorBridge);
     if (bridge?.s.bridge && bridge.d <= bridge.s.width / 2 + 0.3) {
-      const source = roadMap.get(bridge.s.roadId);
-      const nearAccess =
-        Math.min(...[source.p[0], source.p.at(-1)].map((q) => Math.hypot(x - q[0], z - q[1]))) <=
-        (cfg.accessRadius ?? 6);
+      const start = bridge.s.accessStart,
+        end = bridge.s.accessEnd,
+        radius = cfg.accessRadius ?? 6,
+        nearAccess =
+          (x - start[0]) ** 2 + (z - start[1]) ** 2 <= radius * radius ||
+          (x - end[0]) ** 2 + (z - end[1]) ** 2 <= radius * radius;
       if (
         previous === null ||
         (nearAccess && Math.abs(previous - bridge.y) <= (cfg.maximumAccessStep ?? 0.75))
       ) {
-        actor.surfaceSupport = `road:${bridge.s.roadId}`;
+        actor.surfaceSupport = bridge.s.supportId;
         return bridge.y;
       }
     }
@@ -830,11 +924,13 @@ export function createSurfaceModel(city, terrain, design) {
     return y;
   };
   const affectedAt = (x, z) =>
-    grid.has(key(x, z)) || !!atPlatform(x, z) || water.some((a) => pInside(x, z, a.p));
+    grid.has(key(x, z)) ||
+    !!atPlatform(x, z) ||
+    (waterGrid.get(key(x, z)) ?? empty).some((a) => waterShapes.get(a).contains(x, z));
   const ceilingAt = (x, z, reference) => {
     if (reference === null) return Infinity;
     const p = atPlatform(x, z),
-      r = roadAt(x, z);
+      r = roadAt(x, z, null, true, false, ceilingRoad);
     const upper = p?.y ?? (r?.s.bridge && r.d <= r.s.width / 2 ? r.y : Infinity);
     return Number.isFinite(upper) && reference < upper - 0.5
       ? upper - (p?.thickness ?? 0.12)
@@ -842,7 +938,7 @@ export function createSurfaceModel(city, terrain, design) {
   };
   const drySurfaceAt = (x, z, reference = null) => {
     const p = atPlatform(x, z),
-      r = roadAt(x, z),
+      r = roadAt(x, z, null, true, false, dryRoad),
       y = surfaceHeightAt(x, z, reference);
     if (p && Math.abs(y - p.y) < 0.1) return true;
     if (r && r.d <= r.s.width / 2 + 0.3)

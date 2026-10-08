@@ -1,3 +1,4 @@
+import { updateMarkers } from '../web/js/game/missions.js';
 import { rescue } from '../web/js/game/player.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -6,17 +7,26 @@ import { createRuntime } from './runtime-harness.mjs';
 import { world, actors, camTarget, session } from '../web/js/core/state.js';
 
 const city = JSON.parse(fs.readFileSync('web/world.json', 'utf8'));
-const buffer = new ArrayBuffer(8),
+// Rampa sintética al paso del piloto: el presupuesto de malla depende del paso fuente.
+const columns = 136,
+  rows = 102,
+  buffer = new ArrayBuffer(columns * rows * 2),
   dv = new DataView(buffer);
-[-200, 0, 0, 200].forEach((v, i) => dv.setInt16(i * 2, v, true));
+for (let j = 0; j < rows; j++)
+  for (let i = 0; i < columns; i++)
+    dv.setInt16(
+      (j * columns + i) * 2,
+      Math.round(-200 + (200 * i) / (columns - 1) + (200 * j) / (rows - 1)),
+      true,
+    );
 const manifest = {
   version: 1,
   bounds: [-city.size[0] / 2, city.size[0] / 2, -city.size[1] / 2, city.size[1] / 2],
   origin: city.origin,
   size: city.size,
-  columns: 2,
-  rows: 2,
-  step: city.size,
+  columns,
+  rows,
+  step: [city.size[0] / (columns - 1), city.size[1] / (rows - 1)],
   encoding: 'int16-le',
   scale: 0.1,
   rowOrder: 'north-to-south',
@@ -43,6 +53,28 @@ for (const c of g.vehicles) {
   assert.equal(c.mesh.position.y, g.surfaceHeightAt(c.x, c.z, c.surfaceY, c.surfaceRoad ?? null));
   assert(Math.abs(c.mesh.rotation.x) <= Math.PI / 12);
 }
+// La intro consulta una vez y no recoloca vehículos parados.
+const surfaceQuery = world.surfaces.surfaceHeightAt;
+let queryCount = 0;
+world.surfaces.surfaceHeightAt = (...args) => {
+  queryCount++;
+  return surfaceQuery(...args);
+};
+g.frame(performance.now());
+assert.equal(queryCount, 1, 'una sola consulta de superficie en la intro');
+// El anillo se sube solo al cambiar el objetivo; su escala sigue animándose.
+const goal = { x: g.pois[0].x + 1, z: g.pois[0].z };
+updateMarkers(goal);
+const ringPositions = actors.ring.geometry.getAttribute('position'),
+  version = ringPositions.version,
+  firstQueries = queryCount;
+session.t += 0.1;
+updateMarkers({ ...goal });
+assert.equal(ringPositions.version, version, 'sin subida de geometría por frame');
+assert.equal(queryCount, firstQueries, 'sin consultas de marcador por frame');
+updateMarkers({ ...goal, x: goal.x + 5 });
+assert(ringPositions.version > version, 'objetivo nuevo reconstruye anillo');
+world.surfaces.surfaceHeightAt = surfaceQuery;
 g.start();
 for (let i = 0; i < 120; i++) g.update(1 / 60);
 assert(g.camPos.y > g.surfaceHeightAt(g.camPos.x, g.camPos.z));

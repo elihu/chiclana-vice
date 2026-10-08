@@ -1,0 +1,138 @@
+{
+ "ms": 16780,
+ "state": {
+  "ready": true,
+  "status": "Centro de Chiclana listo.",
+  "streets": "254 calles con nombre",
+  "game": true
+ },
+ "scene": {
+  "meshes": 1422,
+  "triangles": 1465563,
+  "drawCalls": 112
+ },
+ "quality": "auto",
+ "surfaceChecks": [
+  {
+   "id": "walking-53800523",
+   "walking": {
+    "road": "53800523",
+    "count": 130,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 0
+   }
+  },
+  {
+   "id": "walking-759565061",
+   "walking": {
+    "road": "759565061",
+    "count": 20,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 0
+   }
+  },
+  {
+   "id": "walking-759565062",
+   "walking": {
+    "road": "759565062",
+    "count": 15,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 0
+   }
+  },
+  {
+   "id": "walking-760833292",
+   "walking": {
+    "road": "760833292",
+    "count": 31,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 14
+   }
+  },
+  {
+   "id": "walking-760833297",
+   "walking": {
+    "road": "760833297",
+    "count": 46,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 14
+   }
+  },
+  {
+   "id": "walking-1195660889",
+   "walking": {
+    "road": "1195660889",
+    "count": 95,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 0
+   }
+  },
+  {
+   "id": "walking-1195660891",
+   "walking": {
+    "road": "1195660891",
+    "count": 30,
+    "wrong": 0,
+    "blocked": 0,
+    "outside": 0
+   }
+  },
+  {
+   "id": "gran-plaza-iro-upper",
+   "expected": 0.9867741985122302,
+   "actual": 0.9867741985122302,
+   "camera": [
+    292.7233333333333,
+    2.1867741985122304,
+    -143.52444444444447
+   ],
+   "ceiling": null,
+   "blocked": false
+  },
+  {
+   "id": "gran-plaza-iro-lower",
+   "expected": -3.0132258014877698,
+   "actual": -3.0132258014877698,
+   "camera": [
+    295.62903578183597,
+    -1.8127969529072987,
+    -170.7255356963221
+   ],
+   "ceiling": 0.1867741985122302,
+   "blocked": false
+  },
+  {
+   "id": "tablero-remedios-upper",
+   "expected": 0.9829270302859787,
+   "actual": 0.9829270302859787,
+   "camera": [
+    342.5959289987963,
+    2.1829270302859785,
+    -120.88409622832471
+   ],
+   "ceiling": null,
+   "blocked": false
+  },
+  {
+   "id": "tablero-remedios-lower",
+   "expected": -3.0170729697140217,
+   "actual": -3.0170729697140217,
+   "camera": [
+    330.3607184457313,
+    -1.816445259802879,
+    -146.4746308954895
+   ],
+   "ceiling": 0.18292703028597868,
+   "blocked": false
+  }
+ ],
+ "errors": [],
+ "requests": 65,
+ "unversioned": []
+}

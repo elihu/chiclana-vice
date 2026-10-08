@@ -5,10 +5,7 @@ import { nearestRoad } from './spatial.js';
 import { surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
-import { pInside, pointSeg } from '../core/math.js';
-
-const pointSegDistance = (q, polygon) =>
-  Math.min(...polygon.map((p, i) => pointSeg(...q, p, polygon[(i + 1) % polygon.length]).d));
+import { pInside, boundaryDistance } from '../core/math.js';
 
 function platformGeometry(polygon, thickness = 0.12) {
   const top = flatGeometry(polygon),
@@ -128,7 +125,7 @@ export function buildRoadDetails() {
         world.surfaces?.platforms.some(
           (p) =>
             p.deckRoads.includes(r.id) &&
-            (pInside(...middle, p.polygon) || pointSegDistance(middle, p.polygon) < 0.05),
+            (pInside(...middle, p.polygon) || boundaryDistance(...middle, p.polygon) < 0.05),
         )
       )
         continue;
@@ -267,13 +264,16 @@ export function buildStreetSurfaces() {
     }
   }
   // Mapped pedestrian squares retain their real polygon outlines.
+  // Evita pavimento duplicado cuando >80% del contorno coincide con un tablero;
+  // 3 m tolera el margen de acera entre dos huellas de una misma plaza. Son criterios
+  // de deduplicación visual, no un cambio de cotas, contornos ni transitabilidad.
   for (const a of world.city.areas) {
     if (
       world.surfaces?.platforms.some(
         (p) =>
           p.area === a ||
           (a.kind === 'square' &&
-            a.p.filter((q) => pInside(...q, p.polygon) || pointSegDistance(q, p.polygon) < 3)
+            a.p.filter((q) => pInside(...q, p.polygon) || boundaryDistance(...q, p.polygon) < 3)
               .length /
               a.p.length >
               0.8),

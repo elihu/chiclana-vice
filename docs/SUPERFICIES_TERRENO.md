@@ -18,10 +18,11 @@ referencia normativa y comprueba también los anclajes contra las capas cargadas
 - `roads.shoulder`: transición lateral y margen de construcción, en metros.
 - `roads.bridgeAnchorRadius`: vecindad del MDT usada para estabilizar cotas de acceso.
 - `roads.pavementStep` y `roads.meshSubdivisions`: presupuesto de geometría. El perfil
-  puede tener más muestras que el pavimento. La malla refina celdas afectadas y comparte
-  bordes con las celdas vecinas para evitar grietas.
+  puede tener más muestras que el pavimento. `meshSubdivisions` divide el paso fuente
+  en cada eje entre 1, 2 o 4, sin un tope oculto de 5 m; la rejilla construida es
+  uniforme y comparte vértices entre celdas.
 - `water.axis`, `sliceLength`, `percentile`, `maximumSlope`: tramos de lámina de agua
-  sobre muestras locales del cauce. Se limita su variación longitudinal, sin usar el
+  sobre muestras locales de cada polígono de cauce, excluyendo las cubetas. Se limita su variación longitudinal, sin usar el
   mínimo de todo el polígono de kilómetros. `bedDepth` y `shoreWidth` describen un
   lecho visual y su transición de orilla; no son profundidades ni mareas medidas.
 - `platforms`: tableros y plazas independientes del terreno. Cada elemento tiene
@@ -44,7 +45,8 @@ salta al tablero al cruzar su huella. Al bajar del coche se conserva su nivel y 
 teletransportación explícita reinicia el anclaje. No se aplica `max(MDT, tablero)`.
 
 Los perfiles inferiores respetan la altura libre declarada y transicionan fuera de la
-estructura. Las cotas de sus extremos se propagan a vías conectadas. La malla de terreno
+estructura. Las cotas de las uniones, también en T sobre vértices interiores, se
+resuelven conjuntamente y se propagan a cadenas conectadas dentro de `smoothingRadius`. La malla de terreno
 se rebaja localmente y el tablero se dibuja por separado, con cara inferior. La cámara
 consulta suelo y techo del nivel del actor; no se eleva automáticamente encima de la
 plataforma. La proximidad para subir a coches y los choques entre vehículos tienen en
@@ -124,7 +126,7 @@ las piezas dentro de la plataforma no se duplican.
 
 El problema de ortofoto visible en algunas vías procedía de dos triangulaciones
 incompatibles. Ahora dibujo, consultas y recorte de pavimento comparten una rejilla
-construida de 5 m. Solo bajo corredores se rebaja el terreno con un margen equivalente
+construida de aproximadamente 5 m en el piloto (`meshSubdivisions: 2`). Solo bajo corredores se rebaja el terreno con un margen equivalente
 a la diagonal de una celda y `coverageGap` (15 cm por defecto); los pavimentos opacos
 conservan su perfil suave. Es una construcción visual de autor, no un tratamiento de
 la imagen. Una muestra de 344.100 puntos, incluidos bordes de calzada, pasó de 5.963
@@ -133,3 +135,54 @@ protrusiones a cero. No elimina sombras horneadas fuera de las superficies recub
 Los fixtures independientes prueban soporte persistente, paso inferior, grosor,
 recubrimiento y precisión Float32. El humo en Chrome con SwiftShader recorre los
 perfiles peatonales y comprueba los dos niveles; no acredita GPU física ni móvil.
+
+## Correcciones de la auditoría (8/10/2026)
+
+`fix/superficies-terreno` parte de `fix/relieve-datos` (`02a5420`). La capa real
+permanece activa y provisional en esta rama, conservada en Git. No se regeneran
+`terrain.json`, `terrain.bin` ni su huella; no se cambia el diseño local.
+
+Las cotas de unión se calculan antes de corregir los perfiles, sin iteraciones que
+retroalimenten el resultado. Plataforma, paso inferior y puente tienen prioridad
+sobre la calzada ordinaria; las vías ordinarias comparten la media de sus perfiles.
+Entre pasos inferiores se escoge la cota menor para conservar el gálibo más restrictivo.
+La transición usa el radio de suavizado longitudinal. Las cotas estructurales alcanzan
+cadenas de vías cortas mediante distancias sobre el grafo, sin limitarse a un salto.
+Las apariciones divididas de un mismo ID conservan todos sus segmentos.
+
+Solo el modelo de superficies proporciona perfiles de puentes. Un terreno real sin
+`terrainSurfaces` produce un error explícito; no hay índice alternativo ni
+`max(MDT, tablero)`. Sin capa real se mantiene el dibujo plano anterior. El verificador
+de módulos controla imports estáticos y dinámicos contra la dirección de capas.
+
+Una vía puede atravesar varias plataformas, tanto por arriba como por debajo. Los
+puntos de entrada/salida se insertan en sus perfiles mediante intersecciones de la
+polilínea con la huella. La transición usa el tramo por el que sale, con independencia
+de la mitad de la longitud total de la vía. En los huecos entre tableros se combinan
+las dos transiciones. Los corredores de `roadAnchor` y sus bandas siguen todos los
+vértices, con juntas en inglete; segmentos nulos y giros de retorno que alargan la
+junta más de cuatro veces se rechazan. Los tableros de plataforma siguen siendo
+horizontales, con cota media de sus anclajes: no se implementan tableros inclinados.
+
+Cada polígono de agua calcula sus propios percentiles y limita su propia pendiente.
+Las cubetas están excluidas. `water.axis` continúa siendo un eje cartesiano común:
+no representa un eje hidráulico curvo ni resuelve meandros que regresen sobre ese eje.
+La lámina del río conserva exactamente las 2.173 muestras deterministas guardadas
+antes de la corrección en `source-data/auditoria-relieve/agua-antes.json`.
+
+El horneado consulta índices de vías, plataformas y agua. Fuera de celdas afectadas
+copia el MDT; dentro del cauce, índices de aristas por fila y orilla evitan recorrer
+los 400 vértices en cada muestra. La optimización conserva los bytes de la malla
+construida previos a ella. Los resultados internos de `roadAt` se reutilizan y los
+soportes de actor y sus accesos se precalculan; la consulta pública entrega objetos
+independientes. Los vehículos se recolocan cuando cambia pose, ruta, soporte o modelo.
+El anillo se conforma al cambiar objetivo/modelo; por frame solo se anima la escala.
+La intro realiza una consulta de superficie por frame. Los umbrales de solape plaza /
+plataforma se justifican en `streets.js` como deduplicación visual.
+
+Fixtures: T, cadena, vías divididas, cresta sobre un puente, dos plataformas y pasos
+inferiores, corredor en L, retorno inválido, aguas independientes, cubeta,
+subdivisiones distintas y cachés de vehículos, intro y marcador. El verificador real
+impone ≤5 cm para las uniones, sin excepciones locales ni aumento de umbral, y compara
+las muestras de agua y los bytes de la malla. La rampa del arnés usa ahora el paso
+fuente del piloto para que la subdivisión tenga un presupuesto representativo.

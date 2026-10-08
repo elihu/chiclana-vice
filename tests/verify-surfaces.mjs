@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createSurfaceModel, validateSurfaceDesign } from '../web/js/world/surface-model.js';
-import { placeVehicle } from '../web/js/engine/terrain-sampling.js';
+import { placeVehicle, placeVehicleIfChanged } from '../web/js/engine/terrain-sampling.js';
 import { world, waterAreas, streetEnvironment } from '../web/js/core/state.js';
 import { blocked } from '../web/js/world/spatial.js';
 import * as THREE from '../web/vendor/three.module.min.js';
@@ -276,7 +276,13 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
     a.roadAt(6, 0, 'chain-b').y !== fixtureTerrain.heightAt(6, 0),
     'propaga más allá de un salto',
   );
-  assert(a.roadAt(14, 0, 'split'), 'no sobrescribe la primera aparición de una vía dividida');
+  assert.equal(a.roadAt(11, 0, 'split').d, 0, 'conserva la primera aparición de una vía dividida');
+  assert.equal(a.roadAt(14, 0, 'split').d, 0, 'conserva la segunda aparición');
+  assert.equal(a.profiles.get('split').length, 4, 'agrega segmentos de ambas apariciones');
+  const firstHit = a.roadAt(0, 0, 'tee'),
+    firstY = firstHit.y;
+  assert.notEqual(a.roadAt(0, 5, 'tee'), firstHit, 'consulta pública entrega un objeto propio');
+  assert.equal(firstHit.y, firstY, 'una consulta posterior no modifica un resultado público');
   const list = a.profiles.get('chain-a');
   for (const segment of list)
     assert(Math.abs(segment.y1 - segment.y0) < 1, 'transición de cadena acotada');
@@ -486,4 +492,87 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
   assert.equal(model.meshTerrain.manifest.columns, 33);
   assert.equal(coarse.meshTerrain.manifest.rows, 17);
   assert.equal(model.meshTerrain.manifest.rows, 33);
+}
+
+// Vehículos parados no muestrean cada frame; cualquier cambio de pose/soporte invalida.
+{
+  const oldModel = world.surfaces,
+    oldTerrain = world.terrain;
+  let samples = 0;
+  const cachedModel = {
+    actorHeightAt: (c) => {
+      samples++;
+      return c.surfaceY ?? 0;
+    },
+    surfaceHeightAt: () => {
+      samples++;
+      return 0;
+    },
+  };
+  world.surfaces = cachedModel;
+  const parked = { x: 0, z: 0, a: 0, mesh: new THREE.Group() };
+  assert(placeVehicleIfChanged(parked));
+  assert.equal(samples, 5);
+  for (let i = 0; i < 120; i++) assert.equal(placeVehicleIfChanged(parked), false);
+  assert.equal(samples, 5, 'cero consultas del vehículo parado');
+  for (const [field, value] of [
+    ['x', 1],
+    ['a', 1],
+    ['bank', 0.02],
+    ['surfaceSupport', 'road:changed'],
+    ['surfaceRoad', 'changed'],
+    ['surfaceY', 3],
+  ]) {
+    parked[field] = value;
+    assert(placeVehicleIfChanged(parked), field + ' invalida la pose');
+  }
+  world.surfaces = { ...cachedModel };
+  assert(placeVehicleIfChanged(parked), 'modelo nuevo invalida');
+  world.terrain = { kind: 'flat' };
+  assert(placeVehicleIfChanged(parked), 'terreno nuevo invalida');
+  world.surfaces = oldModel;
+  world.terrain = oldTerrain;
+}
+
+// Una unión entre pasos inferiores conserva el gálibo más restrictivo.
+{
+  const lowerCity = structuredClone(city);
+  lowerCity.roads[0].p = [
+    [-30, 0],
+    [0, 0],
+    [30, 0],
+  ];
+  lowerCity.roads.push({
+    id: 'under-other',
+    w: 2,
+    p: [
+      [-20, -20],
+      [0, 0],
+      [20, 20],
+    ],
+  });
+  const lowerDesign = structuredClone(design);
+  lowerDesign.platforms.push({
+    ...structuredClone(design.platforms[0]),
+    id: 'higher',
+    lowerRoads: ['under-other'],
+    deckRoads: [],
+    heightAnchors: [
+      { roadId: 'upper', vertex: 0, offset: 7 },
+      { roadId: 'upper', vertex: 1, offset: 7 },
+    ],
+  });
+  const lowerModel = createSurfaceModel(
+    lowerCity,
+    { ...terrain, heightAt: (x, z) => (Math.abs(z) < 10 ? 20 : 2) },
+    lowerDesign,
+  );
+  const a = lowerModel.roadAt(0, 0, 'lower').y,
+    b = lowerModel.roadAt(0, 0, 'under-other').y;
+  assert.equal(a, b, 'misma cota de unión inferior');
+  assert(a <= 6 - 0.12 - 3.2 + 1e-9, 'respeta el gálibo más restrictivo');
+  // El validador informa errores sin lanzar por una banda de tipo incorrecto.
+  const malformed = structuredClone(lowerDesign);
+  malformed.platforms[0].bands = {};
+  assert(validateSurfaceDesign(malformed, lowerCity).length > 0);
 }

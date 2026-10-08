@@ -1,10 +1,11 @@
 # Relieve: implementación y revisión local
 
-Rama `feat/relieve-terreno`, base `0b4859d` (7/10/2026). **La capa real sigue siendo
-provisional: no se publica ni se activa por defecto en la rama.** El modo plano conserva
-el mundo y el comportamiento anteriores. La revisión local usa una copia separada con
-`terrain.json` y `terrain.bin`; no acredita cierre de la fase D del
-[plan](PLAN-TERRENO.md).
+Implementación original en `feat/relieve-terreno`, base `0b4859d` (7/10/2026).
+**La capa real sigue siendo provisional y no se publica.** Desde `fix/relieve-datos`
+(`02a5420`) se conserva en Git y se activa por defecto para revisión local.
+`fix/superficies-terreno` parte de esa rama y corrige la auditoría sin regenerar cotas.
+Sin la capa se conserva el mundo plano anterior. No se acredita el cierre de la fase D
+del [plan](PLAN-TERRENO.md). Las copias en `/tmp` descritas abajo son históricas.
 
 ## Implementación
 
@@ -166,3 +167,61 @@ La capa mantiene `preview: true` y la decisión de auditoría pendiente: se acti
 para la revisión local de esta rama, sin declarar validación ni publicar.
 La copia de prueba ya no depende de `/tmp`: se sirve directamente `web/` del
 worktree persistente de la rama. La huella de geografía no cambia.
+
+## Auditoría corregida en `fix/superficies-terreno`
+
+Rama creada desde `02a5420`; no integrada ni publicada. Los tres archivos de cotas y
+huella permanecen idénticos al punto de partida (`preview: true`, SHA-256 de alturas
+`4fce7079…`). No se modifican contornos, coordenadas, plantas ni diseño de instancias.
+La ampliación del mapa y los zócalos/accesos basados en `baseY = max` quedan fuera de
+esta corrección. La implementación de bases no se cambia.
+
+Evidencia persistente en `source-data/auditoria-relieve/`:
+
+| Comprobación                                            | Antes                              | Después                            |
+| ------------------------------------------------------- | ---------------------------------- | ---------------------------------- |
+| Salto máximo en unión en T                              | 1,723327 m                         | 0 m                                |
+| Salto máximo entre extremos compartidos                 | 0,380845 m                         | 1,11 × 10⁻¹⁶ m                     |
+| `createSurfaceModel`, mediana CPU Node v26.8.2          | 343,42 ms                          | 158,87 ms                          |
+| Mediana justo antes de optimizar el modelo ya corregido | 261,53 ms                          | 158,87 ms                          |
+| Consulta de actor, misma tanda de 100.000 puntos        | 2,18 µs                            | 0,80 µs                            |
+| Escena con relieve en Chrome SwiftShader                | 1.465.517 triángulos, 112 llamadas | 1.465.563 triángulos, 112 llamadas |
+| Huella plana CPU                                        | `3afabb84…`                        | idéntica                           |
+
+`bench-original.txt` conserva sin editar el script temporal de la auditoría recibida.
+Para ejecutarlo en la base, copiarlo a un `.mjs` y lanzar Node desde su worktree.
+`tools/bench-terrain-surfaces.mjs [raíz] [informe.json]` fija la semilla de 100.000
+consultas y mide siete construcciones tras una de calentamiento. Se usa el mismo
+script y máquina para `antes.json` y `despues.json`; los tiempos son orientativos de
+CPU y varían entre tandas. `antes-optimizacion.json` conserva la medición intermedia, antes de los índices y de ajustar las uniones
+inferiores al gálibo más restrictivo. No son medidas de FPS, GPU ni móvil.
+
+El auditor nuevo cuenta 611 pares de extremos y 411 uniones en T. El script recibido
+contaba 409 T porque su mapa guardaba una sola vía interior por coordenada y usaba
+extremos de perfiles sobrescritos cuando un ID aparecía varias veces. Ahora compara
+las cotas consultadas en cada coordenada para todas las apariciones. No se omite
+ninguna unión del mismo nivel ni se eleva el umbral de 5 cm.
+
+`tests/verify-surface-junctions.mjs` carga mundo corregido y terreno real como el
+auditor, impone el máximo de 5 cm y compara exactamente 2.173 muestras de río y los
+bytes de malla antes/después de la optimización. La auditoría de pendientes sigue
+disponible con `node tools/audit-terrain-surfaces.mjs web RUTA_INFORME`. El informe
+final registra 47 muestras con pendiente >20%, frente a las 43 de la composición
+anterior; es un indicador de revisión, no un criterio de aceptación ni un límite
+físico.
+
+Para la comparación plana se apartaron temporalmente `terrain.json` y `terrain.bin`,
+se ejecutó `scene-fingerprint.mjs` y se restauraron. `plano-antes.json` y
+`plano-despues.json` coinciden en geometría, materiales, transformaciones, recursos,
+rutas y traza de 600 pasos. Permanecen 1.421 mallas y 917.276 triángulos con instancias.
+
+Chrome sin interfaz pasa `tools/browser-smoke.mjs URL google-chrome-stable --surfaces`
+y `--surfaces --low`: arranque sin errores, niveles superior/inferior, techo, cámaras
+finitas, cotas de vehículo y perfiles peatonales sin bloqueo dentro del límite jugable.
+Los informes son `chrome-normal.json` y `chrome-ligero.json`. El incremento de 46
+triángulos corresponde a los corredores siguiendo la polilínea y los cortes explícitos
+en límites de plataformas. Las dos pasarelas recortadas por el borde siguen teniendo
+muestras fuera del límite, que no se convierte en un pendiente de ampliación.
+`npm run check` pasa con el relieve activo. Estos verificadores y SwiftShader no
+acreditan revisión visual completa, GPU física ni móvil; sigue pendiente la prueba del
+usuario y las mediciones en dispositivos físicos.

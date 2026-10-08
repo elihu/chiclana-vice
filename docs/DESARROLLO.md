@@ -97,8 +97,9 @@ sin bundler ni compilación:
 
 Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. Dos
 excepciones: `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
-puede importarse desde cualquier capa, y `ui/hud.js` (`updateHUD`, `updateHudReadouts`),
-que importan `game/missions`, `player`, `police` y `update` para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
+puede importarse desde cualquier capa, y las funciones de actualización de
+`ui/hud.js` (`updateHUD`, `updateHudReadouts`), que pueden importarse desde `game`
+para refrescar el marcador. `tests/verify-modules.mjs` falla si aparece un
 ciclo o una dependencia en dirección contraria a las capas, salvo las dos excepciones
 explícitas de interfaz.
 

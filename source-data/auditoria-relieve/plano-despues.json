@@ -1,0 +1,48 @@
+{
+  "scene": {
+    "objects": 1787,
+    "meshes": 1421,
+    "instancedMeshes": 76,
+    "instances": 2963,
+    "triangles": 917276,
+    "trianglesWithoutInstancing": 761408,
+    "materials": 137,
+    "textures": 9,
+    "geometries": 731,
+    "strict": "3afabb844fd506d6a09ac597bec7bc3204bfffd09c7bcaaccd62285666e565ac",
+    "unordered": "7544f5c59c97a30727e6ad9e1d3493c6fdfa13970489c0c3d1158b2bac0f17ad"
+  },
+  "render": {
+    "pixelRatio": 1.35,
+    "shadows": true,
+    "shadowType": 2,
+    "toneMapping": 4,
+    "exposure": 1.2,
+    "colorSpace": "srgb",
+    "fog": [
+      "a5bbc8",
+      175,
+      620
+    ],
+    "background": "a5bbc8"
+  },
+  "routes": "93f1fbd14f1a62ad46ba64aab8a306ecfee7595f2a969c730c543ac622527a3d",
+  "resources": [
+    "world.json?v=2026-10-07-terreno-accesos",
+    "aerial-2048.jpg?v=2026-10-07-terreno-accesos",
+    "height-samples.json?v=2026-10-07-terreno-accesos",
+    "facade-profiles.json?v=2026-10-07-terreno-accesos",
+    "street-objects.json?v=2026-10-07-terreno-accesos",
+    "facade-designs.json?v=2026-10-07-terreno-accesos",
+    "city-design.json?v=2026-10-07-terreno-accesos",
+    "buildings.json?v=2026-10-07-terreno-accesos",
+    "osm-world.json?v=2026-10-07-terreno-accesos",
+    "map-corrections.json?v=2026-10-07-terreno-accesos",
+    "terrain.json?v=2026-10-07-terreno-accesos"
+  ],
+  "behaviour": {
+    "trace": "2a946df60c49ce65aec69ff392e0ffb217d385b388da9dd9abe46fecdbc8adba",
+    "domAfterInit": "a8f84224c91aca440d5880878a71f2f696632728ef4514c575283175c1d88752",
+    "domAfterTrace": "a26018ac99598632b6f4b261ff1615a12f2d85c7793df1c260108f5816365233"
+  }
+}

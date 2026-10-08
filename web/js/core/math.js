@@ -35,3 +35,16 @@ export const fold = (text) =>
     .toLocaleLowerCase('es')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+
+export function boundaryDistance(x, z, polygon) {
+  let best = Infinity;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i],
+      b = polygon[(i + 1) % polygon.length],
+      dx = b[0] - a[0],
+      dz = b[1] - a[1],
+      t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)));
+    best = Math.min(best, Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz));
+  }
+  return best;
+}
