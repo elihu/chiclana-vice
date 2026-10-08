@@ -65,8 +65,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [PLAN-AMPLIACION.md](PLAN-AMPLIACION.md). Fase 0 integrada el 8/10/2026 (rejilla del
   relieve anclada al origen, revisada por el usuario, y rampas de acceso a plataformas
   sin escalones) y fase 1 el 8/10/2026 (límites del mundo como lista de rectángulos en
-  `world.json`, con márgenes medidos sobre la unión; escena idéntica). Sigue la fase 2
-  (herramientas de teselas).
+  `world.json`, con márgenes medidos sobre la unión; escena idéntica). Fase 2 integrada
+  el 8/10/2026: 24 teselas PNOA 2022-07 en `web/aerial/` (12 MB), que el juego aún no
+  usa. Sigue la fase 3 (ortofoto por teselas en el juego).
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
