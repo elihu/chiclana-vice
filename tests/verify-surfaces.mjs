@@ -281,3 +281,32 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
   for (const segment of list)
     assert(Math.abs(segment.y1 - segment.y0) < 1, 'transición de cadena acotada');
 }
+
+// El tablero no usa max(MDT, perfil): un bulto original no lo eleva.
+{
+  const bridgeCity = {
+    roads: [
+      {
+        id: 'crest',
+        bridge: true,
+        w: 2,
+        p: [
+          [-30, 0],
+          [30, 0],
+        ],
+      },
+    ],
+    areas: [],
+  };
+  const bridgeDesign = structuredClone(design);
+  bridgeDesign.platforms = [];
+  const crestTerrain = { ...terrain, heightAt: (x) => (Math.abs(x) < 10 ? 20 : 2) };
+  const bridgeModel = createSurfaceModel(bridgeCity, crestTerrain, bridgeDesign);
+  assert.equal(bridgeModel.surfaceHeightAt(0, 0), 2);
+  assert.equal(crestTerrain.heightAt(0, 0), 20);
+  assert.throws(
+    () => createSurfaceModel(bridgeCity, crestTerrain, undefined),
+    /requiere terrainSurfaces/,
+  );
+  assert.equal(createSurfaceModel(bridgeCity, { kind: 'flat' }, undefined), null);
+}

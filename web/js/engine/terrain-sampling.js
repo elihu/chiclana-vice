@@ -14,16 +14,7 @@ export function groundHeightAt(x, z) {
 
 export function surfaceHeightAt(x, z, reference = null, roadId = null) {
   if (world.surfaces) return world.surfaces.surfaceHeightAt(x, z, reference, roadId);
-  let y = groundHeightAt(x, z);
-  const cell = world.bridgeGrid?.get(Math.floor(x / 25) * 65536 + Math.floor(z / 25));
-  if (!cell) return y;
-  for (const s of cell) {
-    const u = ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length);
-    if (u < 0 || u > 1) continue;
-    const distance = Math.abs((x - s.a[0]) * s.dz - (z - s.a[1]) * s.dx) / s.length;
-    if (distance <= s.width / 2) y = Math.max(y, s.y0 + u * (s.y1 - s.y0));
-  }
-  return y;
+  return groundHeightAt(x, z);
 }
 
 export function actorHeightAt(actor, x = actor.x, z = actor.z) {

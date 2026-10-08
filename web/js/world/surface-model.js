@@ -237,7 +237,9 @@ export function validateSurfaceDesign(design, city = null) {
 export function createSurfaceModel(city, terrain, design) {
   const errors = validateSurfaceDesign(design, city);
   if (errors.length) throw Error('Diseño vertical incompatible: ' + errors.join('; '));
-  if (!design || terrain.kind === 'flat') return null;
+  if (terrain.kind === 'flat') return null;
+  if (!design)
+    throw Error('Terreno real requiere terrainSurfaces: no hay perfil alternativo de puentes');
   const raw = terrain.heightAt,
     roadMap = new Map(city.roads.map((r) => [r.id, r])),
     grid = new Map(),

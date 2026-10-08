@@ -121,7 +121,7 @@ export function buildRoadDetails() {
     if (!r.bridge) continue;
     const pieces =
       world.surfaces?.profiles.get(r.id) ??
-      r.p.slice(1).map((b, i) => ({ a: r.p[i], b, ...r.bridgeProfile[i] }));
+      r.p.slice(1).map((b, i) => ({ a: r.p[i], b, y0: 0, y1: 0 }));
     for (const piece of pieces) {
       const middle = [(piece.a[0] + piece.b[0]) / 2, (piece.a[1] + piece.b[1]) / 2];
       if (

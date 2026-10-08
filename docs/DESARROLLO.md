@@ -152,7 +152,7 @@ las alturas relativas de edificios; la física y las rutas siguen en planta.
 | ---------------------------- | ------------------------------------------------------------------------------ |
 | `world/terrain.js`           | Contrato, rejilla y muestreo triangular puro, sin DOM ni Three.                |
 | `world/terrain-mesh.js`      | Malla indexada, normales, UV y transición exterior.                            |
-| `world/terrain-placement.js` | Bases de edificios y monumentos, perfiles e índice estático de puentes.        |
+| `world/terrain-placement.js` | Bases de edificios y monumentos y preparación del modelo de superficies.       |
 | `engine/terrain-sampling.js` | Terreno, superficie transitable y colocación/inclinación de vehículos.         |
 | `engine/terrain-drape.js`    | Cortes de aristas y pavimentos contra celdas y diagonales.                     |
 | `world/surface-model.js`     | Diseño validado de perfiles, agua, plataformas y continuidad entre niveles.    |
