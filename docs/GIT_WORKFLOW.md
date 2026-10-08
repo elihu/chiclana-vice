@@ -20,27 +20,24 @@ git config user.email 4126552+elihu@users.noreply.github.com
 - Las ramas parten de `main` y vuelven a `main` con `merge --no-ff`, que deja un commit de
   integración por tarea y permite revertirla de una vez.
 
-## Un worktree por agente
+## Una rama en curso
 
-Cada agente trabaja en su propio worktree y su propia rama, de modo que varios agentes
-pueden avanzar en paralelo sin pisarse el árbol de trabajo. El repositorio principal
-(`chiclana-vice-public`) queda en `main` y es donde se integra.
-
-Crear el worktree (la barra de la rama se sustituye por un guion en la carpeta):
+Lo normal es un solo agente cada vez, así que se trabaja en el repositorio principal
+(`chiclana-vice-public`) cambiando de rama, sin worktrees. Hay una rama en curso como
+mucho; al terminar se integra o se deja indicada antes de empezar otra.
 
 ```fish
 cd /home/elihu/GIT/chiclana-vice-public
-git switch main
-git worktree add ../chiclana-vice-wt/feat-tema -b feat/tema main
-ln -s /home/elihu/GIT/chiclana-vice-public/node_modules ../chiclana-vice-wt/feat-tema/node_modules
+git status --short --branch   # debe estar en main y limpio
+git switch -c feat/tema
 ```
-
-`node_modules` está ignorado; el enlace evita instalar las herramientas en cada worktree.
-Dentro de un worktree no se ejecuta `npm install`.
 
 Reglas para el agente:
 
-- Trabajar solo en su worktree y su rama. No tocar `main`, otros worktrees ni el remoto.
+- Empezar desde `main` limpio. Si hay cambios sin confirmar o otra rama en curso, no
+  cambiar de rama ni guardar cambios con `stash`: preguntar al usuario.
+- Trabajar solo en su rama. No hacer commits en `main` salvo la integración y el estado
+  posterior, y no tocar el remoto.
 - No hacer merge, rebase ni push salvo petición explícita.
 - Hacer commits pequeños y dejar `npm run check` en verde en el último.
 - Al terminar, informar de la rama, los commits (`git log --oneline main..HEAD`), lo
@@ -93,12 +90,22 @@ npm run check
 - Para cambios grandes, conviene subir antes la rama (`git push -u origin feat/tema`) para
   que la CI la compruebe también con la versión mínima de Node.
 - Publicar es `git push origin main` y requiere petición explícita: dispara el despliegue.
-- Limpiar después:
+- Tras integrar, borrar la rama con `git branch -d feat/tema`; solo borra ramas ya
+  integradas, así que no se pierde nada.
+
+## Agentes en paralelo (excepción)
+
+Solo si el usuario pide varios agentes a la vez: cada uno en su worktree y su rama,
+dentro de `.claude/worktrees/` (ignorado por Git), con la barra de la rama sustituida por
+un guion. El repositorio principal queda en `main` para integrar.
 
 ```fish
-git worktree remove ../chiclana-vice-wt/feat-tema
-git branch -d feat/tema
+git worktree add .claude/worktrees/feat-tema -b feat/tema main
+ln -s /home/elihu/GIT/chiclana-vice-public/node_modules .claude/worktrees/feat-tema/node_modules
 ```
+
+Dentro de un worktree no se ejecuta `npm install`. Cada agente trabaja solo en el suyo.
+Tras integrar: `git worktree remove .claude/worktrees/feat-tema` y `git branch -d feat/tema`.
 
 Para deshacer una tarea ya integrada sin reescribir historial:
 `git revert -m 1 HASH_DEL_MERGE`.
@@ -139,7 +146,7 @@ de terceros que deba retirarse. En ese caso:
    pisar cambios ajenos:
    `git push --force-with-lease=main:SHA_REMOTO_ACTUAL origin main` (obtener el SHA con
    `git ls-remote origin main`).
-5. Recrear los worktrees y documentarlo en `docs/ESTADO.md`.
+5. Recrear las ramas en curso y documentarlo en `docs/ESTADO.md`.
 
 GitHub puede conservar un tiempo los commits antiguos accesibles por su SHA; si hace falta
 purgarlos, hay que pedirlo a su soporte.

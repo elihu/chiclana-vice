@@ -1,13 +1,13 @@
 ---
 name: integrar-rama
-description: Cierra la rama de un worktree de agente y, solo si el usuario lo pide expresamente, la integra en main con merge --no-ff. Úsala cuando el usuario pida cerrar, revisar o integrar una rama; no para trabajo en curso.
+description: Cierra la rama de una tarea y, solo si el usuario lo pide expresamente, la integra en main con merge --no-ff. Úsala cuando el usuario pida cerrar, revisar o integrar una rama; no para trabajo en curso.
 ---
 
 # Cerrar e integrar una rama
 
 Sigue `docs/GIT_WORKFLOW.md`. Resumen verificable:
 
-## 1. En la rama (en su worktree)
+## 1. En la rama
 
 1. `git status --short --branch`: identifica cambios ajenos a la tarea y no los incluyas.
 2. `npm run check` debe pasar. Si la tarea toca interfaz, cámara o render, indica si se ha
@@ -19,7 +19,7 @@ Sigue `docs/GIT_WORKFLOW.md`. Resumen verificable:
 
 ## 2. Integración (solo con petición explícita del usuario)
 
-Desde el worktree de `main` (el repositorio principal):
+En el repositorio principal (si la rama tiene worktree, desde el principal, no desde él):
 
 ```fish
 git switch main
@@ -31,5 +31,6 @@ npm run check
   abandonarlo, `git merge --abort`.
 - Actualiza `docs/ESTADO.md` si la rama cierra o añade pendientes, en un commit
   `docs: actualizar estado tras integrar RAMA`.
-- No hagas `git push`, no borres la rama ni el worktree y no crees etiquetas sin
-  petición explícita.
+- Tras integrar y comprobar, borra la rama con `git branch -d RAMA` y, si tenía worktree,
+  `git worktree remove` antes. No hagas `git push` ni crees etiquetas sin petición
+  explícita.
