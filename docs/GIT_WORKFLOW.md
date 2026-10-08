@@ -22,9 +22,15 @@ git config user.email 4126552+elihu@users.noreply.github.com
 
 ## Una rama en curso
 
-Lo normal es un solo agente cada vez, así que se trabaja en el repositorio principal
-(`chiclana-vice-public`) cambiando de rama, sin worktrees. Hay una rama en curso como
-mucho; al terminar se integra o se deja indicada antes de empezar otra.
+Se trabaja en el repositorio principal (`chiclana-vice-public`) cambiando de rama, sin
+worktrees. Hay una rama en curso como mucho; al terminar se integra o se deja indicada
+antes de empezar otra.
+
+Lo habitual son dos agentes a la vez: uno implementa en su rama mientras otro planifica o
+revisa. Mientras una rama está en curso en el repositorio principal, los demás agentes
+solo leen: `git show`, `git diff` o copias con `git archive` fuera del repositorio. Si
+otro agente necesita escribir, espera o pide al usuario un worktree (ver
+[Agentes en paralelo](#agentes-en-paralelo-excepción)).
 
 ```fish
 cd /home/elihu/GIT/chiclana-vice-public
@@ -83,6 +89,14 @@ git merge --no-ff feat/tema -m 'merge: integrar feat/tema'
 npm run check
 ```
 
+- Antes de integrar una rama ajena, revisarla de forma independiente (habilidad
+  `revisar-rama`): el informe del autor no basta.
+- Si la rama cambia algo de `web/` que se publica (código, estilos o datos), subir en
+  `main` la versión de los recursos `?v=` (ver
+  [DESARROLLO.md](DESARROLLO.md#módulos-del-juego)) en un commit
+  `chore: subir la versión de los recursos` tras el merge. Formato `AAAA-MM-DD-tema`,
+  por ejemplo `2026-10-08-limites-rectangulos`. Cada push a `main` despliega: así nunca
+  se mezclan en la caché del navegador módulos o datos viejos y nuevos.
 - Con varias ramas en paralelo, integrar de una en una y repetir `npm run check` tras cada
   merge. Si hay conflictos, resolverlos, comprobar y terminar el merge; para abandonarlo,
   `git merge --abort`.
@@ -93,11 +107,30 @@ npm run check
 - Tras integrar, borrar la rama con `git branch -d feat/tema`; solo borra ramas ya
   integradas, así que no se pierde nada.
 
+## Planes para otro agente
+
+Un plan (`docs/PLAN-*.md`) que va a ejecutar otro agente se escribe en una rama `docs/` y
+se integra al terminarlo, sin esperar petición, porque el agente trabaja desde `main`.
+Es la única excepción a la integración a petición; push sigue requiriendo petición.
+
+Todo plan incluye un apartado «Cómo ejecutar este plan» con:
+
+- rama por fase o por paso, desde `main` limpio, y un commit por paso;
+- referencias que generar antes de un refactor (huella de escena con relieve y sin él) y
+  que deben coincidir al terminar;
+- qué hacer si una verificación falla: parar y entregar el diagnóstico;
+- qué pasos esperan la revisión del usuario en navegador;
+- lo que no acreditan los tests (GPU, memoria real, fluidez y móvil).
+
+Las referencias de línea indican el commit en que se tomaron. El mensaje que se da al
+agente es corto y remite al plan: «Ejecuta la fase N de docs/PLAN-X.md y nada más; sigue
+"Cómo ejecutar este plan"; si algo no cuadra, para y explícalo».
+
 ## Agentes en paralelo (excepción)
 
-Solo si el usuario pide varios agentes a la vez: cada uno en su worktree y su rama,
-dentro de `.claude/worktrees/` (ignorado por Git), con la barra de la rama sustituida por
-un guion. El repositorio principal queda en `main` para integrar.
+Solo si el usuario pide varios agentes que escriban a la vez: cada uno en su worktree y
+su rama, dentro de `.claude/worktrees/` (ignorado por Git), con la barra de la rama
+sustituida por un guion. El repositorio principal queda en `main` para integrar.
 
 ```fish
 git worktree add .claude/worktrees/feat-tema -b feat/tema main

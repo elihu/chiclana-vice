@@ -15,7 +15,9 @@ algo en `tools/`, lee `tools/AGENTS.md`.
 - Comprobar todo (lint, formato y verificadores): `npm run check`. Debe pasar antes del
   commit que cierra el trabajo y antes de integrar.
 - Aplicar formato, incluido Markdown: `npm run format`.
-- Servir el juego: `uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web`
+- Servir el juego: `uv run --no-project python -m http.server 8080 --bind 127.0.0.1 --directory web`.
+  Si el puerto está ocupado, usa otro libre; cierra al terminar el servidor que arrancaste
+  y nunca uno ajeno sin preguntar.
 - Python siempre con `uv run --no-project python`; dependencias con `--with paquete`.
 
 ## Límites
@@ -73,7 +75,13 @@ Nunca:
   `git switch -c`. Si el árbol tiene cambios o hay otra rama en curso, pregunta antes de
   cambiar de rama. Worktree solo si el usuario pide agentes en paralelo.
 - Conventional Commits en español: `tipo(ámbito opcional): descripción en minúscula`.
-- No hagas merge, rebase ni push salvo que te lo pidan. El flujo completo y la integración
-  están en `docs/GIT_WORKFLOW.md`.
+- No hagas merge, rebase ni push salvo que te lo pidan. Excepción: un plan
+  (`docs/PLAN-*.md`) para otro agente se integra al terminarlo. El flujo completo y la
+  integración están en `docs/GIT_WORKFLOW.md`.
+- Suele haber dos agentes a la vez. Mientras otro tiene una rama en curso en el
+  repositorio principal, solo lees (`git show`, `git archive`): no cambias de rama ni
+  escribes.
+- Al integrar algo que cambia `web/`, sube la versión de los recursos `?v=`
+  (`docs/GIT_WORKFLOW.md`, «Integrar»).
 - No edites `docs/ESTADO.md` desde una rama salvo que tu tarea cierre o añada un
   pendiente; quien integra en `main` lo actualiza.
