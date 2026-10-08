@@ -9,9 +9,9 @@ import { prepareTerrainPlacement } from '../web/js/world/terrain-placement.js';
 import { sha256Hex } from '../web/js/world/corrections.js';
 
 const city = { origin: [0, 0], size: [10, 10] },
-  buffer = new ArrayBuffer(8),
+  buffer = new ArrayBuffer(18),
   view = new DataView(buffer);
-[0, 100, 200, 400].forEach((v, i) => view.setInt16(i * 2, v, true));
+[0, 50, 100, 100, 200, 250, 200, 300, 400].forEach((v, i) => view.setInt16(i * 2, v, true));
 const digest = async (b) => createHash('sha256').update(new Uint8Array(b)).digest('hex');
 assert.equal(
   sha256Hex(new Uint8Array(buffer)),
@@ -20,10 +20,10 @@ assert.equal(
 );
 const manifest = {
   version: 1,
-  bounds: [-city.size[0] / 2, city.size[0] / 2, -city.size[1] / 2, city.size[1] / 2],
+  bounds: [-10, 10, -10, 10],
   ...city,
-  columns: 2,
-  rows: 2,
+  columns: 3,
+  rows: 3,
   step: [10, 10],
   encoding: 'int16-le',
   scale: 0.1,
@@ -37,13 +37,13 @@ const terrain = createTerrain(manifest, buffer, city);
 assert.equal(heightAt(flatTerrain, 0, 0), 0);
 assert.throws(() => heightAt(terrain, NaN, 0), /finita/);
 for (const [x, z, y] of [
-  [-5, -5, 0],
-  [5, -5, 10],
-  [-5, 5, 20],
-  [5, 5, 40],
+  [-10, -10, 0],
+  [10, -10, 10],
+  [-10, 10, 20],
+  [10, 10, 40],
   [0, 0, 20],
-  [2.5, -2.5, 15],
-  [-2.5, 2.5, 20],
+  [5, -5, 15],
+  [-5, 5, 20],
   [50, 50, 40],
   [-50, -50, 0],
 ])
@@ -133,7 +133,7 @@ world.terrain = terrain;
 world.worldW = 10;
 world.worldH = 10;
 const geometry = terrainGeometry(terrain);
-assert.equal(geometry.index.count, 6);
+assert.equal(geometry.index.count, 24);
 const normals = geometry.getAttribute('normal');
 for (let i = 0; i < normals.count; i++) assert(normals.getY(i) > 0);
 const draped = drapeTriangles([-5, 0.1, -5, 5, 0.1, -5, -5, 0.1, 5], [0, 0, 1, 0, 0, 1]);
@@ -165,9 +165,9 @@ world.city = {
   landmarks: [],
   areas: [],
 };
-const bridgeBuffer = new ArrayBuffer(8),
+const bridgeBuffer = new ArrayBuffer(18),
   bridgeView = new DataView(bridgeBuffer);
-[100, 100, 100, 0].forEach((v, i) => bridgeView.setInt16(i * 2, v, true));
+[100, 100, 100, 100, 50, 50, 100, 50, 0].forEach((v, i) => bridgeView.setInt16(i * 2, v, true));
 world.terrain = createTerrain(manifest, bridgeBuffer, city);
 assert.throws(() => prepareTerrainPlacement(), /Terreno real requiere terrainSurfaces/);
 world.cityDesign = {
@@ -194,7 +194,7 @@ world.cityDesign = {
 };
 prepareTerrainPlacement();
 assert(
-  Math.abs(surfaceHeightAt(0, 0) - 43 / 6) < 1e-12,
+  Math.abs(surfaceHeightAt(0, 0) - (surfaceHeightAt(-5, 0) + surfaceHeightAt(5, 0)) / 2) < 1e-12,
   'tablero interpolado entre accesos estabilizados',
 );
 assert(groundHeightAt(0, 0) < surfaceHeightAt(0, 0), 'terreno construido bajo tablero');
@@ -202,3 +202,30 @@ assert.equal(surfaceHeightAt(0, 4), groundHeightAt(0, 4));
 console.log(
   'Terrain contract, triangular interpolation, clipping, errors and single surface model passed',
 );
+
+const { gridX, gridZ, gridColumn, gridRow } = await import('../web/js/world/terrain.js');
+const shifted = { bounds: [20, 40, -30, -10], step: [10, 10] };
+assert.equal(gridX(shifted, 1), 30);
+assert.equal(gridZ(shifted, 1), -20);
+assert.equal(gridColumn(shifted, 25), 0.5);
+assert.equal(gridRow(shifted, -15), 1.5);
+assert.throws(
+  () => createTerrain({ ...manifest, bounds: [0, 10, 0, 10] }, buffer, city),
+  /incompatible/,
+);
+
+for (const bounds of [
+  [-4, 10, -10, 10],
+  [-10, 4, -10, 10],
+  [-10, 10, -4, 10],
+  [-10, 10, -10, 4],
+  [-11, 9, -10, 10],
+])
+  assert.throws(() => createTerrain({ ...manifest, bounds }, buffer, city), /incompatible/);
+const asymmetric = { ...manifest, bounds: [-10, 30, -20, 20], step: [20, 20] };
+// La esquina X debe estar anclada también: esta rejilla se rechaza.
+assert.throws(() => createTerrain(asymmetric, buffer, city), /incompatible/);
+const covering = { ...manifest, bounds: [-20, 20, -20, 20], step: [20, 20] };
+assert.equal(createTerrain(covering, buffer, city).heightAt(0, 0), 20);
+const nonCentered = { ...manifest, bounds: [-10, 20, -10, 10], columns: 4 };
+assert.equal(createTerrain(nonCentered, new ArrayBuffer(24), city).heightAt(15, 5), 0);

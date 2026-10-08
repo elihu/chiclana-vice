@@ -158,7 +158,9 @@ de módulos controla imports estáticos y dinámicos contra la dirección de cap
 Una vía puede atravesar varias plataformas, tanto por arriba como por debajo. Los
 puntos de entrada/salida se insertan en sus perfiles mediante intersecciones de la
 polilínea con la huella. La transición usa el tramo por el que sale, con independencia
-de la mitad de la longitud total de la vía. En los huecos entre tableros se combinan
+de la mitad de la longitud total de la vía, y mide siempre `smoothingRadius` aunque la
+vía sea más corta: el extremo de un acceso corto queda junto al tablero y la resolución
+de uniones continúa la rampa por las vías vecinas, sin comprimirla en un escalón. En los huecos entre tableros se combinan
 las dos transiciones. Los corredores de `roadAnchor` y sus bandas siguen todos los
 vértices, con juntas en inglete; segmentos nulos y giros de retorno que alargan la
 junta más de cuatro veces se rechazan. Los tableros de plataforma siguen siendo

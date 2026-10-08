@@ -1,3 +1,5 @@
+export { gridX, gridZ, gridColumn, gridRow } from '../core/math.js';
+import { gridColumn, gridRow } from '../core/math.js';
 // Muestreo puro; diagonal NW→SE compartida con el dibujo.
 export const flatTerrain = Object.freeze({
   kind: 'flat',
@@ -20,9 +22,11 @@ export function createTerrain(m, buffer, city) {
     !pair(m.size) ||
     !Array.isArray(m.bounds) ||
     m.bounds.length !== 4 ||
-    m.bounds.some(
-      (v, i) => v !== [-m.size[0] / 2, m.size[0] / 2, -m.size[1] / 2, m.size[1] / 2][i],
-    ) ||
+    !m.bounds.every(Number.isFinite) ||
+    m.bounds[0] > -city.size[0] / 2 ||
+    m.bounds[1] < city.size[0] / 2 ||
+    m.bounds[2] > -city.size[1] / 2 ||
+    m.bounds[3] < city.size[1] / 2 ||
     m.origin.some((v, i) => v !== city.origin[i]) ||
     m.size.some((v, i) => v !== city.size[i]) ||
     !Number.isInteger(m.columns) ||
@@ -38,8 +42,11 @@ export function createTerrain(m, buffer, city) {
     !/^[a-f0-9]{64}$/.test(m.sha256 || '') ||
     !Number.isFinite(m.referenceElevation) ||
     !pair(m.step) ||
-    m.step[0] !== m.size[0] / (m.columns - 1) ||
-    m.step[1] !== m.size[1] / (m.rows - 1) ||
+    m.step[0] !== (m.bounds[1] - m.bounds[0]) / (m.columns - 1) ||
+    m.step[1] !== (m.bounds[3] - m.bounds[2]) / (m.rows - 1) ||
+    m.step.some((v) => v <= 0) ||
+    !Number.isInteger(m.bounds[0] / m.step[0]) ||
+    !Number.isInteger(m.bounds[2] / m.step[1]) ||
     !(buffer instanceof ArrayBuffer) ||
     buffer.byteLength !== m.columns * m.rows * 2
   )
@@ -59,8 +66,8 @@ export function createTerrain(m, buffer, city) {
 }
 
 export function gridHeightAt(m, data, x, z) {
-  const gx = Math.max(0, Math.min(m.columns - 1, (x + m.size[0] / 2) / m.step[0])),
-    gz = Math.max(0, Math.min(m.rows - 1, (z + m.size[1] / 2) / m.step[1])),
+  const gx = Math.max(0, Math.min(m.columns - 1, gridColumn(m, x))),
+    gz = Math.max(0, Math.min(m.rows - 1, gridRow(m, z))),
     i = Math.min(m.columns - 2, Math.floor(gx)),
     j = Math.min(m.rows - 2, Math.floor(gz)),
     u = gx - i,

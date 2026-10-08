@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { readWorld } from '../tools/world-files.mjs';
-import { surfaceJunctions } from '../tools/surface-junctions.mjs';
+import { surfaceJunctions, surfaceSteps } from '../tools/surface-junctions.mjs';
 import { applyCorrections } from '../web/js/world/corrections.js';
 import { createTerrain } from '../web/js/world/terrain.js';
 import { createSurfaceModel } from '../web/js/world/surface-model.js';
@@ -29,4 +29,8 @@ if (fs.existsSync('web/terrain.json')) {
   );
   for (const group of [report.shared, report.tees])
     assert(group.maximum <= 0.05, 'salto máximo de unión <= 5 cm');
+  // Sin escalones dentro de los perfiles: las cuestas del MDT quedan bajo 0,2 m por metro.
+  const steps = surfaceSteps(model, 1);
+  console.log('Mayor desnivel en 1 m de perfil:', JSON.stringify(steps));
+  assert(steps.step <= 0.3, 'escalón de perfil > 0,3 m en 1 m en la vía ' + steps.roadId);
 }

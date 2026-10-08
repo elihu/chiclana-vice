@@ -31,3 +31,29 @@ export function surfaceJunctions(city, model) {
     tees: { count: tees.length, maximum: tees[0]?.jump ?? 0, worst: tees.slice(0, 10) },
   };
 }
+
+// Escalones dentro de un perfil: mayor desnivel en `run` metros de recorrido. Un ID
+// repetido concatena tramos separados; se corta la cadena donde no son contiguos.
+export function surfaceSteps(model, run = 1) {
+  let worst = { step: 0, roadId: null, point: null };
+  for (const [roadId, list] of model.profiles) {
+    let chain = [];
+    const scan = () => {
+      for (let i = 0; i < chain.length; i++)
+        for (let j = i + 1; j < chain.length && chain[j].d - chain[i].d <= run; j++) {
+          const step = Math.abs(chain[j].y - chain[i].y);
+          if (step > worst.step) worst = { step, roadId, point: chain[i].p };
+        }
+    };
+    for (const s of list) {
+      const last = chain.at(-1);
+      if (!last || last.p[0] !== s.a[0] || last.p[1] !== s.a[1]) {
+        scan();
+        chain = [{ d: 0, y: s.y0, p: s.a }];
+      }
+      chain.push({ d: chain.at(-1).d + s.length, y: s.y1, p: s.b });
+    }
+    scan();
+  }
+  return worst;
+}

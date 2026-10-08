@@ -1,3 +1,4 @@
+import { gridX, gridZ } from '../core/math.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { world } from '../core/state.js';
@@ -15,12 +16,11 @@ export function terrainGeometry(terrain) {
     indices = [];
   for (let j = 0; j < m.rows; j++)
     for (let i = 0; i < m.columns; i++) {
-      positions.push(
-        -m.size[0] / 2 + i * m.step[0],
-        terrain.data[j * m.columns + i],
-        -m.size[1] / 2 + j * m.step[1],
+      positions.push(gridX(m, i), terrain.data[j * m.columns + i], gridZ(m, j));
+      uv.push(
+        (gridX(m, i) + m.size[0] / 2) / m.size[0],
+        1 - (gridZ(m, j) + m.size[1] / 2) / m.size[1],
       );
-      uv.push(i / (m.columns - 1), 1 - j / (m.rows - 1));
       if (i + 1 < m.columns && j + 1 < m.rows) {
         const a = j * m.columns + i,
           b = a + 1,
@@ -45,13 +45,10 @@ export function terrainExterior(terrain) {
     m = terrain.manifest,
     perimeter = [];
   if (!m) return null;
-  for (let i = 0; i < m.columns; i++)
-    perimeter.push([-m.size[0] / 2 + i * m.step[0], -m.size[1] / 2]);
-  for (let j = 1; j < m.rows; j++) perimeter.push([m.size[0] / 2, -m.size[1] / 2 + j * m.step[1]]);
-  for (let i = m.columns - 2; i >= 0; i--)
-    perimeter.push([-m.size[0] / 2 + i * m.step[0], m.size[1] / 2]);
-  for (let j = m.rows - 2; j > 0; j--)
-    perimeter.push([-m.size[0] / 2, -m.size[1] / 2 + j * m.step[1]]);
+  for (let i = 0; i < m.columns; i++) perimeter.push([gridX(m, i), m.bounds[2]]);
+  for (let j = 1; j < m.rows; j++) perimeter.push([m.bounds[1], gridZ(m, j)]);
+  for (let i = m.columns - 2; i >= 0; i--) perimeter.push([gridX(m, i), m.bounds[3]]);
+  for (let j = m.rows - 2; j > 0; j--) perimeter.push([m.bounds[0], gridZ(m, j)]);
   for (const [x, z] of perimeter) {
     positions.push(x, groundHeightAt(x, z) - 0.01, z, x * 8, 0, z * 8);
   }

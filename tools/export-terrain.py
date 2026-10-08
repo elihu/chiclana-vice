@@ -24,13 +24,19 @@ city = json.loads(Path("web/world.json").read_text())
 lon, lat = city["origin"]
 width, height = city["size"]
 sx = 111320 * math.cos(math.radians(lat))
-columns, rows = math.ceil(width / 10) + 1, math.ceil(height / 10) + 1
-dx, dz = width / (columns - 1), height / (rows - 1)
+bounds = [math.floor(-width / 2 / 10) * 10, math.ceil(width / 2 / 10) * 10,
+          math.floor(-height / 2 / 10) * 10, math.ceil(height / 2 / 10) * 10]
+columns, rows = (bounds[1] - bounds[0]) // 10 + 1, (bounds[3] - bounds[2]) // 10 + 1
+dx, dz = 10, 10
+# sample rechaza coordenadas fuera de los centros del original; no extrapola.
+for x in bounds[:2]:
+    for z in bounds[2:]:
+        source["sample"](header, values, lon + x / sx, lat - z / 111320)
 reference = source["sample"](header, values, lon, lat)
 quantized = []
 for j in range(rows):
     for i in range(columns):
-        x, z = -width / 2 + i * dx, -height / 2 + j * dz
+        x, z = bounds[0] + i * dx, bounds[2] + j * dz
         y = source["sample"](header, values, lon + x / sx, lat - z / 111320)
         q = round((y - reference) * 10)
         if not -32768 <= q <= 32767:
@@ -40,7 +46,7 @@ binary = struct.pack("<" + "h" * len(quantized), *quantized)
 manifest = {
     "version": 1, "origin": city["origin"], "size": city["size"],
     "columns": columns, "rows": rows, "step": [dx, dz],
-    "bounds": [-width / 2, width / 2, -height / 2, height / 2],
+    "bounds": bounds,
     "encoding": "int16-le", "scale": 0.1, "rowOrder": "north-to-south",
     "diagonal": "nw-se", "file": "terrain.bin",
     "sha256": hashlib.sha256(binary).hexdigest(), "referenceElevation": reference,
@@ -52,7 +58,7 @@ manifest = {
     "preview": args.preview,
     "sourceUrls": [audit["sourceUrl"]], "sourceSha256": checksum,
     "accessDate": audit["accessDate"], "acquisitionDate": audit["acquisitionDate"],
-    "method": "Centros ASCII, remuestreo bilineal a 10 m efectivos; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
+    "method": "Centros ASCII, remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
     "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
 }
 out = Path(args.out)

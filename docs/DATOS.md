@@ -170,7 +170,13 @@ probar el juego en un navegador.
 
 `audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
 `export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
-GIS nuevas. `audit-terrain-surfaces.mjs` revisa pendientes, bases y perfiles sobre las
+GIS nuevas. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
+múltiplos de ese paso desde el origen, sin cambiar `world.size`. El original debe
+cubrir todos los vértices: se rechaza un recorte insuficiente, sin extrapolación.
+El runtime valida cobertura, paso y anclaje; la malla construida subdivide el paso
+fuente conservando la esquina del manifiesto. Las funciones de coordenadas viven
+en `core/math.js` y se reexportan desde `world/terrain.js` para respetar las capas.
+`audit-terrain-surfaces.mjs` revisa pendientes, bases y perfiles sobre las
 capas actuales. No se distribuyen los originales.
 
 Los comandos, la copia de revisión y los pendientes están en

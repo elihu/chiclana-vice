@@ -8,24 +8,24 @@
     1343.67,
     1001.88
   ],
-  "columns": 136,
-  "rows": 102,
+  "columns": 137,
+  "rows": 103,
   "step": [
-    9.953111111111111,
-    9.91960396039604
+    10,
+    10
   ],
   "bounds": [
-    -671.835,
-    671.835,
-    -500.94,
-    500.94
+    -680,
+    680,
+    -510,
+    510
   ],
   "encoding": "int16-le",
   "scale": 0.1,
   "rowOrder": "north-to-south",
   "diagonal": "nw-se",
   "file": "terrain.bin",
-  "sha256": "4fce70794b5a5d53aac5e3feb8429303d80c1851339ccb342a19a626b0f4ce4e",
+  "sha256": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c",
   "referenceElevation": 6.909499953061762,
   "verticalReference": "sin confirmar para este recorte",
   "source": "IGN / PNOA MDT 5 m, Elevacion4258_5",
@@ -39,6 +39,6 @@
   "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
   "accessDate": "2026-10-07",
   "acquisitionDate": "sin confirmar",
-  "method": "Centros ASCII, remuestreo bilineal a 10 m efectivos; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
+  "method": "Centros ASCII, remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
   "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar"
 }

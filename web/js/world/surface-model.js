@@ -1,3 +1,4 @@
+import { gridX, gridZ } from '../core/math.js';
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
 import { pInside, boundaryDistance } from '../core/math.js';
 import { gridHeightAt } from './terrain.js';
@@ -427,8 +428,8 @@ export function createSurfaceModel(city, terrain, design) {
       levels = new Map();
     for (let j = 0; j < wm.rows; j++)
       for (let i = 0; i < wm.columns; i++) {
-        const x = -wm.size[0] / 2 + i * wm.step[0],
-          z = -wm.size[1] / 2 + j * wm.step[1];
+        const x = gridX(wm, i),
+          z = gridZ(wm, j);
         if (!waterShapes.get(area).contains(x, z)) continue;
         const k = Math.floor((axis === 0 ? x : z) / sliceLength);
         if (!slices.has(k)) slices.set(k, []);
@@ -592,29 +593,20 @@ export function createSurfaceModel(city, terrain, design) {
               smooth((distance - left.end) / (right.start - left.end)),
             );
           else {
+            // La rampa mide siempre smoothingRadius aunque la vía sea más corta: su extremo
+            // queda cerca de la plataforma y la resolución de uniones la continúa por las
+            // vías vecinas, en lugar de comprimirla en un escalón.
             if (left)
               y = mix(
                 y,
                 left.platform.y,
-                1 -
-                  smooth(
-                    Math.min(
-                      1,
-                      (distance - left.end) / Math.min(cfg.smoothingRadius, total - left.end),
-                    ),
-                  ),
+                1 - smooth(Math.min(1, (distance - left.end) / cfg.smoothingRadius)),
               );
             if (right)
               y = mix(
                 y,
                 right.platform.y,
-                1 -
-                  smooth(
-                    Math.min(
-                      1,
-                      (right.start - distance) / Math.min(cfg.smoothingRadius, right.start),
-                    ),
-                  ),
+                1 - smooth(Math.min(1, (right.start - distance) / cfg.smoothingRadius)),
               );
           }
         }
@@ -838,17 +830,15 @@ export function createSurfaceModel(city, terrain, design) {
     sub = cfg.meshSubdivisions;
   const meshManifest = {
     ...original,
-    columns: Math.ceil(original.size[0] / (original.step[0] / sub)) + 1,
-    rows: Math.ceil(original.size[1] / (original.step[1] / sub)) + 1,
+    columns: (original.columns - 1) * sub + 1,
+    rows: (original.rows - 1) * sub + 1,
+    step: original.step.map((v) => v / sub),
   };
-  meshManifest.step = original.size.map(
-    (v, i) => v / ((i === 0 ? meshManifest.columns : meshManifest.rows) - 1),
-  );
   const meshData = new Float32Array(meshManifest.columns * meshManifest.rows);
   for (let j = 0; j < meshManifest.rows; j++)
     for (let i = 0; i < meshManifest.columns; i++) {
-      const x = -original.size[0] / 2 + i * meshManifest.step[0],
-        z = -original.size[1] / 2 + j * meshManifest.step[1];
+      const x = gridX(meshManifest, i),
+        z = gridZ(meshManifest, j);
       let y = constructedHeightAt(x, z);
       const margin = Math.hypot(...meshManifest.step);
       for (const s of grid.get(key(x, z)) ?? empty) {

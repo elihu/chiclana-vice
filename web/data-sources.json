@@ -133,11 +133,11 @@
         "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc"
       ],
       "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
-      "transformation": "Centros ASCII, remuestreo bilineal a 10 m efectivos; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
+      "transformation": "Centros ASCII, remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
       "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
       "sha256": {
-        "terrain.json": "1c40b0ea7e92ddecc9a29af2866bf08dcaa6f99873501e847da929d171111fd5",
-        "terrain.bin": "4fce70794b5a5d53aac5e3feb8429303d80c1851339ccb342a19a626b0f4ce4e"
+        "terrain.json": "1bf5633d78c697aae066f6063f09da3d37b0ad3ce7ffec571e40ecea99fbc329",
+        "terrain.bin": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c"
       }
     }
   ]

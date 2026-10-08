@@ -48,3 +48,9 @@ export function boundaryDistance(x, z, polygon) {
   }
   return best;
 }
+
+// Coordenadas de rejilla, independientes del rectángulo del mundo.
+export const gridX = (m, i) => m.bounds[0] + i * m.step[0],
+  gridZ = (m, j) => m.bounds[2] + j * m.step[1],
+  gridColumn = (m, x) => (x - m.bounds[0]) / m.step[0],
+  gridRow = (m, z) => (z - m.bounds[2]) / m.step[1];

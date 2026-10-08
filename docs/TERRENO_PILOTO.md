@@ -35,8 +35,9 @@ la respuesta: unos 4,04 m este/oeste y 5,01 m norte/sur. No se deduce el CRS del
 DescribeCoverage declara unidades impropias (`W.m-2.Sr-1`); la fecha de adquisición y
 la referencia vertical exacta quedan sin confirmar.
 
-La rejilla derivada cubre exactamente 1343,67 × 1001,88 m: 136 × 102 vértices,
-27.744 bytes de alturas y 27.270 triángulos del suelo. Referencia: 6,909 m muestreados
+La rejilla derivada cubre 1360 × 1020 m, con `bounds: [-680, 680, -510, 510]`,
+paso exacto de 10 m y 137 × 103 vértices: 28.222 bytes y 27.744 triángulos
+del MDT. El mundo conserva 1343,67 × 1001,88 m. Referencia: 6,909 m muestreados
 en el origen del mapa; no es una cota certificada. Rango del original: 0–52 m. No se
 suaviza el MDT original ni se rellena NoData como cero. Los perfiles construidos
 suavizan solo corredores de calzada, según el diseño de autor.
@@ -256,3 +257,77 @@ La validación es de juego, no topográfica: la referencia vertical y la fecha d
 adquisición del MDT siguen sin confirmar y las cotas estructurales son aproximaciones
 de autor. Quedan pendientes los defectos visuales menores, zócalos y accesos de edificios
 en pendiente (`baseY` máximo) y la prueba en un móvil físico.
+
+## Fase 0 de ampliación: rejilla del relieve (8/10/2026)
+
+Solo pasos 0.1 y 0.2, desde `main` f1e4ad3. No cambia el rectángulo jugable,
+la ortofoto ni el diseño de superficies. La decisión de la auditoría original se
+conserva; **el paso 0.2 queda pendiente de revisión visual** del Iro, plataformas,
+Plaza Mayor y accesos. No acredita GPU ni móvil físico.
+
+El refactor 0.1 conserva exactamente el SHA de la malla
+`cd14f7372782357cf7d00b54ba2a2a77372a7ee8088eb7a6a817a27dedfe148e`
+y el del agua (4.346 consultas). `bench-terrain-surfaces.mjs --compare`
+y `scene-fingerprint.mjs --compare` pasan: escena con relieve idéntica
+(1.465.563 triángulos) y escena plana idéntica (917.276 triángulos), incluidas
+transformaciones, materiales, recursos y traza de comportamiento. Para el plano
+se apartaron temporalmente ambos archivos y se restauraron. Las referencias
+son mediciones puntuales en `/tmp`, no tests de instantánea permanentes.
+
+El paso 0.2 reexporta del original con SHA-256
+`71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae`,
+sin descarga nueva ni extrapolación. SHA-256 del binario reexportado:
+`ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c`.
+La malla construida pasa de 271 × 203 a 273 × 205 (paso 5 m).
+En los 13.872 vértices de la rejilla anterior, la diferencia absoluta del MDT
+muestreado es 0,103221 m de media y 2,778100 m de máximo
+(en x=373,241667, z=163,673465; diferencia −2,778100 m). Son cambios
+de remuestreo, no desplazamientos del mundo ni mediciones de precisión.
+
+| Auditoría CPU                                                  |     Antes |   Después |
+| -------------------------------------------------------------- | --------: | --------: |
+| Muestras de vía con pendiente >20 %                            |        47 |        44 |
+| Muestras MDT de vía con pendiente >20 %                        |       148 |       152 |
+| Desnivel máximo de edificio (índice 5865), m                   |  8,769545 |  8,933147 |
+| Base de ese edificio, m                                        |  8,761223 |  9,008630 |
+| Salto máximo en 611 extremos compartidos y 411 uniones en T, m |  1,11e-16 |  4,44e-16 |
+| Triángulos de escena con instancias                            | 1.465.563 | 1.466.564 |
+
+Los nueve puentes conservan sus perfiles como fuente única. Separación mínima
+tablero–suelo y pendiente máxima, calculadas por la misma auditoría:
+
+| Vía        | Separación antes/después, m | Pendiente antes/después |
+| ---------- | --------------------------: | ----------------------: |
+| 50664224   |         1.106639 / 0.745214 |     0.000000 / 0.000000 |
+| 53800523   |        0.012047 / -0.061123 |     0.012643 / 0.012213 |
+| 142805148  |         1.085064 / 1.263948 |     0.020823 / 0.021899 |
+| 759565061  |         4.000000 / 4.000000 |     0.000000 / 0.000000 |
+| 759565062  |         1.482732 / 2.462496 |     1.728298 / 2.442239 |
+| 760833292  |         0.851980 / 0.926895 |     0.025565 / 0.018726 |
+| 760833297  |         0.532079 / 0.502554 |     0.017765 / 0.028079 |
+| 1195660889 |         2.796687 / 2.700113 |     0.000000 / 0.000000 |
+| 1195660891 |         0.505360 / 0.536922 |     0.514738 / 0.516802 |
+
+Puente Chico registra −0,061123 m de separación mínima, medida en los bordes del
+tablero junto al estribo de x 121, z −209; en el eje es +0,025 m. Es el apoyo del
+tablero en el suelo, no un cruce en el vano. No se ajusta el diseño para ocultarlo.
+
+**Escalones de acceso (corregido en esta fase).** La pendiente 2,44 de la vía 759565062
+era un escalón de 0,83 m en 0,34 m en el acceso peatonal al tablero de Remedios (x 337,4,
+z −157,3), ya presente antes de la fase (0,59 m). La transición hacia una plataforma se
+recortaba a la longitud de la propia vía. Ahora mide siempre `smoothingRadius` y la
+rampa sigue por la acera vecina; cambian 9 de 609 perfiles. La pendiente máxima de esa
+vía pasa a 0,003. La pasarela 1195660891 de la Gran Plaza baja de 1,01 m a 0,82 m en
+2 m: lo que queda es el desnivel de diseño entre la orilla (−2,5 m) y la plataforma
+(+1,0 m) repartido en el radio de 16 m, no un escalón. Suavizarlo más es una decisión de
+diseño (radio o acceso de autor). `verify-surface-junctions.mjs` impone ahora como
+máximo 0,3 m de desnivel en 1 m de perfil con los datos reales (máximo actual 0,196 m,
+cuesta del MDT en la vía 53650596), y `verify-surfaces.mjs` cubre un acceso más corto
+que el radio. El informe generado vigente es `source-data/terrain-surface-audit.json`.
+
+Comprobaciones: contrato, cobertura y anclaje, interpolación, recorte de
+pavimentos, superficies sintéticas, uniones reales, runtime y escena;
+`npm run check` y `tests/verify-terrain-tools.py`. Chrome se ejecuta mediante
+`browser-smoke.mjs --surfaces`, normal y `--low`, ambos sin errores y con 112 llamadas de dibujo, usando SwiftShader. El
+verificador de accesos excluye el borde **jugable**, no el margen del MDT: este
+margen no amplía la zona de colisión. La revisión visual humana sigue pendiente.
