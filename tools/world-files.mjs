@@ -1,3 +1,4 @@
+import { worldBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 
 export function readWorld(directory = 'web') {
@@ -6,7 +7,7 @@ export function readWorld(directory = 'web') {
   const osm = JSON.parse(fs.readFileSync(`${directory}/${manifest.files.osm}`, 'utf8'));
   return {
     origin: manifest.origin,
-    size: manifest.size,
+    bounds: worldBounds(manifest),
     roads: osm.roads,
     areas: osm.areas,
     landmarks: osm.landmarks,

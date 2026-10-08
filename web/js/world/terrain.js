@@ -1,3 +1,4 @@
+import { boundsBox, validBounds, worldBounds } from './bounds.js';
 export { gridX, gridZ, gridColumn, gridRow } from '../core/math.js';
 import { gridColumn, gridRow } from '../core/math.js';
 // Muestreo puro; diagonal NW→SE compartida con el dibujo.
@@ -14,6 +15,10 @@ export function heightAt(terrain, x, z) {
 }
 
 export function createTerrain(m, buffer, city) {
+  const bounds = worldBounds(city);
+  if (!validBounds(bounds)) throw Error('Capa de terreno incompatible');
+  const box = boundsBox(bounds),
+    size = [box[1] - box[0], box[3] - box[2]];
   const pair = (a) => Array.isArray(a) && a.length === 2 && a.every(Number.isFinite);
   if (
     !m ||
@@ -23,12 +28,12 @@ export function createTerrain(m, buffer, city) {
     !Array.isArray(m.bounds) ||
     m.bounds.length !== 4 ||
     !m.bounds.every(Number.isFinite) ||
-    m.bounds[0] > -city.size[0] / 2 ||
-    m.bounds[1] < city.size[0] / 2 ||
-    m.bounds[2] > -city.size[1] / 2 ||
-    m.bounds[3] < city.size[1] / 2 ||
+    m.bounds[0] > box[0] ||
+    m.bounds[1] < box[1] ||
+    m.bounds[2] > box[2] ||
+    m.bounds[3] < box[3] ||
     m.origin.some((v, i) => v !== city.origin[i]) ||
-    m.size.some((v, i) => v !== city.size[i]) ||
+    m.size.some((v, i) => v !== size[i]) ||
     !Number.isInteger(m.columns) ||
     !Number.isInteger(m.rows) ||
     m.columns < 2 ||

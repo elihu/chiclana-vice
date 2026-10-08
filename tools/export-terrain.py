@@ -22,10 +22,13 @@ if audit["sourceSha256"] != checksum:
     raise ValueError("Auditoría de otro original")
 city = json.loads(Path("web/world.json").read_text())
 lon, lat = city["origin"]
-width, height = city["size"]
+rectangles = city["bounds"]
+box = [min(r[0] for r in rectangles), max(r[1] for r in rectangles),
+       min(r[2] for r in rectangles), max(r[3] for r in rectangles)]
+width, height = box[1] - box[0], box[3] - box[2]
 sx = 111320 * math.cos(math.radians(lat))
-bounds = [math.floor(-width / 2 / 10) * 10, math.ceil(width / 2 / 10) * 10,
-          math.floor(-height / 2 / 10) * 10, math.ceil(height / 2 / 10) * 10]
+bounds = [math.floor(box[0] / 10) * 10, math.ceil(box[1] / 10) * 10,
+          math.floor(box[2] / 10) * 10, math.ceil(box[3] / 10) * 10]
 columns, rows = (bounds[1] - bounds[0]) // 10 + 1, (bounds[3] - bounds[2]) // 10 + 1
 dx, dz = 10, 10
 # sample rechaza coordenadas fuera de los centros del original; no extrapola.
@@ -44,7 +47,7 @@ for j in range(rows):
         quantized.append(q)
 binary = struct.pack("<" + "h" * len(quantized), *quantized)
 manifest = {
-    "version": 1, "origin": city["origin"], "size": city["size"],
+    "version": 1, "origin": city["origin"], "size": [width, height],
     "columns": columns, "rows": rows, "step": [dx, dz],
     "bounds": bounds,
     "encoding": "int16-le", "scale": 0.1, "rowOrder": "north-to-south",

@@ -1,17 +1,7 @@
+import { nearEdge } from '../world/bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { d } from '../core/math.js';
-import {
-  gfx,
-  input,
-  keys,
-  labelPoint,
-  player,
-  pois,
-  session,
-  state,
-  view,
-  world,
-} from '../core/state.js';
+import { gfx, input, keys, labelPoint, player, pois, session, state, view } from '../core/state.js';
 import { JOBS as jobs } from '../../game-data.js';
 import { nearestCar } from '../game/vehicles.js';
 import { nearestRoad } from '../world/spatial.js';
@@ -66,7 +56,7 @@ export function updateHudReadouts(goal) {
     hint = 'Detente en el círculo dorado para entregar';
   else if (state.wanted)
     hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
-  else if (Math.abs(player.x) > world.worldW / 2 - 30 || Math.abs(player.z) > world.worldH / 2 - 30)
+  else if (nearEdge(player.x, player.z, 30))
     hint = 'Fin de la zona recreada · Abre el mapa para volver';
   setText('hint', hint);
 }

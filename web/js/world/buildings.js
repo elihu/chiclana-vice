@@ -90,7 +90,8 @@ export async function buildBuildings() {
       for (const i of tr) {
         let p = all[i];
         g.r.push(p.x, b.baseY + h + 0.02, p.y);
-        g.ru.push(p.x / world.worldW + 0.5, 0.5 - p.y / world.worldH);
+        const [x0, x1, z0, z1] = world.aerialBox;
+        g.ru.push(p.x / (x1 - x0) - x0 / (x1 - x0), -z0 / (z1 - z0) - p.y / (z1 - z0));
       }
     if (++count % 900 === 0) {
       loadProgress(

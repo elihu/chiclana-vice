@@ -6,7 +6,12 @@ const world = readWorld(),
   baseline = geographicHash(world);
 const mutations = [
   (w) => (w.origin[0] += 0.01),
-  (w) => (w.size[0] += 1),
+  (w) => (w.bounds[0][1] += 1),
+  (w) => {
+    w.bounds[0][0] += 1;
+    w.bounds[0][1] += 1;
+  },
+  (w) => w.bounds.push([-10, 10, -10, 10]),
   (w) => (w.buildings[0].p[0][0] += 1),
   (w) =>
     w.buildings[0].holes.push([

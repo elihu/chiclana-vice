@@ -7,7 +7,13 @@ regenerar los datos.
 ## Capas
 
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
-`buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Carga además la
+`buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Sus límites se describen
+con `bounds`, una lista no vacía de
+rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene solo
+`[-671.835, 671.835, -500.94, 500.94]`. La pertenencia se consulta sobre la unión,
+mientras que mapa y cobertura del terreno usan la caja envolvente. `prepare-world.mjs`
+genera este formato y admite también entradas antiguas con `size`; el cargador
+conserva esa compatibilidad para copias locales. Carga además la
 ortofoto `aerial.jpg`, `facade-profiles.json` (paleta y política de alturas propias,
 obligatorio), `facade-designs.json` (recetas y composiciones de fachada, obligatorio),
 `city-design.json` (zonas, reglas de calle, mobiliario, pavimentos, vegetación y edificios
@@ -155,7 +161,7 @@ npm test
 `verify-world` comprueba los checksums de capas y procedencia, las alturas base, que el
 overlay y el catálogo apuntan a la instantánea actual de edificios, que las copias de
 `web/` coinciden y que las licencias están incluidas. Además compara una huella fija de
-la geografía (origen, tamaño, contornos, patios, plantas, vías con anchura y sentido,
+la geografía (origen, límites, contornos, patios, plantas, vías con anchura y sentido,
 áreas, monumentos y árboles) con `source-data/geometry-baseline.json`;
 un cambio deliberado de geometría actualiza esa huella en su propio commit
 (`node tools/export-geometry-baseline.mjs`, solo después de revisar el cambio).
@@ -171,7 +177,7 @@ probar el juego en un navegador.
 `audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
 `export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
 GIS nuevas. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
-múltiplos de ese paso desde el origen, sin cambiar `world.size`. El original debe
+múltiplos de ese paso desde el origen, sin cambiar `world.bounds`. El original debe
 cubrir todos los vértices: se rechaza un recorte insuficiente, sin extrapolación.
 El runtime valida cobertura, paso y anclaje; la malla construida subdivide el paso
 fuente conservando la esquina del manifiesto. Las funciones de coordenadas viven

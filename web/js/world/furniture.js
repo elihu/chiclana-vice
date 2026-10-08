@@ -1,3 +1,4 @@
+import { insideBounds } from './bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
@@ -31,8 +32,7 @@ export function buildUrbanFurniture() {
     [lampMinX, lampMaxX, lampMinZ, lampMaxZ] = world.cityDesign.zones.streetLamps;
   function clear(x, z, r = 0.35) {
     return (
-      Math.abs(x) < world.worldW / 2 - 3 &&
-      Math.abs(z) < world.worldH / 2 - 3 &&
+      insideBounds(x, z, 3, world.city.bounds, false) &&
       !inBuilding(x, z, r) &&
       !waterAreas.some((p) => pInside(x, z, p.p)) &&
       !rules.protectedPoints.some((p) => Math.hypot(x - p[0], z - p[1]) < rules.protectedRadius) &&

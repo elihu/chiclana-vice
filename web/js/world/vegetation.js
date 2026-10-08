@@ -1,3 +1,4 @@
+import { insideBounds } from './bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, lerp, pInside } from '../core/math.js';
@@ -63,8 +64,7 @@ export function buildTrees() {
         z = lerp(mnz, mxz, rnd()),
         near = nearestRoad(x, z);
       if (
-        Math.abs(x) > world.worldW / 2 ||
-        Math.abs(z) > world.worldH / 2 ||
+        !insideBounds(x, z) ||
         !pInside(x, z, a.p) ||
         inBuilding(x, z, rules.buildingClearance) ||
         !near ||
@@ -172,8 +172,7 @@ export function buildTrees() {
       let p = a.p[i],
         near = nearestRoad(...p);
       if (
-        Math.abs(p[0]) > world.worldW / 2 ||
-        Math.abs(p[1]) > world.worldH / 2 ||
+        !insideBounds(p[0], p[1]) ||
         inBuilding(...p, rules.shrubBuildingClearance) ||
         !near ||
         near.d < near.s.width / 2 + rules.shrubRoadClearance
