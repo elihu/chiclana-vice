@@ -151,7 +151,43 @@ una segunda copia.
 La política común de alturas se publica en los perfiles con
 `node tools/export-height-policy.mjs`; la consumen también los conversores Python.
 
-## 4. Procedencia y comprobación (siempre)
+## 4. Ortofoto por teselas (opcional)
+
+```sh
+uv run --no-project --with pillow python tools/aerial-tiles.py
+```
+
+Después, el paso 5.
+
+El generador lee `world.json.bounds` y usa su unión para seleccionar la rejilla de
+255 m anclada al origen. Guarda respuestas originales del WMS y GetFeatureInfo en
+`~/.cache/chiclana-vice/pnoa/`, identificadas por SHA-256 de la URL completa; descarga
+solo las ausentes, con un máximo de dos peticiones simultáneas. Ante respuestas 5xx
+o errores de red hace hasta tres reintentos, con esperas de 2, 4 y 8 segundos;
+los demás errores HTTP se propagan sin reintento. No añade dependencias
+al proyecto. Si falla una consulta, se puede repetir el comando usando la caché.
+
+Antes de escribir datos comprueba que todos los centros declaran vuelo `2022-07` y
+que las imágenes se alinean con `aerial.jpg`. Reduce cada tesela con Lanczos a la
+resolución de referencia y compara la intersección, dejando ocho píxeles de margen.
+Busca el máximo de correlación normalizada de luminancia en ±2 píxeles y estima el
+pico subpíxel mediante parábolas por eje. Exige desplazamiento menor de un píxel y
+diferencia absoluta media RGB menor o igual a 20 sobre 255. Son comprobaciones de
+coincidencia de imágenes, no de precisión topográfica. El informe por tesela queda en
+`/tmp/chiclana-aerial-alignment.json`.
+
+`web/aerial/index.json` declara rejilla, margen, resoluciones, coordenadas de teselas,
+recuadro y dimensiones de la vista general, fecha de vuelo, fecha de consulta,
+servicio y SHA-256 de cada JPEG. `hi/` conserva los JPEG WMS de 1184 × 1184 sin
+recompresión (296 m de lado con margen de 20,5 m); `lo/` deriva 592 × 592 con Lanczos
+y JPEG calidad 82. `general.jpg` cubre la caja envolvente a aproximadamente 1 m/píxel,
+con dimensiones redondeadas hacia arriba y máximo de 2048 por lado.
+
+El juego todavía no carga estas teselas: sigue usando `aerial.jpg` y `aerial-2048.jpg`,
+con sus registros de procedencia. `verify-world` comprueba cobertura, inventario de
+archivos, SHA-256 y dimensiones JPEG.
+
+## 5. Procedencia y comprobación (siempre)
 
 ```fish
 node tools/export-provenance.mjs
@@ -172,7 +208,7 @@ Los casos de conversión de sentidos OSM se comprueban además con
 Las comprobaciones en CPU no acreditan el render en GPU ni el comportamiento en móvil:
 probar el juego en un navegador.
 
-## 5. Terreno
+## 6. Terreno
 
 `audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
 `export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias

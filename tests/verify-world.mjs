@@ -21,6 +21,55 @@ const manifest = read('web/world.json'),
   world = readWorld();
 assert.equal(manifest.version, 1);
 assert(validBounds(manifest.bounds), 'rectángulos válidos');
+// Teselas derivadas: cobertura exacta, dimensiones JPEG y bytes publicados.
+{
+  const aerial = read('web/aerial/index.json');
+  assert.equal(aerial.version, 1);
+  assert.equal(aerial.tile, 255);
+  assert.equal(aerial.margin, 20.5);
+  assert.deepEqual(aerial.levels, { hi: [1184, 0.25], lo: [592, 0.5] });
+  assert.equal(aerial.acquisition, '2022-07');
+  const expected = new Set();
+  for (const [x0, x1, z0, z1] of manifest.bounds)
+    for (let i = Math.floor(x0 / 255); i < Math.ceil(x1 / 255); i++)
+      for (let j = Math.floor(z0 / 255); j < Math.ceil(z1 / 255); j++) expected.add(`${i}_${j}`);
+  assert.equal(aerial.tiles.length, expected.size);
+  assert.deepEqual(new Set(aerial.tiles.map(([i, j]) => `${i}_${j}`)), expected);
+  const box = [
+    Math.min(...manifest.bounds.map((b) => b[0])),
+    Math.max(...manifest.bounds.map((b) => b[1])),
+    Math.min(...manifest.bounds.map((b) => b[2])),
+    Math.max(...manifest.bounds.map((b) => b[3])),
+  ];
+  assert.deepEqual(aerial.general.box, box);
+  const scale = Math.max(1, (box[1] - box[0]) / 2048, (box[3] - box[2]) / 2048);
+  assert.deepEqual(aerial.general.size, [
+    Math.ceil((box[1] - box[0]) / scale),
+    Math.ceil((box[3] - box[2]) / scale),
+  ]);
+  const files = { [aerial.general.file]: aerial.general.size };
+  for (const [i, j] of aerial.tiles)
+    for (const [level, [size]] of Object.entries(aerial.levels))
+      files[`${level}/${i}_${j}.jpg`] = [size, size];
+  assert.deepEqual(Object.keys(aerial.sha256).sort(), Object.keys(files).sort());
+  for (const [file, size] of Object.entries(files)) {
+    const bytes = fs.readFileSync(`web/aerial/${file}`);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), aerial.sha256[file]);
+    assert.equal(bytes.readUInt16BE(0), 0xffd8, 'JPEG');
+    let dimensions;
+    for (let offset = 2; offset < bytes.length;) {
+      assert.equal(bytes[offset++], 0xff);
+      while (bytes[offset] === 0xff) offset++;
+      const marker = bytes[offset++];
+      if ([0xc0, 0xc1, 0xc2].includes(marker)) {
+        dimensions = [bytes.readUInt16BE(offset + 5), bytes.readUInt16BE(offset + 3)];
+        break;
+      }
+      offset += bytes.readUInt16BE(offset);
+    }
+    assert.deepEqual(dimensions, size, file);
+  }
+}
 for (const [key, name] of Object.entries(manifest.files)) {
   assert(!name.includes('/') && name.endsWith('.json'), 'local layer filename');
   assert.equal(

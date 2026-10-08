@@ -91,6 +91,20 @@ const records = [
     transformation: 'Guarded edits of road attributes and vertices; base layers unchanged',
   },
 ];
+if (fs.existsSync(directory + '/aerial/index.json')) {
+  const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
+  const original = records.find((record) => record.files.includes('aerial.jpg'));
+  records.push({
+    ...original,
+    files: ['aerial/index.json', ...Object.keys(aerial.sha256).map((file) => 'aerial/' + file)],
+    date: aerial.consulted,
+    acquisitionDate: aerial.acquisition,
+    acquisitionDateEvidence:
+      'WMS OI.MosaicElement GetFeatureInfo at every tile centre; tools/aerial-tiles.py',
+    transformation:
+      '255 m tiles with 20.5 m margin: original WMS JPEG at 0.25 m/pixel; lo resampled with Lanczos, JPEG q82; general overview at approximately 1 m/pixel',
+  });
+}
 if (fs.existsSync(directory + '/terrain.json')) {
   const terrain = JSON.parse(fs.readFileSync(directory + '/terrain.json', 'utf8'));
   if (!terrain.attribution || !terrain.license || !terrain.licenseUrl)

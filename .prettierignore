@@ -2,6 +2,7 @@ node_modules/
 web/vendor/
 web/licenses/
 web/*.json
+web/aerial/index.json
 source-data/
 package-lock.json
 web/LICENSE
