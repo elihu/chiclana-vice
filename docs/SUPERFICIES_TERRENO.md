@@ -167,8 +167,10 @@ horizontales, con cota media de sus anclajes: no se implementan tableros inclina
 Cada polígono de agua calcula sus propios percentiles y limita su propia pendiente.
 Las cubetas están excluidas. `water.axis` continúa siendo un eje cartesiano común:
 no representa un eje hidráulico curvo ni resuelve meandros que regresen sobre ese eje.
-La lámina del río conserva exactamente las 2.173 muestras deterministas guardadas
-antes de la corrección en `source-data/auditoria-relieve/agua-antes.json`.
+La comprobación puntual de esta corrección conservó exactamente 2.173 muestras
+deterministas de la lámina del río. Para futuras optimizaciones sin cambio de diseño,
+`tools/bench-terrain-surfaces.mjs --compare` permite contrastar huellas temporales de
+agua y malla; esos resultados exactos no forman parte de los tests permanentes.
 
 El horneado consulta índices de vías, plataformas y agua. Fuera de celdas afectadas
 copia el MDT; dentro del cauce, índices de aristas por fila y orilla evitan recorrer
@@ -183,6 +185,5 @@ plataforma se justifican en `streets.js` como deduplicación visual.
 Fixtures: T, cadena, vías divididas, cresta sobre un puente, dos plataformas y pasos
 inferiores, corredor en L, retorno inválido, aguas independientes, cubeta,
 subdivisiones distintas y cachés de vehículos, intro y marcador. El verificador real
-impone ≤5 cm para las uniones, sin excepciones locales ni aumento de umbral, y compara
-las muestras de agua y los bytes de la malla. La rampa del arnés usa ahora el paso
+impone ≤5 cm para las uniones, sin excepciones locales ni aumento de umbral. La rampa del arnés usa ahora el paso
 fuente del piloto para que la subdivisión tenga un presupuesto representativo.

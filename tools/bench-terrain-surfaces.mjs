@@ -1,10 +1,25 @@
 // Medición CPU reproducible; ejecutar antes/después en la misma máquina y Node.
-// node tools/bench-terrain-surfaces.mjs [raíz] [informe.json]
+// node tools/bench-terrain-surfaces.mjs [raíz] [informe.json] [--compare referencia.json]
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { surfaceJunctions } from './surface-junctions.mjs';
-const root = path.resolve(process.argv[2] || '.');
+const args = process.argv.slice(2),
+  compareIndex = args.indexOf('--compare');
+let comparison = null;
+if (compareIndex >= 0) {
+  const reference = args[compareIndex + 1];
+  if (!reference || reference.startsWith('--'))
+    throw Error('--compare requiere un informe de referencia');
+  comparison = JSON.parse(fs.readFileSync(reference));
+  if (!comparison.fingerprints)
+    throw Error('Informe sin huellas: genera una referencia con esta versión de la herramienta');
+  args.splice(compareIndex, 2);
+}
+if (args.length > 2 || args.some((arg) => arg.startsWith('--')))
+  throw Error('Uso: [raíz] [informe.json] [--compare referencia.json]');
+const root = path.resolve(args[0] || '.');
 const load = (p) => import(pathToFileURL(path.join(root, p)).href);
 const { createTerrain } = await load('web/js/world/terrain.js');
 const modelPath = fs.existsSync(root + '/web/js/world/surface-model.js') ? 'world' : 'engine';
@@ -50,13 +65,55 @@ for (const [name, fn] of [
     checksum: sum,
   };
 }
+// Huellas para una comparación puntual de refactorización, nunca un test del diseño.
+const { pInside } = await load('web/js/core/math.js');
+const meshHash = createHash('sha256')
+  .update(new Uint8Array(model.meshTerrain.data.buffer))
+  .digest('hex');
+const waterHash = createHash('sha256');
+let waterSeed = 76,
+  waterSamples = 0;
+const waterRandom = () =>
+  (waterSeed = (Math.imul(waterSeed, 1664525) + 1013904223) >>> 0) / 4294967296;
+for (const area of city.areas.filter((a) => a.kind === 'water')) {
+  const minX = Math.min(...area.p.map((p) => p[0])),
+    minZ = Math.min(...area.p.map((p) => p[1])),
+    width = Math.max(...area.p.map((p) => p[0])) - minX,
+    depth = Math.max(...area.p.map((p) => p[1])) - minZ;
+  let count = 0;
+  // Límite de intentos para rechazar huellas degeneradas sin bloquear la herramienta.
+  for (let attempts = 0; count < 2173 && attempts < 1000000; attempts++) {
+    const x = minX + waterRandom() * width,
+      z = minZ + waterRandom() * depth;
+    if (!pInside(x, z, area.p)) continue;
+    waterHash.update(JSON.stringify([x, z, model.waterHeightAt(x, z, area)]) + '\n');
+    count++;
+    waterSamples++;
+  }
+  if (count !== 2173)
+    throw Error('Polígono de agua degenerado o demasiado estrecho para el muestreo de comparación');
+}
 const report = {
   node: process.version,
   creationMs: times,
   medianMs: [...times].sort((a, b) => a - b)[3],
   mesh: [model.meshTerrain.manifest.columns, model.meshTerrain.manifest.rows],
   queries,
+  fingerprints: {
+    mesh: meshHash,
+    water: { samples: waterSamples, sha256: waterHash.digest('hex') },
+  },
   junctions: surfaceJunctions(city, model),
 };
-if (process.argv[3]) fs.writeFileSync(process.argv[3], JSON.stringify(report, null, 2) + '\n');
+if (comparison) {
+  report.comparison = {
+    mesh: comparison.fingerprints.mesh === report.fingerprints.mesh,
+    water:
+      comparison.fingerprints.water.samples === report.fingerprints.water.samples &&
+      comparison.fingerprints.water.sha256 === report.fingerprints.water.sha256,
+  };
+}
+if (args[1]) fs.writeFileSync(args[1], JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
+
+if (comparison && (!report.comparison.mesh || !report.comparison.water)) process.exitCode = 1;

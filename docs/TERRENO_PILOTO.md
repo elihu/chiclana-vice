@@ -188,13 +188,27 @@ Evidencia persistente en `source-data/auditoria-relieve/`:
 | Escena con relieve en Chrome SwiftShader                | 1.465.517 triángulos, 112 llamadas | 1.465.563 triángulos, 112 llamadas |
 | Huella plana CPU                                        | `3afabb84…`                        | idéntica                           |
 
-`bench-original.txt` conserva sin editar el script temporal de la auditoría recibida.
-Para ejecutarlo en la base, copiarlo a un `.mjs` y lanzar Node desde su worktree.
+Solo se conservan `antes.json` y `despues.json`, con las mediciones históricas de
+esta revisión. La tabla recoge la evidencia puntual de Chrome, modo plano y la
+medición intermedia; los informes auxiliares y el script temporal se retiraron.
 `tools/bench-terrain-surfaces.mjs [raíz] [informe.json]` fija la semilla de 100.000
-consultas y mide siete construcciones tras una de calentamiento. Se usa el mismo
-script y máquina para `antes.json` y `despues.json`; los tiempos son orientativos de
-CPU y varían entre tandas. `antes-optimizacion.json` conserva la medición intermedia, antes de los índices y de ajustar las uniones
-inferiores al gálibo más restrictivo. No son medidas de FPS, GPU ni móvil.
+consultas y mide siete construcciones tras una de calentamiento. Se usó el mismo
+script y máquina para ambos informes; los tiempos son orientativos de CPU y varían
+entre tandas. No son medidas de FPS, GPU ni móvil.
+
+Para una refactorización que deba conservar el resultado exacto, la herramienta
+calcula huellas de la malla y de 2.173 puntos deterministas por polígono de agua,
+incluidas cubetas. `--compare` contrasta esas huellas y termina con código 1 si
+cambian. Es una comprobación puntual y voluntaria: no forma parte de `npm run check`.
+No debe usarse para exigir igualdad cuando se añaden plataformas o se ajusta el diseño.
+Los informes históricos anteriores a esta opción no incluyen huellas; generar una
+referencia nueva antes de optimizar, fuera del conjunto de evidencia versionado:
+
+```sh
+node tools/bench-terrain-surfaces.mjs . /tmp/superficies-antes.json
+# Después de la refactorización, en el mismo equipo y con la misma versión de Node:
+node tools/bench-terrain-surfaces.mjs . /tmp/superficies-despues.json --compare /tmp/superficies-antes.json
+```
 
 El auditor nuevo cuenta 611 pares de extremos y 411 uniones en T. El script recibido
 contaba 409 T porque su mapa guardaba una sola vía interior por coordenada y usaba
@@ -203,22 +217,23 @@ las cotas consultadas en cada coordenada para todas las apariciones. No se omite
 ninguna unión del mismo nivel ni se eleva el umbral de 5 cm.
 
 `tests/verify-surface-junctions.mjs` carga mundo corregido y terreno real como el
-auditor, impone el máximo de 5 cm y compara exactamente 2.173 muestras de río y los
-bytes de malla antes/después de la optimización. La auditoría de pendientes sigue
+auditor e impone el máximo de 5 cm como invariante de continuidad. La igualdad de
+las 2.173 muestras del río y de los bytes de malla fue evidencia puntual de esta
+optimización; no se fija como contrato permanente del diseño. La auditoría de pendientes sigue
 disponible con `node tools/audit-terrain-surfaces.mjs web RUTA_INFORME`. El informe
 final registra 47 muestras con pendiente >20%, frente a las 43 de la composición
 anterior; es un indicador de revisión, no un criterio de aceptación ni un límite
 físico.
 
 Para la comparación plana se apartaron temporalmente `terrain.json` y `terrain.bin`,
-se ejecutó `scene-fingerprint.mjs` y se restauraron. `plano-antes.json` y
-`plano-despues.json` coinciden en geometría, materiales, transformaciones, recursos,
+se ejecutó `scene-fingerprint.mjs` y se restauraron. Las huellas puntuales
+coincidieron en geometría, materiales, transformaciones, recursos,
 rutas y traza de 600 pasos. Permanecen 1.421 mallas y 917.276 triángulos con instancias.
 
 Chrome sin interfaz pasa `tools/browser-smoke.mjs URL google-chrome-stable --surfaces`
 y `--surfaces --low`: arranque sin errores, niveles superior/inferior, techo, cámaras
 finitas, cotas de vehículo y perfiles peatonales sin bloqueo dentro del límite jugable.
-Los informes son `chrome-normal.json` y `chrome-ligero.json`. El incremento de 46
+La tabla conserva el resultado de estas comprobaciones. El incremento de 46
 triángulos corresponde a los corredores siguiendo la polilínea y los cortes explícitos
 en límites de plataformas. Las dos pasarelas recortadas por el borde siguen teniendo
 muestras fuera del límite, que no se convierte en un pendiente de ampliación.
