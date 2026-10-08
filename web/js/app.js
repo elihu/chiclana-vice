@@ -1,4 +1,3 @@
-import { boundsBox } from './world/bounds.js';
 import * as THREE from '../vendor/three.module.min.js';
 import { $, sleepFrame, ui } from './core/dom.js';
 import { SPAWN_POSITION } from '../game-data.js';
@@ -42,6 +41,7 @@ import { spawnTraffic, updatePedestrians } from './game/traffic.js';
 import { terrainGeometry, terrainExterior } from './world/terrain-mesh.js';
 import { prepareTerrainPlacement } from './world/terrain-placement.js';
 import { surfaceHeightAt, placeVehicle, placeVehicleIfChanged } from './engine/terrain-sampling.js';
+import { updateAerialTiles } from './world/aerial-tiles.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -50,6 +50,7 @@ async function init() {
     res,
     tex,
     aerial,
+    aerialIndex,
     heightSamples,
     profiles,
     streetObjects,
@@ -83,7 +84,8 @@ async function init() {
     world.groundTexture.colorSpace = THREE.SRGBColorSpace;
     world.groundTexture.anisotropy = 4;
   } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
-  world.aerialBox = boundsBox();
+  world.aerialIndex = aerialIndex;
+  world.aerialBox = aerialIndex.general.box;
   loadProgress('Preparando el mundo 3D…', 25);
   setupRenderer();
   buildRoadGraph();
@@ -111,6 +113,7 @@ async function init() {
   cars.push(car);
   Object.assign(player, spawn);
   player.car = car;
+  updateAerialTiles(player.x, player.z);
   actors.character = createPerson('#d7d5b0');
   actors.character.mesh.visible = false;
   spawnTraffic();
