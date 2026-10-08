@@ -1,8 +1,8 @@
 # Plan: ortofoto por teselas y ampliación del mapa
 
-Fecha: 8/10/2026. Base: `main` en `4ad6bc9` (versión 1.2.0, relieve validado y publicado).
-Desarrolla [ESTUDIO-AMPLIACION.md](ESTUDIO-AMPLIACION.md). Sustituye a la versión del
-7/10/2026, que se redactó contra el relieve aún en rama (`4f8ec99`).
+Fecha: 8/10/2026. Desarrolla [ESTUDIO-AMPLIACION.md](ESTUDIO-AMPLIACION.md). Las
+referencias de línea de las fases pendientes son de `main` en `0dea8f5`, con la fase 0 ya
+integrada.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.md`,
 `tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md) y
@@ -10,12 +10,19 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
 
 ## Cómo ejecutar este plan
 
-- **Una fase = una rama y un worktree propios** (`refactor/…`, `feat/…`, `chore/…`), con
-  un commit por paso. Sin push, merge ni rebase: la integración la pide el usuario.
+- **Una fase = una rama** en el repositorio principal, como indican `AGENTS.md` y
+  [GIT_WORKFLOW.md](GIT_WORKFLOW.md): desde `main` limpio, `git switch -c` con el nombre
+  de la fase. Sin worktrees ni `stash`; si el árbol no está limpio u otra rama está en
+  curso, preguntar. Un commit por paso. Sin push, merge ni rebase: la integración la pide
+  el usuario.
+- **Refactors**: antes de cambiar código, generar referencias fuera del repositorio con
+  `node tools/scene-fingerprint.mjs --out /tmp/…`, con relieve y sin él (apartando
+  temporalmente `web/terrain.json` y `web/terrain.bin` y restaurándolos). Al terminar,
+  `--compare` debe dar huella idéntica en ambos casos.
 - Cada paso indica archivos, cambios, verificación y commit. Si una verificación falla y
   no se puede resolver dentro del paso, parar y entregar el diagnóstico.
 - `npm run check` pasa en el último commit de cada fase. Las referencias de línea son
-  de `4ad6bc9`; contrastarlas con el árbol al empezar.
+  orientativas; contrastarlas con el árbol al empezar.
 - Los pasos marcados **«revisión del usuario»** no se cierran sin su prueba en navegador.
 - No se afirma rendimiento de GPU ni de móvil sin medirlo en un dispositivo.
 
@@ -54,8 +61,7 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
   10 m, y la malla construida mide 5 m (`meshSubdivisions: 2`). Ambos son múltiplos
   desde el origen, así que los bordes de tesela de 255 m (51 celdas de malla) caen sobre
   vértices. El manifiesto declara su esquina mínima en `bounds` y debe **contener** los
-  límites del mundo, no igualarlos. Hoy el paso es `size/(n-1)` (9,953 m), está centrado
-  y no encaja con D1.
+  límites del mundo, no igualarlos. Implementada en la fase 0.
 - **D11. Anclajes estables al reconstruir** (nueva). Las áreas llevan su ID de OSM y los
   anclajes de diseño de áreas (`areaAnchor` de plataformas y cubetas) pasan a `areaId`.
   Los anclajes por vértice e índice siguen como comprobación, no como identidad. Se hace
@@ -64,89 +70,72 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.
 Memoria de GPU estimada: unos 90–110 MB en escritorio (9–12 teselas y la vista general)
 y unos 25 MB en móvil, frente a unos 67 y 13 MB hoy.
 
-## Fase 0: relieve preparado para límites no centrados
+## Fase 0: relieve preparado para límites no centrados (completada)
 
-Rama `refactor/relieve-rejilla`. El relieve publicado supone un mundo rectangular
-centrado en el origen y con un paso derivado del tamaño. Esta fase lo independiza de
-eso **antes** de tocar límites u ortofoto, para que los cambios de las fases siguientes
-no se mezclen con el relieve.
+Integrada el 8/10/2026 y revisada por el usuario. Estado resultante, del que parten las
+fases siguientes:
 
-### Paso 0.1: esquina mínima explícita, sin cambiar bytes
-
-- **Archivos**: `web/js/world/terrain.js` (`createTerrain` :14-46, `gridHeightAt` :61),
-  `web/js/engine/terrain-drape.js` (`terrainEdge` :5, `drapeTriangles` :58),
-  `web/js/world/terrain-mesh.js` (:19-21, `terrainExterior` :41-66),
-  `web/js/world/terrain-placement.js` (:29-39), `web/js/world/surface-model.js` (agua
-  :430-431, malla :837-851), `tools/export-terrain.py` (:33, :43),
-  `tools/browser-smoke.mjs` (:115), `tests/verify-terrain.mjs` y
-  `tests/verify-terrain-runtime.mjs`.
-- Funciones de rejilla en `world/terrain.js` que lean `bounds[0]` y `bounds[2]` como
-  esquina, por ejemplo `gridX(m, i)`, `gridZ(m, j)` y `gridCell(m, x, z)`. Sustituyen a
-  cada `-m.size[k] / 2` y `+ m.size[k] / 2`. Ningún módulo calcula ya la esquina por su cuenta.
-- `createTerrain` sigue exigiendo hoy `bounds` centrados: la validación se relaja en el
-  paso 0.2.
-- **Verificación**: con los datos actuales, todo idéntico.
-  - Malla: `node tools/bench-terrain-surfaces.mjs . /tmp/r-antes.json` antes y
-    `--compare /tmp/r-antes.json` después.
-  - Escena: `node tools/scene-fingerprint.mjs --compare` con la huella de `main`, tanto
-    con relieve como sin `web/terrain.*`.
-  - `npm run check`.
-- **Commit**: `refactor(relieve): leer la esquina de la rejilla del manifiesto`.
-
-### Paso 0.2: rejilla anclada al origen (D10)
-
-- **Archivos**: `tools/export-terrain.py`, `web/js/world/terrain.js`,
-  `web/js/world/surface-model.js` (`meshManifest` :837-847), `web/terrain.json`,
-  `web/terrain.bin`, `source-data/terrain-baseline.json`, tests de terreno,
-  `docs/TERRENO_PILOTO.md` y `docs/DATOS.md`.
-- **Exportador**: paso exacto de 10 m en múltiplos desde el origen. Cubre la caja de
-  `world.size` (todavía un solo rectángulo) redondeada hacia fuera a múltiplos de 10 m,
-  y escribe esa caja en `bounds`. El recorte actual tiene 20 m de margen y alcanza; si no,
-  se para, sin extrapolar.
-- **`createTerrain`**: valida que los `bounds` del terreno contienen la caja del mundo,
-  que `step` es exactamente `(bounds ancho) / (columns - 1)` y que la esquina es múltiplo
-  del paso. Sigue rechazando un manifiesto que no cubra el mundo.
-- **Malla construida**: paso = paso de datos / `meshSubdivisions`, anclado igual.
-- **Cambio deliberado de datos**: las cotas se remuestrean en otros puntos, así que
-  `terrain.bin` cambia. Se reexporta desde el original con
-  `export-terrain.py ... --out web`; la auditoría ya está validada. Registrar la huella
-  nueva con `export-terrain-metadata.mjs` y `export-provenance.mjs`.
-  - El original está en `/tmp/chiclana-mdt-original.bin` (SHA-256 `71572c05…`). Si no
-    está, descargarlo con los comandos de `TERRENO_PILOTO.md` y comprobar el SHA-256
-    antes de nada. Si no coincide, parar.
-- **Verificación**:
-  - `npm run check`, incluido el límite de 5 cm en las uniones.
-  - `browser-smoke.mjs … --surfaces` y `--surfaces --low`.
-  - Comparar `audit-terrain-surfaces.mjs` antes y después: pendientes >20 %, puentes y
-    mayor desnivel de base. Anotar las diferencias en `TERRENO_PILOTO.md`.
-- **Revisión del usuario**: relieve general, Iro, plataformas y Plaza Mayor, por si se
-  nota el remuestreo.
-- **Commit**: `feat(relieve): anclar la rejilla del terreno al origen`.
+- La rejilla del terreno se lee siempre desde su manifiesto: `gridX`, `gridZ`,
+  `gridColumn` y `gridRow` (`web/js/core/math.js`) usan la esquina `bounds[0]`/`bounds[2]`.
+  Ningún módulo supone una rejilla centrada.
+- `tools/export-terrain.py` escribe una rejilla de 10 m exactos anclada al origen que
+  cubre el mundo redondeado hacia fuera (hoy `bounds: [-680, 680, -510, 510]`, 137 × 103).
+  La malla construida mide 5 m. `createTerrain` exige anclaje y cobertura del mundo.
+- La transición hacia una plataforma mide siempre `smoothingRadius` y continúa por las
+  vías vecinas. `tests/verify-surface-junctions.mjs` impone uniones sin saltos (≤ 5 cm)
+  y perfiles sin escalones (≤ 0,3 m en 1 m) con los datos reales.
+- El faldón exterior (`terrainExterior`) sigue el borde de la rejilla del terreno, no el
+  del mundo.
 
 ## Fase 1: límites con rectángulos
 
-Rama `refactor/limites-rectangulos`.
+Rama `refactor/limites-rectangulos`. Es un refactor: el juego, la escena y los datos
+quedan idénticos.
 
 ### Paso 1.1: `bounds` sin cambiar el área
 
-- **Archivos y usos actuales** de `worldW`, `worldH` y `size`:
-  - `web/js/app.js:85`, `web/js/core/state.js:76-77`.
-  - `web/js/world/spatial.js:91` (colisión con el borde).
-  - `web/js/ui/hud.js:69` (aviso de salida).
-  - `web/js/ui/map.js:19-79` (mapa y minimapa).
-  - `web/js/world/terrain-mesh.js:7` (plano del modo sin relieve).
-  - `web/js/world/furniture.js:34-35`, `web/js/world/vegetation.js:66-67` y `:175-176`.
-  - `web/js/world/buildings.js:93` (UV de tejados: pasan a depender del recuadro de la
-    ortofoto, no del mundo; ver D4).
-  - `web/js/world/terrain.js:27` (contención del paso 0.2), `tools/prepare-world.mjs:39`.
-  - Tests que fijan `worldW` y `worldH` (`verify-surfaces.mjs:163`, `verify-terrain.mjs:133`).
-- Nuevo `world/bounds.js` con `insideBounds(x, z, pad)`, `boundsBox()` (caja envolvente)
-  y `nearEdge(x, z, d)`. `world.json` lleva un solo rectángulo igual al actual; el
-  cargador acepta también el `size` antiguo para no romper copias locales.
-- `terrainExterior` (`terrain-mesh.js:41-66`) recorre el contorno de la unión de
-  rectángulos. Con un rectángulo, el resultado es idéntico.
-- **Verificación**: huella de escena idéntica a la de `main`, con y sin relieve (es un
-  refactor); `npm run check`.
+- **`world.json`** describe los límites con `bounds`, una lista de rectángulos
+  `[x0, x1, z0, z1]`, con un solo rectángulo igual al actual (±671,835 × ±500,94). Se
+  genera con `tools/prepare-world.mjs` (:39), no a mano, seguido de
+  `node tools/export-provenance.mjs`. El cargador acepta también el `size` antiguo para
+  no romper copias locales.
+- **Nuevo `web/js/world/bounds.js`**, en el importmap y los `modulepreload` de
+  `web/index.html`, con `insideBounds(x, z, pad)`, `boundsBox()` (caja envolvente) y
+  `nearEdge(x, z, d)`. Sustituye cada uso de `worldW`, `worldH` y del tamaño del mundo:
+  - `web/js/app.js:85` y `web/js/core/state.js:76-77`;
+  - `web/js/world/spatial.js:91` (colisión con el borde);
+  - `web/js/ui/hud.js:69` (aviso de salida);
+  - `web/js/ui/map.js:19-79` (mapa y minimapa, dibujados sobre la caja envolvente);
+  - `web/js/world/furniture.js:34-35` y `web/js/world/vegetation.js:66-67` y `:175-176`;
+  - `web/js/world/terrain-mesh.js:8` (plano del modo sin relieve).
+- **Coordenadas de textura de la ortofoto**: las de los tejados
+  (`web/js/world/buildings.js:93`) y las del suelo (`web/js/world/terrain-mesh.js:21-22`)
+  dependen del recuadro que cubre la imagen, no del mundo. Se expresan con un recuadro
+  propio de la ortofoto (por ejemplo `aerialBox`), que hoy coincide con la caja envolvente.
+- **Terreno**: `web/js/world/terrain.js:26-31` exige que el terreno cubra la caja
+  envolvente y compara `manifest.size` con el tamaño de esa caja. `tools/export-terrain.py`
+  toma la caja de `bounds` en lugar de `size`. Reexportar a `/tmp` desde el original
+  (`/tmp/chiclana-mdt-original.bin`, SHA-256 `71572c05…`) debe dar exactamente los bytes
+  de `web/terrain.bin` y `web/terrain.json`; si el original no está, informar sin
+  descargarlo. `web/terrain.*` no se regenera.
+- **Sin tocar**: `terrainExterior` (`web/js/world/terrain-mesh.js:41-64`) sigue en el
+  borde de la rejilla del terreno; seguir el contorno de los rectángulos es parte del
+  paso 3.2.
+- **Tests y herramientas** que usan el tamaño del mundo: `tests/verify-world.mjs:103`,
+  `tests/verify-geography.mjs:9`, `tests/verify-surfaces.mjs:163`,
+  `tests/verify-terrain.mjs:133`, `tests/verify-terrain-runtime.mjs:11` y `:27`, y
+  `tools/browser-smoke.mjs:116`.
+- **Tests nuevos de `bounds.js`** con dos rectángulos, aunque los datos solo tengan uno:
+  punto dentro de cada uno, fuera, en el hueco entre ambos, con margen y caja envolvente.
+- **Verificación**:
+  - huella de escena idéntica con relieve y sin él (ver «Refactors»);
+  - `npm run check`;
+  - `tools/browser-smoke.mjs URL google-chrome-stable --surfaces` y `--surfaces --low`
+    sirviendo `web/` en un puerto libre, sin errores;
+  - ningún uso de `worldW`, `worldH` ni `city.size` fuera de `bounds.js` y del cargador,
+    comprobado con `grep` e incluido en el informe.
+- **Documentación**: `docs/DESARROLLO.md` (mundo y límites) y `docs/DATOS.md` (formato de
+  `world.json`). `docs/ESTADO.md` no se edita en la rama.
 - **Commit**: `refactor(juego): describir los límites del mundo con rectángulos`.
 
 ## Fase 2: herramientas de teselas
@@ -201,8 +190,11 @@ Rama `feat/teselas-ortofoto` (fases 2 y 3).
 - **Suelo**: un trozo de malla por tesela D9, cortado de `world.surfaces.meshTerrain`.
   Gracias a D10, sus vértices de borde son los mismos que los de la tesela vecina. Cada
   trozo tiene su material, que empieza con la vista general. Sin relieve, un plano por
-  tesela. El faldón exterior sigue el contorno de `bounds`. Pavimentos, bases y consultas
-  no cambian: siguen leyendo la malla completa en memoria.
+  tesela. Pavimentos, bases y consultas no cambian: siguen leyendo la malla completa en
+  memoria.
+- **Faldón exterior**: `terrainExterior` deja el borde de la rejilla del terreno y sigue
+  el contorno de la unión de rectángulos de `bounds`, a la cota del suelo en ese contorno.
+  Los trozos de malla fuera de todo rectángulo no se construyen (D9).
 - **Tejados**: un material por tesela, compartido por los grupos de sus nueve celdas. El
   grupo aparte de D5 usa siempre la vista general.
 - `update` llama a `updateAerialTiles` en cada frame; es barato si no cambia de tesela.
@@ -327,8 +319,6 @@ El grafo de rutas (unos pocos KB) seguiría cargándose entero.
 
 ## Riesgos
 
-- **Remuestreo del relieve (paso 0.2)**: pequeñas diferencias de cota respecto a lo
-  validado. Se mitiga con la auditoría comparada y la revisión del usuario.
 - **Salto de nitidez** al conducir rápido: precarga en la dirección de marcha (D6).
 - **Costuras** entre teselas de ortofoto: margen de 20 m, filtrado y
   `ClampToEdgeWrapping`. Las grietas entre trozos de malla las evita D10, con un test.
@@ -338,7 +328,7 @@ El grafo de rutas (unos pocos KB) seguiría cargándose entero.
   validadores que fallan de forma explícita.
 - **Cuestas de Santa Ana**: zócalos altos (`baseY` máximo) y pendientes mayores. Revisar
   vías, aceras, edificios y cámara con las comprobaciones del relieve.
-- **Huella**: las fases 0.1 y 1 dejan la escena idéntica; 0.2, 3 y 4 la cambian a
-  propósito y lo documentan.
+- **Huella**: la fase 1 deja la escena idéntica; las fases 3 y 4 la cambian a propósito
+  y lo documentan.
 
 Lo que no acreditan los tests (DOM y WebGL simulados): GPU, memoria real, fluidez y móvil.
