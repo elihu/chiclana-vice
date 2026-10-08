@@ -1,6 +1,6 @@
 ---
 name: integrar-rama
-description: Cierra la rama de una tarea y, solo si el usuario lo pide expresamente, la integra en main con merge --no-ff. Úsala cuando el usuario pida cerrar o integrar una rama; para revisar la rama de otro agente, usa revisar-rama; no para trabajo en curso.
+description: Cierra la rama de una tarea y, solo si el usuario lo pide expresamente, la integra en main con merge --no-ff. Úsala cuando el usuario pida cerrar, revisar o integrar una rama; no para trabajo en curso.
 ---
 
 # Cerrar e integrar una rama
@@ -22,8 +22,6 @@ Sigue `docs/GIT_WORKFLOW.md`. Resumen verificable:
 Excepción: una rama `docs/` con un plan que va a ejecutar otro agente se integra al
 terminarla, sin esperar petición (`docs/GIT_WORKFLOW.md`, «Planes para otro agente»).
 
-Si la rama es de otro agente, revísala antes con `revisar-rama`.
-
 En el repositorio principal (si la rama tiene worktree, desde el principal, no desde él):
 
 ```fish
@@ -34,15 +32,6 @@ npm run check
 
 - Si hay conflictos, resuélvelos, repite `npm run check` y termina el merge; para
   abandonarlo, `git merge --abort`.
-- Si el merge cambia algo publicado de `web/` (`git diff --stat HEAD^1 HEAD -- web/`),
-  sube la versión de los recursos a `AAAA-MM-DD-tema` en un commit
-  `chore: subir la versión de los recursos`:
-
-  ```fish
-  sed -i 's/?v=[^"]*"/?v=AAAA-MM-DD-tema"/g' web/index.html
-  npm run check
-  ```
-
 - Actualiza `docs/ESTADO.md` si la rama cierra o añade pendientes, en un commit
   `docs: actualizar estado tras integrar RAMA`.
 - Tras integrar y comprobar, borra la rama con `git branch -d RAMA` y, si tenía worktree,

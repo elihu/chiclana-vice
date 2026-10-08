@@ -7,8 +7,8 @@ documento; los demás enlazan a él.
 
 - [Desarrollo, estructura y convenciones](DESARROLLO.md): ejecutar, comprobar, modo ligero,
   herramientas de medición.
-- [Flujo de Git](GIT_WORKFLOW.md): ramas, varios agentes, planes para otro agente,
-  integración y versión de los recursos, commits, etiquetas e historial.
+- [Flujo de Git](GIT_WORKFLOW.md): ramas, varios agentes, revisión, planes para otro
+  agente, integración, commits, etiquetas e historial.
 - [Publicación y CI](PUBLICACION.md): GitHub Actions, Pages y ajustes del repositorio.
 - [Reproducir los datos](DATOS.md): conversores y orden de los pasos.
 

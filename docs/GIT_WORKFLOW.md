@@ -89,14 +89,8 @@ git merge --no-ff feat/tema -m 'merge: integrar feat/tema'
 npm run check
 ```
 
-- Antes de integrar una rama ajena, revisarla de forma independiente (habilidad
-  `revisar-rama`): el informe del autor no basta.
-- Si la rama cambia algo de `web/` que se publica (código, estilos o datos), subir en
-  `main` la versión de los recursos `?v=` (ver
-  [DESARROLLO.md](DESARROLLO.md#módulos-del-juego)) en un commit
-  `chore: subir la versión de los recursos` tras el merge. Formato `AAAA-MM-DD-tema`,
-  por ejemplo `2026-10-08-limites-rectangulos`. Cada push a `main` despliega: así nunca
-  se mezclan en la caché del navegador módulos o datos viejos y nuevos.
+- Antes de integrar una rama ajena, revisarla de forma independiente (ver
+  [Revisar una rama ajena](#revisar-una-rama-ajena)).
 - Con varias ramas en paralelo, integrar de una en una y repetir `npm run check` tras cada
   merge. Si hay conflictos, resolverlos, comprobar y terminar el merge; para abandonarlo,
   `git merge --abort`.
@@ -104,8 +98,21 @@ npm run check
 - Para cambios grandes, conviene subir antes la rama (`git push -u origin feat/tema`) para
   que la CI la compruebe también con la versión mínima de Node.
 - Publicar es `git push origin main` y requiere petición explícita: dispara el despliegue.
+  Si desde el último push cambió algo de `web/`, subir antes la versión de los recursos
+  `?v=` (ver [DESARROLLO.md](DESARROLLO.md#módulos-del-juego)): Pages deja diez minutos
+  en caché cada archivo y, sin una etiqueta nueva, un navegador podría mezclar módulos o
+  datos viejos y nuevos. Al sacar versión ya se hace en `chore: preparar la versión`.
 - Tras integrar, borrar la rama con `git branch -d feat/tema`; solo borra ramas ya
   integradas, así que no se pierde nada.
+
+## Revisar una rama ajena
+
+El informe del autor no basta. Se extraen `main` (el commit del que partió la rama) y la
+rama con `git archive` a copias fuera del repositorio, con `node_modules` enlazado, y se
+comprueba con cifras: `npm run check`, huella de escena con relieve y sin él si no debe
+cambiar la escena, datos regenerados byte a byte, `browser-smoke.mjs` con `--surfaces` y
+`--surfaces --low` en un puerto libre, y scripts propios para lo que los tests no cubren.
+Los fallos se informan con su escenario concreto; no se corrigen sin petición.
 
 ## Planes para otro agente
 

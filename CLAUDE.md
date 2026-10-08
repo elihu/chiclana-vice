@@ -6,5 +6,5 @@
   específico de Claude Code. No dupliques reglas aquí.
 - Permisos compartidos en `.claude/settings.json`. Las preferencias personales van en
   `.claude/settings.local.json` o `CLAUDE.local.md`, ambos ignorados por Git.
-- Habilidades del proyecto: `/revisar-rama` y `/integrar-rama` (en `.agents/skills/`,
-  enlazadas desde `.claude/skills/`).
+- Habilidad del proyecto: `/integrar-rama` (en `.agents/skills/`, enlazada desde
+  `.claude/skills/`).

@@ -81,7 +81,5 @@ Nunca:
 - Suele haber dos agentes a la vez. Mientras otro tiene una rama en curso en el
   repositorio principal, solo lees (`git show`, `git archive`): no cambias de rama ni
   escribes.
-- Al integrar algo que cambia `web/`, sube la versión de los recursos `?v=`
-  (`docs/GIT_WORKFLOW.md`, «Integrar»).
 - No edites `docs/ESTADO.md` desde una rama salvo que tu tarea cierre o añada un
   pendiente; quien integra en `main` lo actualiza.
