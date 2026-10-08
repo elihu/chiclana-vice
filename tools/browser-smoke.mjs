@@ -109,10 +109,11 @@ if (process.argv.includes('--surfaces') && state.game) {
     expression: `(()=>{
     const g=window.__cityGame,m=g.surfaceModel;if(!m)return [];
     return g.city.roads.filter(r=>r.bridge&&['pedestrian','footway','path'].includes(r.type)).map(r=>{
+      // La colisión usa los límites jugables, no el margen de la rejilla MDT.
       const list=m.profiles.get(r.id),actor={surfaceY:list[0].y0};let wrong=0,blocked=0,count=0,outside=0;
       for(const s of list)for(const t of [0,.25,.5,.75,1]){
         const x=s.a[0]+s.dx*t,z=s.a[1]+s.dz*t,y=m.actorHeightAt(actor,x,z);
-        if(x<g.terrain.manifest.bounds[0]+5||x>g.terrain.manifest.bounds[1]-5||z<g.terrain.manifest.bounds[2]+5||z>g.terrain.manifest.bounds[3]-5){outside++;continue;}
+        if(Math.abs(x)>g.city.size[0]/2-5||Math.abs(z)>g.city.size[1]/2-5){outside++;continue;}
         if(Math.abs(y-(s.y0+(s.y1-s.y0)*t))>.1)wrong++;
         if(g.blocked(x,z,.28,y))blocked++;actor.surfaceY=y;count++;
       }return {road:r.id,count,wrong,blocked,outside};

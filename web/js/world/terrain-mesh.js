@@ -17,7 +17,10 @@ export function terrainGeometry(terrain) {
   for (let j = 0; j < m.rows; j++)
     for (let i = 0; i < m.columns; i++) {
       positions.push(gridX(m, i), terrain.data[j * m.columns + i], gridZ(m, j));
-      uv.push(i / (m.columns - 1), 1 - j / (m.rows - 1));
+      uv.push(
+        (gridX(m, i) + m.size[0] / 2) / m.size[0],
+        1 - (gridZ(m, j) + m.size[1] / 2) / m.size[1],
+      );
       if (i + 1 < m.columns && j + 1 < m.rows) {
         const a = j * m.columns + i,
           b = a + 1,

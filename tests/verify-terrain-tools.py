@@ -38,6 +38,15 @@ class TerrainTools(unittest.TestCase):
             audit.write_text(json.dumps({"sourceSha256": checksum, "verticalReference": "sintética", "sourceUrl": "fixture", "accessDate": "2000-01-01", "acquisitionDate": "sintética"}))
             for name in ["a", "b"]:
                 subprocess.run([sys.executable, str(ROOT / "tools/export-terrain.py"), str(original), "--audit", str(audit), "--out", str(root / name)], cwd=ROOT, check=True, capture_output=True)
+            manifest = json.loads((root / "a" / "terrain.json").read_text())
+            self.assertEqual(manifest["step"], [10, 10])
+            bounds = manifest["bounds"]
+            self.assertTrue(all(v % 10 == 0 for v in bounds))
+            width, height = manifest["size"]
+            self.assertLessEqual(bounds[0], -width / 2)
+            self.assertGreaterEqual(bounds[1], width / 2)
+            self.assertLessEqual(bounds[2], -height / 2)
+            self.assertGreaterEqual(bounds[3], height / 2)
             for name in ["terrain.json", "terrain.bin"]:
                 self.assertEqual((root / "a" / name).read_bytes(), (root / "b" / name).read_bytes())
 

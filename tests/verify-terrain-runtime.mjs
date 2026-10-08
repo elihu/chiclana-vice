@@ -8,8 +8,9 @@ import { world, actors, camTarget, session } from '../web/js/core/state.js';
 
 const city = JSON.parse(fs.readFileSync('web/world.json', 'utf8'));
 // Rampa sintética al paso del piloto: el presupuesto de malla depende del paso fuente.
-const columns = 136,
-  rows = 102,
+const half = city.size.map((v) => Math.ceil(v / 2 / 10) * 10);
+const columns = half[0] / 5 + 1,
+  rows = half[1] / 5 + 1,
   buffer = new ArrayBuffer(columns * rows * 2),
   dv = new DataView(buffer);
 for (let j = 0; j < rows; j++)
@@ -21,12 +22,12 @@ for (let j = 0; j < rows; j++)
     );
 const manifest = {
   version: 1,
-  bounds: [-city.size[0] / 2, city.size[0] / 2, -city.size[1] / 2, city.size[1] / 2],
+  bounds: [-half[0], half[0], -half[1], half[1]],
   origin: city.origin,
   size: city.size,
   columns,
   rows,
-  step: [city.size[0] / (columns - 1), city.size[1] / (rows - 1)],
+  step: [10, 10],
   encoding: 'int16-le',
   scale: 0.1,
   rowOrder: 'north-to-south',

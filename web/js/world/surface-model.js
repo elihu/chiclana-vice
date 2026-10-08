@@ -839,12 +839,10 @@ export function createSurfaceModel(city, terrain, design) {
     sub = cfg.meshSubdivisions;
   const meshManifest = {
     ...original,
-    columns: Math.ceil(original.size[0] / (original.step[0] / sub)) + 1,
-    rows: Math.ceil(original.size[1] / (original.step[1] / sub)) + 1,
+    columns: (original.columns - 1) * sub + 1,
+    rows: (original.rows - 1) * sub + 1,
+    step: original.step.map((v) => v / sub),
   };
-  meshManifest.step = original.size.map(
-    (v, i) => v / ((i === 0 ? meshManifest.columns : meshManifest.rows) - 1),
-  );
   const meshData = new Float32Array(meshManifest.columns * meshManifest.rows);
   for (let j = 0; j < meshManifest.rows; j++)
     for (let i = 0; i < meshManifest.columns; i++) {
