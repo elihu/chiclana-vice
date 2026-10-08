@@ -42,13 +42,31 @@ class TerrainTools(unittest.TestCase):
             self.assertEqual(manifest["step"], [10, 10])
             bounds = manifest["bounds"]
             self.assertTrue(all(v % 10 == 0 for v in bounds))
-            width, height = manifest["size"]
-            self.assertLessEqual(bounds[0], -width / 2)
-            self.assertGreaterEqual(bounds[1], width / 2)
-            self.assertLessEqual(bounds[2], -height / 2)
-            self.assertGreaterEqual(bounds[3], height / 2)
+            rectangles = json.loads((ROOT / "web/world.json").read_text())["bounds"]
+            for x0, x1, z0, z1 in rectangles:
+                self.assertLessEqual(bounds[0], x0)
+                self.assertGreaterEqual(bounds[1], x1)
+                self.assertLessEqual(bounds[2], z0)
+                self.assertGreaterEqual(bounds[3], z1)
             for name in ["terrain.json", "terrain.bin"]:
                 self.assertEqual((root / "a" / name).read_bytes(), (root / "b" / name).read_bytes())
+
+    def test_export_covers_shifted_rectangles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "web").mkdir()
+            rectangles = [[13, 23, -17, -7], [47, 61, 21, 36]]
+            (root / "web/world.json").write_text(json.dumps({"origin": [-6.1485, 36.4195], "bounds": rectangles}))
+            original = root / "source.asc"
+            original.write_text("ncols 4\nnrows 4\nxllcorner -6.18\nyllcorner 36.38\ndx .02\ndy .02\n" + "1 2 3 4\n" * 4)
+            _, _, checksum = source["read_ascii"](original)
+            audit = root / "audit.json"
+            audit.write_text(json.dumps({"sourceSha256": checksum, "verticalReference": "sintética", "sourceUrl": "fixture", "accessDate": "2000-01-01", "acquisitionDate": "sintética"}))
+            subprocess.run([sys.executable, str(ROOT / "tools/export-terrain.py"), str(original), "--audit", str(audit), "--out", str(root / "out")], cwd=root, check=True, capture_output=True)
+            manifest = json.loads((root / "out/terrain.json").read_text())
+            self.assertEqual(manifest["bounds"], [10, 70, -20, 40])
+            self.assertEqual(manifest["size"], [48, 53])
+            self.assertEqual([manifest["columns"], manifest["rows"]], [7, 7])
 
 
 if __name__ == "__main__":

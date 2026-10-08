@@ -1,11 +1,14 @@
 // Split the transformed snapshot; originals are never inputs to the browser.
 // node tools/prepare-world.mjs [local city.json]
+import { validBounds, worldBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
 import { readWorld } from './world-files.mjs';
 
 const input = process.argv[2];
 const city = input ? JSON.parse(fs.readFileSync(input, 'utf8')) : readWorld();
+const bounds = worldBounds(city);
+if (!validBounds(bounds)) throw Error('Límites del mundo incompatibles');
 const write = (name, data) => fs.writeFileSync(`web/${name}`, JSON.stringify(data) + '\n');
 write('buildings.json', {
   version: 1,
@@ -36,7 +39,7 @@ const sha = (name) =>
 write('world.json', {
   version: 1,
   origin: city.origin,
-  size: city.size,
+  bounds,
   meta: city.meta,
   files: { buildings: 'buildings.json', osm: 'osm-world.json' },
   checksums: { buildings: sha('buildings.json'), osm: sha('osm-world.json') },

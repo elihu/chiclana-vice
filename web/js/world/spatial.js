@@ -1,3 +1,4 @@
+import { insideBounds } from './bounds.js';
 import {
   base,
   buildingGrid,
@@ -88,7 +89,7 @@ export function nearestRoad(x, z, driveOnly = false) {
 }
 
 export function blocked(x, z, r = 0.3, reference = null) {
-  if (Math.abs(x) > world.worldW / 2 - 5 || Math.abs(z) > world.worldH / 2 - 5) return true;
+  if (!insideBounds(x, z, 5)) return true;
   if (inBuilding(x, z, r)) return true;
   if (
     streetEnvironment.colliders.some(

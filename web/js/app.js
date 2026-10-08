@@ -1,3 +1,4 @@
+import { boundsBox } from './world/bounds.js';
 import * as THREE from '../vendor/three.module.min.js';
 import { $, sleepFrame, ui } from './core/dom.js';
 import { SPAWN_POSITION } from '../game-data.js';
@@ -82,7 +83,7 @@ async function init() {
     world.groundTexture.colorSpace = THREE.SRGBColorSpace;
     world.groundTexture.anisotropy = 4;
   } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
-  [world.worldW, world.worldH] = world.city.size;
+  world.aerialBox = boundsBox();
   loadProgress('Preparando el mundo 3D…', 25);
   setupRenderer();
   buildRoadGraph();

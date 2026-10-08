@@ -1,3 +1,4 @@
+import { validBounds, worldBounds } from './bounds.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { applyCorrections, sha256Hex } from './corrections.js';
@@ -52,9 +53,10 @@ export async function loadWorld() {
   // Validate the layer structure up front: a clear message instead of a TypeError later.
   const incompatible = () => Error('Capas del mapa incompatibles'),
     pair = (v) => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite);
+  const bounds = worldBounds(manifest);
   if (
     !pair(manifest.origin) ||
-    !pair(manifest.size) ||
+    !validBounds(bounds) ||
     typeof manifest.files?.buildings !== 'string' ||
     typeof manifest.files?.osm !== 'string'
   )
@@ -84,7 +86,7 @@ export async function loadWorld() {
   );
   return {
     origin: manifest.origin,
-    size: manifest.size,
+    bounds,
     buildings: buildings.buildings,
     roads: osm.roads,
     areas: osm.areas,

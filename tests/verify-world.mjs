@@ -1,3 +1,5 @@
+import './verify-bounds.mjs';
+import { insideBounds, validBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -18,6 +20,7 @@ const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 const manifest = read('web/world.json'),
   world = readWorld();
 assert.equal(manifest.version, 1);
+assert(validBounds(manifest.bounds), 'rectángulos válidos');
 for (const [key, name] of Object.entries(manifest.files)) {
   assert(!name.includes('/') && name.endsWith('.json'), 'local layer filename');
   assert.equal(
@@ -99,8 +102,7 @@ for (const f of catalog.fronts) {
     'anclajes verticales vigentes',
   );
   assert.deepEqual(errors, [], 'facade designs valid:\n' + errors.join('\n'));
-  const inside = (p) =>
-    Math.abs(p[0]) <= manifest.size[0] / 2 && Math.abs(p[1]) <= manifest.size[1] / 2;
+  const inside = (p) => insideBounds(...p, 0, manifest.bounds);
   const landmarks = world.landmarks || [];
   // Zonas y calles de city-design.json: dentro del mundo y con vías reales en OSM.
   for (const [name, [x0, x1, z0, z1]] of Object.entries(city.zones))

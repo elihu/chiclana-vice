@@ -1,3 +1,4 @@
+import { boundsBox } from '../world/bounds.js';
 import { $ } from '../core/dom.js';
 import { TAU, fold } from '../core/math.js';
 import { VIEWPOINTS } from '../../game-data.js';
@@ -13,18 +14,16 @@ import { toast } from './feedback.js';
 let chart, chartCtx;
 
 function trace(c, poly) {
+  const [x0, , z0] = boundsBox();
   c.beginPath();
-  poly.forEach((p, i) =>
-    i
-      ? c.lineTo(p[0] + world.worldW / 2, p[1] + world.worldH / 2)
-      : c.moveTo(p[0] + world.worldW / 2, p[1] + world.worldH / 2),
-  );
+  poly.forEach((p, i) => (i ? c.lineTo(p[0] - x0, p[1] - z0) : c.moveTo(p[0] - x0, p[1] - z0)));
 }
 
 export function prepareMap() {
+  const [x0, x1, z0, z1] = boundsBox();
   chart = document.createElement('canvas');
-  chart.width = 1344;
-  chart.height = 1002;
+  chart.width = Math.ceil(x1 - x0);
+  chart.height = Math.ceil(z1 - z0);
   chartCtx = chart.getContext('2d');
   chartCtx.fillStyle = '#6c806f';
   chartCtx.fillRect(0, 0, chart.width, chart.height);
@@ -57,26 +56,26 @@ export function prepareMap() {
 }
 
 export function drawMap(canvas, mini = false) {
+  const [x0, x1, z0, z1] = boundsBox(),
+    width = x1 - x0,
+    height = z1 - z0;
   let cw = canvas.width,
     ch = canvas.height,
     c = canvas.getContext('2d'),
-    scale = mini ? 1.1 : Math.min(cw / world.worldW, ch / world.worldH) * 0.92;
-  let ox = mini
-      ? cw / 2 - player.x * scale
-      : (cw - world.worldW * scale) / 2 + (world.worldW / 2) * scale,
-    oy = mini
-      ? ch / 2 - player.z * scale
-      : (ch - world.worldH * scale) / 2 + (world.worldH / 2) * scale;
+    scale = mini ? 1.1 : Math.min(cw / width, ch / height) * 0.92;
+  let ox = mini ? cw / 2 - player.x * scale : (cw - width * scale) / 2 - x0 * scale,
+    oy = mini ? ch / 2 - player.z * scale : (ch - height * scale) / 2 - z0 * scale;
   c.fillStyle = '#1a343d';
   c.fillRect(0, 0, cw, ch);
   c.save();
-  c.translate(ox - (world.worldW / 2) * scale, oy - (world.worldH / 2) * scale);
+  c.translate(ox + x0 * scale, oy + z0 * scale);
   c.scale(scale, scale);
   // The 2D orthophoto reuses the image already loaded for the ground texture.
-  if (session.mapAerial && !mini && world.groundTexture?.image)
-    c.drawImage(world.groundTexture.image, 0, 0, world.worldW, world.worldH);
-  else c.drawImage(chart, 0, 0, world.worldW, world.worldH);
-  c.translate(world.worldW / 2, world.worldH / 2);
+  if (session.mapAerial && !mini && world.groundTexture?.image) {
+    const [ax0, ax1, az0, az1] = world.aerialBox;
+    c.drawImage(world.groundTexture.image, ax0 - x0, az0 - z0, ax1 - ax0, az1 - az0);
+  } else c.drawImage(chart, 0, 0, width, height);
+  c.translate(-x0, -z0);
   if (session.route.length) {
     c.strokeStyle = '#ddf98a';
     c.lineWidth = mini ? 4 : 5 / scale;

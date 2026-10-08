@@ -160,8 +160,7 @@ for (const y of [0, 4]) {
 }
 world.surfaces = null;
 world.surfaces = model;
-world.worldW = 80;
-world.worldH = 80;
+world.city = { ...city, bounds: [[-40, 40, -40, 40]] };
 waterAreas.push({ p: city.areas[0].p });
 streetEnvironment.colliders.push({ x: 0, z: 0, r: 1, y: 4 });
 assert.equal(

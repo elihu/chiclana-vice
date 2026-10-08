@@ -1,3 +1,4 @@
+import { boundsBox } from '../web/js/world/bounds.js';
 import { updateMarkers } from '../web/js/game/missions.js';
 import { rescue } from '../web/js/game/player.js';
 import fs from 'node:fs';
@@ -8,9 +9,10 @@ import { world, actors, camTarget, session } from '../web/js/core/state.js';
 
 const city = JSON.parse(fs.readFileSync('web/world.json', 'utf8'));
 // Rampa sintética al paso del piloto: el presupuesto de malla depende del paso fuente.
-const half = city.size.map((v) => Math.ceil(v / 2 / 10) * 10);
-const columns = half[0] / 5 + 1,
-  rows = half[1] / 5 + 1,
+const box = boundsBox(city.bounds),
+  bounds = box.map((v, i) => (i % 2 ? Math.ceil(v / 10) : Math.floor(v / 10)) * 10);
+const columns = (bounds[1] - bounds[0]) / 10 + 1,
+  rows = (bounds[3] - bounds[2]) / 10 + 1,
   buffer = new ArrayBuffer(columns * rows * 2),
   dv = new DataView(buffer);
 for (let j = 0; j < rows; j++)
@@ -22,9 +24,9 @@ for (let j = 0; j < rows; j++)
     );
 const manifest = {
   version: 1,
-  bounds: [-half[0], half[0], -half[1], half[1]],
+  bounds,
   origin: city.origin,
-  size: city.size,
+  size: [box[1] - box[0], box[3] - box[2]],
   columns,
   rows,
   step: [10, 10],

@@ -141,6 +141,22 @@ calle a menos de 3 m, el monumento que lo contiene y la posición y el rumbo del
 o `localhost`). El procedimiento de edición está en [DATOS.md](DATOS.md#diseños-y-correcciones-a-mano).
 Probado a mano en un móvil Android; no en iOS.
 
+## Mundo y límites
+
+`world.json.bounds` declara una lista de rectángulos `[x0, x1, z0, z1]` en
+coordenadas locales: x hacia el este y z hacia el sur. El origen y el área actual se
+conservan, con un solo rectángulo `[-671.835, 671.835, -500.94, 500.94]`.
+El cargador convierte también el antiguo `size` de copias locales a un rectángulo.
+
+`world/bounds.js` centraliza pertenencia, margen interior, proximidad al borde y caja
+envolvente. Los márgenes se miden hasta el borde de la unión: la costura entre rectángulos
+contiguos o solapados no bloquea ni avisa. Colisiones, aviso de salida, mobiliario y
+vegetación consultan los límites;
+el mapa, minimapa y suelo plano usan su caja envolvente. El recuadro de la ortofoto
+(`world.aerialBox`) es independiente, aunque hoy coincide con esa caja: fija las UV de
+suelo y tejados y la posición de la imagen en el mapa. El faldón del relieve sigue
+el borde de la rejilla del terreno.
+
 ## Terreno
 
 El relieve real está activo con `web/terrain.json` y `web/terrain.bin`, validados para el

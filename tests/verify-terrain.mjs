@@ -8,7 +8,7 @@ import { groundHeightAt, surfaceHeightAt } from '../web/js/engine/terrain-sampli
 import { prepareTerrainPlacement } from '../web/js/world/terrain-placement.js';
 import { sha256Hex } from '../web/js/world/corrections.js';
 
-const city = { origin: [0, 0], size: [10, 10] },
+const city = { origin: [0, 0], bounds: [[-5, 5, -5, 5]] },
   buffer = new ArrayBuffer(18),
   view = new DataView(buffer);
 [0, 50, 100, 100, 200, 250, 200, 300, 400].forEach((v, i) => view.setInt16(i * 2, v, true));
@@ -21,7 +21,8 @@ assert.equal(
 const manifest = {
   version: 1,
   bounds: [-10, 10, -10, 10],
-  ...city,
+  origin: city.origin,
+  size: [10, 10],
   columns: 3,
   rows: 3,
   step: [10, 10],
@@ -130,8 +131,8 @@ const unavailable = await loadTerrain(
 );
 assert.equal(unavailable.terrain, flatTerrain);
 world.terrain = terrain;
-world.worldW = 10;
-world.worldH = 10;
+world.city = { bounds: [[-5, 5, -5, 5]] };
+world.aerialBox = [-5, 5, -5, 5];
 const geometry = terrainGeometry(terrain);
 assert.equal(geometry.index.count, 24);
 const normals = geometry.getAttribute('normal');
@@ -229,3 +230,23 @@ const covering = { ...manifest, bounds: [-20, 20, -20, 20], step: [20, 20] };
 assert.equal(createTerrain(covering, buffer, city).heightAt(0, 0), 20);
 const nonCentered = { ...manifest, bounds: [-10, 20, -10, 10], columns: 4 };
 assert.equal(createTerrain(nonCentered, new ArrayBuffer(24), city).heightAt(15, 5), 0);
+
+// Igual tamaño con caja desplazada: la cobertura depende de las coordenadas.
+const shiftedCity = { origin: [0, 0], bounds: [[10, 20, -5, 5]] };
+assert.throws(() => createTerrain(manifest, buffer, shiftedCity), /incompatible/);
+assert.equal(createTerrain(nonCentered, new ArrayBuffer(24), shiftedCity).kind, 'grid');
+
+world.city = { bounds: [[10, 20, 30, 40]] };
+world.aerialBox = [0, 40, 0, 80];
+world.surfaces = null;
+const shiftedPlane = terrainGeometry(flatTerrain),
+  planePositions = shiftedPlane.getAttribute('position'),
+  planeUV = shiftedPlane.getAttribute('uv');
+for (let i = 0; i < planePositions.count; i++) {
+  const x = planePositions.getX(i),
+    z = planePositions.getZ(i);
+  assert(x === 10 || x === 20, 'plano situado en la caja desplazada');
+  assert(z === 30 || z === 40);
+  assert.equal(planeUV.getX(i), x / 40, 'UV referida al recuadro propio de la ortofoto');
+  assert.equal(planeUV.getY(i), 1 - z / 80);
+}
