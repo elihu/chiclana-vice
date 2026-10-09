@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Revisión: 8/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 9/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
@@ -74,8 +74,13 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   ferial), capas reconstruidas desde los originales (44 vías ganan el sentido único de
   OSM), relieve desde la rejilla nativa del MDT por teselas (ampliar ya no cambia las
   cotas existentes) validado por el usuario, Puente VII Centenario modelado con sus dos
-  arcos y Santa Ana como lugar, mirador y encargo. Sigue la fase 5 (modelos: ermitas de
-  la Veracruz y de Santa Ana, Iglesia Mayor). Sin publicar: `?v=` se sube al sacar la
+  arcos y Santa Ana como lugar, mirador y encargo. Fase 5: paso 5.0 integrado (monumentos desde
+  los datos), junto con la variación de edificios precalculada por parte fuera del
+  navegador; huellas con relieve y sin él idénticas, paleta, vegetación y actores
+  conservados. Paso 5.1 detenido al comprobar que el contorno OSM de Veracruz incluye
+  el atrio: hay que separar la planta visual de la nave de ese contorno antes de usar
+  la portada retranqueada; conservar el contorno y la colisión catastral. Siguen
+  pendientes los modelos de Veracruz, Santa Ana e Iglesia Mayor. Sin publicar: `?v=` se sube al sacar la
   versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
