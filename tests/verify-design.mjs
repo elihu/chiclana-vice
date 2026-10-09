@@ -1016,13 +1016,26 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       new RegExp(`Corrección ${id} no aplicable`),
     );
 
-  // El archivo publicado no cambia las capas de base cuando está vacío.
+  // El archivo publicado se aplica entero y solo cambia lo que corrige.
   const published = read('web/map-corrections.json');
   assert.deepEqual(validateCorrections(published), [], 'web/map-corrections.json válido');
-  const before = JSON.stringify(real());
-  const l = real();
-  applyCorrections(l, published);
-  assert.equal(JSON.stringify(l), before, 'sin correcciones, las capas no cambian');
+  const base = real(),
+    l = real();
+  assert.deepEqual(
+    applyCorrections(l, published),
+    published.corrections.map((c) => c.id),
+    'todas las correcciones publicadas se aplican',
+  );
+  const touched = new Set(published.corrections.map((c) => c.road?.id).filter(Boolean));
+  assert(
+    published.corrections.every((c) => c.op === 'road.set'),
+    'ampliar esta comprobación si se publican otras operaciones',
+  );
+  assert.equal(JSON.stringify(l.areas), JSON.stringify(base.areas));
+  assert.equal(JSON.stringify(l.buildings), JSON.stringify(base.buildings));
+  l.roads.forEach((r, i) => {
+    if (!touched.has(r.id)) assert.deepEqual(r, base.roads[i], 'vía sin corrección intacta');
+  });
 }
 
 console.log('Facade kit, validator, composer and map corrections passed');

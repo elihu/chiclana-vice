@@ -98,6 +98,8 @@ export function buildDetailedFacades() {
   composeBuilding(kit, world.facadeDesigns, 'portada-san-telmo');
   // San Juan Bautista: three-bay stone facade, giant pilasters and a central pediment.
   composeBuilding(kit, world.facadeDesigns, 'portada-san-juan-bautista');
+  // Puente VII Centenario: two steel side arches over the whole span, with hangers.
+  composeBuilding(kit, world.facadeDesigns, 'puente-vii-centenario');
 
   // Nearby residential and commercial frontages: varied plaster, framed openings, shutters and balconies.
   const frontContext = { residentialStreets: world.cityDesign.frontages.residentialStreets };

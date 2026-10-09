@@ -970,6 +970,38 @@
         }
       ]
     },
+    "puente-arco": {
+      "description": "Puente de dos arcos laterales sobre toda la luz (Puente VII Centenario): arcos circulares de acero con péndolas verticales y apoyos en los extremos. x a lo largo del tablero, z hacia los lados; la altura del arco es una estimación.",
+      "params": { "rise": 9, "offset": 7, "tube": 0.35, "step": 3.5, "steel": "#2f4c6e" },
+      "body": [
+        { "let": { "R": "(len * len / 4 + rise * rise) / (2 * rise)" } },
+        { "let": { "half": "atan2(len / 2, sqrt(R * R - len * len / 4))" } },
+        {
+          "for": "side",
+          "in": ["offset", "-offset"],
+          "body": [
+            {
+              "geo": ["TorusGeometry", "R", "tube", 8, 64, "2 * half"],
+              "at": ["len / 2", "rise - R", "side"],
+              "rotation": [0, 0, "PI / 2 - half"],
+              "color": "steel"
+            },
+            { "box": [0.8, 0.6, "side", 1.6, 1.2, 1.2], "color": "steel" },
+            { "box": ["len - 0.8", 0.6, "side", 1.6, 1.2, 1.2], "color": "steel" },
+            {
+              "for": "x",
+              "from": "step",
+              "while": "x < len - step / 2",
+              "step": "step",
+              "body": [
+                { "let": { "top": "rise - R + sqrt(R * R - (x - len / 2) * (x - len / 2))" } },
+                { "box": ["x", "top / 2", "side", 0.08, "top", 0.08], "color": "steel" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "street-generic": {
       "description": "Generic street frontage: plastered wall with plinth and cornice, shopfronts or doors and framed openings with shutters or balconies per storey. Variants depend on `hash`. Equivalent to the street frontage loop of buildDetailedFacades in main 5666928.",
       "params": {
@@ -1373,6 +1405,22 @@
             "world": true
           },
           "recipe": "cupula-san-juan-bautista"
+        }
+      ]
+    },
+    {
+      "id": "puente-vii-centenario",
+      "name": "Puente VII Centenario",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": [
+        "web/aerial (PNOA 2022-07): dos arcos laterales sobre toda la luz y su posición respecto a calzada y aceras",
+        "OSM 142805148: eje del tablero y cuatro carriles; altura de los arcos estimada por sus sombras"
+      ],
+      "fronts": [
+        {
+          "anchor": { "a": [-470.32, -533.22], "b": [-489.92, -484.33], "outward": [-0.928, -0.372] },
+          "recipe": "puente-arco"
         }
       ]
     }
