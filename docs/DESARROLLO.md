@@ -219,6 +219,58 @@ medido en un móvil físico.
 
 ## Medir en el navegador
 
+Para medir el presupuesto de render, sirve `web/` y ejecuta:
+
+```sh
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --out /tmp/chiclana-budget/base.json --shots /tmp/chiclana-budget/normal-a
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --out /tmp/chiclana-budget/base-low.json --low --shots /tmp/chiclana-budget/low-a
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --compare /tmp/chiclana-budget/base.json --shots /tmp/chiclana-budget/normal-b
+uv run --no-project --with pillow --with numpy python tools/compare-shots.py /tmp/chiclana-budget/normal-a /tmp/chiclana-budget/normal-b
+```
+
+`scene-budget.mjs` requiere Node con WebSocket global y `google-chrome-stable`.
+Abre Chrome sin interfaz con SwiftShader a 1280 × 720 y escala 1, inicia la partida y
+mide Alameda (inicio), Mercado de Abastos, Plaza Mayor, Santa Ana y San Telmo en
+seguimiento, primera persona y aérea, con el rumbo inicial. Espera 2,5 segundos,
+recarga las teselas de ortofoto y espera otro segundo en cada vista. `--low` guarda
+la calidad ligera antes de cargar y comprueba que se haya aplicado.
+
+El JSON incluye llamadas de dibujo y triángulos por vista: `total` suma el pase
+principal y el de sombras; `main` excluye sombras. Three.js r169 reinicia
+`renderer.info` después del pase de sombras: la herramienta usa
+`info.autoReset = false` y `info.reset()` antes de cada medida, y restaura el sol y
+el reinicio automático al terminar. También registra una vez el inventario de
+mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
+sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.
+`--compare` muestra las cifras anteriores y actuales y su diferencia porcentual;
+no impone un umbral de presupuesto. Los errores de página hacen fallar la ejecución.
+Chrome y su perfil temporal se cierran y eliminan al terminar, también ante errores.
+El servidor se cierra por separado.
+
+`compare-shots.py` compara los PNG con el mismo nombre, contando los píxeles cuya
+diferencia máxima entre canales RGBA es mayor que 8 (escala 0–255), e imprime esa
+proporción y la diferencia máxima. Sale con código 1 si alguna captura supera
+`--limit` (por defecto 0,5 %); dimensiones distintas también fallan. Avisa de PNG
+sin pareja y falla si no hay ninguno comparable. Repite las capturas sobre el mismo
+árbol antes de un cambio para conocer el ruido y fijar el límite de comparación.
+
+En G0 (9/10/2026, árbol de `main ce06a1a`), dos ejecuciones consecutivas por calidad
+dieron un ruido máximo de 0,975477 % en normal (Mercado, seguimiento; diferencia
+máxima de canal 221) y 0,957899 % en ligero (Mercado, aérea; máximo 225).
+Se adopta `--limit 0.975478` para las fases siguientes, redondeando hacia arriba el
+máximo observado. No se aisló la causa del ruido; las capturas incluyen el juego en
+marcha. Los recuentos se repitieron salvo en Santa Ana normal: primera persona pasó
+de 467/382 a 471/386 llamadas totales/principales (+228 triángulos en ambos pases),
+y aérea pasó de 195 a 196 llamadas totales (+24 triángulos; principal idéntico).
+Las referencias completas de las 15 vistas por calidad se guardaron en
+`/tmp/chiclana-budget/base.json` y `base-low.json`; son artefactos temporales.
+Santa Ana en seguimiento dio 509/423 llamadas frente a 496/425 del plan (+2,62 %
+en el total), por lo que se usa la nueva medida como referencia conforme a G0.1.
+
+Estos recuentos y las capturas en SwiftShader no acreditan rendimiento de GPU,
+FPS ni comportamiento en móvil físico. Para medir intervalos entre frames en el
+dispositivo real, usa la herramienta siguiente.
+
 `web/measure.js` se publica pero no se carga con el juego. Con el juego en marcha y sin
 menús abiertos, en la consola:
 
