@@ -433,18 +433,143 @@ mismos bytes y dos recortes solapados coinciden en todas las celdas comunes.
 
 ## Fase 5: modelos
 
-Cada modelo en su propia rama y commit `feat(datos)`, como receta de
-`facade-designs.json`, con las referencias citadas en `THIRD_PARTY_NOTICES.md` (solo como
-referencia; **preguntar antes de añadir atribuciones**) y revisión visual del usuario.
-Son independientes de las fases anteriores, salvo los que están en anexos.
+Referencias de línea de `main` en `9e33eb3`. Tres ramas, una por modelo, en este orden;
+cada una se integra tras la revisión del usuario antes de empezar la siguiente:
+`feat/modelo-veracruz` (pasos 5.0 y 5.1), `feat/modelo-iglesia-mayor` (5.2) y
+`feat/modelo-santa-ana` (5.3).
 
-1. Ermita del Cristo de la Veracruz (Plaza del Santo Cristo): hoy es un bloque genérico.
-2. Iglesia Mayor (San Juan Bautista): rehacer la aproximación actual para que se reconozca.
-3. Ermita de Santa Ana (tras el paso 4.2); su base sigue la política de zócalos vigente.
-4. Puente VII Centenario: hecho junto con el paso 4.4 a petición del usuario (receta
-   `puente-arco`, tablero de 14 m por corrección del mapa). Queda revisar en el navegador
-   la flecha estimada de los arcos y su color.
-5. Ferial: explanada y portada, solo si sigue interesando.
+### Reglas comunes
+
+- **Recetas en `facade-designs.json`**, con primitivas del kit (`box`, `piece`, `geo`
+  permitidas por `design-validate.js`) y sin texturas. Cada edificio lleva `references`
+  con las de abajo y `status: "approximate"`. Agrupar geometría repetida (bucles `for`
+  con los mismos colores) para no multiplicar mallas.
+- **Referencias aprobadas por el usuario el 9/10/2026**, solo como referencia (no se
+  distribuyen). Añadirlas a «Fachadas, monumentos y referencias» de
+  `THIRD_PARTY_NOTICES.md`, con el formato de las actuales, en la rama del modelo que
+  las usa; después `node tools/export-provenance.mjs`. No añadir otras sin preguntar.
+  - Veracruz: Xemenendura, 19/7/2022, CC BY-SA 4.0.
+    https://commons.wikimedia.org/wiki/File:Ermita_Cristo_de_la_Veracruz.jpg y
+    https://commons.wikimedia.org/wiki/File:Ermita_del_Cristo_de_la_Veracruz.jpg
+  - Iglesia Mayor, fachada: Oscar Sanchez, 28/9/2011, CC BY-SA 3.0 es,
+    https://commons.wikimedia.org/wiki/File:Iglesia_Mayor_Chiclana_de_la_Frontera.jpg;
+    Xemenendura, 29/4/2023, CC BY-SA 4.0,
+    https://commons.wikimedia.org/wiki/File:San_Juan_Chiclana_1.jpg
+  - Iglesia Mayor, cúpula: PEPE GADEIRAS, 4/1/2011, CC BY-SA 4.0.
+    https://commons.wikimedia.org/wiki/File:Chiclana,_la_c%C3%BApula_de_la_Iglesia_Mayor.jpg
+  - Santa Ana: Xemenendura, 20/5/2023, CC BY-SA 4.0,
+    https://commons.wikimedia.org/wiki/File:Ermita_Santa_Ana_Chiclana.jpg y
+    https://commons.wikimedia.org/wiki/File:Ermita_de_Santa_Ana_Chiclana.jpg; Carlosrs,
+    10/3/2008, dominio público,
+    https://commons.wikimedia.org/wiki/File:Chiclana._Ermita_de_Santa_Ana.jpg
+- **Planta y posición** desde el contorno del hito de OSM y la ortofoto de `web/aerial/hi/`
+  (ya atribuida); **alturas** estimadas por proporciones de las fotos, sin afirmar
+  medición. Las fotos se consultan en Commons y no se guardan en el repositorio.
+- **Sin tocar** colisiones, contornos de Catastro ni el relieve. La parte catastral sigue
+  debajo como volumen de juego; los huecos (arcos, puertas) son paneles oscuros o
+  rehundidos, como en la portada actual de San Juan Bautista.
+- **Base**: la que da `composeBuilding` (cota `baseY` del hito, política vigente). Si
+  queda un zócalo visible, se informa con la cifra; no se cambia la política.
+- **Verificación de cada rama**: `npm run check`; `scene-fingerprint --compare` contra
+  `main` con relieve, informando de las mallas y triángulos añadidos o quitados (el cambio
+  es intencionado y debe limitarse al monumento); humo de Chrome (`browser-smoke`
+  normal y `--low`); capturas desde un mirador o un punto de vista cercano para el
+  informe.
+- **Revisión del usuario** en el navegador antes de integrar. Documentar en
+  `MAP_SOURCES.md` («Fachadas y monumentos») qué sale de cada fuente y qué se estima.
+
+### Paso 5.0: monumentos desde los datos (refactor)
+
+Hoy el código fija qué edificios son iglesias y qué diseños se componen:
+
+- `prepareFacades` (`web/js/world/facades.js:25-33`) marca `detailType = 'church'` con la
+  expresión fija `/Iglesia de Jesús Nazareno|San Telmo|Iglesia Mayor/`. Debe salir de los
+  edificios de `facade-designs.json` con `detailType: "church"` y `landmark` (el hito cuyo
+  nombre contiene ese texto), como hace `composeBuilding` con `landmark`.
+- `buildDetailedFacades` (:88-102) compone una lista fija de IDs. Debe componer todos los
+  `buildings` del archivo en su orden, pasando `{ landmarks }` a todos; el orden actual
+  del archivo coincide con el de las llamadas, así que la escena no cambia. Los
+  comentarios descriptivos de cada edificio ya están en `description` de sus recetas.
+- **Verificación**: `scene-fingerprint --compare` idéntico con y sin relieve, y
+  `npm run check`.
+- **Commit**: `refactor(fachadas): componer los monumentos desde facade-designs.json`.
+
+### Paso 5.1: Ermita del Cristo de la Veracruz
+
+Hito OSM «Ermita del Cristo de la Veracruz», contorno rectangular de unos 17 × 27 m
+(`[201.47, 381.32]`), parte catastral 4909 de una planta (3,45 m). Hoy es un bloque
+genérico.
+
+- **Rasgos** (fotos de Xemenendura): nave encalada de una planta alta; fachada a la
+  plaza con hastial blanco de remate curvo y cornisa ocre; espadaña central de un vano con
+  campana, pilastras y frontón ocres y cruz de veleta; óculo con marco ocre bajo la
+  espadaña; portada de arco de medio punto en piedra con pilastras y puerta de madera,
+  dos faroles a los lados; puerta lateral pequeña de arco a la derecha; zócalo de
+  piedra; atrio delante con reja de hierro sobre murete y dos pilares de ladrillo junto a
+  una hornacina con tejadillo. Cipreses: no se modelan (la vegetación es aparte).
+- **Diseño**: edificio `veracruz` con `detailType: "church"` y `landmark: "Veracruz"`;
+  una nave por `landmarkRing` (receta `nave`, altura estimada, cubierta según la
+  ortofoto) y la fachada como receta propia `portada-veracruz` sobre el lado corto que da
+  a la plaza (anclaje de segmento con dos vértices del contorno). Identificar en la
+  ortofoto qué lado es y si el atrio queda dentro del contorno: si lo está, la fachada se
+  retrasa a su línea real y la reja va en el borde. Explicar la elección en el informe.
+- **Commit**: `feat(datos): modelar la Ermita del Cristo de la Veracruz`.
+
+### Paso 5.2: Iglesia Mayor (San Juan Bautista)
+
+Rama aparte. Hoy: `nave-iglesia-mayor` (muros de 14,2 m por el contorno),
+`portada-san-juan-bautista` sobre el lado `[206.93, 180.32]`–`[218.19, 152.82]`
+(29,7 m) y `cupula-san-juan-bautista` (media esfera gris de 4,7 m de radio con nervios,
+sin tambor). La composición de tres calles es correcta; falla la escala y la cúpula.
+
+- **Fachada** (fotos de Oscar Sanchez y Xemenendura): sillería clara; cuatro pilastras
+  gigantes con capiteles de volutas; entablamento completo con dentículos y frontón
+  triangular bajo con un grupo escultórico central (ángeles con escudo: volumen
+  simplificado, sin figuras), y un ático detrás. Calle central: portada de arco entre
+  columnas pareadas sobre pedestales, entablamento con balcón de balaustres, ventana de
+  arco entre columnas pareadas y frontón curvo. Calles laterales: ventana baja con
+  frontón triangular, gran arco ciego con óculo y ventana pequeña rectangular arriba.
+  Podio con escalinata central y muretes laterales. En las fotos la cornisa queda hacia
+  0,6 veces el ancho sobre la plaza (unos 17–18 m) y el vértice del frontón hacia 21 m:
+  estimarlo y comparar con los 14,2 m actuales.
+- **Cúpula** (foto de PEPE GADEIRAS): tambor octogonal de piedra con una ventana por
+  cara y cornisa; media naranja blanca con nervios azules dobles y anillo azul en la
+  base; linterna de piedra con cruz. Centro y diámetro desde la ortofoto (hoy
+  `[236.7, 177.2]`, radio 4,7). Altura del tambor estimada.
+- Ajustar la altura de la nave y, si hace falta, la regla `minimumHeights` «Iglesia
+  Mayor» de `city-design.json` para que el conjunto sea coherente. Mantener los IDs de
+  las recetas o renombrarlos en el mismo commit.
+- **Commit**: `feat(datos): rehacer la Iglesia Mayor`.
+
+### Paso 5.3: Ermita de Santa Ana
+
+Rama aparte. Hito OSM «Ermita de Santa Ana» (`[-226.59, 526.92]`), parte catastral 2630
+de una planta. El contorno de 14 vértices es un **octógono** de unos 7 m de lado
+(vértices 0–4 y 10–12, centro hacia `[-226.9, 524.1]`) con un **anexo** rectangular
+(vértices 4–10, unos 6 × 10 m).
+
+- **Rasgos** (fotos de Xemenendura y Carlosrs): galería perimetral de tres arcos de
+  medio punto por cara sobre pilares con impostas ocres y antepecho de reja; cornisa ocre
+  y terraza con pretil; encima, tambor octogonal retranqueado con una ventana por cara y
+  cornisa ocre; cúpula blanca semiesférica con banda ocre, óculos y remate de bulbo ocre
+  con cruz de veleta; espadaña pequeña con campana sobre la terraza, en la cara de la
+  puerta. Todo encalado. Escalinata ante la puerta y plataforma escalonada. El anexo es
+  un volumen blanco bajo y liso.
+- **Diseño**: edificio `santa-ana` con `detailType: "church"` y `landmark: "Santa Ana"`.
+  Como la receta por lado no distingue octógono y anexo, usar anclajes de segmento por
+  cara del octógono (o un anclaje `world` con los vértices medidos) y la receta `nave`
+  en el anexo. Cara de la puerta y escalinata según la ortofoto. La estatua del Sagrado
+  Corazón no se modela.
+- **Relieve**: el cerro tiene pendiente. Medir la diferencia de cota bajo el contorno e
+  informar del zócalo resultante; la plataforma escalonada puede absorberlo si es
+  pequeño, pero sin cambiar la política de bases.
+- **Commit**: `feat(datos): modelar la Ermita de Santa Ana`.
+
+### Pendientes de la fase
+
+- Puente VII Centenario: hecho en la fase 4 (receta `puente-arco`). Falta revisar en el
+  navegador la flecha estimada de los arcos y su color.
+- Ferial (explanada y portada): solo si el usuario lo pide.
 
 ## Ampliar más adelante
 
