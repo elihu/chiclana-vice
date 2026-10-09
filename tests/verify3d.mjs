@@ -449,6 +449,36 @@ for (const street of ['Calle Álamo', 'Calle Garcia Gutierrez', 'Calle Corredera
 console.log('Expanded pilot frontage IDs match cadastral edges');
 
 // Camera sweep must prevent cuts through walls while orbiting at tight viewpoints.
+{
+  const { x, z } = g.player,
+    offset = new Real.Vector3(-85, 125, 60),
+    basisInverse = new Real.Matrix4()
+      .lookAt(offset, new Real.Vector3(), new Real.Vector3(0, 1, 0))
+      .invert();
+  for (const [dx, dz] of [
+    [0.037, -0.091],
+    [13.27, 7.53],
+  ]) {
+    Object.assign(g.player, { x: x + dx, z: z + dz });
+    g.updateCamera(0.016);
+    const target = gfx.sun.target.position.clone().applyMatrix4(basisInverse),
+      camera = gfx.sun.shadow.camera,
+      texel = (camera.right - camera.left) / gfx.sun.shadow.mapSize.x;
+    for (const value of [target.x, target.y])
+      assert(
+        Math.abs(value - Math.round(value / texel) * texel) < 1e-6,
+        'sun target on texel grid',
+      );
+    assert(
+      gfx.sun.position.clone().sub(gfx.sun.target.position).distanceTo(offset) < 1e-6,
+      'sun offset preserved',
+    );
+  }
+  Object.assign(g.player, { x, z });
+  g.updateCamera(0.016);
+}
+console.log('Destino del sol encajado en texeles y orientación conservada tras mover al jugador');
+
 for (const { x, z } of VIEWPOINTS.slice(0, 3)) {
   Object.assign(g.player, { x, z });
   for (let i = 0; i < 24; i++) {

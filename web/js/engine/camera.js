@@ -12,6 +12,7 @@ import {
 } from '../core/state.js';
 import { lerp, pInside, pointSeg } from '../core/math.js';
 import { toast } from '../ui/feedback.js';
+import { placeSun } from './renderer.js';
 import {
   actorHeightAt,
   surfaceHeightAt,
@@ -152,9 +153,7 @@ export function updateCamera(dt) {
   updateCameraVisibility();
   gfx.camera.position.copy(camPos);
   gfx.camera.lookAt(camTarget);
-  gfx.sun.position.set(player.x - 85, ground + 125, player.z + 60);
-  gfx.sun.target.position.set(player.x, ground, player.z);
-  gfx.sun.target.updateMatrixWorld();
+  placeSun(player.x, ground, player.z);
   // In light mode, chunks beyond the fog end are culled (measured from the camera).
   const low = gfx.quality === 'low',
     reach = low ? gfx.scene.fog.far : view.mode === 2 ? 650 : 520,

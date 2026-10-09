@@ -16,7 +16,7 @@ import {
   vehicles,
   world,
 } from './core/state.js';
-import { addGroundPlanes, setupRenderer } from './engine/renderer.js';
+import { addGroundPlanes, placeSun, setupRenderer } from './engine/renderer.js';
 import { addSigns } from './world/signs.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
@@ -170,8 +170,7 @@ function frame(now) {
       player.z + Math.cos(session.t * 0.075) * 36,
     );
     gfx.camera.lookAt(player.x, ground, player.z);
-    gfx.sun.target.position.set(player.x, ground, player.z);
-    gfx.sun.position.set(player.x - 85, ground + 125, player.z + 60);
+    placeSun(player.x, ground, player.z);
     for (let c of vehicles) {
       placeVehicleIfChanged(c);
     }

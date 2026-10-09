@@ -3,6 +3,27 @@ import { $ } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 
+const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
+  sunBasis = new THREE.Matrix4().lookAt(
+    SUN_OFFSET,
+    new THREE.Vector3(),
+    new THREE.Vector3(0, 1, 0),
+  ),
+  sunBasisInverse = sunBasis.clone().invert(),
+  snapped = new THREE.Vector3();
+
+export function placeSun(x, y, z) {
+  const cam = gfx.sun.shadow.camera,
+    texel = (cam.right - cam.left) / gfx.sun.shadow.mapSize.x;
+  snapped.set(x, y, z).applyMatrix4(sunBasisInverse);
+  snapped.x = Math.round(snapped.x / texel) * texel;
+  snapped.y = Math.round(snapped.y / texel) * texel;
+  snapped.applyMatrix4(sunBasis);
+  gfx.sun.target.position.copy(snapped);
+  gfx.sun.position.copy(snapped).add(SUN_OFFSET);
+  gfx.sun.target.updateMatrixWorld();
+}
+
 export function setupRenderer() {
   gfx.renderer = new gfx.platform.WebGLRenderer({
     canvas: $('world'),
