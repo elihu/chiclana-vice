@@ -84,12 +84,15 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   añadir código para este caso y se revisará más adelante. El podio de la Iglesia Mayor
   no tiene colisión. Revisar en el navegador la flecha y el color de los arcos del
   Puente VII Centenario; el ferial solo si el usuario lo pide.
-- Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
-  del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
+- Relieve: integrado sin publicar el 9/10/2026 y aprobado por el usuario, el terreno
+  junto a las calzadas en cuesta ya no se hunde (a 1 m del borde, los puntos más de 1 m
+  por debajo de la calzada bajan del 6,4 % al 1,2 %;
+  [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
+  pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
 - Mejora gráfica y presupuesto de render: plan en
-  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md), sin empezar. Con la fase 5 integrada,
-  pueden empezar todas sus fases. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
+  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md), sin empezar; es el contenido de
+  la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
