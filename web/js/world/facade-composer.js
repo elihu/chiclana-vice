@@ -234,6 +234,7 @@ export function composeBuilding(kit, designs, id, context = {}) {
       const recipe = designs.recipes[front.recipe],
         env = { kit, designs, palette: kit.palette, ring: null };
       for (const w of walls(front.anchor, kit, context, env)) {
+        w.g.userData.recipe = front.recipe;
         w.g.position.y = baseY;
         const scope = Object.create(null);
         if (w.len !== undefined) scope.len = w.len;
@@ -276,6 +277,7 @@ export function composeFront(kit, designs, recipeName, front, context = {}) {
   try {
     const w = frontWall(kit, front, context),
       scope = Object.create(null);
+    w.g.userData.recipe = recipeName;
     scope.len = w.len;
     Object.assign(scope, w.extra);
     for (const [k, v] of Object.entries(recipe.params || {}))

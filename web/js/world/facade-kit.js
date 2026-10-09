@@ -188,6 +188,7 @@ export function createFacadeKit({ staging, palette }) {
       new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, side: THREE.DoubleSide }),
     );
     m.position.set(x, y, 0.42);
+    m.userData.facadeText = true;
     g.add(m);
     return m;
   }

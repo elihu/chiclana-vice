@@ -4,7 +4,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, lerp, pInside } from '../core/math.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
-import { mat } from '../engine/materials.js';
+import { mat, mergeParts } from '../engine/materials.js';
 import { rnd } from '../core/random.js';
 
 // Partition static vegetation without changing any instance transform or color.
@@ -91,25 +91,30 @@ export function buildTrees() {
     )
       points.push([x, z]);
   }
-  let trunk = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.13, 0.23, 3.3, 7),
-      mat('#786d57'),
-      points.length,
-    ),
+  const branchGeometry = new THREE.CylinderGeometry(0.045, 0.09, 2, 5),
+    trunkGeometry = new THREE.CylinderGeometry(0.13, 0.23, 3.3, 7),
+    parts = [{ geometry: trunkGeometry, matrix: new THREE.Matrix4() }],
+    branch = new THREE.Object3D();
+  // Transformación de cada rama relativa al centro del tronco, antes de aplicar size.
+  for (let j = 0; j < 3; j++) {
+    const a = (j * TAU) / 3;
+    branch.position.set(0.5 * Math.cos(a), 3.3 * 0.84 - 3.3 / 2, 0.5 * Math.sin(a));
+    branch.rotation.set(0.55 * Math.cos(a), 0, 0.55 * Math.sin(a));
+    branch.updateMatrix();
+    parts.push({ geometry: branchGeometry, matrix: branch.matrix.clone() });
+  }
+  const woodGeometry = mergeParts(parts);
+  trunkGeometry.dispose();
+  branchGeometry.dispose();
+  let wood = new THREE.InstancedMesh(woodGeometry, mat('#786d57'), points.length),
     crowns = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(1, 1),
       mat('#ffffff', { roughness: 1 }),
       points.length * 5,
     ),
-    branches = new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.045, 0.09, 2, 5),
-      mat('#796c54'),
-      points.length * 3,
-    ),
     dummy = new THREE.Object3D(),
     color = new THREE.Color();
-  let k = 0,
-    bk = 0;
+  let k = 0;
   points.forEach((p, i) => {
     let size = 0.8 + rnd() * 0.55,
       h = 3.3 * size,
@@ -118,7 +123,7 @@ export function buildTrees() {
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(size, size, size);
     dummy.updateMatrix();
-    trunk.setMatrixAt(i, dummy.matrix);
+    wood.setMatrixAt(i, dummy.matrix);
     for (let j = 0; j < 5; j++) {
       let angle = (j * TAU) / 5 + rnd() * 0.3,
         rad = j === 4 ? 0 : 1.05 * size;
@@ -138,18 +143,6 @@ export function buildTrees() {
       color.setHSL(0.23 + rnd() * 0.08, 0.18 + rnd() * 0.13, 0.24 + rnd() * 0.13);
       crowns.setColorAt(k++, color);
     }
-    for (let j = 0; j < 3; j++) {
-      let a = (j * TAU) / 3;
-      dummy.position.set(
-        p[0] + Math.cos(a) * 0.5 * size,
-        baseY + h * 0.84,
-        p[1] + Math.sin(a) * 0.5 * size,
-      );
-      dummy.rotation.set(Math.cos(a) * 0.55, 0, Math.sin(a) * 0.55);
-      dummy.scale.set(size, size, size);
-      dummy.updateMatrix();
-      branches.setMatrixAt(bk++, dummy.matrix);
-    }
     if (!streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
       streetEnvironment.colliders.push({
         x: p[0],
@@ -158,10 +151,9 @@ export function buildTrees() {
         y: surfaceHeightAt(...p),
       });
   });
-  trunk.castShadow = branches.castShadow = crowns.castShadow = true;
+  wood.castShadow = crowns.castShadow = true;
   crowns.receiveShadow = true;
-  addVegetationCells(vegetation, trunk, 'trunks');
-  addVegetationCells(vegetation, branches, 'branches');
+  addVegetationCells(vegetation, wood, 'wood');
   addVegetationCells(vegetation, crowns, 'crowns');
   streetEnvironment.trees = points.length;
   // Low shrubs use the same compact instancing approach in mapped green areas.

@@ -281,7 +281,14 @@ assert(detail, 'custom details exist');
 assert(g.facadeWork.fronts.length > 0, 'street frontages upgraded');
 // Closed facade solids are single-sided; flat/open shapes keep DoubleSide.
 const facadeSides = detail.children.map((m) => m.material.side);
-assert(facadeSides.filter((s) => s === Real.FrontSide).length > facadeSides.length / 2);
+for (const m of detail.children) {
+  if (m.material.side === Real.FrontSide)
+    assert(m.userData.closedSolid, 'single-sided batches contain only closed solids');
+  if (!m.material.map) {
+    assert(m.material.vertexColors, 'facade batch uses vertex colors');
+    assert.equal(m.geometry.getAttribute('color').count, m.geometry.getAttribute('position').count);
+  }
+}
 assert(facadeSides.includes(Real.DoubleSide), 'flat facade shapes stay double-sided');
 for (const v of VIEWPOINTS) assert(!g.blocked(v.x, v.z, 1.1), 'viewpoint clear ' + v.name);
 const { colliders, ...environmentCounts } = g.streetEnvironment;
@@ -381,9 +388,8 @@ const count = (kind) =>
   vegetation.children
     .filter((m) => m.name.startsWith('vegetation-' + kind + '-'))
     .reduce((n, m) => n + m.count, 0);
-assert.equal(count('trunks'), g.streetEnvironment.trees);
+assert.equal(count('wood'), g.streetEnvironment.trees);
 assert.equal(count('crowns'), g.streetEnvironment.trees * 5);
-assert.equal(count('branches'), g.streetEnvironment.trees * 3);
 for (const m of vegetation.children) {
   assert(m.isInstancedMesh);
   assert(Number.isFinite(m.boundingSphere.radius));

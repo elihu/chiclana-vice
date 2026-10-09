@@ -109,24 +109,30 @@ export function buildDetailedFacades() {
         return false;
     }
   }
-  const frontMaterials = new Map();
-  function frontSide(m) {
-    if (!frontMaterials.has(m)) {
-      let front = m.clone();
-      front.side = THREE.FrontSide;
-      frontMaterials.set(m, front);
-    }
-    return frontMaterials.get(m);
-  }
+  const materials = new Map();
   // Batch by material, side and 170 m cell, so off-screen frontage groups can be culled.
   staging.updateMatrixWorld(true);
   let batches = new Map(),
     textMeshes = [];
   staging.traverse((o) => {
     if (!o.isMesh) return;
-    if (o.material.map) {
+    if (o.userData.facadeText) {
       textMeshes.push(o);
       return;
+    }
+    const material = o.material;
+    if (
+      !material.isMeshStandardMaterial ||
+      material.map ||
+      material.emissive.getHex() !== 0 ||
+      material.transparent ||
+      material.opacity < 1
+    ) {
+      let parent = o;
+      while (parent && !parent.userData.recipe) parent = parent.parent;
+      throw Error(
+        'Material incompatible con el lote de fachada: ' + (parent?.userData.recipe ?? 'cubierta'),
+      );
     }
     let geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(),
       closed = closedSolid(o.geometry);
@@ -148,14 +154,30 @@ export function buildDetailedFacades() {
       Math.floor(geom.boundingSphere.center.z / world.facadeProfiles.facadeCellSize);
     let p = geom.getAttribute('position'),
       n = geom.getAttribute('normal'),
-      key = o.material.color.getHexString() + (closed ? '-front' : '') + '@' + cell,
+      side = closed ? THREE.FrontSide : THREE.DoubleSide,
+      materialKey =
+        material.roughness + '|' + material.metalness + '|' + (closed ? 'front' : 'double'),
+      key = materialKey + '@' + cell,
       bucket = batches.get(key);
     if (!bucket) {
-      bucket = { p: [], n: [], material: closed ? frontSide(o.material) : o.material };
+      if (!materials.has(materialKey))
+        materials.set(
+          materialKey,
+          new THREE.MeshStandardMaterial({
+            color: '#ffffff',
+            vertexColors: true,
+            roughness: material.roughness,
+            metalness: material.metalness,
+            side,
+          }),
+        );
+      bucket = { p: [], n: [], c: [], closed, material: materials.get(materialKey) };
       batches.set(key, bucket);
     }
     for (let i = 0; i < p.array.length; i++) bucket.p.push(p.array[i]);
     for (let i = 0; i < n.array.length; i++) bucket.n.push(n.array[i]);
+    for (let i = 0; i < p.count; i++)
+      bucket.c.push(material.color.r, material.color.g, material.color.b);
     geom.dispose();
   });
   let root = new THREE.Group();
@@ -164,9 +186,11 @@ export function buildDetailedFacades() {
     let g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(b.p, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(b.n, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(b.c, 3));
     g.computeBoundingSphere();
     let m = new THREE.Mesh(g, b.material);
     m.name = 'facade-cell-' + key;
+    m.userData.closedSolid = b.closed;
     m.castShadow = true;
     m.receiveShadow = true;
     root.add(m);
