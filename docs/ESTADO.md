@@ -83,8 +83,10 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   calle), porque la parte catastral 4909 incluye el patio y la ermita se apoya en la cota
   máxima. El usuario no quiere recortar el dato catastral ni añadir código para este
   caso; se revisará más adelante. Portada de Jesús Nazareno reorientada hacia la plaza
-  e integrada el 9/10/2026, aprobada por el usuario. Siguen
-  pendientes los modelos de Santa Ana e Iglesia Mayor. Sin publicar: `?v=` se sube al sacar la
+  e integrada el 9/10/2026, aprobada por el usuario. Paso 5.2 integrado el 9/10/2026:
+  Iglesia Mayor rehecha (fachada sobre el borde catastral con podio a la cota de la plaza y
+  cúpula con tambor), aprobada por el usuario; el podio no tiene colisión. Sigue pendiente
+  el modelo de Santa Ana (paso 5.3). Sin publicar: `?v=` se sube al sacar la
   versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
