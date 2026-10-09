@@ -6,7 +6,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.3.0` (9/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.3.1` (9/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
@@ -30,6 +30,13 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Novedades de `v1.3.1`
+
+- **Retirada la versión arcade anterior** (`web/arcade/`), con otro mapa y sin relación
+  con el juego actual; sigue en el historial y en las etiquetas hasta `v1.3.0`.
+- **Créditos** actualizados con los monumentos modelados y las fotografías de referencia
+  de la Iglesia Mayor, la Veracruz y Santa Ana.
 
 ## Novedades de `v1.3.0`
 
