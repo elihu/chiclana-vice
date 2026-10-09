@@ -14,6 +14,10 @@ export function prepareFacades() {
   const special = world.city.landmarks.filter((p) =>
     /Ayuntamiento de Chiclana|Mercado Municipal/.test(p.name),
   );
+  const churches = world.facadeDesigns.buildings
+    .filter((b) => b.detailType === 'church' && b.landmark)
+    .map((b) => world.city.landmarks.find((p) => p.name.includes(b.landmark)))
+    .filter(Boolean);
   for (const [buildingIndex, b] of world.city.buildings.entries()) {
     const cx = (b.minX + b.maxX) / 2,
       cz = (b.minZ + b.maxZ) / 2;
@@ -22,13 +26,7 @@ export function prepareFacades() {
       b.detailType = hit.name.startsWith('Mercado') ? 'market' : 'townhall';
       continue;
     }
-    if (
-      world.city.landmarks.some(
-        (p) =>
-          /Iglesia de Jesús Nazareno|San Telmo|Iglesia Mayor/.test(p.name) &&
-          pInside(cx, cz, p.outline),
-      )
-    ) {
+    if (churches.some((p) => pInside(cx, cz, p.outline))) {
       b.detailType = 'church';
       continue;
     }
@@ -84,22 +82,8 @@ export function buildDetailedFacades() {
   const staging = new THREE.Group(),
     palette = world.facadeProfiles.palette;
   const kit = createFacadeKit({ staging, palette });
-  // Ayuntamiento: mapped west frontage; vertical proportions interpreted from the official elevation/section.
-  composeBuilding(kit, world.facadeDesigns, 'ayuntamiento');
-  // Mercado: long modern stone facade, upper louvers, dark shopfronts and cafe awnings.
-  composeBuilding(kit, world.facadeDesigns, 'mercado');
-
-  // Church naves have atypical storey heights; dimensions are visual estimates.
-  for (const id of ['nave-jesus-nazareno', 'nave-san-telmo', 'nave-iglesia-mayor'])
-    composeBuilding(kit, world.facadeDesigns, id, { landmarks: world.city.landmarks });
-  // Jesús Nazareno: white side facade, ochre bands and sculpted marble portal.
-  composeBuilding(kit, world.facadeDesigns, 'portada-jesus-nazareno');
-  // San Telmo: ochre-trimmed gable and offset bell-screen; no invented twin towers.
-  composeBuilding(kit, world.facadeDesigns, 'portada-san-telmo');
-  // San Juan Bautista: three-bay stone facade, giant pilasters and a central pediment.
-  composeBuilding(kit, world.facadeDesigns, 'portada-san-juan-bautista');
-  // Puente VII Centenario: two steel side arches over the whole span, with hangers.
-  composeBuilding(kit, world.facadeDesigns, 'puente-vii-centenario');
+  for (const building of world.facadeDesigns.buildings)
+    composeBuilding(kit, world.facadeDesigns, building.id, { landmarks: world.city.landmarks });
 
   // Nearby residential and commercial frontages: varied plaster, framed openings, shutters and balconies.
   const frontContext = { residentialStreets: world.cityDesign.frontages.residentialStreets };
