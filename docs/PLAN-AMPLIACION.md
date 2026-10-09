@@ -507,12 +507,17 @@ genérico.
   dos faroles a los lados; puerta lateral pequeña de arco a la derecha; zócalo de
   piedra; atrio delante con reja de hierro sobre murete y dos pilares de ladrillo junto a
   una hornacina con tejadillo. Cipreses: no se modelan (la vegetación es aparte).
-- **Diseño**: edificio `veracruz` con `detailType: "church"` y `landmark: "Veracruz"`;
-  una nave por `landmarkRing` (receta `nave`, altura estimada, cubierta según la
-  ortofoto) y la fachada como receta propia `portada-veracruz` sobre el lado corto que da
-  a la plaza (anclaje de segmento con dos vértices del contorno). Identificar en la
-  ortofoto qué lado es y si el atrio queda dentro del contorno: si lo está, la fachada se
-  retrasa a su línea real y la reja va en el borde. Explicar la elección en el informe.
+- **Diseño**: edificio `veracruz` con `detailType: "church"` y `landmark: "Veracruz"`.
+  Si el contorno OSM incluye el atrio, declarar una planta visual de autor para la nave,
+  basada en ese contorno y recortada a la línea de fachada identificada en la ortofoto.
+  Componer sus muros y cubierta mediante anclajes y primitivas del kit existente, sin
+  código específico para Veracruz; alturas y cubierta aproximadas según las fuentes.
+  Situar la receta `portada-veracruz` en esa línea retranqueada y la reja en el lado corto
+  sur del contorno OSM (vértices 1→2), hacia la plaza. Documentar coordenadas, retranqueo
+  y elección del lado. Conservar íntegros el hito OSM, el contorno y volumen catastrales,
+  las colisiones, el relieve y la política de base de `composeBuilding`. El atrio es una
+  representación visual: este paso no modifica su transitabilidad. Ajuste aprobado
+  por el usuario el 9/10/2026.
 - **Commit**: `feat(datos): modelar la Ermita del Cristo de la Veracruz`.
 
 ### Paso 5.2: Iglesia Mayor (San Juan Bautista)
