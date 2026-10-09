@@ -3,7 +3,10 @@
 Fecha: 9/10/2026. Desarrolla la propuesta de mejora visual revisada el 9/10/2026 contra
 el código. Las cifras de referencia son de `main` en `b007ac5`; las referencias de línea,
 de `main` en `083cc29`. Ambas son orientativas: contrástalas con el árbol al empezar cada
-fase.
+fase. Desde entonces se han integrado los modelos de la fase 5 (Veracruz, Iglesia Mayor,
+Santa Ana y la portada de Jesús Nazareno, unas 15 mallas y 9.000 triángulos más), la
+retirada de `web/arcade/` y el cambio del terreno junto a las calzadas
+(`fix/terreno-junto-calzadas`): G0 medirá cifras distintas de la tabla de referencia.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md` (sobre todo «Modo ligero» y «Medir en el
 navegador»), `docs/ESTADO.md`, `tests/AGENTS.md` y, si la fase toca datos o `tools/`,
@@ -58,7 +61,7 @@ navegador»), `docs/ESTADO.md`, `tests/AGENTS.md` y, si la fase toca datos o `to
   (`tests/AGENTS.md`).
 - **D7. Orden y dependencias.** G0 va primero. G1 y G3 tocan `web/js/world/facades.js`:
   empiezan **después de integrar la fase 5 de [PLAN-AMPLIACION.md](PLAN-AMPLIACION.md)**
-  (modelos), que también lo modifica. G2 no depende de G1. G4 va después de G2. G5
+  (modelos), que también lo modifica; integrada el 9/10/2026. G2 no depende de G1. G4 va después de G2. G5
   necesita decisiones del usuario (ver la propia fase).
 
 ## Referencia medida (main `b007ac5`, SwiftShader, 1280 × 720)
