@@ -92,7 +92,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
 - Mejora gráfica y presupuesto de render: plan en
   [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md). G0 integrada el 9/10/2026
-  (`tools/scene-budget.mjs` y `tools/compare-shots.py`, capturas deterministas); es el contenido de
+  (`tools/scene-budget.mjs` y `tools/compare-shots.py`, capturas deterministas) y G1 el
+  mismo día (fachadas agrupadas por material y troncos con ramas: 21–38 % menos llamadas
+  en seguimiento, hasta un 9,6 % más de triángulos dibujados; G1.3 descartada); es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
