@@ -388,9 +388,8 @@ const count = (kind) =>
   vegetation.children
     .filter((m) => m.name.startsWith('vegetation-' + kind + '-'))
     .reduce((n, m) => n + m.count, 0);
-assert.equal(count('trunks'), g.streetEnvironment.trees);
+assert.equal(count('wood'), g.streetEnvironment.trees);
 assert.equal(count('crowns'), g.streetEnvironment.trees * 5);
-assert.equal(count('branches'), g.streetEnvironment.trees * 3);
 for (const m of vegetation.children) {
   assert(m.isInstancedMesh);
   assert(Number.isFinite(m.boundingSphere.radius));
