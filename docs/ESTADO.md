@@ -85,6 +85,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
+- Mejora gráfica y presupuesto de render: plan en
+  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md), sin empezar. G0 (medición) y G2 (luz
+  y muros) pueden empezar ya; G1 y G3 tocan `facades.js` y esperan a que se integre la
+  fase 5. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
+  sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Verificación en iOS y revisión visual de las fachadas en FrontSide.
