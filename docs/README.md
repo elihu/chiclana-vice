@@ -32,6 +32,9 @@ documento; los demás enlazan a él.
   Centenario, ferial y carga de la ortofoto alrededor del jugador; preliminar.
 - [Plan de ampliación y ortofoto por teselas](PLAN-AMPLIACION.md): relieve anclado al
   origen, límites con rectángulos, teselas, anexos y modelos; fases 0 y 1 integradas.
+- [Plan de mejora gráfica y presupuesto de render](PLAN-MEJORA-GRAFICA.md): medición de
+  llamadas y triángulos, agrupación de fachadas, luz, modo ligero, suelo cercano y árboles
+  sobre la ortofoto; sin empezar.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
