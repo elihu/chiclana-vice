@@ -68,6 +68,23 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+- Ermita del Cristo de la Veracruz (`veracruz`): planta visual de la nave a partir del
+  hito OSM y la ortofoto PNOA 2022-07 `web/aerial/hi/0_1.jpg`. La fachada mira al lado
+  corto sur, vértices 1→2 (`[210.93,394.7]`–`[193.36,393.76]`), de 17,60 m, hacia la
+  plaza. El atrio está dentro del contorno: portada sobre
+  `[193.51,387.46]`–`[210.14,388.35]`, unos 6,3 m detrás de la reja del borde sur.
+  Cabecera y laterales se conservan como referencia; el recorte es una planta visual
+  de autor, no una corrección cartográfica. Encalado, remate curvo, bandas ocres,
+  espadaña de un vano con campana y cruz de veleta, óculo, arco de piedra, puertas,
+  faroles, reja, pilares y hornacinas se interpretan de las dos fotos aprobadas de
+  Xemenendura identificadas en los avisos de terceros. No se distribuyen como texturas.
+  Muros a 9,10 m, cubierta a dos aguas hasta unos 10,60 m y cruz hasta 17 m sobre la
+  base: proporciones estimadas, sin medición arquitectónica. El atrio visual se apoya
+  a 3,50 m sobre la base para cubrir el volumen catastral de 3,45 m que se conserva;
+  no se vuelve transitable. `baseY` del hito es 15,22 m y el desnivel bajo la parte
+  catastral 4909 es 3,18 m: la política de cota máxima permanece y deja un zócalo alto (hasta unos
+  6,68 m hasta el pavimento visual). No se modifica relieve, contorno ni colisiones;
+  no se añaden cipreses. Modelo aproximado pendiente de revisión visual del usuario.
 - Puente VII Centenario (receta `puente-arco`): dos arcos laterales de acero sobre toda la
   luz, con péndolas cada 3,5 m y apoyos, en los bordes de un tablero de 14 m. La planta de
   los arcos y su posición sobre la calzada salen de la ortofoto PNOA 2022-07 y el eje y los

@@ -112,6 +112,9 @@ Referencias que se mantienen identificadas, con sus condiciones originales:
   https://creativecommons.org/licenses/by-sa/3.0/
 - San Telmo: Xemenendura, 5/12/2021, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Iglesia_San_Telmo_Chiclana.jpg
+- Ermita del Cristo de la Veracruz: Xemenendura, 19/7/2022, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:Ermita_Cristo_de_la_Veracruz.jpg
+  https://commons.wikimedia.org/wiki/File:Ermita_del_Cristo_de_la_Veracruz.jpg
 - Turismo municipal: referencias documentales; licencia abierta no verificada.
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-telmo/
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-juan-bautista/
