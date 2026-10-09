@@ -503,12 +503,25 @@
       ]
     },
     "portada-jesus-nazareno": {
-      "description": "White side facade with ochre bands and a sculpted marble portal, with a corner belfry. Equivalent to the Jesús Nazareno block of buildDetailedFacades in main 5666928.",
-      "params": {},
+      "description": "White side facade with ochre bands and a sculpted marble portal, with a corner belfry. Equivalent to the Jesús Nazareno block of buildDetailedFacades in main 5666928. portal and tower place the portal and the belfry along the wall; deck closes the gap to the nave behind with a flat roof strip.",
+      "params": { "portal": "len * 0.52", "tower": "len - 0.9", "deck": 0 },
       "body": [
         {
+          "if": "deck > 0",
+          "then": [
+            {
+              "box": ["len / 2", 10.35, "-deck / 2", "len", 0.1, "deck"],
+              "color": "#bca68b"
+            },
+            {
+              "box": ["len - 0.08", 5.2, "-deck / 2", 0.16, 10.4, "deck"],
+              "color": "#f0ede2"
+            }
+          ]
+        },
+        {
           "let": {
-            "x": "len * 0.52"
+            "x": "portal"
           }
         },
         {
@@ -649,20 +662,20 @@
           "args": ["x", 10.7]
         },
         {
-          "box": ["len - 0.9", 11.3, -1.2, 2.8, 2.2, 2.8],
+          "box": ["tower", 11.3, -1.2, 2.8, 2.2, 2.8],
           "color": "#ede5d4"
         },
         {
           "piece": "belfry",
-          "args": ["len - 0.9", 12.4, 2.8, 2.7]
+          "args": ["tower", 12.4, 2.8, 2.7]
         },
         {
-          "box": ["len - 0.9", 15.18, 0.1, 3.2, 0.2, 0.9],
+          "box": ["tower", 15.18, 0.1, 3.2, 0.2, 0.9],
           "color": "#bd9038"
         },
         {
           "piece": "cross",
-          "args": ["len - 0.9", 16.15]
+          "args": ["tower", 16.15]
         }
       ]
     },
@@ -2035,16 +2048,18 @@
       "status": "approximate",
       "references": [
         "THIRD_PARTY_NOTICES.md: Portada Jesús Nazareno, Xemenendura (29/12/2015), CC BY-SA 3.0, reference only",
-        "THIRD_PARTY_NOTICES.md: IAPH, Fachadas lateral y principal del Convento de Jesús Nazareno (2012), CC BY-NC-SA 3.0, reference only"
+        "THIRD_PARTY_NOTICES.md: IAPH, Fachadas lateral y principal del Convento de Jesús Nazareno (2012), CC BY-NC-SA 3.0, reference only",
+        "West front on the outer cadastral edge (parts 3865 and 3868) facing the plaza; PNOA 2022-07 orthophoto, web/aerial/hi/-1_0.jpg"
       ],
       "fronts": [
         {
           "anchor": {
-            "a": [-73.04, 73.69],
-            "b": [-50.77, 76.89],
-            "outward": [0, -1]
+            "a": [-77.55, 75],
+            "b": [-77.25, 106.91],
+            "outward": [-1, 0]
           },
-          "recipe": "portada-jesus-nazareno"
+          "recipe": "portada-jesus-nazareno",
+          "with": { "tower": 2.1, "portal": 7.9, "deck": 3.4 }
         }
       ]
     },

@@ -17,7 +17,7 @@ export const PLACES = [
 export const VIEWPOINTS = [
   { name: 'Ayuntamiento · ver fachada', x: -99, z: -15, tx: -87, tz: -16 },
   { name: 'Mercado · ver fachada', x: -215, z: -145, tx: -238, tz: -137 },
-  { name: 'Jesús Nazareno · ver fachada', x: -81, z: 69, tx: -62, tz: 76 },
+  { name: 'Jesús Nazareno · ver fachada', x: -93, z: 79, tx: -77, tz: 84 },
   { name: 'San Telmo · ver fachada', x: -10, z: -155, tx: -12, tz: -167 },
   { name: 'Iglesia Mayor · ver fachada', x: 191, z: 163, tx: 212, tz: 167 },
   { name: 'Santa Ana · mirador', x: -238.6, z: 532, tx: 0, tz: 0 },
