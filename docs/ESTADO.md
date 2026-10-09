@@ -69,8 +69,14 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   el 8/10/2026: 24 teselas PNOA 2022-07 en `web/aerial/` (12 MB). Fase 3 integrada el
   8/10/2026: el suelo y los tejados cargan teselas a 0,25 m (0,5 m en ligero y táctil)
   alrededor del jugador, con la vista general de respaldo; retirada la ortofoto única.
-  Revisada por el usuario en escritorio; **falta probarla en un móvil Android**. Sigue
-  la fase 4 (anexos).
+  Revisada por el usuario en escritorio; **falta probarla en un móvil Android**. Fase 4
+  integrada el 9/10/2026: anexos de Santa Ana y del norte (Puente VII Centenario y
+  ferial), capas reconstruidas desde los originales (44 vías ganan el sentido único de
+  OSM), relieve desde la rejilla nativa del MDT por teselas (ampliar ya no cambia las
+  cotas existentes) validado por el usuario, Puente VII Centenario modelado con sus dos
+  arcos y Santa Ana como lugar, mirador y encargo. Sigue la fase 5 (modelos: ermitas de
+  la Veracruz y de Santa Ana, Iglesia Mayor). Sin publicar: `?v=` se sube al sacar la
+  versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
