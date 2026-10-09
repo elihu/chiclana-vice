@@ -70,10 +70,11 @@ se sustituye.
 
 - Ermita del Cristo de la Veracruz (`veracruz`): planta visual de la nave a partir del
   hito OSM y la ortofoto PNOA 2022-07 `web/aerial/hi/0_1.jpg`. La fachada mira al lado
-  corto sur, vértices 1→2 (`[210.93,394.7]`–`[193.36,393.76]`), de 17,60 m, hacia la
+  corto norte, vértices 0→3 (`[207.54,367.8]`–`[194.03,366.67]`), de 13,56 m, hacia la
   plaza. El atrio está dentro del contorno: portada sobre
-  `[193.51,387.46]`–`[210.14,388.35]`, unos 6,3 m detrás de la reja del borde sur.
-  Cabecera y laterales se conservan como referencia; el recorte es una planta visual
+  `[208.35,374.19]`–`[193.87,372.98]`, unos 6,3 m detrás de la reja del borde norte.
+  Orientación corregida tras la revisión del usuario: la fachada es la del extremo
+  norte de la nave. Cabecera y laterales se conservan como referencia; el recorte es una planta visual
   de autor, no una corrección cartográfica. Encalado, remate curvo, bandas ocres,
   espadaña de un vano con campana y cruz de veleta, óculo, arco de piedra, puertas,
   faroles, reja, pilares y hornacinas se interpretan de las dos fotos aprobadas de

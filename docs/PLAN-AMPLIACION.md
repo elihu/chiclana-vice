@@ -513,7 +513,7 @@ genérico.
   Componer sus muros y cubierta mediante anclajes y primitivas del kit existente, sin
   código específico para Veracruz; alturas y cubierta aproximadas según las fuentes.
   Situar la receta `portada-veracruz` en esa línea retranqueada y la reja en el lado corto
-  sur del contorno OSM (vértices 1→2), hacia la plaza. Documentar coordenadas, retranqueo
+  norte del contorno OSM (vértices 0→3), hacia la plaza. Documentar coordenadas, retranqueo
   y elección del lado. Conservar íntegros el hito OSM, el contorno y volumen catastrales,
   las colisiones, el relieve y la política de base de `composeBuilding`. El atrio es una
   representación visual: este paso no modifica su transitabilidad. Ajuste aprobado

@@ -1652,7 +1652,7 @@
       ]
     },
     "cubierta-veracruz": {
-      "description": "Cubierta a dos aguas aproximada sobre la nave visual, sin cubrir el atrio. Anchura decreciente entre fachada y cabecera del contorno OSM.",
+      "description": "Cubierta a dos aguas aproximada sobre la nave visual, sin cubrir el atrio norte. Anchura creciente desde la fachada norte hacia la cabecera sur del contorno OSM.",
       "params": {
         "h": 9.1
       },
@@ -1666,7 +1666,7 @@
             {
               "let": {
                 "t": "(i+0.5)/15",
-                "w": "len-(len-13.55)*t",
+                "w": "len+(17.6-len)*t",
                 "depth": 20.8
               }
             },
@@ -2128,25 +2128,25 @@
           "anchor": {
             "ring": [
               [
-                207.54,
-                367.8
+                208.35,
+                374.19
               ],
               [
-                210.14,
-                388.35
+                210.93,
+                394.7
               ],
               [
-                193.51,
-                387.46
+                193.36,
+                393.76
               ],
               [
-                194.03,
-                366.67
+                193.87,
+                372.98
               ]
             ],
             "center": [
-              201.3,
-              377.5
+              201.5,
+              384
             ]
           },
           "recipe": "nave",
@@ -2158,16 +2158,16 @@
         {
           "anchor": {
             "a": [
-              193.51,
-              387.46
+              208.35,
+              374.19
             ],
             "b": [
-              210.14,
-              388.35
+              193.87,
+              372.98
             ],
             "outward": [
-              -0.0534,
-              0.9986
+              0.08335069669722303,
+              -0.9965202764420239
             ]
           },
           "recipe": "cubierta-veracruz"
@@ -2175,16 +2175,16 @@
         {
           "anchor": {
             "a": [
-              193.51,
-              387.46
+              208.35,
+              374.19
             ],
             "b": [
-              210.14,
-              388.35
+              193.87,
+              372.98
             ],
             "outward": [
-              -0.0534,
-              0.9986
+              0.08335069669722303,
+              -0.9965202764420239
             ]
           },
           "recipe": "portada-veracruz"
@@ -2192,16 +2192,16 @@
         {
           "anchor": {
             "a": [
-              193.36,
-              393.76
+              207.54,
+              367.8
             ],
             "b": [
-              210.93,
-              394.7
+              194.03,
+              366.67
             ],
             "outward": [
-              -0.0534,
-              0.9986
+              0.08335069669722303,
+              -0.9965202764420239
             ]
           },
           "recipe": "atrio-veracruz"
