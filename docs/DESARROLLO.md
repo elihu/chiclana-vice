@@ -219,6 +219,83 @@ medido en un móvil físico.
 
 ## Medir en el navegador
 
+Para medir el presupuesto de render, sirve `web/` y ejecuta:
+
+```sh
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --out /tmp/chiclana-budget/base.json --shots /tmp/chiclana-budget/normal-a
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --out /tmp/chiclana-budget/base-low.json --low --shots /tmp/chiclana-budget/low-a
+node tools/scene-budget.mjs http://127.0.0.1:8080/ --compare /tmp/chiclana-budget/base.json --shots /tmp/chiclana-budget/normal-b
+uv run --no-project --with pillow --with numpy python tools/compare-shots.py /tmp/chiclana-budget/normal-a /tmp/chiclana-budget/normal-b
+```
+
+`scene-budget.mjs` requiere Node con WebSocket global y `google-chrome-stable`.
+Abre Chrome sin interfaz con SwiftShader a 1280 × 720 y escala 1, inicia la partida y
+mide Alameda (inicio), Mercado de Abastos, Plaza Mayor, Santa Ana y San Telmo en
+seguimiento, primera persona y aérea, con el rumbo inicial. Inicia y pausa la sesión
+en la misma tarea, antes de que avance la simulación; fija el tiempo de animación a
+cero y coloca los marcadores del encargo inicial sin descubrir lugares ni entregar
+encargos. Tráfico y peatones conservan su posición inicial. Ajusta la superficie del
+jugador y coloca la cámara sin interpolación residual. Oculta la interfaz (HUD,
+avisos y etiquetas) y renderiza a mano para medir y capturar. Espera 2,5 segundos,
+recarga las teselas de ortofoto y espera otro segundo en cada vista. `--low` guarda
+la calidad ligera antes de cargar y comprueba que se haya aplicado.
+
+El JSON incluye llamadas de dibujo y triángulos por vista: `total` suma el pase
+principal y el de sombras; `main` excluye sombras. Three.js r169 reinicia
+`renderer.info` después del pase de sombras: la herramienta usa
+`info.autoReset = false` y `info.reset()` antes de cada medida, y restaura el sol y
+el reinicio automático al terminar. También registra una vez el inventario de
+mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
+sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.
+`--compare` muestra las cifras anteriores y actuales y su diferencia porcentual;
+no impone un umbral de presupuesto. Los errores de página hacen fallar la ejecución.
+La espera de arranque tolera fallos de `Runtime.evaluate` durante la navegación
+hasta el plazo de 90 segundos. Chrome y su perfil temporal se cierran y eliminan al
+terminar, también ante errores.
+El servidor se cierra por separado.
+
+`compare-shots.py` compara los PNG con el mismo nombre, contando los píxeles cuya
+diferencia máxima entre canales RGBA es mayor que 8 (escala 0–255), e imprime esa
+proporción y la diferencia máxima. Sale con código 1 si alguna captura supera
+`--limit` (por defecto 0,5 %); dimensiones distintas también fallan. Avisa de PNG
+sin pareja y falla si no hay ninguno comparable. Repite las capturas sobre el mismo
+árbol antes de un cambio para conocer el ruido y fijar el límite de comparación.
+
+En G0 se recomienda el límite predeterminado de 0,5 % (o uno menor), sin ampliar
+la tolerancia para cubrir una simulación en marcha. La revisión del 9/10/2026
+dio **0 % de ruido y diferencia máxima de canal 0 en las 15 vistas de cada modo**
+entre dos ejecuciones consecutivas por calidad; los informes JSON completos también
+fueron idénticos entre repeticiones. La sesión congelada sustituye las referencias
+anteriores, cuyo ruido cercano
+al 1 % procedía de avisos, descubrimientos, entregas, marcadores animados y actores
+en movimiento. Las nuevas capturas y cifras se guardan en
+`/tmp/chiclana-budget-fixed/`; son artefactos temporales.
+
+El cálculo de los pases no cambia, pero las referencias se miden ahora con los
+actores en su posición inicial y el objetivo del primer encargo fijo en el Mercado
+(en vez de avanzar a otro encargo). Esto cambia qué objetos entran en el frustum
+principal y el de sombras. Al teletransportar se reinicia la referencia de superficie
+y se elimina la interpolación residual de cámara; en Santa Ana también cambia el
+encuadre. No se elimina geometría para reducir los recuentos: el inventario conserva
+1618 mallas, 1686067 triángulos y 1216705 triángulos que proyectan sombras en ambos
+modos. En ligero, las geometrías subidas al renderizador bajan de 675 a 667, pues los
+actores quietos no llegan a hacer visibles las mismas geometrías durante el recorrido.
+
+Frente a `base.json` y `base-low.json` anteriores, Alameda y Mercado en seguimiento
+y primera persona conservan llamadas y triángulos. Ejemplos de cambios justificados
+(llamadas total/principal; triángulos total/principal):
+
+| Vista                    | Normal anterior → congelado                          | Ligero anterior → congelado                          |
+| ------------------------ | ---------------------------------------------------- | ---------------------------------------------------- |
+| Mercado, aérea           | 305/140 → 310/145; 859819/500143 → 860147/500471     | 140/140 → 145/145; 500143/500143 → 500471/500471     |
+| Plaza Mayor, seguimiento | 756/656 → 741/665; 1275139/1196683 → 1270629/1197933 | 610/610 → 619/619; 1160458/1160458 → 1161708/1161708 |
+| Santa Ana, seguimiento   | 509/423 → 511/433; 806162/721577 → 822336/738991     | 401/401 → 411/411; 700790/700790 → 718204/718204     |
+| San Telmo, aérea         | 382/194 → 358/182; 1078294/677244 → 1072534/674364   | 194/194 → 182/182; 677244/677244 → 674364/674364     |
+
+Estos recuentos y las capturas en SwiftShader no acreditan rendimiento de GPU,
+FPS ni comportamiento en móvil físico. Para medir intervalos entre frames en el
+dispositivo real, usa la herramienta siguiente.
+
 `web/measure.js` se publica pero no se carga con el juego. Con el juego en marcha y sin
 menús abiertos, en la consola:
 
