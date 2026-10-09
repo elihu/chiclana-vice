@@ -68,6 +68,20 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+- Iglesia Mayor (`portada-san-juan-bautista`, `cupula-san-juan-bautista`,
+  `nave-iglesia-mayor`): fachada de 27,5 m sobre el borde oeste de la parte catastral 5106,
+  de `[204.36,179.39]` a `[214.14,153.68]`, que coincide con el tejado en la ortofoto
+  PNOA 2022-07 `web/aerial/hi/0_0.jpg`; el contorno OSM queda unos 2,5 m por detrás y
+  dejaba la portada tapada por el volumen catastral. La base del conjunto es la cota
+  máxima del hito (14,71 m) y la plaza está a unos 7–8 m: la fachada arranca del podio a
+  9,4 m (5,3 m por debajo de la base) y el podio baja hasta 8,4 m bajo la base, enterrado
+  en el extremo bajo. Proporciones de las fotos de Oscar Sanchez y Xemenendura citadas en
+  los avisos de terceros: cornisa a unos 17,6 m sobre el podio, frontón hasta 19,9 m,
+  podio de 2 m con escalinata central de siete peldaños. Tambor octogonal sobre el
+  octógono catastral 5104 (centro `[236.8,177.1]`, apotema 5,4 m), de 5,7 m de alto, y
+  media naranja de 5 m de radio con 16 nervios dobles, según la foto de PEPE GADEIRAS; la
+  cúpula de la ortofoto aparece desplazada por la perspectiva y no se usa para situarla.
+  Nave a 12,2 m sobre la base, al nivel de la cornisa. Alturas estimadas, sin medición.
 - Jesús Nazareno (`portada-jesus-nazareno`): la portada de mármol y la torre miran al
   oeste, a la Plaza de Jesús Nazareno, al otro lado de Calle Hormaza; el lado de Calle
   Larga es un muro liso. Lo indican la foto IAPH «Fachadas lateral y principal del
