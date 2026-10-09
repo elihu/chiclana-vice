@@ -68,6 +68,15 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+- Jesús Nazareno: pendiente de corregir la orientación y el anclaje de la portada.
+  La foto IAPH «Fachadas lateral y principal del Convento de Jesús Nazareno», ya citada
+  en los avisos de terceros, y la ortofoto sitúan la portada de mármol al oeste, hacia
+  la plaza, y el lateral en Calle Larga, al norte. La receta vigente sigue sobre el
+  lado norte del hito OSM. La prueba de moverla al lado oeste de ese hito dejó parte de
+  la portada tapada por los volúmenes catastrales: hay que comprobar el anclaje contra
+  su borde exterior y la base común antes de adoptar una corrección. Esa prueba no se
+  incorpora; se conserva el modelo anterior. Diagnóstico del 9/10/2026 tras la revisión
+  del usuario, separado del modelo de Veracruz.
 - Ermita del Cristo de la Veracruz (`veracruz`): planta visual de la nave a partir del
   hito OSM y la ortofoto PNOA 2022-07 `web/aerial/hi/0_1.jpg`. La fachada mira al lado
   corto norte, vértices 0→3 (`[207.54,367.8]`–`[194.03,366.67]`), de 13,56 m, hacia la
