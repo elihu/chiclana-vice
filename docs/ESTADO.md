@@ -6,13 +6,15 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.2.0` (8/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.3.0` (9/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
   la `v1.1.0` el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android, y el
-  relieve de la `v1.2.0` el 8/10/2026 en el navegador de escritorio.
-- No verificado: iOS, FPS medidos en un móvil físico y el relieve en móvil.
+  relieve de la `v1.2.0` el 8/10/2026 en el navegador de escritorio; la ampliación y los
+  modelos de la `v1.3.0`, el 8 y el 9/10/2026 en el navegador de escritorio.
+- No verificado: iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
+  teselas en móvil.
 
 ## Decisiones vigentes
 
@@ -29,15 +31,21 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
-## Novedades de `v1.2.0`
+## Novedades de `v1.3.0`
 
-- **Relieve real del terreno** a partir del MDT de 5 m del IGN, remuestreado a unos
-  10 m: calles, edificios, vegetación, mobiliario, vehículos, peatones, cámaras y
-  marcadores siguen las cuestas ([TERRENO_PILOTO.md](TERRENO_PILOTO.md)).
-- **Plataformas con paso inferior** (Gran Plaza sobre el Iro y tablero de Remedios
-  sobre San Sebastián), lámina de agua por tramos y estanque de la Alameda, declarados
-  en `city-design.json` ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)).
-- **Créditos** con la atribución del MDT del IGN.
+- **Mapa ampliado** a Santa Ana y al norte (Puente VII Centenario y ferial), con los
+  límites del mundo como lista de rectángulos ([PLAN-AMPLIACION.md](PLAN-AMPLIACION.md)).
+- **Ortofoto por teselas** PNOA 2022-07 a 0,25 m alrededor del jugador (0,5 m en modo
+  ligero y táctil), con una vista general de respaldo.
+- **Relieve** desde la rejilla nativa del MDT por teselas: ampliar el mapa ya no cambia
+  las cotas existentes.
+- **Monumentos** descritos en `facade-designs.json`: Ermita de la Veracruz, Iglesia Mayor
+  rehecha con su cúpula, Ermita de Santa Ana y Puente VII Centenario; la portada de Jesús
+  Nazareno mira ya a su plaza.
+- **Juego**: Santa Ana y el puente como lugares y miradores, y el encargo «La subida a
+  Santa Ana».
+- **Datos**: variación de edificios precalculada por parte y 44 vías con el sentido único
+  de OSM.
 
 ## Relieve del terreno
 
@@ -61,41 +69,20 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 
 ## Pendientes
 
-- Ampliación del mapa y ortofoto por teselas: plan en
-  [PLAN-AMPLIACION.md](PLAN-AMPLIACION.md). Fase 0 integrada el 8/10/2026 (rejilla del
-  relieve anclada al origen, revisada por el usuario, y rampas de acceso a plataformas
-  sin escalones) y fase 1 el 8/10/2026 (límites del mundo como lista de rectángulos en
-  `world.json`, con márgenes medidos sobre la unión; escena idéntica). Fase 2 integrada
-  el 8/10/2026: 24 teselas PNOA 2022-07 en `web/aerial/` (12 MB). Fase 3 integrada el
-  8/10/2026: el suelo y los tejados cargan teselas a 0,25 m (0,5 m en ligero y táctil)
-  alrededor del jugador, con la vista general de respaldo; retirada la ortofoto única.
-  Revisada por el usuario en escritorio; **falta probarla en un móvil Android**. Fase 4
-  integrada el 9/10/2026: anexos de Santa Ana y del norte (Puente VII Centenario y
-  ferial), capas reconstruidas desde los originales (44 vías ganan el sentido único de
-  OSM), relieve desde la rejilla nativa del MDT por teselas (ampliar ya no cambia las
-  cotas existentes) validado por el usuario, Puente VII Centenario modelado con sus dos
-  arcos y Santa Ana como lugar, mirador y encargo. Fase 5: paso 5.0 integrado (monumentos desde
-  los datos), junto con la variación de edificios precalculada por parte fuera del
-  navegador; huellas con relieve y sin él idénticas, paleta, vegetación y actores
-  conservados. Paso 5.1 integrado el 9/10/2026: Ermita de la Veracruz con la fachada al
-  norte, aprobada por el usuario con una salvedad: el patio delante de la puerta queda
-  unos 6,5 m sobre la calle (en la realidad, algo elevado y con la verja casi a pie de
-  calle), porque la parte catastral 4909 incluye el patio y la ermita se apoya en la cota
-  máxima. El usuario no quiere recortar el dato catastral ni añadir código para este
-  caso; se revisará más adelante. Portada de Jesús Nazareno reorientada hacia la plaza
-  e integrada el 9/10/2026, aprobada por el usuario. Paso 5.2 integrado el 9/10/2026:
-  Iglesia Mayor rehecha (fachada sobre el borde catastral con podio a la cota de la plaza y
-  cúpula con tambor), aprobada por el usuario; el podio no tiene colisión. Paso 5.3 integrado el
-  9/10/2026: Ermita de Santa Ana (octógono con galería, tambor y cúpula, anexo y
-  escalinata), aprobada por el usuario; zócalo de hasta 3,7 m junto al anexo. Sin publicar: `?v=` se sube al sacar la
-  versión.
+- Ampliación ([PLAN-AMPLIACION.md](PLAN-AMPLIACION.md)): fases 0–5 publicadas en la
+  `v1.3.0`. Falta probar la ortofoto por teselas en un móvil Android. Veracruz: el patio
+  delante de la puerta queda unos 6,5 m sobre la calle (en la realidad, algo elevado y
+  con la verja casi a pie de calle), porque la parte catastral 4909 incluye el patio y la
+  ermita se apoya en la cota máxima; el usuario no quiere recortar el dato catastral ni
+  añadir código para este caso y se revisará más adelante. El podio de la Iglesia Mayor
+  no tiene colisión. Revisar en el navegador la flecha y el color de los arcos del
+  Puente VII Centenario; el ferial solo si el usuario lo pide.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
 - Mejora gráfica y presupuesto de render: plan en
-  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md), sin empezar. G0 (medición) y G2 (luz
-  y muros) pueden empezar ya; G1 y G3 tocan `facades.js` y esperan a que se integre la
-  fase 5. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
+  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md), sin empezar. Con la fase 5 integrada,
+  pueden empezar todas sus fases. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
