@@ -11,27 +11,28 @@ se sustituye.
 
 ## Fuentes
 
-- **Catastro INSPIRE BU**, municipio 11015, descarga del 4/10/2026. 7.448 partes de
-  edificio: contornos y patios recortados, simplificados a 0,12 m y transformados de
+- **Catastro INSPIRE BU**, municipio 11015, descarga del 4/10/2026. 7.862 partes de
+  edificio (7.419 en el centro, 333 en Santa Ana y 86 en el norte): contornos y patios
+  recortados con la unión de los rectángulos del mundo, simplificados a 0,12 m y transformados de
   EPSG:25829 a coordenadas locales con precisión de 0,01 m. Se conservan las plantas;
   altura base = plantas × 3,05 + 0,4 m. Capa: `web/buildings.json`.
   https://www.catastro.hacienda.gob.es/INSPIRE/Buildings/11/11015-CHICLANA%20DE%20LA%20FRONTERA/A.ES.SDGC.BU.11015.zip
-- **OpenStreetMap**, extracto del 4/10/2026: 616 vías, 69 áreas, 20 hitos y 14 árboles
-  cartografiados; objetos de calle extraídos aparte. Anchuras y categorías de juego
+- **OpenStreetMap**, extracto del 8/10/2026 (el del 5/10 no cubría los anexos y en el
+  centro no difiere): 682 vías, 83 áreas con su ID, 22 hitos y 15 árboles cartografiados; objetos de calle extraídos aparte. Anchuras y categorías de juego
   inferidas donde OSM no las indica. Capas: `web/osm-world.json` y
   `web/street-objects.json`.
-  https://www.openstreetmap.org/api/0.6/map?bbox=-6.156,36.415,-6.141,36.424
+  https://api.openstreetmap.org/api/0.6/map?bbox=-6.158,36.413,-6.141,36.430
 - **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa `OI.OrthoimageCoverage`,
   EPSG:4326, por teselas en `web/aerial/` (`tools/aerial-tiles.py`); consulta del
-  8/10/2026. 24 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
+  8/10 y 9/10/2026. 36 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
   recomprimir a 0,25 m/píxel (`hi/`) y derivados a 0,5 m/píxel (`lo/`) para el modo
-  ligero y los táctiles, más una vista general de la caja envolvente en 1344 × 1002. El
+  ligero y los táctiles, más una vista general de la caja envolvente en 1492 × 1770. El
   recuadro local pasa a longitud y latitud con la inversa exacta de la proyección de
   `rebuild-map.py` (`lon = -6.1485 + x / (111320 · cos 36.4195°)`,
-  `lat = 36.4195 − z / 111320`). Los 24 centros declaran vuelo 2022-07 (GetFeatureInfo
-  `OI.MosaicElement`). Las franjas comunes de los 38 pares de teselas vecinas coinciden
-  con un desplazamiento máximo de 0,005 píxeles de 0,25 m. Al generarlas, además,
-  coincidían con la ortofoto única anterior (`aerial.jpg`, 4096 × 3072, consulta del
+  `lat = 36.4195 − z / 111320`). Los 36 centros declaran vuelo 2022-07 (GetFeatureInfo
+  `OI.MosaicElement`). Las franjas comunes de los 57 pares de teselas vecinas coinciden
+  con un desplazamiento máximo de 0,005 píxeles de 0,25 m. Al generar las 24 del centro,
+  además, coincidían con la ortofoto única anterior (`aerial.jpg`, 4096 × 3072, consulta del
   4/10/2026, retirada después) con un desplazamiento máximo de 0,091 píxeles de esa
   imagen. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
   Método en [DATOS.md](DATOS.md#4-ortofoto-por-teselas-opcional).

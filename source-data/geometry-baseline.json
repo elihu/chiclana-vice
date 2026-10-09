@@ -1,5 +1,5 @@
 {
-  "sha256": "6b2db8a4a5ff84377f6243d5967ae8d145a5096d5e992a0b58694af1dde4a94f",
+  "sha256": "ea1d5977ef4a6c70a871b36b08763f3e64e0232ee40d2633ad37b6819aca55db",
   "covers": "origin, size, buildings[].p/holes/floors, roads[].p/name/type/w/bridge/oneway, areas, landmarks, trees",
   "origin": "Geografía de main 13f212e; alcance ampliado sin modificar las capas"
 }

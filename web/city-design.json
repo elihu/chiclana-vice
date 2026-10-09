@@ -330,6 +330,7 @@
           "id": "cubeta-alameda",
           "kind": "basin",
           "areaAnchor": {
+            "areaId": "184499839",
             "kind": "water",
             "vertex": [
               136.05,
@@ -348,6 +349,7 @@
       {
         "id": "gran-plaza-iro",
         "areaAnchor": {
+          "areaId": "183510852",
           "kind": "square",
           "vertex": [
             268.23,

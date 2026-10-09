@@ -9,8 +9,9 @@ regenerar los datos.
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
 `buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Sus límites se describen
 con `bounds`, una lista no vacía de
-rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene solo
-`[-671.835, 671.835, -500.94, 500.94]`. La pertenencia se consulta sobre la unión,
+rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene
+`[-671.835, 671.835, -500.94, 500.94]` (centro), `[-420, -60, 500.94, 650]` (Santa Ana) y
+`[-820, -380, -1120, -500.94]` (norte: Puente VII Centenario y ferial). La pertenencia se consulta sobre la unión,
 mientras que mapa y cobertura del terreno usan la caja envolvente. `prepare-world.mjs`
 genera este formato y admite también entradas antiguas con `size`; el cargador
 conserva esa compatibilidad para copias locales. Carga además la
@@ -109,12 +110,14 @@ Solo si hay que reconstruir el mapa desde originales descargados con las URL de
 [MAP_SOURCES.md](MAP_SOURCES.md):
 
 ```fish
-uv run --no-project --with pyproj==3.8.0 --with shapely==2.2.0 python tools/rebuild-map.py --catastro ~/.cache/chiclana-vice/sources/catastro-chiclana.zip --osm ~/.cache/chiclana-vice/sources/osm-center.xml
+uv run --no-project --with pyproj==3.8.0 --with shapely==2.2.0 python tools/rebuild-map.py --catastro ~/.cache/chiclana-vice/sources/catastro-chiclana.zip --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
 ```
 
 Las versiones van fijadas porque de ellas depende la geometría exacta. Con estos
-originales (Catastro del 4/10/2026 y OSM del 5/10/2026) y estas versiones se reproducen
-las capas publicadas. Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
+originales (Catastro del 4/10/2026, el ZIP del municipio entero, y OSM del 8/10/2026) y
+estas versiones se reproducen las capas publicadas. Recorta con la unión de los
+rectángulos de `world.json.bounds`, o los de `--bounds` (JSON) si se indican; los bordes
+compartidos no cortan vías ni edificios. Cada área lleva su ID de OSM. Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
 contornos a coordenadas de juego. Escribe `rebuilt-city.json` en la raíz (ignorado por
 Git); no sustituye el mapa. Revisarlo y, si se adopta deliberadamente:
 

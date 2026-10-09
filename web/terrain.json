@@ -5,27 +5,27 @@
     36.4195
   ],
   "size": [
-    1343.67,
-    1001.88
+    1491.835,
+    1770
   ],
-  "columns": 137,
-  "rows": 103,
+  "columns": 151,
+  "rows": 178,
   "step": [
     10,
     10
   ],
   "bounds": [
-    -680,
+    -820,
     680,
-    -510,
-    510
+    -1120,
+    650
   ],
   "encoding": "int16-le",
   "scale": 0.1,
   "rowOrder": "north-to-south",
   "diagonal": "nw-se",
   "file": "terrain.bin",
-  "sha256": "02a424e7f6487929e36e9f608bb4a2ac5a3a92918067b793ca65b65718c6918a",
+  "sha256": "34c4d63f01daa0b5f11c51c149f3434536f1dfdba950524b690689891bc51756",
   "referenceElevation": 6.894414854555887,
   "verticalReference": "sin confirmar para este recorte",
   "source": "IGN / PNOA MDT 5 m, Elevacion25830_5 (rejilla nativa por teselas)",
@@ -34,36 +34,52 @@
   "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
   "preview": true,
   "sourceUrls": [
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
-    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035497.5,4035997.5)&format=application/asc"
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035997.5,4036497.5)&format=application/asc"
   ],
-  "sourceSha256": "ebaa16b4d7a9032a533bc831c1bb4fa979705598bffd0ea70c69a530d0e43488",
+  "sourceSha256": "0dfa0c8ab46a040dd97ebb7d669ecbed6f3dd53165216e9378eed61038533181",
   "accessDate": "2026-10-09",
   "acquisitionDate": "sin confirmar",
   "method": "Centros nativos UTM 30N de 5 m (pyproj), remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
   "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
   "sourceTiles": {
+    "433_8068.asc": "30c022c5f6cf687a07756aa01e72318f8e64c07b0a2bc536438ebed19e41621c",
     "433_8069.asc": "2e377f21eb2c3ff44ec69a0fa7ab0e5bc9c9c2ed5d4ddf4798dca452e50417d4",
     "433_8070.asc": "7be04bd2aae30bd71c8e39fa4b1cccc41bc9d771c97e6ee04cc72bf937fa56e5",
     "433_8071.asc": "0e8ef2ba10015785d0c22d91227d99a9d3192ca4fd2652314441def1d9c9d931",
+    "433_8072.asc": "4133cae165ecd46b9541b79615c3d16aff5f0346cbf1004bdb4877e071078e34",
+    "434_8068.asc": "9577a074716f0a768e0dfc797825eae9b86108a0b6d37799fbe08861c274da8a",
     "434_8069.asc": "acc42f5e04ec819fcc844916fa2e29921053561d2bee3b76d5c3260ae2a2a9fe",
     "434_8070.asc": "b9709fffaaeff14d886af9b668d28d05de03dd71ca07031bfc4d0819ce38b977",
     "434_8071.asc": "4b09e5e5b85b10a4e0a2354c248ba26c88f104c65a48acde99683898c1f695a6",
+    "434_8072.asc": "8f95d640da48958d8567f9efc6d4b3a74b8821f6755cb05dafe7e0ce053acee7",
+    "435_8068.asc": "dd03d30d3eaec6edfb04d9345a0f589ef5d9e35d076053a2d811d4fc3edc0ea6",
     "435_8069.asc": "0e3d9d7ae822c80c8189a031edd9bf919920f328228954e7c2cf81ca12382972",
     "435_8070.asc": "6270f6e4f196128ba0254210bc100e9403b41c853b144ddb839da1f174f6dd7d",
     "435_8071.asc": "c9bad7fe7a1bc46144e4ea129968e7f1c58219b6d0284bb90b9c98c88c4579bd",
+    "435_8072.asc": "712a2f7bafa295b1ebfdf3faf5c187aee49c510c4b6884c087bbd8d39243fd96",
+    "436_8068.asc": "f4bf2a8b31756fbe3e98f1a273c0d72778b7b357b15719e0fe65e45fc8381b73",
     "436_8069.asc": "a507eab57d54586f76e86ec1cc04726cb58a3ae02011f6ee757173bcce535615",
     "436_8070.asc": "fefab810d8c16e84dbe355d4abe8c17f8543b0667810cb4530e0668082a5e489",
-    "436_8071.asc": "cddef6cc8feee38ba05c101f602a71b4002830af772a16ddc296b52b6a94160d"
+    "436_8071.asc": "cddef6cc8feee38ba05c101f602a71b4002830af772a16ddc296b52b6a94160d",
+    "436_8072.asc": "f82aa52ad9ac6ef0094658f5f80d612ffa0943384e110e0cd627d611f5094770"
   }
 }

@@ -708,8 +708,12 @@
                   },
                   "areaAnchor": {
                     "type": "object",
-                    "required": ["kind", "vertex", "vertexCount"],
+                    "required": ["areaId", "kind", "vertex", "vertexCount"],
                     "properties": {
+                      "areaId": {
+                        "type": "string",
+                        "description": "ID de OSM del área; la forma sigue comprobándose"
+                      },
                       "kind": {
                         "type": "string"
                       },
@@ -751,8 +755,12 @@
               },
               "areaAnchor": {
                 "type": "object",
-                "required": ["kind", "vertex", "vertexCount"],
+                "required": ["areaId", "kind", "vertex", "vertexCount"],
                 "properties": {
+                  "areaId": {
+                    "type": "string",
+                    "description": "ID de OSM del área; la forma sigue comprobándose"
+                  },
                   "kind": {
                     "type": "string"
                   },
