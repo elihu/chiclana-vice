@@ -28,6 +28,31 @@ class TerrainTools(unittest.TestCase):
             with self.assertRaises(ValueError):
                 source["read_ascii"](path)
 
+    def test_native_tiles(self):
+        def tile(path, x0, y0, rows):
+            path.write_text(f"ncols 2\nnrows {len(rows)}\nxllcorner {x0}\nyllcorner {y0}\ncellsize 5\n"
+                            + "".join(" ".join(map(str, r)) + "\n" for r in rows))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            # Centros x = 0, 5 e y = 5 (fila norte), 0; la segunda tesela solapa la columna x = 5.
+            tile(root / "a.asc", -2.5, -2.5, [[10, 20], [30, 40]])
+            tile(root / "b.asc", 2.5, -2.5, [[20, 50], [40, 60]])
+            mosaic, combined = source["read_tiles"](root)
+            self.assertEqual(len(mosaic["cells"]), 6)
+            self.assertEqual(source["sample_cells"](mosaic, 0, 5), 10)
+            self.assertEqual(source["sample_cells"](mosaic, 2.5, 2.5), 25)
+            self.assertEqual(source["sample_cells"](mosaic, 7.5, 0), 50)
+            with self.assertRaises(ValueError):
+                source["sample_cells"](mosaic, 12, 0)
+            self.assertEqual(combined, source["read_tiles"](root)[1])
+            tile(root / "b.asc", 2.5, -2.5, [[21, 50], [40, 60]])
+            with self.assertRaises(ValueError):
+                source["read_tiles"](root)
+            tile(root / "b.asc", 3.5, -2.5, [[20, 50], [40, 60]])
+            with self.assertRaises(ValueError):
+                source["read_tiles"](root)
+
     def test_export_is_reproducible(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

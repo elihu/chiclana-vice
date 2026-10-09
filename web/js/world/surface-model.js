@@ -7,6 +7,14 @@ const key = (x, z) => Math.floor(x / 25) * 65536 + Math.floor(z / 25);
 const mix = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
 
+// Anclaje de área: el ID de OSM la identifica (si se declara) y la forma comprueba que
+// la geometría no ha cambiado desde que se escribió el diseño.
+const anchoredArea = (anchor) => (a) =>
+  (anchor.areaId === undefined || a.id === anchor.areaId) &&
+  a.kind === anchor.kind &&
+  a.p.length === anchor.vertexCount &&
+  a.p.some((v) => v[0] === anchor.vertex[0] && v[1] === anchor.vertex[1]);
+
 export function validateSurfaceDesign(design, city = null) {
   if (design === undefined) return [];
   const errors = [],
@@ -146,18 +154,11 @@ export function validateSurfaceDesign(design, city = null) {
     } else if (
       !Array.isArray(p.areaAnchor?.vertex) ||
       p.areaAnchor.vertex.length !== 2 ||
-      !p.areaAnchor.vertex.every(Number.isFinite)
+      !p.areaAnchor.vertex.every(Number.isFinite) ||
+      (p.areaAnchor.areaId !== undefined && typeof p.areaAnchor.areaId !== 'string')
     )
       fail(`platforms.${i}.areaAnchor`, 'se esperaba vértice de área existente');
-    else if (
-      city &&
-      city.areas.filter(
-        (a) =>
-          a.kind === p.areaAnchor.kind &&
-          a.p.length === p.areaAnchor.vertexCount &&
-          a.p.some((v) => v[0] === p.areaAnchor.vertex[0] && v[1] === p.areaAnchor.vertex[1]),
-      ).length !== 1
-    )
+    else if (city && city.areas.filter(anchoredArea(p.areaAnchor)).length !== 1)
       fail(`platforms.${i}.areaAnchor`, 'anclaje ambiguo o área modificada');
     if (!Array.isArray(p.heightAnchors) || p.heightAnchors.length < 2)
       fail(`platforms.${i}.heightAnchors`, 'mínimo dos accesos');
@@ -202,21 +203,14 @@ export function validateSurfaceDesign(design, city = null) {
       f.kind !== 'basin' ||
       typeof f.id !== 'string' ||
       !Array.isArray(f.areaAnchor?.vertex) ||
+      (f.areaAnchor.areaId !== undefined && typeof f.areaAnchor.areaId !== 'string') ||
       !Array.isArray(f.evidence) ||
       !f.evidence.length
     ) {
       fail('water.features', 'cubeta con anclaje y evidencia obligatorios');
       continue;
     }
-    if (
-      city &&
-      city.areas.filter(
-        (a) =>
-          a.kind === f.areaAnchor.kind &&
-          a.p.length === f.areaAnchor.vertexCount &&
-          a.p.some((v) => v[0] === f.areaAnchor.vertex[0] && v[1] === f.areaAnchor.vertex[1]),
-      ).length !== 1
-    )
+    if (city && city.areas.filter(anchoredArea(f.areaAnchor)).length !== 1)
       fail('water.features', 'área inexistente o ambigua');
   }
   // Corredores de polilínea con juntas en inglete. Rechaza giros de retorno
@@ -348,14 +342,7 @@ export function createSurfaceModel(city, terrain, design) {
     ];
   };
   for (const p of design.platforms) {
-    const area = p.areaAnchor
-        ? city.areas.find(
-            (a) =>
-              a.kind === p.areaAnchor.kind &&
-              a.p.length === p.areaAnchor.vertexCount &&
-              a.p.some((v) => v[0] === p.areaAnchor.vertex[0] && v[1] === p.areaAnchor.vertex[1]),
-          )
-        : null,
+    const area = p.areaAnchor ? city.areas.find(anchoredArea(p.areaAnchor)) : null,
       heights = p.heightAnchors.map((a) => {
         const q = roadMap.get(a.roadId).p[a.vertex];
         return average(...q, cfg.bridgeAnchorRadius) + a.offset;
@@ -410,12 +397,7 @@ export function createSurfaceModel(city, terrain, design) {
     );
   }
   const basins = (design.water.features ?? []).map((f) => {
-    const area = city.areas.find(
-      (a) =>
-        a.kind === f.areaAnchor.kind &&
-        a.p.length === f.areaAnchor.vertexCount &&
-        a.p.some((v) => v[0] === f.areaAnchor.vertex[0] && v[1] === f.areaAnchor.vertex[1]),
-    );
+    const area = city.areas.find(anchoredArea(f.areaAnchor));
     return { ...f, area, polygon: area.p, y: Math.max(...area.p.map((q) => raw(...q))) + 0.04 };
   });
   const waterLevels = new Map(),

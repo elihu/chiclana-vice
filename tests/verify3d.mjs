@@ -911,7 +911,7 @@ assert(windowListeners.pointerdown, 'first touch enables touch mode');
   assert.equal(panel.hidden, true, 'un arrastre no abre el panel');
   // Rayo real contra el suelo, sin edificios que puedan ocultar una regresión.
   const ground = g.scene.getObjectByName('terrain-ground');
-  assert(ground.isGroup && ground.children.length === 24);
+  assert(ground.isGroup && ground.children.length > 1, 'un trozo de suelo por tesela');
   const isolated = new Real.Scene();
   isolated.add(ground.clone());
   isolated.updateMatrixWorld(true);

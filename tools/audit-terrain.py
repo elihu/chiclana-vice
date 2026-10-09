@@ -9,7 +9,7 @@ from pathlib import Path
 
 source = runpy.run_path(str(Path(__file__).with_name("terrain-source.py")))
 parser = argparse.ArgumentParser()
-parser.add_argument("original", nargs="?")
+parser.add_argument("original", nargs="?", help="ASCII EPSG:4326 o directorio de teselas nativas de tools/mdt-tiles.py")
 parser.add_argument("--date")
 parser.add_argument("--url")
 parser.add_argument("--out", default="source-data/terrain-audit.json")
@@ -34,32 +34,50 @@ if args.decision:
     raise SystemExit(0)
 if not args.original or not args.date or not args.url:
     parser.error("se requieren original, --date y --url")
-header, values, checksum = source["read_ascii"](args.original)
+tiles = None
+if Path(args.original).is_dir():
+    mosaic, checksum = source["read_tiles"](args.original)
+    tiles, cells, step = mosaic["tiles"], mosaic["cells"], mosaic["step"]
+    values = list(cells.values())
+    header = {"cellsize": step, "tiles": len(tiles), "cells": len(cells)}
+    dx = dy = step
+    slopes = [abs(cells[i + di, j + dj] - v) / step
+              for (i, j), v in cells.items() for di, dj in [(1, 0), (0, 1)] if (i + di, j + dj) in cells]
+    crs = "EPSG:25830 (UTM 30N), rejilla nativa de 5 m: centros en múltiplos de 5 m, sin remuestreo"
+else:
+    header, values, checksum = source["read_ascii"](args.original)
+    columns, rows = int(header["ncols"]), int(header["nrows"])
+    city = json.loads(Path("web/world.json").read_text())
+    sx = 111320 * math.cos(math.radians(city["origin"][1]))
+    # El servicio devuelve dx/dy o, con algunos recuadros, una sola cellsize.
+    dx = header.get("dx", header.get("cellsize")) * sx
+    dy = header.get("dy", header.get("cellsize")) * 111320
+    slopes = []
+    for j in range(rows):
+        for i in range(columns):
+            k = j * columns + i
+            if i + 1 < columns:
+                slopes.append(abs(values[k + 1] - values[k]) / dx)
+            if j + 1 < rows:
+                slopes.append(abs(values[k + columns] - values[k]) / dy)
+    crs = "EPSG:4326 según DescribeCoverage; orden Lat,Long; ASCII x=longitud"
 ordered = sorted(values)
-columns, rows = int(header["ncols"]), int(header["nrows"])
-city = json.loads(Path("web/world.json").read_text())
-sx = 111320 * math.cos(math.radians(city["origin"][1]))
-dx, dy = header["dx"] * sx, header["dy"] * 111320
-slopes = []
-for j in range(rows):
-    for i in range(columns):
-        k = j * columns + i
-        if i + 1 < columns:
-            slopes.append(abs(values[k + 1] - values[k]) / dx)
-        if j + 1 < rows:
-            slopes.append(abs(values[k + columns] - values[k]) / dy)
 result = {
     "version": 1, "accessDate": args.date, "sourceUrl": args.url,
     "sourceSha256": checksum, "header": header, "samples": len(values),
     "nodata": 0, "range": [min(values), max(values)],
     "percentiles": {str(p): ordered[round((len(ordered) - 1) * p / 100)] for p in [5, 50, 95]},
     "maximumNeighbourSlope": max(slopes), "resolutionMetres": [dx, dy],
-    "crs": "EPSG:4326 según DescribeCoverage; orden Lat,Long; ASCII x=longitud",
+    "crs": crs,
     "acquisitionDate": "sin confirmar",
     "verticalReference": "sin confirmar para este recorte",
     "metadataWarning": "DescribeCoverage publica unidades W.m-2.Sr-1 impropias del MDT: no utilizarlas como evidencia vertical.",
     "decision": "no activar hasta revisar perfiles transitables y referencia vertical",
 }
+if tiles:
+    result["sourceTiles"] = tiles
+    index = json.loads((Path(args.original) / "index.json").read_text())
+    result["sourceUrls"] = [index[name]["url"] for name in sorted(tiles)]
 evidence = {}
 for key, name in [("capabilities", args.capabilities), ("description", args.description)]:
     path = Path(name)

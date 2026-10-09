@@ -9,8 +9,9 @@ regenerar los datos.
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
 `buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Sus límites se describen
 con `bounds`, una lista no vacía de
-rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene solo
-`[-671.835, 671.835, -500.94, 500.94]`. La pertenencia se consulta sobre la unión,
+rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene
+`[-671.835, 671.835, -500.94, 500.94]` (centro), `[-420, -60, 500.94, 650]` (Santa Ana) y
+`[-820, -380, -1120, -500.94]` (norte: Puente VII Centenario y ferial). La pertenencia se consulta sobre la unión,
 mientras que mapa y cobertura del terreno usan la caja envolvente. `prepare-world.mjs`
 genera este formato y admite también entradas antiguas con `size`; el cargador
 conserva esa compatibilidad para copias locales. Carga además la
@@ -109,10 +110,14 @@ Solo si hay que reconstruir el mapa desde originales descargados con las URL de
 [MAP_SOURCES.md](MAP_SOURCES.md):
 
 ```fish
-uv run --no-project --with pyproj --with shapely python tools/rebuild-map.py --catastro /ruta/local/catastro.zip --osm /ruta/local/osm.xml
+uv run --no-project --with pyproj==3.8.0 --with shapely==2.2.0 python tools/rebuild-map.py --catastro ~/.cache/chiclana-vice/sources/catastro-chiclana.zip --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
 ```
 
-Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
+Las versiones van fijadas porque de ellas depende la geometría exacta. Con estos
+originales (Catastro del 4/10/2026, el ZIP del municipio entero, y OSM del 8/10/2026) y
+estas versiones se reproducen las capas publicadas. Recorta con la unión de los
+rectángulos de `world.json.bounds`, o los de `--bounds` (JSON) si se indican; los bordes
+compartidos no cortan vías ni edificios. Cada área lleva su ID de OSM. Lee las partes de edificio sin extraer el ZIP, conserva las plantas y transforma los
 contornos a coordenadas de juego. Escribe `rebuilt-city.json` en la raíz (ignorado por
 Git); no sustituye el mapa. Revisarlo y, si se adopta deliberadamente:
 
@@ -129,7 +134,7 @@ Descarga solo un recorte WCS pequeño de la zona (nunca el mosaico nacional) a u
 fuera del repositorio, por defecto `~/.cache/chiclana-vice/ign`:
 
 ```fish
-uv run --no-project --with rasterio --with pyproj --with shapely python tools/audit-ign-heights.py --download --overlay web/height-samples.json
+uv run --no-project --with rasterio==1.5.2 --with pyproj==3.8.0 --with shapely==2.1.2 --with numpy python tools/audit-ign-heights.py --download --overlay web/height-samples.json
 ```
 
 Escribe la auditoría completa en `source-data/height-audit-ign.json` y las entradas
@@ -139,6 +144,12 @@ partes aceptadas: [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
 
 El script escribe el campo `attribution` del overlay (CC BY 4.0) y `verify-world`
 comprueba que llega igual a `data-sources.json`.
+
+El overlay enlaza los edificios por índice y por la huella de `buildings.json`: tras
+cualquier reconstrucción hay que volver a ejecutarlo (sin `--download` si el recorte
+sigue en la caché). Si se descarga de nuevo y su SHA-256 coincide con `sourceSha256`,
+se conserva la fecha de consulta original en el archivo `.access-date` de la caché.
+Las versiones van fijadas a las registradas en el campo `versions` del overlay.
 
 ## 3. Catálogo de frentes
 
@@ -210,9 +221,11 @@ probar el juego en un navegador.
 
 ## 6. Terreno
 
-`audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
-`export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
-GIS nuevas. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
+`mdt-tiles.py` descarga a la caché las teselas nativas del MDT05 (UTM 30N, 500 m) que
+faltan para cubrir `world.bounds`; ampliar el mapa solo añade teselas. `audit-terrain.py`
+lee esas teselas (o un ASCII WCS antiguo), comprueba que se alinean con la rejilla
+nativa y que coinciden donde se solapan; `export-terrain.py` genera la rejilla Int16 y
+el manifiesto deterministas. Ambos fijan pyproj 3.8.0 para la conversión a UTM. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
 múltiplos de ese paso desde el origen, sin cambiar `world.bounds`. El original debe
 cubrir todos los vértices: se rechaza un recorte insuficiente, sin extrapolación.
 El runtime valida cobertura, paso y anclaje; la malla construida subdivide el paso

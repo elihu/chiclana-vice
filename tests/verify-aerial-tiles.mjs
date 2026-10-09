@@ -9,6 +9,7 @@ import {
   updateAerialTiles,
 } from '../web/js/world/aerial-tiles.js';
 import { terrainGeometry, terrainTiles } from '../web/js/world/terrain-mesh.js';
+import { boundsBox } from '../web/js/world/bounds.js';
 
 export async function verifyAerialTiles({
   g,
@@ -222,12 +223,34 @@ export async function verifyAerialTiles({
     'mismos triángulos, sin huecos ni duplicados',
   );
   full.dispose();
-  assert.equal(g.scene.getObjectByName('aerial-roofs-general').userData.parts, 6);
+  // Partes cuyo recuadro sale de su tesela con margen (D5), con la regla de buildBuildings.
+  const { tile: size, margin } = world.aerialIndex,
+    overflow = world.city.buildings.filter((b) => {
+      const xs = b.p.map((p) => p[0]),
+        zs = b.p.map((p) => p[1]),
+        [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)],
+        i = Math.floor(Math.floor((x0 + x1) / 2 / 85) / 3),
+        j = Math.floor(Math.floor((z0 + z1) / 2 / 85) / 3);
+      return !(
+        x0 >= i * size - margin &&
+        x1 <= (i + 1) * size + margin &&
+        z0 >= j * size - margin &&
+        z1 <= (j + 1) * size + margin
+      );
+    }).length;
+  assert(overflow > 0 && overflow < 20, 'pocas partes fuera de su tesela');
+  assert.equal(g.scene.getObjectByName('aerial-roofs-general').userData.parts, overflow);
   console.log(
-    `Costuras: ${tiles.length} trozos, ${shared} vértices compartidos exactos en posición y normal; ${triangles.length} triángulos conservados; 6 tejados con vista general`,
+    `Costuras: ${tiles.length} trozos, ${shared} vértices compartidos exactos en posición y normal; ${triangles.length} triángulos conservados; ${overflow} tejados con vista general`,
   );
-  const flatTiles = terrainTiles({ kind: 'flat' });
-  assert.equal(flatTiles.length, 24, 'plano recortado por teselas');
+  const flatTiles = terrainTiles({ kind: 'flat' }),
+    [bx0, bx1, bz0, bz1] = boundsBox();
+  assert.equal(
+    flatTiles.length,
+    (Math.ceil(bx1 / size) - Math.floor(bx0 / size)) *
+      (Math.ceil(bz1 / size) - Math.floor(bz0 / size)),
+    'plano recortado por teselas',
+  );
   for (const { geometry } of flatTiles) {
     assert.equal(geometry.index.count, 6);
     assert(geometry.boundingSphere);

@@ -1,14 +1,14 @@
 {
   "version": 1,
-  "sha256": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c",
-  "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
+  "sha256": "34c4d63f01daa0b5f11c51c149f3434536f1dfdba950524b690689891bc51756",
+  "sourceSha256": "0dfa0c8ab46a040dd97ebb7d669ecbed6f3dd53165216e9378eed61038533181",
   "origin": [
     -6.1485,
     36.4195
   ],
   "size": [
-    1343.67,
-    1001.88
+    1491.835,
+    1770
   ],
   "preview": false
 }

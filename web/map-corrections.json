@@ -4,5 +4,16 @@
   "license": "ODbL-1.0",
   "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
   "attribution": "© OpenStreetMap contributors; corrections by the Chiclana Vice project. Building vertices from D.G. del Catastro INSPIRE BU.",
-  "corrections": []
+  "corrections": [
+    {
+      "id": "fix-001",
+      "op": "road.set",
+      "road": { "id": "142805148", "occurrence": 0 },
+      "expect": { "name": "Puente VII Centenario", "w": 8 },
+      "set": { "w": 14 },
+      "reason": "Tablero de cuatro carriles (lanes=4 en OSM): la anchura por defecto de 8 m dejaba los arcos fuera del puente",
+      "evidence": "ortofoto PNOA 2022-07 y OSM 142805148 (lanes=4, aceras a +9 y -7,8 m del eje)",
+      "date": "2026-10-09"
+    }
+  ]
 }

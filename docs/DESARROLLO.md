@@ -144,8 +144,9 @@ Probado a mano en un móvil Android; no en iOS.
 ## Mundo y límites
 
 `world.json.bounds` declara una lista de rectángulos `[x0, x1, z0, z1]` en
-coordenadas locales: x hacia el este y z hacia el sur. El origen y el área actual se
-conservan, con un solo rectángulo `[-671.835, 671.835, -500.94, 500.94]`.
+coordenadas locales: x hacia el este y z hacia el sur. Hoy son tres: el centro
+`[-671.835, 671.835, -500.94, 500.94]`, Santa Ana `[-420, -60, 500.94, 650]` y el norte
+`[-820, -380, -1120, -500.94]`, contiguos al centro.
 El cargador convierte también el antiguo `size` de copias locales a un rectángulo.
 
 `world/bounds.js` centraliza pertenencia, margen interior, proximidad al borde y caja

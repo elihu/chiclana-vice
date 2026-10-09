@@ -301,17 +301,18 @@ salvo en dos cosas, ambas anteriores a este plan:
 - **44 vías con sentido único** (27 `secondary`, 7 `tertiary`, 10 `residential`) que OSM
   marca como `oneway` y las capas publicadas no. El conversor de sentidos se corrigió el
   6/10 sin regenerar las vías (`MAP_SOURCES.md` lo indica). Cambia el tráfico.
-- **Un edificio** (índice 3314): la versión actual de shapely conserva un patio que la
-  publicada había fundido con el contorno.
+- **Un edificio** (índice 3314): la reconstrucción conserva un patio que la capa
+  publicada había fundido con el contorno. No depende de la versión de shapely: 2.1.2 y
+  2.2.0 dan lo mismo; la causa no está identificada.
 
 Con esas dos diferencias, y regenerando frentes (276 → 277) y la capa de alturas, pasan
-todos los tests. Este paso adopta la reconstrucción para que el diff de 4.1 muestre solo
+todos los tests. Este paso adopta la reconstrucción para que el diff de 4.2 muestre solo
 la ampliación:
 
 - **`rebuild-map.py`**: el texto `meta.terrain` (:82) dice «Plano…»; debe conservar el
   vigente de `world.json`. Anotar en `DATOS.md` las versiones de shapely y pyproj usadas
-  (2.2.0 y 3.8.0 en la comprobación del 8/10) y fijarlas en el comando (`--with shapely==…`): de ellas depende la
-  geometría exacta.
+  (2.2.0 y 3.8.0 en la comprobación del 8/10) y fijarlas en el comando
+  (`--with shapely==…`): de ellas depende la geometría exacta.
 - **Capa de alturas IGN**: `height-samples.json` enlaza los edificios por índice y por
   la huella SHA-256 de `buildings.json`, así que se regenera con
   `audit-ign-heights.py --download --overlay web/height-samples.json`. El recorte del
@@ -324,7 +325,32 @@ la ampliación:
 - **Revisión del usuario**: el tráfico en las calles con sentido nuevo.
 - **Commit**: `fix(datos): regenerar las capas desde los originales con los sentidos de OSM`.
 
-### Paso 4.1: reconstrucción con varios rectángulos e IDs de área
+### Paso 4.1: relieve desde la rejilla nativa del MDT, por teselas
+
+Comprobado el 8 y el 9/10/2026: la cobertura `Elevacion4258_5` que se usaba se remuestrea
+según el recuadro pedido. Dos descargas del centro difieren hasta 2 m (p95 0,28–0,36 m),
+así que cada ampliación habría cambiado y obligado a revalidar todo el relieve. La
+cobertura `Elevacion25830_5` es la rejilla nativa (UTM 30N, 5 m, centros en múltiplos
+de 5 m): pidiendo recuadros con los bordes entre centros, la misma petición da los
+mismos bytes y dos recortes solapados coinciden en todas las celdas comunes.
+
+- **`tools/mdt-tiles.py`** (nuevo): descarga a `~/.cache/chiclana-vice/mdt/utm/` las
+  teselas fijas de 500 m que faltan para cubrir `world.bounds` con 20 m de margen, con
+  un índice de URL, fecha y SHA-256. Hoy son 12.
+- **`terrain-source.py`**: `read_tiles` une las teselas por celda nativa y rechaza las
+  desalineadas o las que no coinciden al solaparse; `sample_cells` interpola entre los
+  cuatro centros nativos. `audit-terrain.py` y `export-terrain.py` aceptan el directorio
+  de teselas (pyproj 3.8.0 fijado) y siguen aceptando un ASCII antiguo; la auditoría
+  entiende también la cabecera `cellsize`.
+- **Cambio de cotas, una sola vez**: frente al relieve validado, mediana 1,5 cm, p95
+  0,49 m, máximo 4,0 m en una ladera (hacia x = 360, z = 180). `npm run check`, uniones
+  a 5 cm y puentes como antes. Se exporta con `--preview`.
+- **Revisión del usuario**: el relieve del centro, sobre todo puentes, rampas y la
+  ladera indicada. Con su aprobación se registra la decisión con
+  `audit-terrain.py --decision` y se reexporta sin `--preview`.
+- **Commit**: `feat(relieve): usar la rejilla nativa del MDT por teselas`.
+
+### Paso 4.2: reconstrucción con varios rectángulos e IDs de área
 
 - **Archivos**: `tools/rebuild-map.py`, capas de `web/`, `web/height-samples.json`,
   `source-data/geometry-baseline.json`, `web/frontages.json`, `web/city-design.json`,
@@ -361,13 +387,13 @@ la ampliación:
 - Regenerar frentes, procedencia y la huella geográfica en este commit.
 - **Commit**: `feat(datos): ampliar el mapa a Santa Ana, el Puente VII Centenario y el ferial`.
 
-### Paso 4.2: relieve de los anexos
+### Paso 4.3: relieve de los anexos
 
-- Descargar el MDT de la caja envolvente de `bounds` con 20 m de margen, con los
-  comandos de `TERRENO_PILOTO.md` y las coordenadas nuevas, a
-  `~/.cache/chiclana-vice/mdt/` con otro nombre (no sobrescribir `original.bin`). La
-  malla del suelo cubrirá toda esa caja (D9): unos 107.000 vértices y 212.000
-  triángulos, frente a 56.000 y 111.000 hoy. Después:
+- `mdt-tiles.py` añade solo las teselas nativas de los anexos; las del centro no
+  cambian, y la reexportación debe dar en el centro las mismas cotas que el paso 4.1
+  (comprobarlo). Como el juego no arranca sin relieve que cubra `bounds`, esta parte de
+  datos se hace junto con el paso 4.2. La malla del suelo cubrirá toda la caja (D9):
+  unos 107.000 vértices y 212.000 triángulos, frente a 56.000 y 111.000 hoy. Después:
   - `audit-terrain.py`, con decisión pendiente;
   - `export-terrain.py --preview --out web`;
   - metadatos y procedencia.
@@ -396,10 +422,13 @@ la ampliación:
 - **Commits**: `feat(relieve): extender el terreno a los anexos` y, tras la revisión,
   `chore(relieve): validar el relieve de los anexos`.
 
-### Paso 4.3: juego en los anexos
+### Paso 4.4: juego en los anexos
 
 - Santa Ana como lugar y mirador en `web/game-data.js` y, si encaja, un encargo de subida
   a la ermita. Revisar que el tráfico y la policía usan las vías nuevas.
+- Hecho el 9/10/2026: lugares «Ermita de Santa Ana» y «Puente VII Centenario», miradores
+  de Santa Ana y del puente, y el encargo «La subida a Santa Ana» (del puente a la ermita:
+  2,0 km en coche, los últimos 55 m a pie; límite de 240 s).
 - **Commit**: `feat(juego): añadir Santa Ana como mirador`.
 
 ## Fase 5: modelos
@@ -411,9 +440,10 @@ Son independientes de las fases anteriores, salvo los que están en anexos.
 
 1. Ermita del Cristo de la Veracruz (Plaza del Santo Cristo): hoy es un bloque genérico.
 2. Iglesia Mayor (San Juan Bautista): rehacer la aproximación actual para que se reconozca.
-3. Ermita de Santa Ana (tras el paso 4.1); su base sigue la política de zócalos vigente.
-4. Puente VII Centenario (tras el paso 4.2): tablero de cuatro carriles, estructura
-   azul y barandillas, sobre el perfil del modelo de superficies.
+3. Ermita de Santa Ana (tras el paso 4.2); su base sigue la política de zócalos vigente.
+4. Puente VII Centenario: hecho junto con el paso 4.4 a petición del usuario (receta
+   `puente-arco`, tablero de 14 m por corrección del mapa). Queda revisar en el navegador
+   la flecha estimada de los arcos y su color.
 5. Ferial: explanada y portada, solo si sigue interesando.
 
 ## Ampliar más adelante

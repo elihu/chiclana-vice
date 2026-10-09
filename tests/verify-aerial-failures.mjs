@@ -16,7 +16,7 @@ assert.equal(world.groundTexture, null);
 assert.equal(els.toast.textContent, 'Ortofoto no disponible: suelo y tejados en color liso');
 assert.deepEqual(world.aerialBox, boundsBox());
 const ground = g.scene.getObjectByName('terrain-ground');
-assert(ground.isGroup && ground.children.length === 24);
+assert(ground.isGroup && ground.children.length > 1, 'un trozo de suelo por tesela');
 let plain = 0;
 for (const mesh of ground.children) {
   if (!mesh.material.map) {

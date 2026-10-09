@@ -95,6 +95,19 @@ const design = {
   ],
 };
 assert.deepEqual(validateSurfaceDesign(design, city), []);
+{
+  // El ID de OSM identifica el área; la forma sigue comprobándose.
+  const withIds = { ...city, areas: city.areas.map((a, i) => ({ ...a, id: String(100 + i) })) },
+    square = withIds.areas.find((a) => a.kind === 'square'),
+    anchored = (areaId) => {
+      const d = structuredClone(design);
+      d.platforms[0].areaAnchor.areaId = areaId;
+      return validateSurfaceDesign(d, withIds);
+    };
+  assert.deepEqual(anchored(square.id), []);
+  assert(anchored('999').some((e) => e.includes('anclaje ambiguo o área modificada')));
+  assert(anchored(7).some((e) => e.includes('vértice de área existente')));
+}
 const model = createSurfaceModel(city, terrain, design);
 assert.equal(model.surfaceHeightAt(0, 0, 0), 0, 'continuidad inferior');
 assert.equal(model.surfaceHeightAt(0, 0, 4), 4, 'continuidad superior');

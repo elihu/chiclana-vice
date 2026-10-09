@@ -13,7 +13,7 @@
       "licenseUrl": "https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf",
       "transformation": "Clipping, 0.12m topology-preserving simplification, local coordinates, game volume reconstruction and floor-based heights",
       "sha256": {
-        "buildings.json": "97dd40200c6403106ac9ee5cc4ec620b61681b6f03fd287419061d0149e50217"
+        "buildings.json": "6712bf9b9f82876d477c9203bde37e0c4ecb6c6b0bf6b792ce39961dfbd8dc18"
       }
     },
     {
@@ -27,7 +27,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Local game extraction; all used roads/areas/landmarks/trees/objects made available",
       "sha256": {
-        "osm-world.json": "ec7e847431a05856381d00ddca112b85d132e72882604901d6468ea4510302ef",
+        "osm-world.json": "673ccad38cab7cee2d786fd916dcecb50b692151ee6513d92aaf309b2a536c9d",
         "street-objects.json": "f370556915fd38cba571294040d848fa77b71552c1226354a9a9e3ed9c5b8259"
       }
     },
@@ -48,7 +48,7 @@
       "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
       "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
       "sha256": {
-        "height-samples.json": "ddc96f070bd1f7f53dfa642a32133f818c7285fabf5a7635931d07d9bf8a7e99"
+        "height-samples.json": "23a5279b95be4f0f85e60f8930686f33f8207216faeffdaed4acde8dd2540304"
       }
     },
     {
@@ -71,7 +71,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped",
       "sha256": {
-        "frontages.json": "e3c943959efbbf3eaf63a04c7a8830ceff723678fe9deee6455a50586df37c1d"
+        "frontages.json": "a399be979bdb70ba7062abec31d1d100c6fe9797999a1aa292ebe47a9a54a890"
       }
     },
     {
@@ -84,8 +84,8 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
-        "facade-designs.json": "a55a5c91652095b5725ee55b0f35ce1e48811b040fe4614f191654358e023b34",
-        "city-design.json": "bb17684671d56ba6ec98783c236d2e01e42668b6e9d762e7c072459862f6aae6"
+        "facade-designs.json": "901cd6825f33837c5e31481286b0179db4ea01c73af6b123edfe2893e35b1e04",
+        "city-design.json": "e010fe9fddd1cb75d04c34bfb8863a6c8eaecf77febd6d017dc0c26d96e8d523"
       }
     },
     {
@@ -97,12 +97,26 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Guarded edits of road attributes and vertices; base layers unchanged",
       "sha256": {
-        "map-corrections.json": "92092b3d9d57d1aaae2904d3ee74f34de6c366c5050e59bda25112a55c68224b"
+        "map-corrections.json": "b91cda86cb7dca54c3e613cf7cd2a16ae27dfc3aa20798c46b6946b48beee5ca"
       }
     },
     {
       "files": [
         "aerial/index.json",
+        "aerial/hi/-4_-5.jpg",
+        "aerial/lo/-4_-5.jpg",
+        "aerial/hi/-4_-4.jpg",
+        "aerial/lo/-4_-4.jpg",
+        "aerial/hi/-4_-3.jpg",
+        "aerial/lo/-4_-3.jpg",
+        "aerial/hi/-4_-2.jpg",
+        "aerial/lo/-4_-2.jpg",
+        "aerial/hi/-3_-5.jpg",
+        "aerial/lo/-3_-5.jpg",
+        "aerial/hi/-3_-4.jpg",
+        "aerial/lo/-3_-4.jpg",
+        "aerial/hi/-3_-3.jpg",
+        "aerial/lo/-3_-3.jpg",
         "aerial/hi/-3_-2.jpg",
         "aerial/lo/-3_-2.jpg",
         "aerial/hi/-3_-1.jpg",
@@ -111,6 +125,12 @@
         "aerial/lo/-3_0.jpg",
         "aerial/hi/-3_1.jpg",
         "aerial/lo/-3_1.jpg",
+        "aerial/hi/-2_-5.jpg",
+        "aerial/lo/-2_-5.jpg",
+        "aerial/hi/-2_-4.jpg",
+        "aerial/lo/-2_-4.jpg",
+        "aerial/hi/-2_-3.jpg",
+        "aerial/lo/-2_-3.jpg",
         "aerial/hi/-2_-2.jpg",
         "aerial/lo/-2_-2.jpg",
         "aerial/hi/-2_-1.jpg",
@@ -119,6 +139,8 @@
         "aerial/lo/-2_0.jpg",
         "aerial/hi/-2_1.jpg",
         "aerial/lo/-2_1.jpg",
+        "aerial/hi/-2_2.jpg",
+        "aerial/lo/-2_2.jpg",
         "aerial/hi/-1_-2.jpg",
         "aerial/lo/-1_-2.jpg",
         "aerial/hi/-1_-1.jpg",
@@ -127,6 +149,8 @@
         "aerial/lo/-1_0.jpg",
         "aerial/hi/-1_1.jpg",
         "aerial/lo/-1_1.jpg",
+        "aerial/hi/-1_2.jpg",
+        "aerial/lo/-1_2.jpg",
         "aerial/hi/0_-2.jpg",
         "aerial/lo/0_-2.jpg",
         "aerial/hi/0_-1.jpg",
@@ -154,7 +178,7 @@
         "aerial/general.jpg"
       ],
       "source": "© IGN / PNOA / SCNE",
-      "date": "2026-10-08",
+      "date": "2026-10-09",
       "conditions": "CC-BY-4.0 compatible IGN terms",
       "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
       "sourceUrl": "https://www.ign.es/wms-inspire/pnoa-ma",
@@ -163,7 +187,21 @@
       "acquisitionDateEvidence": "WMS OI.MosaicElement GetFeatureInfo at every tile centre; tools/aerial-tiles.py",
       "transformation": "255 m tiles with 20.5 m margin: original WMS JPEG at 0.25 m/pixel; lo resampled with Lanczos, JPEG q82; general overview at approximately 1 m/pixel",
       "sha256": {
-        "aerial/index.json": "2404bc128f35e6140fd689029000dffe34a2c802ba600994384dfbed530c065c",
+        "aerial/index.json": "91169c887e90f1ea24b2474a57ed95d5fca816fee7e47d5c700d49c91a7488ab",
+        "aerial/hi/-4_-5.jpg": "314b14c7860104c51300873a3afc74ec4311df4560d216c933eb525fb12f6864",
+        "aerial/lo/-4_-5.jpg": "2d04a8b66ee0251262dfe27a0c59cf292141bc4fc6268f043596b061797383fd",
+        "aerial/hi/-4_-4.jpg": "97e74e3e74df54af74c0ac4440725d9a49c582bbda270a2414bece7f0c9a1472",
+        "aerial/lo/-4_-4.jpg": "1e38f625d617cfb61b534bf891490d2452bfe606887674d8c762b418c0db77d8",
+        "aerial/hi/-4_-3.jpg": "ebcdca84f7375a660c78b6405bb476cd84142ef99cafe5066ba076f0da1087c2",
+        "aerial/lo/-4_-3.jpg": "7554ecaa3ca665ee966ca0cd6d1f2efe592a254d900534b10661ee6a5896f3c9",
+        "aerial/hi/-4_-2.jpg": "5c4fe4b2164dde70d8ed28038a9e73271d1d4a72618ba0339009e473c89dce00",
+        "aerial/lo/-4_-2.jpg": "c4d9b065f24d675f9505cbef469710c6d472aaeffadd71417715e592a9e5e78c",
+        "aerial/hi/-3_-5.jpg": "81b1c64950b4a3559e0b46f17cd9c3dde064cce9bb1782d3e3f6ebf3a8c69e31",
+        "aerial/lo/-3_-5.jpg": "77269bd2be3a3a13b80564c24641f04ca5a428fa78f7a8426a65a03c87ceabe4",
+        "aerial/hi/-3_-4.jpg": "456ab481ca708c57301aae170c18d011095dfac3c596b72b062116220b1c6a4e",
+        "aerial/lo/-3_-4.jpg": "d36a743127afe8efda6df1caeff5da87cd560d12430eaaba04dd24324dcc03df",
+        "aerial/hi/-3_-3.jpg": "45f119ea40f2875fda7e458e638fa71ddfde136da5b9810a904b4586cea73349",
+        "aerial/lo/-3_-3.jpg": "1acd3f61edb5f13dad306566d616dda99eda8dc0a75d4459183699790e495673",
         "aerial/hi/-3_-2.jpg": "7fd71dccb7a20ba2c1b5bb7800033a950bd9b0887539fb55f28400ab1a6dbc33",
         "aerial/lo/-3_-2.jpg": "f6341b45af3815b4f1026648753f763e6b597fdcf781a1630cf113da4cd060c9",
         "aerial/hi/-3_-1.jpg": "78d38ab6e4b9ce951a29ec6c81e340c43f6587c90050954a2ece27e38ca16417",
@@ -172,6 +210,12 @@
         "aerial/lo/-3_0.jpg": "982401b3e74ffbfd57bc56a13c08577d53f8c3ff8d31a64e0e8fb761e0f88222",
         "aerial/hi/-3_1.jpg": "205494ceff33e43e9c2738689c82328198a1e98849483c00108068a3154b2967",
         "aerial/lo/-3_1.jpg": "61a84a6f39cfda246567db118f964987b202c58b938a98e7da30f45304664a94",
+        "aerial/hi/-2_-5.jpg": "ac21c32546fd5353562216befc79cb794e3c9c8332bd1c2e0e497eb35838e8f3",
+        "aerial/lo/-2_-5.jpg": "11c86eb5b63e840fda2c18f3285aba9e152687526d24044f1c195fe4783d3a1a",
+        "aerial/hi/-2_-4.jpg": "ed0bd85701c908115fdc8781bf9de80ad1ec055e8e7933c8b5a09072b6aca589",
+        "aerial/lo/-2_-4.jpg": "53b658c7f693224a20c267ed8947aa87e4fb0e03d71aa825d5fccf5465128d98",
+        "aerial/hi/-2_-3.jpg": "4b3b9efd4bd60b15b7ebc4cfcb682bf5cf55fc7373f60da0d7169c5e9a09b505",
+        "aerial/lo/-2_-3.jpg": "c015676cbbe98b2488315672151c68717169ad9c91a17d84f0c590ad97bf2c8e",
         "aerial/hi/-2_-2.jpg": "1745eac231f7eedb5ffb124d0931488d87e828cfdc626bef8380fe38956ce380",
         "aerial/lo/-2_-2.jpg": "b093bd6b9c969fd055c341a2e2678894ae06010bd7e31fe72f55859376d01c2b",
         "aerial/hi/-2_-1.jpg": "1c0f400703659f36461abdcf4701b75f60030563bb0fbaff5c095ec062256e1b",
@@ -180,6 +224,8 @@
         "aerial/lo/-2_0.jpg": "f702a05c5c4136d96517c0b1b4e12c156c067a75a99b6e94db3ecec55d0df840",
         "aerial/hi/-2_1.jpg": "69d6b719616ea4ec11ca42866b38c4024943dbbac3f832711b32d09c745665c8",
         "aerial/lo/-2_1.jpg": "4984ddbcb0610a307602a3db0b60edf45064451f07cf49b077071b5ea7fbce99",
+        "aerial/hi/-2_2.jpg": "319c32dd91e3e0dc4fbbe6f47a4de75d5b2916c814a465641340470949c72faa",
+        "aerial/lo/-2_2.jpg": "eb84b4d39083adf50081d7d6c885f00d97526284c1041140a0456da9e6078926",
         "aerial/hi/-1_-2.jpg": "22f2e07f96d557bdc3e180478b5c61dded80bfb910ba1aa5cc556c30be8c929d",
         "aerial/lo/-1_-2.jpg": "e60efb3fa64f783154d68fdb23ffa681414b305378446aa8f5c341a2def2f4c0",
         "aerial/hi/-1_-1.jpg": "f0b7fa86f98139ce30525ce39e4acb5f11731b39e2f5179c027b04ef23fc369a",
@@ -188,6 +234,8 @@
         "aerial/lo/-1_0.jpg": "b1fbcc2a210b88a9e2c163c2f0dbca3a45d796fe757002b1c5e5b6d54b7ba949",
         "aerial/hi/-1_1.jpg": "b73d0bca9bfe2a0add513d9be8617a340fcef639b187e58da620c0371ba240a9",
         "aerial/lo/-1_1.jpg": "18e6fa3b9ad514c4ce08b7db89ed86e78bc09b85283e0def984af370b582b961",
+        "aerial/hi/-1_2.jpg": "20af5a9597f8b55b87257421850e1f11cfc39d5c98d06cba35f7bda2cd8b1d58",
+        "aerial/lo/-1_2.jpg": "b282b07fa22f7c690a95089d6166f9228536b3c1f9916dee507842ad3d574c7c",
         "aerial/hi/0_-2.jpg": "ff81fa3ff0e270e4b172421d43b260eecf9decd1572a462434177c2d5adc89ee",
         "aerial/lo/0_-2.jpg": "eb432aae527ddd3a4ccae4303da2177a08fcc36127bcbcd54d269fd46b37535b",
         "aerial/hi/0_-1.jpg": "b4a5b17367329d4ef9b53591df15cbc704bacdee538ad8acc026c5f8f607e977",
@@ -212,7 +260,7 @@
         "aerial/lo/2_0.jpg": "dccc33f680a9439ddd45e2f511ccfd17287917643d53df0a2f29206fe9dd699a",
         "aerial/hi/2_1.jpg": "e601acbcd45036ca0fec6200f8e8d91ac32378f056f892472923d603b536bc25",
         "aerial/lo/2_1.jpg": "450f9edc6b00d4d47d72eab43b60fdd8edeb0b58e29779632882597de2f92d80",
-        "aerial/general.jpg": "17971518ae98b6bdd619ff12107130fecd70720a8f589ab5331c40aed7970e65"
+        "aerial/general.jpg": "8f6c9d46f8ad8581843f92a8337e8a18241ad620a4ad9ca168bb77882a85230b"
       }
     },
     {
@@ -220,20 +268,39 @@
         "terrain.json",
         "terrain.bin"
       ],
-      "source": "IGN / PNOA MDT 5 m, Elevacion4258_5",
-      "date": "2026-10-07",
+      "source": "IGN / PNOA MDT 5 m, Elevacion25830_5 (rejilla nativa por teselas)",
+      "date": "2026-10-09",
       "attribution": "Obra derivada del MDT de España (5 m) CC-BY 4.0 IGN / PNOA / SCNE (scne.es)",
       "conditions": "CC-BY-4.0 compatible IGN terms",
       "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
       "sourceUrls": [
-        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc"
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035997.5,4036497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035997.5,4036497.5)&format=application/asc"
       ],
-      "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
-      "transformation": "Centros ASCII, remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
+      "sourceSha256": "0dfa0c8ab46a040dd97ebb7d669ecbed6f3dd53165216e9378eed61038533181",
+      "transformation": "Centros nativos UTM 30N de 5 m (pyproj), remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
       "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
       "sha256": {
-        "terrain.json": "1bf5633d78c697aae066f6063f09da3d37b0ad3ce7ffec571e40ecea99fbc329",
-        "terrain.bin": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c"
+        "terrain.json": "fc50553cfc151985bced114c72276680624eeb19c8333b75ffa0445bcf953cc0",
+        "terrain.bin": "34c4d63f01daa0b5f11c51c149f3434536f1dfdba950524b690689891bc51756"
       }
     }
   ]
