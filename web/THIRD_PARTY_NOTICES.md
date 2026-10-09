@@ -121,6 +121,11 @@ Referencias que se mantienen identificadas, con sus condiciones originales:
   https://commons.wikimedia.org/wiki/File:San_Juan_Chiclana_1.jpg
 - Iglesia Mayor, cúpula: PEPE GADEIRAS, 4/1/2011, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Chiclana,_la_c%C3%BApula_de_la_Iglesia_Mayor.jpg
+- Ermita de Santa Ana: Xemenendura, 20/5/2023, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:Ermita_Santa_Ana_Chiclana.jpg
+  https://commons.wikimedia.org/wiki/File:Ermita_de_Santa_Ana_Chiclana.jpg
+- Ermita de Santa Ana: Carlosrs, 10/3/2008, dominio público.
+  https://commons.wikimedia.org/wiki/File:Chiclana._Ermita_de_Santa_Ana.jpg
 - Turismo municipal: referencias documentales; licencia abierta no verificada.
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-telmo/
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-juan-bautista/
