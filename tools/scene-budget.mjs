@@ -117,15 +117,34 @@ try {
     });
   await send('Page.navigate', { url });
   const deadline = Date.now() + 90000;
-  while (
-    !(await evaluate(
-      "!!window.__cityGame && !document.getElementById('welcome').classList.contains('hidden')",
-    ))
-  ) {
-    if (errors.length || Date.now() > deadline) throw Error('Juego no listo: ' + errors.join('\n'));
-    await sleep(500);
+  let ready = false,
+    readinessError;
+  while (!ready) {
+    try {
+      ready = await evaluate(
+        "!!window.__cityGame && !document.getElementById('welcome').classList.contains('hidden')",
+      );
+    } catch (error) {
+      // La navegación puede destruir el contexto entre dos consultas de CDP.
+      readinessError = error;
+    }
+    if (errors.length || Date.now() > deadline)
+      throw Error(
+        'Juego no listo: ' + (errors.join('\n') || readinessError?.message || 'plazo agotado'),
+      );
+    if (!ready) await sleep(500);
   }
-  await evaluate("document.getElementById('start').click()");
+  await evaluate(`(async()=>{
+    const {session}=await import('./js/core/state.js');
+    const {start}=await import('./js/game/flow.js');
+    const {target}=await import('./js/game/jobs.js');
+    const {updateMarkers}=await import('./js/game/missions.js');
+    // Importar antes de start evita que un frame avance la partida antes de pausarla.
+    start();session.paused=true;session.t=0;updateMarkers(target());
+    const style=document.createElement('style');
+    style.textContent='body > :not(#world) { visibility: hidden !important; }';
+    document.head.appendChild(style);
+  })()`);
   const points = await evaluate(`(()=>{
     const g=window.__cityGame;
     return [{name:'Alameda',x:g.player.x,z:g.player.z},...['Mercado de Abastos','Plaza Mayor','Ermita de Santa Ana','San Telmo'].map(name=>{
@@ -140,10 +159,10 @@ try {
     for (let mode = 0; mode < 3; mode++) {
       await evaluate(`(async()=>{
       const {player,view}=await import('./js/core/state.js');
-      const {cycleCamera,snapCamera}=await import('./js/engine/camera.js');
+      const {cycleCamera,snapCamera,updateCamera}=await import('./js/engine/camera.js');
       const {x,z,a}=${JSON.stringify(point)};
       Object.assign(player,{x,z,a,speed:0});if(player.car)Object.assign(player.car,{x,z,a,speed:0});
-      while(view.mode!==${mode})cycleCamera();snapCamera();
+      while(view.mode!==${mode})cycleCamera();snapCamera(true);updateCamera(100);
     })()`);
       await sleep(2500);
       await evaluate(
