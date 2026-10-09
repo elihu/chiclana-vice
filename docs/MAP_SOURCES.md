@@ -68,6 +68,33 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+- Jesús Nazareno: pendiente de corregir la orientación y el anclaje de la portada.
+  La foto IAPH «Fachadas lateral y principal del Convento de Jesús Nazareno», ya citada
+  en los avisos de terceros, y la ortofoto sitúan la portada de mármol al oeste, hacia
+  la plaza, y el lateral en Calle Larga, al norte. La receta vigente sigue sobre el
+  lado norte del hito OSM. La prueba de moverla al lado oeste de ese hito dejó parte de
+  la portada tapada por los volúmenes catastrales: hay que comprobar el anclaje contra
+  su borde exterior y la base común antes de adoptar una corrección. Esa prueba no se
+  incorpora; se conserva el modelo anterior. Diagnóstico del 9/10/2026 tras la revisión
+  del usuario, separado del modelo de Veracruz.
+- Ermita del Cristo de la Veracruz (`veracruz`): planta visual de la nave a partir del
+  hito OSM y la ortofoto PNOA 2022-07 `web/aerial/hi/0_1.jpg`. La fachada mira al lado
+  corto norte, vértices 0→3 (`[207.54,367.8]`–`[194.03,366.67]`), de 13,56 m, hacia la
+  plaza. El atrio está dentro del contorno: portada sobre
+  `[208.35,374.19]`–`[193.87,372.98]`, unos 6,3 m detrás de la reja del borde norte.
+  Orientación corregida tras la revisión del usuario: la fachada es la del extremo
+  norte de la nave. Cabecera y laterales se conservan como referencia; el recorte es una planta visual
+  de autor, no una corrección cartográfica. Encalado, remate curvo, bandas ocres,
+  espadaña de un vano con campana y cruz de veleta, óculo, arco de piedra, puertas,
+  faroles, reja, pilares y hornacinas se interpretan de las dos fotos aprobadas de
+  Xemenendura identificadas en los avisos de terceros. No se distribuyen como texturas.
+  Muros a 9,10 m, cubierta a dos aguas hasta unos 10,60 m y cruz hasta 17 m sobre la
+  base: proporciones estimadas, sin medición arquitectónica. El atrio visual se apoya
+  a 3,50 m sobre la base para cubrir el volumen catastral de 3,45 m que se conserva;
+  no se vuelve transitable. `baseY` del hito es 15,22 m y el desnivel bajo la parte
+  catastral 4909 es 3,18 m: la política de cota máxima permanece y deja un zócalo alto (hasta unos
+  6,68 m hasta el pavimento visual). No se modifica relieve, contorno ni colisiones;
+  no se añaden cipreses. Modelo aproximado pendiente de revisión visual del usuario.
 - Puente VII Centenario (receta `puente-arco`): dos arcos laterales de acero sobre toda la
   luz, con péndolas cada 3,5 m y apoyos, en los bordes de un tablero de 14 m. La planta de
   los arcos y su posición sobre la calzada salen de la ortofoto PNOA 2022-07 y el eje y los

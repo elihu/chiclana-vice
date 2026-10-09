@@ -1207,6 +1207,693 @@
           ]
         }
       ]
+    },
+    "portada-veracruz": {
+      "description": "Fachada encalada de remate curvo, espadaña, óculo, arco de piedra y puertas de madera; proporciones aproximadas de las dos fotos aprobadas. f es el pavimento visual que cubre el volumen catastral conservado.",
+      "params": {
+        "f": 3.5,
+        "h": 9.1
+      },
+      "body": [
+        {
+          "box": [
+            "len/2",
+            "h/2",
+            0,
+            "len",
+            "h",
+            0.32
+          ],
+          "color": "#f0ece2"
+        },
+        {
+          "box": [
+            "len/2",
+            "f+0.3",
+            0.2,
+            "len",
+            0.6,
+            0.2
+          ],
+          "color": "#bba583"
+        },
+        {
+          "box": [
+            "len/2",
+            "h",
+            0.15,
+            "len+0.3",
+            0.28,
+            0.45
+          ],
+          "color": "#b88b37"
+        },
+        {
+          "box": [
+            "len/2",
+            "h-0.22",
+            0.18,
+            "len",
+            0.13,
+            0.3
+          ],
+          "color": "#b88b37"
+        },
+        {
+          "for": "i",
+          "from": 0,
+          "while": "i < 48",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "u": "i*len/48",
+                "w": "len/48",
+                "a": "1.85*(1-abs(2*u/len-1))*(1-abs(2*u/len-1))",
+                "b": "1.85*(1-abs(2*(u+w)/len-1))*(1-abs(2*(u+w)/len-1))"
+              }
+            },
+            {
+              "geo": [
+                "TriangleExtrude",
+                0,
+                0,
+                "w",
+                0,
+                "w",
+                "b",
+                0.32
+              ],
+              "at": [
+                "u",
+                "h",
+                -0.16
+              ],
+              "color": "#f0ece2"
+            },
+            {
+              "geo": [
+                "TriangleExtrude",
+                0,
+                0,
+                "w",
+                "b",
+                0,
+                "a",
+                0.32
+              ],
+              "at": [
+                "u",
+                "h",
+                -0.16
+              ],
+              "color": "#f0ece2"
+            },
+            {
+              "box": [
+                "u+w/2",
+                "h+(a+b)/2+0.03",
+                0.12,
+                "hypot(w,b-a)+0.02",
+                0.13,
+                0.39
+              ],
+              "color": "#b88b37",
+              "rotation": [
+                0,
+                0,
+                "atan2(b-a,w)"
+              ]
+            }
+          ]
+        },
+        {
+          "piece": "door",
+          "args": [
+            "len/2",
+            "f",
+            3.6,
+            4.45
+          ]
+        },
+        {
+          "for": "side",
+          "in": [
+            -1,
+            1
+          ],
+          "body": [
+            {
+              "box": [
+                "len/2+side*1.94",
+                "f+1.35",
+                0.28,
+                0.36,
+                2.7,
+                0.42
+              ],
+              "color": "#bba583"
+            },
+            {
+              "box": [
+                "len/2+side*1.94",
+                "f+2.65",
+                0.34,
+                0.6,
+                0.21,
+                0.52
+              ],
+              "color": "#bba583"
+            }
+          ]
+        },
+        {
+          "geo": [
+            "TorusGeometry",
+            1.98,
+            0.2,
+            6,
+            24,
+            "PI"
+          ],
+          "at": [
+            "len/2",
+            "f+2.65",
+            0.29
+          ],
+          "color": "#bba583"
+        },
+        {
+          "geo": [
+            "CircleGeometry",
+            0.65,
+            24
+          ],
+          "at": [
+            "len/2",
+            10.1,
+            0.22
+          ],
+          "color": "#343a37"
+        },
+        {
+          "geo": [
+            "TorusGeometry",
+            0.75,
+            0.13,
+            6,
+            24
+          ],
+          "at": [
+            "len/2",
+            10.1,
+            0.26
+          ],
+          "color": "#b88b37"
+        },
+        {
+          "piece": "belfry",
+          "args": [
+            "len/2",
+            11.15,
+            2.7,
+            3.35
+          ]
+        },
+        {
+          "for": "side",
+          "in": [
+            -1,
+            1
+          ],
+          "body": [
+            {
+              "box": [
+                "len/2+side*1.18",
+                12.8,
+                0.49,
+                0.33,
+                3.25,
+                0.28
+              ],
+              "color": "#b88b37"
+            },
+            {
+              "box": [
+                "len/2+side*1.18",
+                11.35,
+                0.49,
+                0.51,
+                0.21,
+                0.46
+              ],
+              "color": "#b88b37"
+            },
+            {
+              "box": [
+                "len/2+side*1.18",
+                14.3,
+                0.49,
+                0.52,
+                0.21,
+                0.48
+              ],
+              "color": "#b88b37"
+            }
+          ]
+        },
+        {
+          "box": [
+            "len/2",
+            14.6,
+            0.14,
+            3.15,
+            0.27,
+            0.84
+          ],
+          "color": "#b88b37"
+        },
+        {
+          "geo": [
+            "TriangleExtrude",
+            -1.45,
+            0,
+            1.45,
+            0,
+            0,
+            0.9,
+            0.55
+          ],
+          "at": [
+            "len/2",
+            14.75,
+            -0.15
+          ],
+          "color": "#f0ece2"
+        },
+        {
+          "piece": "cross",
+          "args": [
+            "len/2",
+            16.25,
+            0.14
+          ]
+        },
+        {
+          "box": [
+            "len/2",
+            16.25,
+            0.18,
+            1.2,
+            0.04,
+            0.05
+          ],
+          "color": "#343a37"
+        },
+        {
+          "for": "side",
+          "in": [
+            -1,
+            1
+          ],
+          "body": [
+            {
+              "box": [
+                "len/2+side*2.8",
+                "f+3.15",
+                0.36,
+                0.09,
+                0.65,
+                0.45
+              ],
+              "color": "#343a37"
+            },
+            {
+              "box": [
+                "len/2+side*2.8",
+                "f+3.45",
+                0.58,
+                0.34,
+                0.48,
+                0.3
+              ],
+              "color": "#d4d0b7"
+            },
+            {
+              "geo": [
+                "ConeGeometry",
+                0.29,
+                0.16,
+                4
+              ],
+              "at": [
+                "len/2+side*2.8",
+                "f+3.78",
+                0.58
+              ],
+              "color": "#bba583"
+            }
+          ]
+        },
+        {
+          "piece": "door",
+          "args": [
+            "len-2.2",
+            "f",
+            1.3,
+            2.2
+          ]
+        },
+        {
+          "for": "side",
+          "in": [
+            -1,
+            1
+          ],
+          "body": [
+            {
+              "box": [
+                "len-2.2+side*0.77",
+                "f+0.76",
+                0.23,
+                0.18,
+                1.52,
+                0.2
+              ],
+              "color": "#bba583"
+            }
+          ]
+        },
+        {
+          "geo": [
+            "TorusGeometry",
+            0.74,
+            0.1,
+            5,
+            16,
+            "PI"
+          ],
+          "at": [
+            "len-2.2",
+            "f+1.52",
+            0.28
+          ],
+          "color": "#bba583"
+        },
+        {
+          "for": "u",
+          "in": [
+            3.1,
+            "len-4.3"
+          ],
+          "body": [
+            {
+              "box": [
+                "u",
+                "f+2.6",
+                0.28,
+                0.82,
+                1.05,
+                0.24
+              ],
+              "color": "#b88b37"
+            },
+            {
+              "box": [
+                "u",
+                "f+2.6",
+                0.42,
+                0.55,
+                0.76,
+                0.04
+              ],
+              "color": "#343a37"
+            },
+            {
+              "geo": [
+                "TriangleExtrude",
+                -0.65,
+                0,
+                0.65,
+                0,
+                0,
+                0.42,
+                0.72
+              ],
+              "at": [
+                "u",
+                "f+3.19",
+                0.1
+              ],
+              "color": "#65705b"
+            }
+          ]
+        }
+      ]
+    },
+    "cubierta-veracruz": {
+      "description": "Cubierta a dos aguas aproximada sobre la nave visual, sin cubrir el atrio norte. Anchura creciente desde la fachada norte hacia la cabecera sur del contorno OSM.",
+      "params": {
+        "h": 9.1
+      },
+      "body": [
+        {
+          "for": "i",
+          "from": 0,
+          "while": "i < 15",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "t": "(i+0.5)/15",
+                "w": "len+(17.6-len)*t",
+                "depth": 20.5
+              }
+            },
+            {
+              "for": "side",
+              "in": [
+                -1,
+                1
+              ],
+              "body": [
+                {
+                  "box": [
+                    "len/2-2.75*t+side*w/4",
+                    "h+w*0.045",
+                    "-t*depth",
+                    "w/2+0.2",
+                    0.16,
+                    "depth/15+0.02"
+                  ],
+                  "color": "#8e8065",
+                  "rotation": [
+                    0,
+                    0,
+                    "-side*0.18"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "atrio-veracruz": {
+      "description": "Atrio visual elevado sobre el volumen catastral conservado. Reja de hierro, murete y pilares de ladrillo; no cambia la transitabilidad.",
+      "params": {
+        "f": 3.5
+      },
+      "body": [
+        {
+          "box": [
+            "len/2",
+            "f-0.05",
+            -3.15,
+            "len",
+            0.1,
+            6.3
+          ],
+          "color": "#c3b8a5"
+        },
+        {
+          "box": [
+            "len/2",
+            "f+0.2",
+            0,
+            "len",
+            0.4,
+            0.32
+          ],
+          "color": "#f0ece2"
+        },
+        {
+          "box": [
+            "len/2",
+            "f+0.43",
+            0,
+            "len",
+            0.1,
+            0.42
+          ],
+          "color": "#bba583"
+        },
+        {
+          "for": "i",
+          "from": 0,
+          "while": "i <= floor(len/0.22)",
+          "step": 1,
+          "body": [
+            {
+              "let": {
+                "u": "i*len/floor(len/0.22)"
+              }
+            },
+            {
+              "box": [
+                "u",
+                "f+1.35",
+                0.04,
+                0.035,
+                1.8,
+                0.035
+              ],
+              "color": "#343a37"
+            },
+            {
+              "geo": [
+                "ConeGeometry",
+                0.068,
+                0.16,
+                4
+              ],
+              "at": [
+                "u",
+                "f+2.33",
+                0.04
+              ],
+              "color": "#343a37"
+            }
+          ]
+        },
+        {
+          "for": "y",
+          "in": [
+            0.65,
+            1.7,
+            2.05
+          ],
+          "body": [
+            {
+              "box": [
+                "len/2",
+                "f+y",
+                0.04,
+                "len",
+                0.045,
+                0.05
+              ],
+              "color": "#343a37"
+            }
+          ]
+        },
+        {
+          "for": "u",
+          "in": [
+            "len/2-2.25",
+            "len/2+2.25"
+          ],
+          "body": [
+            {
+              "box": [
+                "u",
+                "f+1.15",
+                0.02,
+                0.58,
+                2.3,
+                0.58
+              ],
+              "color": "#a46c4e"
+            },
+            {
+              "box": [
+                "u",
+                "f+2.33",
+                0.02,
+                0.85,
+                0.15,
+                0.82
+              ],
+              "color": "#bba583"
+            },
+            {
+              "box": [
+                "u",
+                "f+1.1",
+                0.33,
+                0.22,
+                1.6,
+                0.035
+              ],
+              "color": "#d3c6a0"
+            },
+            {
+              "geo": [
+                "SphereGeometry",
+                0.17,
+                8,
+                6
+              ],
+              "at": [
+                "u",
+                "f+2.56",
+                0.02
+              ],
+              "color": "#343a37"
+            }
+          ]
+        },
+        {
+          "box": [
+            "len/2-3.5",
+            "f+2.7",
+            0.05,
+            0.8,
+            1,
+            0.24
+          ],
+          "color": "#bba583"
+        },
+        {
+          "box": [
+            "len/2-3.5",
+            "f+2.7",
+            0.2,
+            0.52,
+            0.72,
+            0.04
+          ],
+          "color": "#343a37"
+        },
+        {
+          "geo": [
+            "TriangleExtrude",
+            -0.6,
+            0,
+            0.6,
+            0,
+            0,
+            0.4,
+            0.72
+          ],
+          "at": [
+            "len/2-3.5",
+            "f+3.22",
+            -0.25
+          ],
+          "color": "#65705b"
+        }
+      ]
     }
   },
   "buildings": [
@@ -1421,6 +2108,103 @@
         {
           "anchor": { "a": [-470.32, -533.22], "b": [-489.92, -484.33], "outward": [-0.928, -0.372] },
           "recipe": "puente-arco"
+        }
+      ]
+    },
+    {
+      "id": "veracruz",
+      "name": "Ermita del Cristo de la Veracruz",
+      "landmark": "Veracruz",
+      "detailType": "church",
+      "lod": "1.2",
+      "status": "approximate",
+      "references": [
+        "https://commons.wikimedia.org/wiki/File:Ermita_Cristo_de_la_Veracruz.jpg",
+        "https://commons.wikimedia.org/wiki/File:Ermita_del_Cristo_de_la_Veracruz.jpg",
+        "Planta y atrio: contorno del hito OSM y ortofoto PNOA 2022-07, web/aerial/hi/0_1.jpg. Alturas, colores y cubierta aproximados; atrio visual sobre el volumen catastral conservado."
+      ],
+      "fronts": [
+        {
+          "anchor": {
+            "ring": [
+              [
+                208.35,
+                374.19
+              ],
+              [
+                210.93,
+                394.7
+              ],
+              [
+                193.36,
+                393.76
+              ],
+              [
+                193.87,
+                372.98
+              ]
+            ],
+            "center": [
+              201.5,
+              384
+            ]
+          },
+          "recipe": "nave",
+          "with": {
+            "h": 9.1,
+            "color": "#f0ece2"
+          }
+        },
+        {
+          "anchor": {
+            "a": [
+              208.35,
+              374.19
+            ],
+            "b": [
+              193.87,
+              372.98
+            ],
+            "outward": [
+              0.08335069669722303,
+              -0.9965202764420239
+            ]
+          },
+          "recipe": "cubierta-veracruz"
+        },
+        {
+          "anchor": {
+            "a": [
+              208.35,
+              374.19
+            ],
+            "b": [
+              193.87,
+              372.98
+            ],
+            "outward": [
+              0.08335069669722303,
+              -0.9965202764420239
+            ]
+          },
+          "recipe": "portada-veracruz"
+        },
+        {
+          "anchor": {
+            "a": [
+              207.54,
+              367.8
+            ],
+            "b": [
+              194.03,
+              366.67
+            ],
+            "outward": [
+              0.08335069669722303,
+              -0.9965202764420239
+            ]
+          },
+          "recipe": "atrio-veracruz"
         }
       ]
     }
