@@ -220,20 +220,31 @@
         "terrain.json",
         "terrain.bin"
       ],
-      "source": "IGN / PNOA MDT 5 m, Elevacion4258_5",
-      "date": "2026-10-07",
+      "source": "IGN / PNOA MDT 5 m, Elevacion25830_5 (rejilla nativa por teselas)",
+      "date": "2026-10-09",
       "attribution": "Obra derivada del MDT de España (5 m) CC-BY 4.0 IGN / PNOA / SCNE (scne.es)",
       "conditions": "CC-BY-4.0 compatible IGN terms",
       "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
       "sourceUrls": [
-        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc"
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+        "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035497.5,4035997.5)&format=application/asc"
       ],
-      "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
-      "transformation": "Centros ASCII, remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
+      "sourceSha256": "ebaa16b4d7a9032a533bc831c1bb4fa979705598bffd0ea70c69a530d0e43488",
+      "transformation": "Centros nativos UTM 30N de 5 m (pyproj), remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
       "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
       "sha256": {
-        "terrain.json": "1bf5633d78c697aae066f6063f09da3d37b0ad3ce7ffec571e40ecea99fbc329",
-        "terrain.bin": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c"
+        "terrain.json": "a56d2342148f2fa8efce8d79bb488ddc879886bc63310bf88bf23476743f1e9f",
+        "terrain.bin": "02a424e7f6487929e36e9f608bb4a2ac5a3a92918067b793ca65b65718c6918a"
       }
     }
   ]

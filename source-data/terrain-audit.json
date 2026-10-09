@@ -1,58 +1,77 @@
 {
   "version": 1,
-  "accessDate": "2026-10-07",
-  "sourceUrl": "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc",
-  "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
+  "accessDate": "2026-10-09",
+  "sourceUrl": "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5 (teselas de 500 m; URL en sourceUrls)",
+  "sourceSha256": "ebaa16b4d7a9032a533bc831c1bb4fa979705598bffd0ea70c69a530d0e43488",
   "header": {
-    "ncols": 346.0,
-    "nrows": 209.0,
-    "xllcorner": -6.1563,
-    "yllcorner": 36.4148,
-    "dx": 4.5086705e-05,
-    "dy": 4.4976077e-05
+    "cellsize": 5.0,
+    "tiles": 12,
+    "cells": 120000
   },
-  "samples": 72314,
+  "samples": 120000,
   "nodata": 0,
   "range": [
     0.0,
-    52.0
+    52.946
   ],
   "percentiles": {
-    "5": 2.147,
-    "50": 7.0,
-    "95": 28.867
+    "5": 1.952,
+    "50": 6.0,
+    "95": 27.407
   },
-  "maximumNeighbourSlope": 1.3068270694634854,
+  "maximumNeighbourSlope": 1.1280000000000001,
   "resolutionMetres": [
-    4.038789923571809,
-    5.00673689164
+    5.0,
+    5.0
   ],
-  "crs": "EPSG:4326 según DescribeCoverage; orden Lat,Long; ASCII x=longitud",
+  "crs": "EPSG:25830 (UTM 30N), rejilla nativa de 5 m: centros en múltiplos de 5 m, sin remuestreo",
   "acquisitionDate": "sin confirmar",
   "verticalReference": "sin confirmar para este recorte",
   "metadataWarning": "DescribeCoverage publica unidades W.m-2.Sr-1 impropias del MDT: no utilizarlas como evidencia vertical.",
-  "decision": "validado para el juego",
+  "decision": "no activar hasta revisar perfiles transitables y referencia vertical",
+  "sourceTiles": {
+    "433_8069.asc": "2e377f21eb2c3ff44ec69a0fa7ab0e5bc9c9c2ed5d4ddf4798dca452e50417d4",
+    "433_8070.asc": "7be04bd2aae30bd71c8e39fa4b1cccc41bc9d771c97e6ee04cc72bf937fa56e5",
+    "433_8071.asc": "0e8ef2ba10015785d0c22d91227d99a9d3192ca4fd2652314441def1d9c9d931",
+    "434_8069.asc": "acc42f5e04ec819fcc844916fa2e29921053561d2bee3b76d5c3260ae2a2a9fe",
+    "434_8070.asc": "b9709fffaaeff14d886af9b668d28d05de03dd71ca07031bfc4d0819ce38b977",
+    "434_8071.asc": "4b09e5e5b85b10a4e0a2354c248ba26c88f104c65a48acde99683898c1f695a6",
+    "435_8069.asc": "0e3d9d7ae822c80c8189a031edd9bf919920f328228954e7c2cf81ca12382972",
+    "435_8070.asc": "6270f6e4f196128ba0254210bc100e9403b41c853b144ddb839da1f174f6dd7d",
+    "435_8071.asc": "c9bad7fe7a1bc46144e4ea129968e7f1c58219b6d0284bb90b9c98c88c4579bd",
+    "436_8069.asc": "a507eab57d54586f76e86ec1cc04726cb58a3ae02011f6ee757173bcce535615",
+    "436_8070.asc": "fefab810d8c16e84dbe355d4abe8c17f8543b0667810cb4530e0668082a5e489",
+    "436_8071.asc": "cddef6cc8feee38ba05c101f602a71b4002830af772a16ddc296b52b6a94160d"
+  },
+  "sourceUrls": [
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216997.5,217497.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217497.5,217997.5)&subset=y(4035497.5,4035997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034497.5,4034997.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4034997.5,4035497.5)&format=application/asc",
+    "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(217997.5,218497.5)&subset=y(4035497.5,4035997.5)&format=application/asc"
+  ],
   "serviceEvidence": {
     "capabilitiesSha256": "30c95575991611cd15924369d2a3ad5066aa9a81ff68f8e549c71bdc6c638d3f",
-    "descriptionSha256": "cfb3a677580104eca03fedef17ef8a36027b651cf8d0973b48d9fa5516aab6e0",
+    "descriptionSha256": "da3b2638ecceb52eeb837fc5d020e6573489fdfb2ce0435872e34e1f5876421a",
     "envelope": {
-      "srsName": "http://www.opengis.net/def/crs/EPSG/0/4326",
-      "axisLabels": "lat long",
-      "uomLabels": "deg deg",
+      "srsName": "http://www.opengis.net/def/crs/EPSG/0/25830",
+      "axisLabels": "x y",
+      "uomLabels": "m m",
       "srsDimension": "2"
     },
     "declaredUnit": {
       "code": "W.m-2.Sr-1"
     },
     "offsetVectors": [
-      "0 0.000045",
-      "-0.000045 0"
-    ],
-    "headers": {
-      "date": "Wed, 07 Oct 2026 11:32:24 GMT",
-      "content-type": "multipart/related; boundary=wcs"
-    }
-  },
-  "decisionDate": "2026-10-08",
-  "decisionNote": "Revisión visual del usuario en navegador: el relieve se considera realista respecto al terreno real; quedan pequeños defectos visuales. Referencia vertical y fecha de adquisición siguen sin confirmar; no es una validación topográfica."
+      "5.000000 0",
+      "0 -5.000000"
+    ]
+  }
 }

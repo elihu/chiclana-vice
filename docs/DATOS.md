@@ -218,9 +218,11 @@ probar el juego en un navegador.
 
 ## 6. Terreno
 
-`audit-terrain.py` lee el ASCII WCS original, incluidos multipart y centros de píxel;
-`export-terrain.py` genera la rejilla Int16 y manifiesto deterministas sin dependencias
-GIS nuevas. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
+`mdt-tiles.py` descarga a la caché las teselas nativas del MDT05 (UTM 30N, 500 m) que
+faltan para cubrir `world.bounds`; ampliar el mapa solo añade teselas. `audit-terrain.py`
+lee esas teselas (o un ASCII WCS antiguo), comprueba que se alinean con la rejilla
+nativa y que coinciden donde se solapan; `export-terrain.py` genera la rejilla Int16 y
+el manifiesto deterministas. Ambos fijan pyproj 3.8.0 para la conversión a UTM. El paso es exactamente 10 m y `bounds` se redondea hacia fuera a
 múltiplos de ese paso desde el origen, sin cambiar `world.bounds`. El original debe
 cubrir todos los vértices: se rechaza un recorte insuficiente, sin extrapolación.
 El runtime valida cobertura, paso y anclaje; la malla construida subdivide el paso

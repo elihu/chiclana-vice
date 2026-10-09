@@ -66,18 +66,19 @@ aproximaciones de autor explícitas, pendientes de revisión; no se cambia el tr
 
 ## Reproducción
 
-Descargar originales únicamente fuera del repositorio, en la caché persistente
-`~/.cache/chiclana-vice/mdt` (las rutas de `audit-terrain.py` apuntan ahí por defecto):
+Desde el 9/10/2026 el relieve sale de la rejilla nativa del MDT05 (`Elevacion25830_5`)
+en teselas fijas de 500 m, guardadas fuera del repositorio en
+`~/.cache/chiclana-vice/mdt/utm/` con su índice de URL, fecha y SHA-256:
 
 ```sh
-mkdir -p ~/.cache/chiclana-vice/mdt
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCapabilities' -o ~/.cache/chiclana-vice/mdt/capabilities.xml
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=DescribeCoverage&coverageId=Elevacion4258_5' -o ~/.cache/chiclana-vice/mdt/description.xml
-curl -L --fail 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc' -D ~/.cache/chiclana-vice/mdt/headers.txt -o ~/.cache/chiclana-vice/mdt/original.bin
-uv run --no-project python tools/audit-terrain.py ~/.cache/chiclana-vice/mdt/original.bin --date 2026-10-07 --url 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion4258_5&subset=Lat(36.4148,36.4242)&subset=Long(-6.1563,-6.1407)&format=application/asc'
-uv run --no-project python tools/export-terrain.py ~/.cache/chiclana-vice/mdt/original.bin --preview
+uv run --no-project --with pyproj==3.8.0 python tools/mdt-tiles.py
+uv run --no-project python tools/audit-terrain.py ~/.cache/chiclana-vice/mdt/utm --date AAAA-MM-DD --url 'https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5 (teselas de 500 m; URL en sourceUrls)' --capabilities ~/.cache/chiclana-vice/mdt/utm/capabilities.xml --description ~/.cache/chiclana-vice/mdt/utm/description.xml
+uv run --no-project --with pyproj==3.8.0 python tools/export-terrain.py ~/.cache/chiclana-vice/mdt/utm --preview
 node tools/audit-terrain-surfaces.mjs /tmp/chiclana-terrain-export
 ```
+
+El recorte anterior (`Elevacion4258_5`, `original.bin`, 7/10/2026) no es reproducible
+fuera de su recuadro: el servicio remuestrea esa cobertura según lo que se pide.
 
 El exportador escribe por defecto en `/tmp/chiclana-terrain-export`. Para revisar,
 copiar `web/` a otro directorio bajo `/tmp`, añadir allí los dos archivos generados y

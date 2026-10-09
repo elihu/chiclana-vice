@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "sha256": "ab830423efd95e6926da862b21d690d304418eb218662b616b2cb9716ff5c27c",
-  "sourceSha256": "71572c05394d10d6d3c708760c2ebc6233df68593cf79f7df125efd730261cae",
+  "sha256": "02a424e7f6487929e36e9f608bb4a2ac5a3a92918067b793ca65b65718c6918a",
+  "sourceSha256": "ebaa16b4d7a9032a533bc831c1bb4fa979705598bffd0ea70c69a530d0e43488",
   "origin": [
     -6.1485,
     36.4195
@@ -10,5 +10,5 @@
     1343.67,
     1001.88
   ],
-  "preview": false
+  "preview": true
 }

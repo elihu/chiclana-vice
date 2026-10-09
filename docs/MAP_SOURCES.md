@@ -43,12 +43,17 @@ se sustituye.
   Parámetros, URL y checksums en `web/height-samples.json` y
   `source-data/height-audit-ign.json`; detalle en [ALTURAS_PILOTO.md](ALTURAS_PILOTO.md).
   https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities
-- **MDT IGN de paso nominal 5 m, validado para el juego**: servicio WCS `Elevacion4258_5`,
-  consulta del 7/10/2026, ASCII multipart en EPSG:4326 según DescribeCoverage.
-  Transformación local existente, remuestreo a unos 10 m, referencia fija en el origen
-  y cuantización a 0,1 m. El original permanece fuera de Git; la rejilla derivada
-  (`terrain.json`, `terrain.bin`) está activa en el juego desde la validación visual del
-  8/10/2026. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
+- **MDT IGN de paso 5 m, rejilla nativa**: servicio WCS `Elevacion25830_5`
+  (EPSG:25830, UTM 30N), consulta del 9/10/2026, en teselas de 500 m cuyos bordes caen
+  entre centros nativos (`tools/mdt-tiles.py`). El servidor devuelve así las celdas
+  originales: la misma petición da los mismos bytes y dos teselas solapadas coinciden
+  celda a celda, de modo que ampliar el mapa solo añade teselas y no cambia las cotas
+  existentes. Sustituye al recorte `Elevacion4258_5` del 7/10/2026, que el servicio
+  remuestreaba según el recuadro pedido; el cambio movió las cotas del centro (mediana
+  1,5 cm, p95 0,49 m, máximo 4,0 m en una ladera). Conversión a UTM con pyproj,
+  bilineal a la rejilla de juego de 10 m, referencia fija en el origen y cuantización a
+  0,1 m. Los originales permanecen fuera de Git; la rejilla derivada (`terrain.json`,
+  `terrain.bin`) está en revisión provisional hasta una nueva validación visual. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
   `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
   aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 - **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del

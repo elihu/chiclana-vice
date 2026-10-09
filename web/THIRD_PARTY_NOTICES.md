@@ -65,9 +65,9 @@ Píxeles de unos 2,5 m, valores almacenados en pasos de 1 m; fecha exacta del vu
 local sin confirmar. No son medidas arquitectónicas ni alturas de cornisa.
 Se indican transformaciones, fuente, fecha, checksum y límites en los archivos.
 Obra derivada del Modelo Digital del Terreno de España, MDT de paso nominal 5 m,
-CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 7/10/2026.
-`terrain.json` y `terrain.bin`: recorte del servicio WCS IGN `Elevacion4258_5`,
-remuestreado a una rejilla de juego de aproximadamente 10 m, cotas relativas al
+CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 9/10/2026.
+`terrain.json` y `terrain.bin`: teselas de la rejilla nativa (UTM 30N, 5 m) del
+servicio WCS IGN `Elevacion25830_5`, remuestreadas a una rejilla de juego de 10 m, cotas relativas al
 origen y cuantizadas a 0,1 m. No se distribuye el ráster original. Fecha exacta de
 adquisición y referencia vertical del recorte sin confirmar; la cuantización no
 implica precisión de 10 cm.
