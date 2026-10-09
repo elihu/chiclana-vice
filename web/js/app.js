@@ -1,3 +1,4 @@
+import { setRandomSeed } from './core/random.js';
 import { boundsBox } from './world/bounds.js';
 import * as THREE from '../vendor/three.module.min.js';
 import { $, sleepFrame, ui } from './core/dom.js';
@@ -79,6 +80,7 @@ async function init() {
     throw Error('Diseños de fachada incompatibles: ' + designErrors.join('; '));
   world.facadeDesigns = designs;
   world.cityDesign = cityDesign;
+  setRandomSeed(cityDesign.randomSeed);
   world.groundTexture = tex;
   world.groundTextureFile = tex ? aerial : null;
   if (world.groundTexture) {

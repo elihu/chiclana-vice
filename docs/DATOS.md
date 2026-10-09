@@ -94,6 +94,27 @@ Ejemplo, desde el modo `?debug` (ver [DESARROLLO.md](DESARROLLO.md#modo-de-depur
 `facade-designs.json`; solo es válido si el frente está catalogado en `frontages.json`
 (el panel lo indica).
 
+### Variación estable de edificios
+
+`city-design.json.buildings.variation` contiene `seed` (entero sin signo de 32 bits)
+y `paletteAssignments` (identidad SHA-256 → índice de `buildings.palette`). El índice
+debe existir en la paleta. El catálogo es diseño de autor: conserva los colores de la
+migración inicial, no se recalcula al añadir fachadas ni al reconstruir el mapa. Las
+partes nuevas, sin asignación, obtienen su índice de la identidad y la semilla.
+
+La identidad normaliza el inicio y orientación de cada anillo y el orden de los patios;
+no usa índice de parte, plantas, altura ni detalle. Un contorno modificado recibe otra
+identidad; las asignaciones antiguas pueden conservarse para recuperar un diseño
+anterior. Para consultar una identidad desde Node, importar `buildingIdentity` de
+`web/js/world/buildings.js` y pasar una parte con `p` y `holes`.
+
+`randomSeed` fija por separado el inicio de la secuencia de vegetación y actores.
+La migración desde `main b007ac5` conserva 7.683 muestras de paleta y fija esa semilla
+a `2165021796`, el estado que antes quedaba tras consumirlas desde `7631`.
+No se añaden llamadas de compatibilidad ni opciones de azar a las recetas arquitectónicas.
+Las capas de Catastro, OSM y relieve no cambian. Después de editar estos parámetros,
+seguir la validación y actualización de procedencia indicadas arriba.
+
 ## Reglas
 
 - Los originales (ZIP/GML de Catastro, extracto OSM, recortes ráster IGN) se descargan a

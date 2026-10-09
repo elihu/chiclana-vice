@@ -14,7 +14,8 @@
     "centerLines",
     "signs",
     "vegetation",
-    "buildings"
+    "buildings",
+    "randomSeed"
   ],
   "additionalProperties": false,
   "properties": {
@@ -510,11 +511,11 @@
     "buildings": {
       "description": "Edificios genéricos: paleta, colores por tipo, alturas mínimas y escala UV.",
       "type": "object",
-      "required": ["palette", "detailColors", "minimumHeights", "wallUvWidth"],
+      "required": ["palette", "detailColors", "minimumHeights", "wallUvWidth", "variation"],
       "additionalProperties": false,
       "properties": {
         "palette": {
-          "description": "Colores de los edificios genéricos, elegidos con el azar con semilla del juego.",
+          "description": "Colores de edificios genéricos, elegidos por identidad de contorno.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/color"
@@ -591,6 +592,29 @@
         "wallUvWidth": {
           "$ref": "#/$defs/positive",
           "description": "Metros de pared por repetición horizontal de la textura de fachada."
+        },
+        "variation": {
+          "type": "object",
+          "required": ["seed", "paletteAssignments"],
+          "additionalProperties": false,
+          "properties": {
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "paletteAssignments": {
+              "description": "Asignaciones de color preservadas por identidad SHA-256 del contorno; las nuevas identidades usan la semilla.",
+              "type": "object",
+              "propertyNames": {
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
         }
       }
     },
@@ -888,6 +912,12 @@
           }
         }
       }
+    },
+    "randomSeed": {
+      "description": "Semilla de la secuencia del entorno (vegetación y actores), independiente de los edificios.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
     }
   },
   "$defs": {

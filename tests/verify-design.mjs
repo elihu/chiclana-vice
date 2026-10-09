@@ -1,3 +1,4 @@
+import './verify-building-variation.mjs';
 // Diseños desde datos: intérprete de expresiones y, más adelante, kit y compositor.
 import assert from 'node:assert/strict';
 import { compile, evaluate, freeNames } from '../web/js/engine/expr.js';
@@ -640,8 +641,10 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         color: '#e8dfbb',
         opacity: 0.55,
       },
+      randomSeed: 7631,
       signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
       buildings: {
+        variation: { seed: 7631, paletteAssignments: {} },
         palette: ['#eee7d7', '#f4ece1'],
         detailColors: {
           church: '#e9e1cd',
@@ -729,6 +732,13 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       /detailType: tipo de detalle/,
     );
     check((c) => (c.buildings.minimumHeights[1].minimumFloors = 0), /minimumFloors: .*entero/);
+    check((c) => (c.randomSeed = -1), /randomSeed/);
+    check((c) => (c.buildings.variation.seed = 4294967296), /variation.seed/);
+    check((c) => (c.buildings.variation.paletteAssignments = { invalid: 0 }), /identidad SHA-256/);
+    check(
+      (c) => (c.buildings.variation.paletteAssignments = { ['a'.repeat(64)]: 2 }),
+      /fuera de la paleta/,
+    );
     check((c) => (c.buildings.wallUvWidth = 0), /wallUvWidth: .*positivo/);
   }
   delete globalThis.document;

@@ -109,6 +109,13 @@ explícitas de interfaz.
   (`engine/expr.js` evalúa las expresiones). `web/city-design.json` fija qué calles y zonas
   reciben frentes y con qué receta. `world/design-validate.js` valida ambos al cargar y en
   `tests/verify-world.mjs`; el formato está en `docs/plan-modular/KIT-FACHADAS.md`.
+- **Variación de edificios**: el color genérico depende de una identidad SHA-256 del
+  contorno y sus patios, independiente del orden de las partes, la orientación de los
+  anillos, las plantas y la clasificación de fachada. `buildings.variation` en
+  `city-design.json` conserva las asignaciones actuales y da una semilla para partes
+  nuevas. Cambiar el contorno cambia la identidad; no equivale a un identificador
+  catastral persistente. Ningún edificio consume la secuencia del entorno, cuya semilla
+  es `city-design.json.randomSeed`. Vegetación y actores aún comparten esa secuencia.
 - **Correcciones del mapa**: `world/corrections.js` aplica `web/map-corrections.json` a las
   vías, áreas y contornos en `loadWorld`, tras validar las capas y antes de construir el
   grafo. Es una función pura de datos (sin DOM ni Three).

@@ -95,6 +95,12 @@ se sustituye.
   motivo y la evidencia. No tocan `osm-world.json` ni `buildings.json`. Por ser una base
   derivada de OSM se publica bajo ODbL 1.0 con su atribución. Hoy no contiene ninguna.
 
+La variación de color de los edificios es de autor: el catálogo inicial de
+`city-design.json.buildings.variation` conserva los colores procedurales anteriores;
+para los contornos nuevos se usa una muestra determinista por identidad geométrica.
+No representa colores medidos o extraídos de fotografías. La semilla de vegetación y
+actores se declara por separado en `city-design.json.randomSeed`.
+
 ## Aproximaciones
 
 - [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.

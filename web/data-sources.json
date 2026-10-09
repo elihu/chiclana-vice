@@ -85,7 +85,7 @@
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
         "facade-designs.json": "901cd6825f33837c5e31481286b0179db4ea01c73af6b123edfe2893e35b1e04",
-        "city-design.json": "e010fe9fddd1cb75d04c34bfb8863a6c8eaecf77febd6d017dc0c26d96e8d523"
+        "city-design.json": "0ac3a5aaa9a3882bdfb08d175db18484bf7be7009d9a3c08bca4d4ca5328ca68"
       }
     },
     {
