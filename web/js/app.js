@@ -43,7 +43,7 @@ import { spawnTraffic, updatePedestrians } from './game/traffic.js';
 import { terrainTiles, terrainExterior } from './world/terrain-mesh.js';
 import { prepareTerrainPlacement } from './world/terrain-placement.js';
 import { surfaceHeightAt, placeVehicle, placeVehicleIfChanged } from './engine/terrain-sampling.js';
-import { aerialMaterial, updateAerialTiles } from './world/aerial-tiles.js';
+import { aerialMaterial, aerialTint, updateAerialTiles } from './world/aerial-tiles.js';
 import { update } from './game/update.js';
 
 async function init() {
@@ -101,7 +101,9 @@ async function init() {
       material: indexedTiles.has(tile.i + '_' + tile.j)
         ? aerialMaterial(tile.i, tile.j, { roughness: 1 })
         : new THREE.MeshStandardMaterial({
-            ...(world.groundTexture ? { map: world.groundTexture } : { color: '#9a9b86' }),
+            ...(world.groundTexture
+              ? { map: world.groundTexture, color: aerialTint() }
+              : { color: '#9a9b86' }),
             roughness: 1,
           }),
     })),

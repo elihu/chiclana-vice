@@ -2,6 +2,23 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
 
+const AERIAL_TINT = '#ffffff',
+  tint = new THREE.Color(AERIAL_TINT);
+export const aerialTint = () => tint;
+
+export function setAerialTint(color) {
+  tint.set(color);
+  for (const group of materials.values())
+    for (const material of group) if (material.map) material.color.copy(tint);
+  // Cubiertas que desbordan las teselas y suelo de respaldo con la vista general.
+  gfx.scene.traverse((object) => {
+    const list = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of list)
+      if (material?.map && material.map === world.groundTexture) material.color.copy(tint);
+  });
+  gfx.needsRender = true;
+}
+
 const materials = new Map(),
   loaded = new Map(),
   pending = new Map();
@@ -24,7 +41,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
     ...options,
   });
   m.userData.plainColor = plainColor;
-  m.color.set(m.map ? '#ffffff' : plainColor);
+  m.color.set(m.map ? aerialTint() : plainColor);
   materials.get(key).add(m);
   return m;
 }
@@ -32,7 +49,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
 function assign(key, texture) {
   for (const material of materials.get(key) ?? []) {
     material.map = texture ?? world.groundTexture;
-    material.color.set(material.map ? '#ffffff' : material.userData.plainColor);
+    material.color.set(material.map ? aerialTint() : material.userData.plainColor);
     material.needsUpdate = true;
   }
   gfx.needsRender = true;

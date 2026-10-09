@@ -1,4 +1,4 @@
-import { aerialMaterial, tileKey } from './aerial-tiles.js';
+import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
@@ -24,7 +24,9 @@ export async function buildBuildings() {
       side: THREE.DoubleSide,
     }),
     roofMat = new THREE.MeshStandardMaterial({
-      ...(world.groundTexture ? { map: world.groundTexture } : { color: '#b4a58f' }),
+      ...(world.groundTexture
+        ? { map: world.groundTexture, color: aerialTint() }
+        : { color: '#b4a58f' }),
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
