@@ -644,7 +644,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       randomSeed: 7631,
       signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
       buildings: {
-        variation: { seed: 7631, paletteAssignments: {} },
+        variation: { seed: 7631 },
         palette: ['#eee7d7', '#f4ece1'],
         detailColors: {
           church: '#e9e1cd',
@@ -734,11 +734,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.buildings.minimumHeights[1].minimumFloors = 0), /minimumFloors: .*entero/);
     check((c) => (c.randomSeed = -1), /randomSeed/);
     check((c) => (c.buildings.variation.seed = 4294967296), /variation.seed/);
-    check((c) => (c.buildings.variation.paletteAssignments = { invalid: 0 }), /identidad SHA-256/);
-    check(
-      (c) => (c.buildings.variation.paletteAssignments = { ['a'.repeat(64)]: 2 }),
-      /fuera de la paleta/,
-    );
+    check((c) => (c.buildings.variation.paletteAssignments = {}), /clave desconocida/);
     check((c) => (c.buildings.wallUvWidth = 0), /wallUvWidth: .*positivo/);
   }
   delete globalThis.document;

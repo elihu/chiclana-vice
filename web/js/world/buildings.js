@@ -3,38 +3,9 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
 import { loadProgress } from '../ui/feedback.js';
-import { randomForKey } from '../core/random.js';
-import { sha256Hex } from './corrections.js';
 import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
-
-// Identidad geométrica: independiente de orden, orientación, plantas y diseño de fachada.
-export function buildingIdentity(b) {
-  const canonicalRing = (ring) => {
-    const points = ring.slice();
-    if (points.length > 1 && JSON.stringify(points[0]) === JSON.stringify(points.at(-1)))
-      points.pop();
-    // Solo un vértice mínimo puede iniciar el anillo canónico; evita crear n rotaciones.
-    const labels = points.map((point) => JSON.stringify(point));
-    const minimum = labels.reduce((a, b) => (a < b ? a : b));
-    const rotations = [];
-    for (const direction of [points, [...points].reverse()])
-      for (let i = 0; i < direction.length; i++)
-        if (JSON.stringify(direction[i]) === minimum)
-          rotations.push(JSON.stringify([...direction.slice(i), ...direction.slice(0, i)]));
-    return rotations.sort()[0];
-  };
-  return sha256Hex(JSON.stringify([canonicalRing(b.p), b.holes.map(canonicalRing).sort()]));
-}
-
-export function buildingPaletteIndex(b, rules) {
-  const key = buildingIdentity(b);
-  return (
-    rules.variation.paletteAssignments[key] ??
-    Math.floor(randomForKey(key, rules.variation.seed) * rules.palette.length)
-  );
-}
 
 export async function buildBuildings() {
   // UV de tejados en el recuadro de la ortofoto.
@@ -98,9 +69,10 @@ export async function buildBuildings() {
       )
         h = Math.max(h, m.height);
     b.renderH = h;
-    let paletteIndex = !b.detailType || b.newDetailOnly ? buildingPaletteIndex(b, rules) : 0;
+    if (!Number.isInteger(b.paletteIndex) || b.paletteIndex < 0 || b.paletteIndex >= palette.length)
+      throw Error('Índice de paleta de edificio incompatible; regenera buildings.json');
     let col = new THREE.Color(
-      b.detailType ? rules.detailColors[b.detailType] : palette[paletteIndex],
+      b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
     );
     for (const ring of [b.p, ...b.holes])
       for (let i = 0; i < ring.length; i++) {

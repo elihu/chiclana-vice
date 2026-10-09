@@ -595,24 +595,13 @@
         },
         "variation": {
           "type": "object",
-          "required": ["seed", "paletteAssignments"],
+          "required": ["seed"],
           "additionalProperties": false,
           "properties": {
             "seed": {
               "type": "integer",
               "minimum": 0,
               "maximum": 4294967295
-            },
-            "paletteAssignments": {
-              "description": "Asignaciones de color preservadas por identidad SHA-256 del contorno; las nuevas identidades usan la semilla.",
-              "type": "object",
-              "propertyNames": {
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "additionalProperties": {
-                "type": "integer",
-                "minimum": 0
-              }
             }
           }
         }

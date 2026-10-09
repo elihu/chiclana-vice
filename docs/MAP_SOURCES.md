@@ -96,8 +96,9 @@ se sustituye.
   derivada de OSM se publica bajo ODbL 1.0 con su atribución. Hoy no contiene ninguna.
 
 La variación de color de los edificios es de autor: el catálogo inicial de
-`city-design.json.buildings.variation` conserva los colores procedurales anteriores;
-para los contornos nuevos se usa una muestra determinista por identidad geométrica.
+`source-data/building-variation.json` conserva los colores procedurales anteriores;
+para los contornos nuevos el generador resuelve una muestra determinista por identidad
+geométrica y publica solo el índice de paleta en cada parte.
 No representa colores medidos o extraídos de fotografías. La semilla de vegetación y
 actores se declara por separado en `city-design.json.randomSeed`.
 

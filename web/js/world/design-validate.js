@@ -444,18 +444,6 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       Number.isInteger(v) && v >= 0 && v <= 0xffffffff
         ? 0
         : fail(p, 'se esperaba un entero de 32 bits sin signo'),
-    paletteAssignments: (v, p) => {
-      if (!isObject(v)) return void fail(p, 'se esperaba un catálogo por SHA-256');
-      for (const [key, index] of Object.entries(v)) {
-        if (!SHA.test(key)) fail(p + '.' + key, 'se esperaba una identidad SHA-256');
-        if (
-          !Number.isInteger(index) ||
-          index < 0 ||
-          index >= (json.buildings?.palette?.length ?? 0)
-        )
-          fail(p + '.' + key, 'índice fuera de la paleta');
-      }
-    },
     pos: (v, p) => (Number.isFinite(v) && v > 0 ? 0 : fail(p, 'se esperaba un número positivo')),
     nonneg: (v, p) => (Number.isFinite(v) && v >= 0 ? 0 : fail(p, 'se esperaba un número >= 0')),
     num: (v, p) => (Number.isFinite(v) ? 0 : fail(p, 'se esperaba un número')),
@@ -704,7 +692,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     json.buildings,
     {
       palette: 'colors',
-      variation: { seed: 'uint32', paletteAssignments: 'paletteAssignments' },
+      variation: { seed: 'uint32' },
       detailColors: Object.fromEntries(DETAIL_TYPES.map((t) => [t, 'color'])),
       minimumHeights: 'heightRules',
       wallUvWidth: 'pos',

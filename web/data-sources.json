@@ -13,7 +13,7 @@
       "licenseUrl": "https://www.catastro.hacienda.gob.es/webinspire/documentos/Licencia.pdf",
       "transformation": "Clipping, 0.12m topology-preserving simplification, local coordinates, game volume reconstruction and floor-based heights",
       "sha256": {
-        "buildings.json": "6712bf9b9f82876d477c9203bde37e0c4ecb6c6b0bf6b792ce39961dfbd8dc18"
+        "buildings.json": "1721d40762146c6c6f12bdfd78cf1bf4798d23bace3d505992cd6cf2fb46e68a"
       }
     },
     {
@@ -48,7 +48,7 @@
       "limits": "First-coverage roof estimates with integer-metre values and approximately 2.5m pixels; Older campaign; not eave heights, architectural survey or equivalent to newer measurements. Landmarks excluded; conservative pilot only.",
       "sourceSha256": "80c560c3ed1dfee7017d058eefe39cebce7997568941e1a90842bbcc4eb4c554",
       "sha256": {
-        "height-samples.json": "23a5279b95be4f0f85e60f8930686f33f8207216faeffdaed4acde8dd2540304"
+        "height-samples.json": "1070a4b3381a0bc55a455b38e00bbbb638adc9eef4d3c52ba2f327fba70b358d"
       }
     },
     {
@@ -71,7 +71,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped",
       "sha256": {
-        "frontages.json": "a399be979bdb70ba7062abec31d1d100c6fe9797999a1aa292ebe47a9a54a890"
+        "frontages.json": "8e0e38a476fe7ff41f2a164e3f4a787255fe6813daedae83a157c96a6c476616"
       }
     },
     {
@@ -85,7 +85,7 @@
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
         "facade-designs.json": "901cd6825f33837c5e31481286b0179db4ea01c73af6b123edfe2893e35b1e04",
-        "city-design.json": "0ac3a5aaa9a3882bdfb08d175db18484bf7be7009d9a3c08bca4d4ca5328ca68"
+        "city-design.json": "0be807a053f416ffd8256b3c0f543e6b78bcf0f4f3161bbeb6faf7e5f71cf61f"
       }
     },
     {
