@@ -85,8 +85,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   caso; se revisará más adelante. Portada de Jesús Nazareno reorientada hacia la plaza
   e integrada el 9/10/2026, aprobada por el usuario. Paso 5.2 integrado el 9/10/2026:
   Iglesia Mayor rehecha (fachada sobre el borde catastral con podio a la cota de la plaza y
-  cúpula con tambor), aprobada por el usuario; el podio no tiene colisión. Sigue pendiente
-  el modelo de Santa Ana (paso 5.3). Sin publicar: `?v=` se sube al sacar la
+  cúpula con tambor), aprobada por el usuario; el podio no tiene colisión. Paso 5.3 integrado el
+  9/10/2026: Ermita de Santa Ana (octógono con galería, tambor y cúpula, anexo y
+  escalinata), aprobada por el usuario; zócalo de hasta 3,7 m junto al anexo. Sin publicar: `?v=` se sube al sacar la
   versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
