@@ -57,7 +57,6 @@ se versiona. El juego no necesita `node_modules`.
 | `web/`           | Juego, capas de datos y recursos publicados en Pages               |
 | `web/game3d.js`  | Entrada del juego: lee `?v=` y llama a `startGame()`               |
 | `web/js/`        | Módulos ES del juego, por capas (ver «Módulos del juego»)          |
-| `web/arcade/`    | Versión arcade anterior, independiente                             |
 | `web/vendor/`    | Three.js r169 y su licencia; no se reformatea                      |
 | `web/licenses/`  | Textos completos de licencias de datos                             |
 | `web/measure.js` | Medición opcional en el navegador; el juego no la importa          |

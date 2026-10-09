@@ -150,12 +150,6 @@ No se ofrecen garantías de exactitud geográfica, ausencia de derechos de terce
 ni respaldo de las instituciones citadas. La edición pública excluye originales
 Catastro y los anteriores derivados/auditorías/capturas REDIAM.
 
-## Versión arcade
-
-`arcade/` es una versión anterior con un mapa ficticio. Su ayuda cita como inspiración el
-portal de Turismo de Chiclana y un plano turístico de la costa, sin redistribuirlos ni
-copiar su cartografía: calles, escalas y edificios están reinventados para el juego.
-
 ## Riesgos conocidos asumidos
 
 Revisión de fachadas del 6/10/2026. Las fachadas genéricas se generan por reglas, sin

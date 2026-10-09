@@ -743,14 +743,12 @@ console.log('Pedestrians', g.people.length);
   );
   assert(!g.paused, 'Escape in search closes the map');
 }
-// Credits links open in a new tab, except the arcade version.
+// Credits links open in a new tab.
 {
   g.help();
   const links = [...els.modalBody.innerHTML.matchAll(/<a [^>]*>/g)].map((m) => m[0]);
   assert(links.length > 10);
-  for (const a of links)
-    if (a.includes('href="arcade/"')) assert(!a.includes('target='));
-    else assert(a.includes('target="_blank"') && a.includes('rel="noopener"'), a);
+  for (const a of links) assert(a.includes('target="_blank"') && a.includes('rel="noopener"'), a);
   g.closeModal();
   console.log('Escape in search and credit links passed');
 }
