@@ -115,6 +115,12 @@ Referencias que se mantienen identificadas, con sus condiciones originales:
 - Ermita del Cristo de la Veracruz: Xemenendura, 19/7/2022, CC BY-SA 4.0.
   https://commons.wikimedia.org/wiki/File:Ermita_Cristo_de_la_Veracruz.jpg
   https://commons.wikimedia.org/wiki/File:Ermita_del_Cristo_de_la_Veracruz.jpg
+- Iglesia Mayor, fachada: Oscar Sanchez, 28/9/2011, CC BY-SA 3.0 es.
+  https://commons.wikimedia.org/wiki/File:Iglesia_Mayor_Chiclana_de_la_Frontera.jpg
+- Iglesia Mayor, fachada: Xemenendura, 29/4/2023, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:San_Juan_Chiclana_1.jpg
+- Iglesia Mayor, cúpula: PEPE GADEIRAS, 4/1/2011, CC BY-SA 4.0.
+  https://commons.wikimedia.org/wiki/File:Chiclana,_la_c%C3%BApula_de_la_Iglesia_Mayor.jpg
 - Turismo municipal: referencias documentales; licencia abierta no verificada.
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-telmo/
   https://turismo.chiclana.es/detalle-de-recurso/iglesia-de-san-juan-bautista/

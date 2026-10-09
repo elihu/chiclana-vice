@@ -799,187 +799,411 @@
       ]
     },
     "portada-san-juan-bautista": {
-      "description": "Three-bay stone facade with giant pilasters and a central pediment. Equivalent to the San Juan Bautista wall block of buildDetailedFacades in main 5666928.",
-      "params": {},
+      "description": "Fachada de sillería de tres calles sobre podio con escalinata: cuatro pilastras gigantes con capiteles de volutas, entablamento con dentículos, frontón bajo con grupo escultórico y ático. Calle central con portada de arco entre columnas pareadas, balcón de balaustres y ventana de arco con frontón curvo; laterales con ventana y frontón, arco ciego con óculo y ventana alta. y0 es la cota del podio y g el fondo enterrado, relativos a la base del monumento. Proporciones estimadas de las fotos.",
+      "params": {
+        "y0": 0,
+        "g": -1,
+        "dp": 2
+      },
       "body": [
         {
           "let": {
             "x": "len / 2",
-            "stone": "#c7b495"
+            "stone": "#c7b495",
+            "joint": "#ab987c",
+            "light": "#d9ccb2",
+            "white": "#e8e2d4",
+            "dark": "#3a3835",
+            "c1": 5.1,
+            "c2": "len - 5.1"
           }
         },
         {
-          "box": ["x", 7.1, 0.08, "len", 14.2, 0.17],
+          "box": ["x", "y0 + 8.2", 0.08, "len", 16.4, 0.17],
           "color": "stone"
         },
         {
           "for": "y",
-          "from": 0.55,
-          "while": "y < 14",
+          "from": "y0 + 1.5",
+          "while": "y < y0 + 14.5",
           "step": 0.62,
           "body": [
             {
               "box": ["x", "y", 0.18, "len", 0.023, 0.025],
-              "color": "#ab987c"
+              "color": "joint"
             },
             {
               "for": "u",
-              "from": "(round(y / 0.62) % 2) * 0.75",
+              "from": "(round((y - y0) / 0.62) % 2) * 0.75",
               "while": "u < len",
               "step": 1.5,
               "body": [
                 {
                   "box": ["u", "y - 0.3", 0.18, 0.022, 0.58, 0.025],
-                  "color": "#ab987c"
+                  "color": "joint"
                 }
               ]
             }
           ]
         },
         {
+          "box": ["x", "y0 + 0.95", 0.3, "len + 0.2", 0.25, 0.4],
+          "color": "light"
+        },
+        {
           "for": "u",
-          "in": [0.9, "len * 0.29", "len * 0.71", "len - 0.9"],
+          "in": [1.75, 8.45, "len - 8.45", "len - 1.75"],
           "body": [
             {
-              "box": ["u", 7, 0.35, 1.2, 13.4, 0.65],
+              "box": ["u", "y0 + 0.45", 0.45, 2.6, 0.9, 0.95],
               "color": "stone"
             },
             {
-              "box": ["u", 13.3, 0.46, 1.8, 0.48, 0.9],
-              "color": "$cream"
+              "box": ["u", "y0 + 7.25", 0.35, 2.2, 12.7, 0.6],
+              "color": "stone"
             },
             {
-              "box": ["u", 0.55, 0.45, 1.75, 0.85, 0.92],
-              "color": "stone"
+              "box": ["u", "y0 + 14.05", 0.5, 2.6, 1.1, 0.85],
+              "color": "light"
             },
             {
               "for": "side",
               "in": [-1, 1],
               "body": [
                 {
-                  "geo": ["TorusGeometry", 0.3, 0.08, 6, 16],
-                  "at": ["u + side * 0.44", 13.3, 0.91],
-                  "color": "$cream"
+                  "geo": ["TorusGeometry", 0.32, 0.09, 6, 16],
+                  "at": ["u + side * 0.95", "y0 + 14", 0.95],
+                  "color": "light"
                 }
               ]
             }
           ]
         },
         {
-          "for": "yy",
-          "in": [13.75, 14.12, 14.45],
-          "body": [
-            {
-              "box": ["x", "yy", 0.46, "len + 0.7", 0.24, 0.95],
-              "color": "stone"
-            }
-          ]
+          "box": ["x", "y0 + 14.95", 0.42, "len + 0.4", 0.7, 0.85],
+          "color": "stone"
+        },
+        {
+          "box": ["x", "y0 + 15.85", 0.36, "len + 0.2", 1.1, 0.72],
+          "color": "stone"
         },
         {
           "for": "u",
-          "in": ["len * 0.15", "x", "len * 0.85"],
+          "from": 0.3,
+          "while": "u < len",
+          "step": 0.5,
           "body": [
             {
-              "piece": "door",
-              "args": ["u", 0.12, "u == x ? 3.3 : 2.7", 4.4]
-            },
-            {
-              "for": "side",
-              "in": [-1, 1],
-              "body": [
-                {
-                  "piece": "column",
-                  "args": ["u + side * 1.65", 2.6, 4.7, 0.2, "stone"]
-                }
-              ]
-            },
-            {
-              "piece": "pediment",
-              "args": ["u", 5.15, 4.4]
+              "box": ["u", "y0 + 16.55", 0.85, 0.22, 0.26, 0.24],
+              "color": "light"
             }
           ]
         },
         {
-          "for": "u",
-          "in": ["len * 0.15", "len * 0.85"],
-          "body": [
-            {
-              "geo": ["CircleGeometry", 0.88, 28],
-              "at": ["u", 8.4, 0.23],
-              "color": "#495b61"
-            },
-            {
-              "geo": ["TorusGeometry", 0.94, 0.17, 8, 28],
-              "at": ["u", 8.4, 0.3],
-              "color": "$cream"
-            },
-            {
-              "geo": ["TorusGeometry", 2.45, 0.13, 6, 30, "PI"],
-              "at": ["u", 7.85, 0.26],
-              "color": "$cream"
-            },
-            {
-              "piece": "pane",
-              "args": ["u", 11.7, 1.9, 0.85, 0.13]
-            }
-          ]
+          "box": ["x", "y0 + 17.05", 0.8, "len + 1.6", 0.6, 1.6],
+          "color": "stone"
         },
         {
-          "geo": ["ArchShape", 3.7, 4.6, 20],
-          "at": ["x", 7.25, 0.2],
-          "color": "#706857"
+          "box": ["x", "y0 + 17.45", 0.85, "len + 1.8", 0.2, 1.75],
+          "color": "light"
+        },
+        {
+          "box": ["x", "y0 + 18.6", -2.2, 11.9, 2.1, 3.6],
+          "color": "stone"
+        },
+        {
+          "geo": ["TriangleExtrude", -7.15, 0, 7.15, 0, 0, 2.3, 0.6],
+          "at": ["x", "y0 + 17.55", 0.25],
+          "color": "stone"
         },
         {
           "for": "side",
           "in": [-1, 1],
           "body": [
             {
-              "piece": "column",
-              "args": ["x + side * 2.35", 9.35, 4.6, 0.23, "$cream"]
+              "box": ["x + side * 3.6", "y0 + 18.8", 0.75, 7.7, 0.3, 0.9],
+              "color": "light",
+              "rotation": [0, 0, "-side * 0.3115"]
+            },
+            {
+              "piece": "statue",
+              "args": ["x + side * 1.3", "y0 + 17.75", 1.5]
             }
           ]
         },
         {
-          "piece": "pediment",
-          "args": ["x", 11.85, 5.7]
+          "box": ["x", "y0 + 18.45", 0.95, 1.0, 1.3, 0.3],
+          "color": "white"
         },
         {
-          "piece": "balcony",
-          "args": ["x", 7.08, 5.6, "$cream", 0.75]
+          "geo": ["SphereGeometry", 0.3, 8, 6],
+          "at": ["x", "y0 + 19.3", 0.95],
+          "color": "white"
         },
         {
-          "piece": "pediment",
-          "args": ["x", 14.6, "len * 0.7"]
+          "geo": ["ArchShape", 3.5, 6.3, 20],
+          "at": ["x", "y0", 0.25],
+          "color": "dark"
         },
         {
-          "geo": ["TorusGeometry", 0.93, 0.18, 8, 28],
-          "at": ["x", 16.1, 0.52],
-          "color": "$cream"
+          "geo": ["TorusGeometry", 1.95, 0.2, 6, 20, "PI"],
+          "at": ["x", "y0 + 4.55", 0.32],
+          "color": "light"
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "box": ["x + side * 1.95", "y0 + 2.275", 0.32, 0.4, 4.55, 0.3],
+              "color": "light"
+            },
+            {
+              "box": ["x + side * 2.8", "y0 + 0.8", 0.6, 1.7, 1.6, 1.15],
+              "color": "white"
+            },
+            {
+              "for": "d",
+              "in": [2.5, 3.1],
+              "body": [
+                {
+                  "piece": "column",
+                  "args": ["x + side * d", "y0 + 4.3", 5.4, 0.3, "light"]
+                },
+                {
+                  "piece": "column",
+                  "args": ["x + side * (d - 0.95)", "y0 + 10.7", 2.8, 0.17, "light"]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "box": ["x", "y0 + 7.5", 0.7, 7.8, 0.9, 1.35],
+          "color": "stone"
+        },
+        {
+          "box": ["x", "y0 + 8.05", 0.8, 8.4, 0.25, 1.55],
+          "color": "light"
+        },
+        {
+          "box": ["x", "y0 + 8.25", 0.85, 5.6, 0.2, 1.6],
+          "color": "white"
+        },
+        {
+          "for": "u",
+          "from": -2.52,
+          "while": "u < 2.6",
+          "step": 0.28,
+          "body": [
+            {
+              "geo": ["CylinderGeometry", 0.07, 0.09, 0.8, 6],
+              "at": ["x + u", "y0 + 8.75", 1.45],
+              "color": "white"
+            }
+          ]
+        },
+        {
+          "box": ["x", "y0 + 9.2", 1.45, 5.7, 0.14, 0.26],
+          "color": "white"
+        },
+        {
+          "geo": ["ArchShape", 1.6, 2.4, 14],
+          "at": ["x", "y0 + 9.3", 0.25],
+          "color": "dark"
+        },
+        {
+          "geo": ["TorusGeometry", 0.9, 0.1, 6, 14, "PI"],
+          "at": ["x", "y0 + 10.9", 0.3],
+          "color": "light"
+        },
+        {
+          "box": ["x", "y0 + 12.3", 0.55, 5.0, 0.4, 0.9],
+          "color": "light"
+        },
+        {
+          "geo": ["TorusGeometry", 5.1, 0.18, 6, 16, 0.98],
+          "at": ["x", "y0 + 8.8", 0.5],
+          "color": "light",
+          "rotation": [0, 0, "PI / 2 - 0.49"]
+        },
+        {
+          "geo": ["CircleGeometry", 0.25, 12],
+          "at": ["x", "y0 + 13.1", 0.3],
+          "color": "dark"
+        },
+        {
+          "for": "c",
+          "in": ["c1", "c2"],
+          "body": [
+            {
+              "box": ["c", "y0 + 3.05", 0.15, 2.0, 3.3, 0.15],
+              "color": "light"
+            },
+            {
+              "box": ["c", "y0 + 3.05", 0.24, 1.6, 2.9, 0.05],
+              "color": "dark"
+            },
+            {
+              "box": ["c", "y0 + 4.9", 0.35, 3.1, 0.18, 0.45],
+              "color": "light"
+            },
+            {
+              "geo": ["TriangleExtrude", -1.45, 0, 1.45, 0, 0, 0.75, 0.3],
+              "at": ["c", "y0 + 4.95", 0.15],
+              "color": "light"
+            },
+            {
+              "box": ["c", "y0 + 7.9", 0.28, 6.3, 0.25, 0.3],
+              "color": "light"
+            },
+            {
+              "geo": ["TorusGeometry", 2.3, 0.18, 6, 20, "PI"],
+              "at": ["c", "y0 + 7.9", 0.28],
+              "color": "light"
+            },
+            {
+              "geo": ["CircleGeometry", 0.65, 20],
+              "at": ["c", "y0 + 8.7", 0.22],
+              "color": "dark"
+            },
+            {
+              "geo": ["TorusGeometry", 0.72, 0.12, 6, 20],
+              "at": ["c", "y0 + 8.7", 0.27],
+              "color": "light"
+            },
+            {
+              "box": ["c", "y0 + 12.85", 0.15, 1.75, 1.05, 0.12],
+              "color": "light"
+            },
+            {
+              "box": ["c", "y0 + 12.85", 0.22, 1.45, 0.75, 0.05],
+              "color": "dark"
+            }
+          ]
+        },
+        {
+          "box": ["x", "(g + y0) / 2", "dp / 2", "len", "y0 - g", "dp"],
+          "color": "#cfc6b4"
+        },
+        {
+          "for": "k",
+          "from": 1,
+          "while": "k <= 7",
+          "step": 1,
+          "body": [
+            {
+              "box": ["x", "(g + y0 - k * 0.19) / 2", "dp + (k - 0.5) * 0.3", 12, "y0 - k * 0.19 - g", 0.3],
+              "color": "#cfc6b4"
+            }
+          ]
+        },
+        {
+          "for": "side",
+          "in": [-1, 1],
+          "body": [
+            {
+              "box": ["x + side * 6.15", "(g + y0) / 2 + 0.2", "dp + 1.05", 0.3, "y0 - g + 0.4", 2.1],
+              "color": "#d8d4c4"
+            }
+          ]
         }
       ]
     },
     "cupula-san-juan-bautista": {
-      "description": "Cúpula en coordenadas globales en planta (anclaje world), detrás de San Juan Bautista; alturas relativas a la base del monumento.",
-      "params": {},
+      "description": "Cúpula en coordenadas globales (anclaje world) sobre el octógono catastral 5104: tambor octogonal de piedra con una ventana por cara y cornisa, anillo azul, media naranja blanca con nervios azules dobles y linterna con cruz. yb es la cota del tejado de la nave, relativa a la base del monumento. Alturas estimadas de la foto.",
+      "params": {
+        "yb": 0,
+        "cx": 236.8,
+        "cz": 177.1
+      },
       "body": [
         {
-          "geo": ["SphereGeometry", 4.7, 24, 12, 0, "TAU", 0, "PI / 2"],
-          "at": [236.7, 14.3, 177.2],
-          "color": "#d4dbdf"
+          "let": {
+            "a": 5.4,
+            "drum": "#a99a80",
+            "blue": "#2c3f86"
+          }
+        },
+        {
+          "for": "k",
+          "from": 0,
+          "while": "k < 8",
+          "step": 1,
+          "body": [
+            {
+              "group": {
+                "at": ["cx", 0, "cz"],
+                "rotation": [0, "k * PI / 4 + PI / 8", 0]
+              },
+              "body": [
+                {
+                  "box": [0, "yb + 2.85", "a - 0.25", 4.6, 5.7, 0.5],
+                  "color": "drum"
+                },
+                {
+                  "box": [0, "yb + 2.2", "a + 0.02", 1.4, 2.9, 0.1],
+                  "color": "#bcae94"
+                },
+                {
+                  "box": [0, "yb + 2.2", "a + 0.06", 1.0, 2.5, 0.06],
+                  "color": "#2f3436"
+                },
+                {
+                  "box": [0, "yb + 5.9", "a + 0.1", 5.1, 0.45, 0.9],
+                  "color": "#bcae94"
+                },
+                {
+                  "box": [0, "yb + 0.25", "a", 4.9, 0.5, 0.6],
+                  "color": "drum"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "geo": ["CylinderGeometry", 5.0, 5.05, 0.45, 32],
+          "at": ["cx", "yb + 6.35", "cz"],
+          "color": "blue"
+        },
+        {
+          "geo": ["SphereGeometry", 5.0, 24, 10, 0, "TAU", 0, "PI / 2"],
+          "at": ["cx", "yb + 6.55", "cz"],
+          "color": "#eef0ef"
         },
         {
           "for": "j",
           "from": 0,
-          "while": "j < 12",
+          "while": "j < 8",
           "step": 1,
           "body": [
             {
-              "geo": ["TorusGeometry", 4.72, 0.065, 5, 24, "PI"],
-              "at": [236.7, 14.3, 177.2],
-              "color": "#3e6b8a",
-              "rotation": [0, "(j * PI) / 12", 0]
+              "for": "d",
+              "in": [-0.035, 0.035],
+              "body": [
+                {
+                  "geo": ["TorusGeometry", 5.03, 0.06, 4, 20, "PI"],
+                  "at": ["cx", "yb + 6.55", "cz"],
+                  "color": "blue",
+                  "rotation": [0, "(j * PI) / 8 + d", 0]
+                }
+              ]
             }
           ]
+        },
+        {
+          "geo": ["CylinderGeometry", 0.55, 0.8, 1.2, 10],
+          "at": ["cx", "yb + 12.1", "cz"],
+          "color": "#b9ab90"
+        },
+        {
+          "geo": ["SphereGeometry", 0.38, 10, 6],
+          "at": ["cx", "yb + 12.95", "cz"],
+          "color": "#b9ab90"
+        },
+        {
+          "piece": "cross",
+          "args": ["cx", "yb + 14.05", "cz"]
         }
       ]
     },
@@ -2020,7 +2244,7 @@
       "lod": "1.2",
       "status": "approximate",
       "references": [
-        "Visual estimate of the nave height from the cadastral outline; no photographic composition"
+        "Altura de la nave igualada a la cornisa de la fachada de las fotos de Oscar Sanchez y Xemenendura; estimación visual"
       ],
       "fronts": [
         {
@@ -2029,7 +2253,7 @@
           },
           "recipe": "nave",
           "with": {
-            "h": 14.2,
+            "h": 12.2,
             "color": "#baa483"
           }
         }
@@ -2092,21 +2316,29 @@
       "detailType": "church",
       "lod": "2.2",
       "status": "approximate",
-      "references": ["THIRD_PARTY_NOTICES.md: turismo.chiclana.es tourism sheets, reference only"],
+      "references": [
+        "THIRD_PARTY_NOTICES.md: turismo.chiclana.es tourism sheets, reference only",
+        "https://commons.wikimedia.org/wiki/File:Iglesia_Mayor_Chiclana_de_la_Frontera.jpg",
+        "https://commons.wikimedia.org/wiki/File:San_Juan_Chiclana_1.jpg",
+        "https://commons.wikimedia.org/wiki/File:Chiclana,_la_c%C3%BApula_de_la_Iglesia_Mayor.jpg",
+        "Fachada sobre el borde oeste de la parte catastral 5106 y tambor sobre el octógono catastral 5104; ortofoto PNOA 2022-07, web/aerial/hi/0_0.jpg. Alturas y proporciones estimadas de las fotos."
+      ],
       "fronts": [
         {
           "anchor": {
-            "a": [206.93, 180.32],
-            "b": [218.19, 152.82],
-            "outward": [-1, -0.4]
+            "a": [204.36, 179.39],
+            "b": [214.14, 153.68],
+            "outward": [-0.9346, -0.3555]
           },
-          "recipe": "portada-san-juan-bautista"
+          "recipe": "portada-san-juan-bautista",
+          "with": { "y0": -5.3, "g": -8.4, "dp": 2 }
         },
         {
           "anchor": {
             "world": true
           },
-          "recipe": "cupula-san-juan-bautista"
+          "recipe": "cupula-san-juan-bautista",
+          "with": { "yb": 12.2 }
         }
       ]
     },
