@@ -93,7 +93,10 @@ function pump() {
         const [x0, x1, z0, z1] = world.aerialBox;
         const extent = size + 2 * margin;
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = 4;
+        texture.anisotropy =
+          requestLevel === 'hi'
+            ? Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4)
+            : 4;
         texture.repeat.set((x1 - x0) / extent, (z1 - z0) / extent);
         texture.offset.set(
           (x0 - tile.i * size + margin) / extent,

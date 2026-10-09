@@ -1,4 +1,5 @@
 import * as THREE from '../../vendor/three.module.min.js';
+import { gfx } from '../core/state.js';
 
 export function facadeTexture() {
   let c = document.createElement('canvas');
@@ -77,6 +78,6 @@ export function surfaceTexture(kind) {
   let tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
   return tex;
 }
