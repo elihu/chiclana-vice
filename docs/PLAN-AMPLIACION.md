@@ -426,6 +426,9 @@ mismos bytes y dos recortes solapados coinciden en todas las celdas comunes.
 
 - Santa Ana como lugar y mirador en `web/game-data.js` y, si encaja, un encargo de subida
   a la ermita. Revisar que el tráfico y la policía usan las vías nuevas.
+- Hecho el 9/10/2026: lugares «Ermita de Santa Ana» y «Puente VII Centenario», miradores
+  de Santa Ana y del puente, y el encargo «La subida a Santa Ana» (del puente a la ermita:
+  2,0 km en coche, los últimos 55 m a pie; límite de 240 s).
 - **Commit**: `feat(juego): añadir Santa Ana como mirador`.
 
 ## Fase 5: modelos
@@ -438,8 +441,9 @@ Son independientes de las fases anteriores, salvo los que están en anexos.
 1. Ermita del Cristo de la Veracruz (Plaza del Santo Cristo): hoy es un bloque genérico.
 2. Iglesia Mayor (San Juan Bautista): rehacer la aproximación actual para que se reconozca.
 3. Ermita de Santa Ana (tras el paso 4.2); su base sigue la política de zócalos vigente.
-4. Puente VII Centenario (tras el paso 4.3): tablero de cuatro carriles, estructura
-   azul y barandillas, sobre el perfil del modelo de superficies.
+4. Puente VII Centenario: hecho junto con el paso 4.4 a petición del usuario (receta
+   `puente-arco`, tablero de 14 m por corrección del mapa). Queda revisar en el navegador
+   la flecha estimada de los arcos y su color.
 5. Ferial: explanada y portada, solo si sigue interesando.
 
 ## Ampliar más adelante

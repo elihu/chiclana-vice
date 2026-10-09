@@ -68,7 +68,13 @@ se sustituye.
 
 ## Fachadas y monumentos
 
-- 276 frentes en 243 partes catalogados en `web/frontages.json` (Constitución,
+- Puente VII Centenario (receta `puente-arco`): dos arcos laterales de acero sobre toda la
+  luz, con péndolas cada 3,5 m y apoyos, en los bordes de un tablero de 14 m. La planta de
+  los arcos y su posición sobre la calzada salen de la ortofoto PNOA 2022-07 y el eje y los
+  cuatro carriles de OSM 142805148; la anchura de juego del tablero se corrige de 8 a 14 m
+  en `map-corrections.json` (`fix-001`). La flecha de los arcos (9 m) se estimó por sus
+  sombras en la ortofoto y el color azul acero es una aproximación pendiente de confirmar.
+- 277 frentes en 221 partes catalogados en `web/frontages.json` (Constitución,
   La Vega, La Plaza, Caraza, Jesús Nazareno, Álamo, García Gutiérrez, Corredera Baja…).
   Son fachadas genéricas generadas por reglas, no cada vivienda fotografiada.
 - Ayuntamiento, Mercado e iglesias se modelan con primitivas que interpretan rasgos del
