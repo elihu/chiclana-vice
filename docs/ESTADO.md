@@ -77,10 +77,14 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   arcos y Santa Ana como lugar, mirador y encargo. Fase 5: paso 5.0 integrado (monumentos desde
   los datos), junto con la variación de edificios precalculada por parte fuera del
   navegador; huellas con relieve y sin él idénticas, paleta, vegetación y actores
-  conservados. Paso 5.1 detenido al comprobar que el contorno OSM de Veracruz incluye
-  el atrio: hay que separar la planta visual de la nave de ese contorno antes de usar
-  la portada retranqueada; conservar el contorno y la colisión catastral. Siguen
-  pendientes los modelos de Veracruz, Santa Ana e Iglesia Mayor. Sin publicar: `?v=` se sube al sacar la
+  conservados. Paso 5.1 integrado el 9/10/2026: Ermita de la Veracruz con la fachada al
+  norte, aprobada por el usuario con una salvedad: el patio delante de la puerta queda
+  unos 6,5 m sobre la calle (en la realidad, algo elevado y con la verja casi a pie de
+  calle), porque la parte catastral 4909 incluye el patio y la ermita se apoya en la cota
+  máxima. El usuario no quiere recortar el dato catastral ni añadir código para este
+  caso; se revisará más adelante. Jesús Nazareno: portada en el lado equivocado (debe
+  mirar al oeste) y anclaje por resolver, diagnóstico en `MAP_SOURCES.md`. Siguen
+  pendientes los modelos de Santa Ana e Iglesia Mayor. Sin publicar: `?v=` se sube al sacar la
   versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
   del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
