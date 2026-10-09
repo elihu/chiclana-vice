@@ -82,8 +82,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   unos 6,5 m sobre la calle (en la realidad, algo elevado y con la verja casi a pie de
   calle), porque la parte catastral 4909 incluye el patio y la ermita se apoya en la cota
   máxima. El usuario no quiere recortar el dato catastral ni añadir código para este
-  caso; se revisará más adelante. Jesús Nazareno: portada en el lado equivocado (debe
-  mirar al oeste) y anclaje por resolver, diagnóstico en `MAP_SOURCES.md`. Siguen
+  caso; se revisará más adelante. Portada de Jesús Nazareno reorientada hacia la plaza
+  e integrada el 9/10/2026, aprobada por el usuario. Siguen
   pendientes los modelos de Santa Ana e Iglesia Mayor. Sin publicar: `?v=` se sube al sacar la
   versión.
 - Relieve: localizar y corregir los pequeños defectos visuales señalados en la revisión
