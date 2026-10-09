@@ -68,6 +68,21 @@ se sustituye.
 
 ## Fachadas y monumentos
 
+- Ermita de Santa Ana (`galeria-santa-ana`, `cupula-santa-ana`, `anexo-santa-ana`):
+  octógono regular de 9,06 m de apotema (caras de 7,5 m) y centro `[-226.41,524.41]`, el
+  menor que envuelve el contorno OSM del hito y la parte catastral 2630; los dos difieren
+  hasta 1 m y el catastral sobresale del OSM por el este. Coincide con el borde blanco de
+  la terraza en la ortofoto PNOA 2022-07 `web/aerial/hi/-1_2.jpg`. Puerta en la cara
+  norte, hacia la explanada del Sagrado Corazón, como en las fotos de Xemenendura; el
+  anexo, al sur, es una caja blanca de 8,6 × 9,8 m y 5 m de alto alineada con esa cara.
+  La casa de tejado rojo al sur del anexo forma parte de la misma parte catastral y se
+  queda como volumen genérico. Galería de 5,9 m hasta la cornisa con arcos de 3,3 m de
+  arranque, pretil hasta 7,25 m, tambor de 5 m de apotema hasta 10,45 m y cúpula de
+  4,9 m de radio con remate hasta unos 17,6 m sobre la base: proporciones estimadas de
+  las fotos de Xemenendura y Carlosrs, sin medición. Relieve: la base es la cota máxima
+  (45,35 m); el suelo baja hasta 41,65 m junto al anexo, así que la plataforma y el anexo
+  bajan 3,9 m (zócalo de hasta 3,7 m) y la escalinata de seis peldaños llega a la
+  explanada (43,95 m). La estatua no se modela.
 - Iglesia Mayor (`portada-san-juan-bautista`, `cupula-san-juan-bautista`,
   `nave-iglesia-mayor`): fachada de 27,5 m sobre el borde oeste de la parte catastral 5106,
   de `[204.36,179.39]` a `[214.14,153.68]`, que coincide con el tejado en la ortofoto

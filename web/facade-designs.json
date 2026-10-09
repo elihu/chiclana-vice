@@ -1207,6 +1207,299 @@
         }
       ]
     },
+    "galeria-santa-ana": {
+      "description": "Cara del octógono de la Ermita de Santa Ana: galería de tres arcos de medio punto (estrecho, ancho, estrecho) como paneles en sombra con impostas ocres y antepecho de reja, cornisa ocre, terraza con pretil y plataforma; door añade la puerta, la escalinata y la espadaña con campana sobre la terraza. g es el fondo enterrado de la plataforma, relativo a la base. Proporciones estimadas de las fotos.",
+      "params": {
+        "door": 0,
+        "g": -3.9
+      },
+      "body": [
+        {
+          "let": {
+            "white": "#f2efe6",
+            "ochre": "#d9a53a",
+            "shade": "#c4c0b6",
+            "iron": "#343a37",
+            "hs": 3.3
+          }
+        },
+        {
+          "box": ["len / 2", 2.95, 0, "len", 5.9, 0.3],
+          "color": "white"
+        },
+        {
+          "for": "arch",
+          "in": [0, 1, 2],
+          "body": [
+            {
+              "let": {
+                "u": "arch == 0 ? len * 0.165 : arch == 1 ? len / 2 : len * 0.835",
+                "r": "arch == 1 ? len * 0.165 : len * 0.085"
+              }
+            },
+            {
+              "geo": ["ArchShape", "2 * r", "hs + r", 16],
+              "at": ["u", 0, 0.16],
+              "color": "shade"
+            },
+            {
+              "geo": ["TorusGeometry", "r + 0.06", 0.07, 4, 14, "PI"],
+              "at": ["u", "hs", 0.17],
+              "color": "white"
+            },
+            {
+              "for": "side",
+              "in": [-1, 1],
+              "body": [
+                {
+                  "box": ["u + side * (r + 0.14)", "hs - 0.07", 0.22, 0.32, 0.14, 0.16],
+                  "color": "ochre"
+                }
+              ]
+            },
+            {
+              "if": "door == 1 && arch == 1",
+              "then": [
+                {
+                  "box": ["u", 1.25, 0.2, 1.5, 2.5, 0.06],
+                  "color": "ochre"
+                },
+                {
+                  "box": ["u", 1.2, 0.23, 1.2, 2.4, 0.04],
+                  "color": "#3b2f28"
+                }
+              ],
+              "else": [
+                {
+                  "box": ["u", 0.62, 0.24, "2 * r", 0.05, 0.05],
+                  "color": "iron"
+                },
+                {
+                  "box": ["u", 0.12, 0.24, "2 * r", 0.05, 0.05],
+                  "color": "iron"
+                },
+                {
+                  "for": "v",
+                  "from": "u - r + 0.08",
+                  "while": "v < u + r - 0.04",
+                  "step": 0.16,
+                  "body": [
+                    {
+                      "box": ["v", 0.37, 0.24, 0.03, 0.5, 0.03],
+                      "color": "iron"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "box": ["len / 2", 5.85, 0.2, "len + 0.3", 0.35, 0.3],
+          "color": "ochre"
+        },
+        {
+          "box": ["len / 2", 6.08, 0.22, "len + 0.4", 0.12, 0.45],
+          "color": "white"
+        },
+        {
+          "box": ["len / 2", 6.65, 0.05, "len", 1.0, 0.25],
+          "color": "white"
+        },
+        {
+          "for": "u",
+          "in": ["len * 0.27", "len * 0.73"],
+          "body": [
+            {
+              "box": ["u", 6.62, 0.18, "len * 0.36", 0.5, 0.02],
+              "color": "#e2ded3"
+            }
+          ]
+        },
+        {
+          "box": ["len / 2", 7.2, 0.05, "len + 0.1", 0.1, 0.35],
+          "color": "white"
+        },
+        {
+          "box": ["len / 2", 6.0, -2.05, "len", 0.2, 4.1],
+          "color": "#9aa58e"
+        },
+        {
+          "box": ["len / 2", "g / 2", 0.6, "len + 0.9", "-g", 1.2],
+          "color": "#ebe7dc"
+        },
+        {
+          "if": "door == 1",
+          "then": [
+            {
+              "for": "k",
+              "from": 1,
+              "while": "k <= 6",
+              "step": 1,
+              "body": [
+                {
+                  "box": ["len / 2", "(g - k * 0.22) / 2", "1.2 + (k - 0.5) * 0.35", "len * 0.85", "-k * 0.22 - g", 0.35],
+                  "color": "#d6d1c4"
+                }
+              ]
+            },
+            {
+              "for": "side",
+              "in": [-1, 1],
+              "body": [
+                {
+                  "box": ["len / 2 + side * 0.55", 7.1, -0.9, 0.12, 1.8, 0.12],
+                  "color": "iron"
+                }
+              ]
+            },
+            {
+              "box": ["len / 2", 8.0, -0.9, 1.25, 0.12, 0.14],
+              "color": "iron"
+            },
+            {
+              "geo": ["ConeGeometry", 0.28, 0.45, 10],
+              "at": ["len / 2", 7.6, -0.9],
+              "color": "#6b5a3a"
+            },
+            {
+              "piece": "cross",
+              "args": ["len / 2", 8.8, -0.9]
+            }
+          ]
+        }
+      ]
+    },
+    "cupula-santa-ana": {
+      "description": "Tambor octogonal retranqueado con una ventana por cara y cornisa ocre, cúpula blanca semiesférica con banda ocre y cuatro óculos, y remate de bulbo ocre con cruz de veleta, en coordenadas globales (anclaje world). rot0 orienta la cara 0 al norte del octógono. Alturas estimadas de las fotos.",
+      "params": {
+        "cx": -226.41,
+        "cz": 524.41,
+        "rot0": 3.2207
+      },
+      "body": [
+        {
+          "let": {
+            "a": 5.0,
+            "white": "#f2efe6",
+            "ochre": "#d9a53a"
+          }
+        },
+        {
+          "for": "k",
+          "from": 0,
+          "while": "k < 8",
+          "step": 1,
+          "body": [
+            {
+              "group": {
+                "at": ["cx", 0, "cz"],
+                "rotation": [0, "rot0 - k * PI / 4", 0]
+              },
+              "body": [
+                {
+                  "box": [0, 8.2, "a - 0.15", 4.2, 4.0, 0.3],
+                  "color": "white"
+                },
+                {
+                  "box": [0, 7.05, "a + 0.01", 1.0, 0.9, 0.06],
+                  "color": "#e2ded3"
+                },
+                {
+                  "box": [0, 7.05, "a + 0.04", 0.75, 0.65, 0.04],
+                  "color": "#2f3436"
+                },
+                {
+                  "box": [0, 10.3, "a + 0.12", 4.6, 0.3, 0.6],
+                  "color": "ochre"
+                },
+                {
+                  "if": "k % 2 == 0",
+                  "then": [
+                    {
+                      "geo": ["CircleGeometry", 0.38, 12],
+                      "at": [0, 12.0, 4.7],
+                      "color": "#2f3436"
+                    },
+                    {
+                      "geo": ["TorusGeometry", 0.42, 0.07, 4, 14],
+                      "at": [0, 12.0, 4.71],
+                      "color": "ochre"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "geo": ["SphereGeometry", 4.9, 24, 10, 0, "TAU", 0, "PI / 2"],
+          "at": ["cx", 10.45, "cz"],
+          "color": "#f4f1ea"
+        },
+        {
+          "geo": ["TorusGeometry", 4.8, 0.09, 4, 32],
+          "at": ["cx", 11.45, "cz"],
+          "color": "ochre",
+          "rotation": ["PI / 2", 0, 0]
+        },
+        {
+          "geo": ["CylinderGeometry", 0.3, 0.45, 0.35, 10],
+          "at": ["cx", 15.5, "cz"],
+          "color": "ochre"
+        },
+        {
+          "geo": ["SphereGeometry", 0.5, 10, 8],
+          "at": ["cx", 15.95, "cz"],
+          "color": "ochre"
+        },
+        {
+          "geo": ["ConeGeometry", 0.32, 0.6, 10],
+          "at": ["cx", 16.6, "cz"],
+          "color": "ochre"
+        },
+        {
+          "piece": "cross",
+          "args": ["cx", 17.6, "cz"]
+        },
+        {
+          "box": ["cx + 0.35", 17.15, "cz", 0.7, 0.05, 0.05],
+          "color": "#343a37"
+        }
+      ]
+    },
+    "anexo-santa-ana": {
+      "description": "Anexo al sur del octógono: volumen blanco bajo y liso con cubierta plana, en coordenadas globales (anclaje world), alineado con la cara sur y ampliado para cubrir la parte catastral 2630. g es el fondo enterrado.",
+      "params": {
+        "cx": -225.4,
+        "cz": 538.2,
+        "rot": 0.0791,
+        "h": 5.0,
+        "g": -3.9
+      },
+      "body": [
+        {
+          "group": {
+            "at": ["cx", 0, "cz"],
+            "rotation": [0, "rot", 0]
+          },
+          "body": [
+            {
+              "box": [0, "(h + g) / 2", 0, 8.6, "h - g", 9.8],
+              "color": "#f2efe6"
+            },
+            {
+              "box": [0, "h + 0.05", 0, 8.7, 0.1, 9.9],
+              "color": "#9aa58e"
+            },
+            {
+              "box": [0, "h - 0.15", 0, 8.75, 0.2, 9.95],
+              "color": "#f2efe6"
+            }
+          ]
+        }
+      ]
+    },
     "puente-arco": {
       "description": "Puente de dos arcos laterales sobre toda la luz (Puente VII Centenario): arcos circulares de acero con péndolas verticales y apoyos en los extremos. x a lo largo del tablero, z hacia los lados; la altura del arco es una estimación.",
       "params": { "rise": 9, "offset": 7, "tube": 0.35, "step": 3.5, "steel": "#2f4c6e" },
@@ -2339,6 +2632,113 @@
           },
           "recipe": "cupula-san-juan-bautista",
           "with": { "yb": 12.2 }
+        }
+      ]
+    },
+    {
+      "id": "santa-ana",
+      "name": "Ermita de Santa Ana",
+      "landmark": "Santa Ana",
+      "detailType": "church",
+      "lod": "2.2",
+      "status": "approximate",
+      "references": ["https://commons.wikimedia.org/wiki/File:Ermita_Santa_Ana_Chiclana.jpg", "https://commons.wikimedia.org/wiki/File:Ermita_de_Santa_Ana_Chiclana.jpg", "https://commons.wikimedia.org/wiki/File:Chiclana._Ermita_de_Santa_Ana.jpg", "Octógono regular de 9,06 m de apotema que envuelve el contorno OSM del hito y la parte catastral 2630; ortofoto PNOA 2022-07, web/aerial/hi/-1_2.jpg. Puerta al norte, hacia la explanada. Alturas estimadas de las fotos."],
+      "fronts": [
+        {
+          "anchor": {
+            "a": [-230.87, 515.67],
+            "b": [-223.38, 515.08],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 1,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-223.38, 515.08],
+            "b": [-217.67, 519.95],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-217.67, 519.95],
+            "b": [-217.08, 527.44],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-217.08, 527.44],
+            "b": [-221.95, 533.15],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-229.44, 533.74],
+            "b": [-235.15, 528.87],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-235.15, 528.87],
+            "b": [-235.74, 521.38],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "a": [-235.74, 521.38],
+            "b": [-230.87, 515.67],
+            "outwardFrom": [-226.41, 524.41]
+          },
+          "recipe": "galeria-santa-ana",
+          "with": {
+            "door": 0,
+            "g": -3.9
+          }
+        },
+        {
+          "anchor": {
+            "world": true
+          },
+          "recipe": "cupula-santa-ana"
+        },
+        {
+          "anchor": {
+            "world": true
+          },
+          "recipe": "anexo-santa-ana"
         }
       ]
     },
