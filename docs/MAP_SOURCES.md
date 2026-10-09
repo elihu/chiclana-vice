@@ -68,15 +68,18 @@ se sustituye.
 
 ## Fachadas y monumentos
 
-- Jesús Nazareno: pendiente de corregir la orientación y el anclaje de la portada.
-  La foto IAPH «Fachadas lateral y principal del Convento de Jesús Nazareno», ya citada
-  en los avisos de terceros, y la ortofoto sitúan la portada de mármol al oeste, hacia
-  la plaza, y el lateral en Calle Larga, al norte. La receta vigente sigue sobre el
-  lado norte del hito OSM. La prueba de moverla al lado oeste de ese hito dejó parte de
-  la portada tapada por los volúmenes catastrales: hay que comprobar el anclaje contra
-  su borde exterior y la base común antes de adoptar una corrección. Esa prueba no se
-  incorpora; se conserva el modelo anterior. Diagnóstico del 9/10/2026 tras la revisión
-  del usuario, separado del modelo de Veracruz.
+- Jesús Nazareno (`portada-jesus-nazareno`): la portada de mármol y la torre miran al
+  oeste, a la Plaza de Jesús Nazareno, al otro lado de Calle Hormaza; el lado de Calle
+  Larga es un muro liso. Lo indican la foto IAPH «Fachadas lateral y principal del
+  Convento de Jesús Nazareno» y la foto de Xemenendura, ya citadas en los avisos de
+  terceros, junto con la ortofoto PNOA 2022-07. El contorno OSM del hito queda unos 3 m
+  dentro del borde catastral por ese lado, así que la fachada se ancla al borde exterior
+  de las partes catastrales 3865 (la torre) y 3868: de `[-77.55,75]` a `[-77.25,106.91]`,
+  unos 31,9 m. La torre queda a 2,1 m del extremo norte y la portada a 7,9 m. Una franja
+  de cubierta de 3,4 m y un muro de retorno en el extremo sur cierran el hueco hasta la
+  nave. Contorno, volúmenes catastrales, colisiones y base sin cambios. Posiciones
+  estimadas sobre las fotos, sin medición. Corregido el 9/10/2026 tras la revisión del
+  usuario.
 - Ermita del Cristo de la Veracruz (`veracruz`): planta visual de la nave a partir del
   hito OSM y la ortofoto PNOA 2022-07 `web/aerial/hi/0_1.jpg`. La fachada mira al lado
   corto norte, vértices 0→3 (`[207.54,367.8]`–`[194.03,366.67]`), de 13,56 m, hacia la
