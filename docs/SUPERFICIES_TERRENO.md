@@ -128,7 +128,14 @@ El problema de ortofoto visible en algunas vías procedía de dos triangulacione
 incompatibles. Ahora dibujo, consultas y recorte de pavimento comparten una rejilla
 construida de aproximadamente 5 m en el piloto (`meshSubdivisions: 2`). Solo bajo corredores se rebaja el terreno con un margen equivalente
 a la diagonal de una celda y `coverageGap` (15 cm por defecto); los pavimentos opacos
-conservan su perfil suave. Es una construcción visual de autor, no un tratamiento de
+conservan su perfil suave. Cada vértice se compara con la rasante de cada tramo cercano
+prolongada hasta su proyección, sin bajar de la cota mínima del tramo: terreno y
+pavimento son planos en cada triángulo, así que basta con que los vértices queden por
+debajo. Antes se usaba la cota mínima del tramo y, en cuesta, el terreno junto a la
+calzada quedaba hasta pendiente × margen por debajo. Revisión del 9/10/2026: a 1 m del
+borde, los puntos con el terreno más de 1 m por debajo de la calzada bajan del 6,4 % al
+1,2 % y los de más de 0,3 m, del 53 % al 16 %; ningún vértice queda más bajo que antes y
+1.098.344 puntos de pavimento siguen sin protrusiones. Es una construcción visual de autor, no un tratamiento de
 la imagen. Una muestra de 344.100 puntos, incluidos bordes de calzada, pasó de 5.963
 protrusiones a cero. No elimina sombras horneadas fuera de las superficies recubiertas.
 

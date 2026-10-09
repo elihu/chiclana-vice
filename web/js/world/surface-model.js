@@ -825,13 +825,18 @@ export function createSurfaceModel(city, terrain, design) {
       const margin = Math.hypot(...meshManifest.step);
       for (const s of grid.get(key(x, z)) ?? empty) {
         if (s.bridge) continue;
-        const t = Math.max(
-          0,
-          Math.min(1, ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length)),
-        );
+        const along = ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length),
+          t = Math.max(0, Math.min(1, along));
         const d = Math.hypot(x - s.a[0] - s.dx * t, z - s.a[1] - s.dz * t);
+        // Rasante del tramo prolongada hasta la proyección del vértice: terreno y pavimento
+        // son planos en cada triángulo, así que basta con que cada vértice quede por debajo.
+        // Con la cota mínima del tramo, en cuesta el vértice bajaba pendiente × margen; esa
+        // cota sigue siendo el suelo del techo más allá del extremo bajo del tramo.
         if (d <= s.width / 2 + margin)
-          y = Math.min(y, Math.min(s.y0, s.y1) - (cfg.coverageGap ?? 0.15));
+          y = Math.min(
+            y,
+            Math.max(mix(s.y0, s.y1, along), Math.min(s.y0, s.y1)) - (cfg.coverageGap ?? 0.15),
+          );
       }
       meshData[j * meshManifest.columns + i] = y;
     }
