@@ -3,7 +3,6 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
 import { loadProgress } from '../ui/feedback.js';
-import { rnd } from '../core/random.js';
 import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
@@ -70,9 +69,10 @@ export async function buildBuildings() {
       )
         h = Math.max(h, m.height);
     b.renderH = h;
-    let paletteIndex = !b.detailType || b.newDetailOnly ? Math.floor(rnd() * palette.length) : 0;
+    if (!Number.isInteger(b.paletteIndex) || b.paletteIndex < 0 || b.paletteIndex >= palette.length)
+      throw Error('Índice de paleta de edificio incompatible; regenera buildings.json');
     let col = new THREE.Color(
-      b.detailType ? rules.detailColors[b.detailType] : palette[paletteIndex],
+      b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
     );
     for (const ring of [b.p, ...b.holes])
       for (let i = 0; i < ring.length; i++) {

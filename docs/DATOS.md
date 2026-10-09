@@ -94,6 +94,49 @@ Ejemplo, desde el modo `?debug` (ver [DESARROLLO.md](DESARROLLO.md#modo-de-depur
 `facade-designs.json`; solo es válido si el frente está catalogado en `frontages.json`
 (el panel lo indica).
 
+### Variación estable de edificios
+
+Cada parte de `buildings.json` lleva `paletteIndex`, un índice ya resuelto de
+`city-design.json.buildings.palette`. El navegador solo lee ese entero; no calcula
+identidades ni muestras aleatorias de color al cargar los edificios.
+
+`tools/prepare-world.mjs` resuelve los índices con `tools/building-variation.mjs`.
+Su entrada de compatibilidad es `source-data/building-variation.json`:
+`version: 1` y `paletteAssignments` (identidad SHA-256 → índice de paleta). Este catálogo
+no se publica. Conserva las asignaciones iniciales y no se recalcula al añadir fachadas
+ni al reconstruir el mapa. En `city-design.json.buildings.variation` queda solo `seed`,
+un entero sin signo de 32 bits para los contornos sin asignación.
+
+La identidad normaliza el inicio y orientación de cada anillo y el orden de los patios;
+no usa índice de parte, plantas, altura ni detalle. Un contorno modificado recibe otra
+identidad; las asignaciones antiguas pueden conservarse para recuperar un diseño
+anterior. Para consultar una identidad desde Node, importar `buildingIdentity` de
+`tools/building-variation.mjs` y pasar una parte con `p` y `holes`.
+
+Después de cambiar la paleta, la semilla o el catálogo:
+
+```sh
+node tools/prepare-world.mjs
+node tools/export-provenance.mjs
+npm test
+```
+
+Cuando solo cambia la apariencia y se conservan exactamente el origen y los demás
+campos de las partes, el generador actualiza el checksum de edificio en las capas de
+alturas, su auditoría y el catálogo de frentes que apuntaban a la versión anterior.
+Si cambia la geometría, no renueva esas referencias: se deben regenerar los derivados
+por el procedimiento habitual. Contornos, patios, plantas, alturas y relieve no se
+modifican al resolver los índices.
+
+`randomSeed` fija por separado el inicio de la secuencia de vegetación y actores.
+La migración desde `main b007ac5` conserva 7.683 muestras de paleta y fija esa semilla
+a `2165021796`, el estado que antes quedaba tras consumirlas desde `7631`.
+`tests/verify-building-variation.mjs` compara los 7.862 índices contra la referencia
+capturada en `60c3e7a` (`source-data/building-variation-baseline.json`), exige conservar
+la semilla del entorno y ejecuta una sonda aislada de vegetación y 600 pasos de actores.
+La referencia no se regenera automáticamente: solo se actualiza si se adopta
+deliberadamente otro mapa, diseño de colores o comportamiento del juego.
+
 ## Reglas
 
 - Los originales (ZIP/GML de Catastro, extracto OSM, recortes ráster IGN) se descargan a

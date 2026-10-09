@@ -440,6 +440,10 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
   // Tipos: pos (> 0), nonneg (>= 0), num, int (entero >= 1), point, rect, color, names,
   // points ([x, z]…) y objetos anidados como especificación. Todas las claves son obligatorias.
   const TYPES = {
+    uint32: (v, p) =>
+      Number.isInteger(v) && v >= 0 && v <= 0xffffffff
+        ? 0
+        : fail(p, 'se esperaba un entero de 32 bits sin signo'),
     pos: (v, p) => (Number.isFinite(v) && v > 0 ? 0 : fail(p, 'se esperaba un número positivo')),
     nonneg: (v, p) => (Number.isFinite(v) && v >= 0 ? 0 : fail(p, 'se esperaba un número >= 0')),
     num: (v, p) => (Number.isFinite(v) ? 0 : fail(p, 'se esperaba un número')),
@@ -518,10 +522,20 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
   ];
   onlyKeys(
     json,
-    ['$schema', 'version', 'description', 'license', 'attribution', 'terrainSurfaces', ...sections],
+    [
+      '$schema',
+      'version',
+      'description',
+      'license',
+      'attribution',
+      'terrainSurfaces',
+      'randomSeed',
+      ...sections,
+    ],
     '$',
   );
   if (json.version !== 1) fail('version', 'debe ser 1');
+  TYPES.uint32(json.randomSeed, 'randomSeed');
   for (const k of ['description', 'license', 'attribution'])
     if (k in json && typeof json[k] !== 'string') fail(k, 'se esperaba texto');
 
@@ -678,6 +692,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     json.buildings,
     {
       palette: 'colors',
+      variation: { seed: 'uint32' },
       detailColors: Object.fromEntries(DETAIL_TYPES.map((t) => [t, 'color'])),
       minimumHeights: 'heightRules',
       wallUvWidth: 'pos',

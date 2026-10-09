@@ -1,6 +1,7 @@
 {
   "$schema": "../schemas/city-design.schema.json",
   "version": 1,
+  "randomSeed": 2165021796,
   "description": "Authored street design rules. Rectangles are [minX, maxX, minZ, maxZ] in local metres. Values equal those of main 5666928 (web/game3d.js); recipes live in facade-designs.json.",
   "license": "ODbL-1.0",
   "attribution": "Street names © OpenStreetMap contributors; building anchors from D.G. del Catastro INSPIRE BU",
@@ -263,6 +264,7 @@
     "shrubBuildingClearance": 0.7
   },
   "buildings": {
+    "variation": { "seed": 7631 },
     "palette": [
       "#eee7d7",
       "#f4ece1",
