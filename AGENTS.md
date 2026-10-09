@@ -60,7 +60,7 @@ Nunca:
 
 - `web/`: sitio publicado y fuente editable (`game3d.js` como entrada y el juego en
   módulos ES en `js/`, `style.css`, `index.html`, capas
-  JSON, `arcade/`, `vendor/`, `licenses/`). Las fachadas, las reglas de calle y las
+  JSON, `vendor/`, `licenses/`). Las fachadas, las reglas de calle y las
   correcciones del mapa se describen en JSON (`facade-designs.json`, `city-design.json`,
   `map-corrections.json`); el modo `?debug` está en `js/debug/`.
 - `tools/`: conversores y generadores de datos (Node `.mjs`, Python `.py`).
