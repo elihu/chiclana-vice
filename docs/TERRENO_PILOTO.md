@@ -245,6 +245,15 @@ muestras fuera del límite, que no se convierte en un pendiente de ampliación.
 acreditan revisión visual completa, GPU física ni móvil; sigue pendiente la prueba del
 usuario y las mediciones en dispositivos físicos.
 
+## Validación del relieve nativo (9/10/2026)
+
+El relieve pasó a la rejilla nativa del MDT05 por teselas (`Elevacion25830_5`) y se
+amplió a los anexos de Santa Ana y el norte. El usuario lo revisó en el navegador:
+puentes, rampas y la ladera con el mayor cambio en el centro, los anexos y el tráfico.
+La auditoría registra `validado para el juego` del 9/10/2026 y `export-terrain.py`
+regeneró la capa sin `--preview`: rejilla 151 × 178, `terrain.bin` idéntico al de la
+vista previa (SHA-256 `34c4d63f…`). Mismos límites que la validación anterior.
+
 ## Validación (8/10/2026)
 
 El usuario revisó el relieve en el navegador y lo considera realista respecto al

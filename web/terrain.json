@@ -32,7 +32,7 @@
   "license": "CC-BY-4.0 compatible IGN terms",
   "attribution": "Obra derivada del MDT de España (5 m) CC-BY 4.0 IGN / PNOA / SCNE (scne.es)",
   "licenseUrl": "https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf",
-  "preview": true,
+  "preview": false,
   "sourceUrls": [
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4033997.5,4034497.5)&format=application/asc",
     "https://servicios.idee.es/wcs-inspire/mdt?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Elevacion25830_5&subset=x(216497.5,216997.5)&subset=y(4034497.5,4034997.5)&format=application/asc",

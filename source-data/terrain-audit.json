@@ -28,7 +28,7 @@
   "acquisitionDate": "sin confirmar",
   "verticalReference": "sin confirmar para este recorte",
   "metadataWarning": "DescribeCoverage publica unidades W.m-2.Sr-1 impropias del MDT: no utilizarlas como evidencia vertical.",
-  "decision": "no activar hasta revisar perfiles transitables y referencia vertical",
+  "decision": "validado para el juego",
   "sourceTiles": {
     "433_8068.asc": "30c022c5f6cf687a07756aa01e72318f8e64c07b0a2bc536438ebed19e41621c",
     "433_8069.asc": "2e377f21eb2c3ff44ec69a0fa7ab0e5bc9c9c2ed5d4ddf4798dca452e50417d4",
@@ -89,5 +89,7 @@
       "5.000000 0",
       "0 -5.000000"
     ]
-  }
+  },
+  "decisionDate": "2026-10-09",
+  "decisionNote": "Revisión visual del usuario en navegador del relieve nativo por teselas: centro (puentes, rampas y la ladera con el mayor cambio) y anexos de Santa Ana, Puente VII Centenario y ferial, junto con el tráfico. Referencia vertical y fecha de adquisición siguen sin confirmar; no es una validación topográfica."
 }

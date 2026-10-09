@@ -54,7 +54,8 @@ se sustituye.
   1,5 cm, p95 0,49 m, máximo 4,0 m en una ladera). Conversión a UTM con pyproj,
   bilineal a la rejilla de juego de 10 m, referencia fija en el origen y cuantización a
   0,1 m. Los originales permanecen fuera de Git; la rejilla derivada (`terrain.json`,
-  `terrain.bin`) está en revisión provisional hasta una nueva validación visual. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
+  `terrain.bin`) está activa en el juego desde la validación visual del usuario del
+  9/10/2026, que cubre el centro y los anexos. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
   `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
   aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 - **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del

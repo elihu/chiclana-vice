@@ -299,7 +299,7 @@
       "transformation": "Centros nativos UTM 30N de 5 m (pyproj), remuestreo bilineal a 10 m exactos, rejilla anclada al origen; referencia en origen; Int16 0,1 m; dibujo y consultas triangulares NW-SE",
       "limits": "Cuantización no implica precisión 0,1 m; referencia vertical sin confirmar",
       "sha256": {
-        "terrain.json": "c74450e02ea11a63761983fd4da2f9cd1c9401436e5b791401f9b8a01f2720cf",
+        "terrain.json": "fc50553cfc151985bced114c72276680624eeb19c8333b75ffa0445bcf953cc0",
         "terrain.bin": "34c4d63f01daa0b5f11c51c149f3434536f1dfdba950524b690689891bc51756"
       }
     }
