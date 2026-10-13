@@ -2,6 +2,24 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
 
+// Gris sRGB elegido en G2.2 (combinación B).
+const AERIAL_TINT = 0.78,
+  tint = new THREE.Color().setRGB(AERIAL_TINT, AERIAL_TINT, AERIAL_TINT, THREE.SRGBColorSpace);
+export const aerialTint = () => tint;
+
+export function setAerialTint(color) {
+  tint.set(color);
+  for (const group of materials.values())
+    for (const material of group) if (material.map) material.color.copy(tint);
+  // Cubiertas que desbordan las teselas y suelo de respaldo con la vista general.
+  gfx.scene.traverse((object) => {
+    const list = Array.isArray(object.material) ? object.material : [object.material];
+    for (const material of list)
+      if (material?.map && material.map === world.groundTexture) material.color.copy(tint);
+  });
+  gfx.needsRender = true;
+}
+
 const materials = new Map(),
   loaded = new Map(),
   pending = new Map();
@@ -24,7 +42,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
     ...options,
   });
   m.userData.plainColor = plainColor;
-  m.color.set(m.map ? '#ffffff' : plainColor);
+  m.color.set(m.map ? aerialTint() : plainColor);
   materials.get(key).add(m);
   return m;
 }
@@ -32,7 +50,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
 function assign(key, texture) {
   for (const material of materials.get(key) ?? []) {
     material.map = texture ?? world.groundTexture;
-    material.color.set(material.map ? '#ffffff' : material.userData.plainColor);
+    material.color.set(material.map ? aerialTint() : material.userData.plainColor);
     material.needsUpdate = true;
   }
   gfx.needsRender = true;
@@ -76,7 +94,10 @@ function pump() {
         const [x0, x1, z0, z1] = world.aerialBox;
         const extent = size + 2 * margin;
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = 4;
+        texture.anisotropy =
+          requestLevel === 'hi'
+            ? Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4)
+            : 4;
         texture.repeat.set((x1 - x0) / extent, (z1 - z0) / extent);
         texture.offset.set(
           (x0 - tile.i * size + margin) / extent,

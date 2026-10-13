@@ -1,4 +1,4 @@
-import { aerialMaterial, tileKey } from './aerial-tiles.js';
+import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
@@ -24,7 +24,9 @@ export async function buildBuildings() {
       side: THREE.DoubleSide,
     }),
     roofMat = new THREE.MeshStandardMaterial({
-      ...(world.groundTexture ? { map: world.groundTexture } : { color: '#b4a58f' }),
+      ...(world.groundTexture
+        ? { map: world.groundTexture, color: aerialTint() }
+        : { color: '#b4a58f' }),
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
@@ -76,11 +78,21 @@ export async function buildBuildings() {
     );
     for (const ring of [b.p, ...b.holes])
       for (let i = 0; i < ring.length; i++) {
-        const edge = terrainEdge(ring[i], ring[(i + 1) % ring.length]);
+        const start = ring[i],
+          end = ring[(i + 1) % ring.length],
+          length = Math.hypot(end[0] - start[0], end[1] - start[1]),
+          bays = Math.max(1, Math.round(length / rules.wallUvWidth)),
+          uScale = length > 0 ? bays / length : 0,
+          floorHeight = world.facadeProfiles.heightPolicy.floorHeight,
+          edge = terrainEdge(start, end);
+        let along = 0;
         for (let k = 1; k < edge.length; k++) {
           let a = edge[k - 1],
             q = edge[k],
             len = Math.hypot(q[0] - a[0], q[1] - a[1]);
+          const u0 = along * uScale,
+            u1 = (along + len) * uScale;
+          along += len;
           if (len < 0.1) continue;
           const vertices = [
               [a[0], groundHeightAt(...a) + (world.terrain.kind === 'flat' ? 0.02 : -0.08), a[1]],
@@ -88,12 +100,17 @@ export async function buildBuildings() {
               [q[0], b.baseY + h, q[1]],
               [a[0], b.baseY + h, a[1]],
             ],
-            uvs = [
-              [0, 0],
-              [len / rules.wallUvWidth, 0],
-              [len / rules.wallUvWidth, h / world.facadeProfiles.heightPolicy.floorHeight],
-              [0, h / world.facadeProfiles.heightPolicy.floorHeight],
-            ];
+            uvs = b.detailType
+              ? [
+                  [0, 0],
+                  [len / rules.wallUvWidth, 0],
+                  [len / rules.wallUvWidth, h / floorHeight],
+                  [0, h / floorHeight],
+                ]
+              : vertices.map((vertex, j) => [
+                  j === 0 || j === 3 ? u0 : u1,
+                  (vertex[1] - b.baseY) / floorHeight,
+                ]);
           for (const j of [0, 1, 2, 0, 2, 3]) {
             (b.detailType ? g.dw : g.w).push(...vertices[j]);
             (b.detailType ? g.dwu : g.wu).push(...uvs[j]);

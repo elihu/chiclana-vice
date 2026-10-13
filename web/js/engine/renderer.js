@@ -3,6 +3,32 @@ import { $ } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 
+// Equilibrio de luz elegido en G2.2 (combinación B).
+const EXPOSURE = 1.05,
+  HEMI_INTENSITY = 1.7,
+  SUN_INTENSITY = 3.2;
+
+const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
+  sunBasis = new THREE.Matrix4().lookAt(
+    SUN_OFFSET,
+    new THREE.Vector3(),
+    new THREE.Vector3(0, 1, 0),
+  ),
+  sunBasisInverse = sunBasis.clone().invert(),
+  snapped = new THREE.Vector3();
+
+export function placeSun(x, y, z) {
+  const cam = gfx.sun.shadow.camera,
+    texel = (cam.right - cam.left) / gfx.sun.shadow.mapSize.x;
+  snapped.set(x, y, z).applyMatrix4(sunBasisInverse);
+  snapped.x = Math.round(snapped.x / texel) * texel;
+  snapped.y = Math.round(snapped.y / texel) * texel;
+  snapped.applyMatrix4(sunBasis);
+  gfx.sun.target.position.copy(snapped);
+  gfx.sun.position.copy(snapped).add(SUN_OFFSET);
+  gfx.sun.target.updateMatrixWorld();
+}
+
 export function setupRenderer() {
   gfx.renderer = new gfx.platform.WebGLRenderer({
     canvas: $('world'),
@@ -13,14 +39,14 @@ export function setupRenderer() {
   gfx.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   gfx.renderer.outputColorSpace = THREE.SRGBColorSpace;
   gfx.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  gfx.renderer.toneMappingExposure = 1.2;
+  gfx.renderer.toneMappingExposure = EXPOSURE;
   gfx.scene = new THREE.Scene();
   gfx.scene.background = new THREE.Color('#a5bbc8');
   gfx.scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   gfx.camera = new THREE.PerspectiveCamera(62, gfx.W / gfx.H, 0.15, 1800);
-  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', 2.2);
+  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', HEMI_INTENSITY);
   gfx.scene.add(hemi);
-  gfx.sun = new THREE.DirectionalLight('#fff0d6', 3.2);
+  gfx.sun = new THREE.DirectionalLight('#fff0d6', SUN_INTENSITY);
   gfx.sun.position.set(-100, 150, 60);
   gfx.sun.shadow.mapSize.set(1024, 1024);
   Object.assign(gfx.sun.shadow.camera, {

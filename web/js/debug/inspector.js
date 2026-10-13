@@ -7,6 +7,25 @@ import { buildingGrid, chunks, facadeWork, gfx, player, world } from '../core/st
 import { pInside, pointSeg } from '../core/math.js';
 import { sha256Hex } from '../world/corrections.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
+import { setAerialTint } from '../world/aerial-tiles.js';
+
+export function adjustLight({ exposure, hemi, sun, aerial } = {}) {
+  for (const [name, value] of Object.entries({ exposure, hemi, sun, aerial }))
+    if (
+      value !== undefined &&
+      (!Number.isFinite(value) || value < 0 || (name === 'aerial' && value > 1))
+    )
+      throw Error(`Parámetro de luz inválido: ${name}`);
+  if (exposure !== undefined) gfx.renderer.toneMappingExposure = exposure;
+  if (hemi !== undefined)
+    gfx.scene.traverse((object) => {
+      if (object.isHemisphereLight) object.intensity = hemi;
+    });
+  if (sun !== undefined) gfx.sun.intensity = sun;
+  if (aerial !== undefined)
+    setAerialTint(new THREE.Color().setRGB(aerial, aerial, aerial, THREE.SRGBColorSpace));
+  gfx.needsRender = true;
+}
 
 // Un toque: mismo puntero, menos de 6 px de desplazamiento y menos de 350 ms.
 export const TAP_MAX_DISTANCE = 6;
@@ -218,6 +237,12 @@ export function formatInfo(info) {
 // Crea el panel y los oyentes. `api`: la API de pruebas del juego (createTestApi). `root`: donde
 // se añade el panel (document.body por defecto).
 export function installInspector(api, { root = document.body } = {}) {
+  window.__luz = adjustLight;
+  const params = new URLSearchParams(globalThis.location?.search ?? ''),
+    light = {};
+  for (const name of ['exposure', 'hemi', 'sun', 'aerial'])
+    if (params.has(name)) light[name] = Number(params.get(name));
+  adjustLight(light);
   const make = (tag, className, text) => {
     const e = document.createElement(tag);
     if (className) e.className = className;

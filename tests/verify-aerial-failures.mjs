@@ -22,7 +22,7 @@ for (const mesh of ground.children) {
   if (!mesh.material.map) {
     assert.equal(mesh.material.color.getHexString(), '9a9b86');
     plain++;
-  } else assert.equal(mesh.material.color.getHexString(), 'ffffff');
+  } else assert.equal(mesh.material.color.getHexString(), 'c7c7c7');
 }
 assert(plain > 0, 'teselas sin textura conservan el color del suelo');
 let plainRoofs = 0;
