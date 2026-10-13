@@ -70,7 +70,8 @@ export function buildTrees() {
     points.push(p);
     counts.osm++;
   }
-  for (const a of world.city.areas) {
+  // Con la capa de copas, los parques ya tienen sus árboles: no se rellenan al azar.
+  for (const a of layer ? [] : world.city.areas) {
     if (a.kind !== 'park' || a.p.length < 3) continue;
     let xs = a.p.map((p) => p[0]),
       zs = a.p.map((p) => p[1]),

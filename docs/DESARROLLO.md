@@ -351,7 +351,7 @@ sigue igual hasta G5.3.
 
 La capa opcional `vegetation.json` coloca las copas aceptadas de ortofoto; sin ella
 se conserva el entorno anterior. `streetEnvironment.treeSources` cuenta por separado
-capa, OSM, plaza y relleno de parques; `treeBuildMs` mide la construcción completa de
+capa, OSM, plaza y relleno de parques (cero con la capa); `treeBuildMs` mide la construcción completa de
 árboles y arbustos con `performance.now()`. El presupuesto por vista incluye también
 instancias, triángulos y lotes de vegetación visibles en el frustum principal.
 Son medidas de CPU y recuentos, no FPS ni tiempo de GPU.

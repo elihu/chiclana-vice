@@ -164,7 +164,7 @@ actores se declara por separado en `city-design.json.randomSeed`.
 ## Aproximaciones
 
 - [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.
-- Árboles: copas aproximadas de ortofoto, puntos OSM y relleno determinista en huecos.
+- Árboles: copas aproximadas de ortofoto y puntos OSM; sin la capa, relleno determinista de parques.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
   El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
@@ -285,8 +285,8 @@ siguen siendo aproximados; la aceptación completa no constituye un inventario d
 
 El juego carga la capa opcional y escala cada árbol con `clamp(r / 1,6, 0,6, 1,8)`.
 Añade los puntos OSM y los árboles de plaza que no tengan otro centro a menos de
-`max(vegetation.spacing, radio detectado)`. Mantiene el relleno determinista de
-parques únicamente en huecos con esa misma separación, conservando las exclusiones
-de edificios, calzadas y límites. Sin capa conserva exactamente la vegetación anterior.
+`max(vegetation.spacing, radio detectado)`. Con la capa no hay relleno aleatorio de
+parques: lo retiró el usuario tras ver la densidad de copas detectadas. Sin capa
+conserva exactamente la vegetación anterior, relleno incluido.
 Las copas detectadas de radio ≤ 2 m usan icosaedros sin subdivisión en sus cinco
 piezas; las mayores y los árboles anteriores conservan una subdivisión.
