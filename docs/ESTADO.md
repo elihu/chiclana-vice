@@ -1,18 +1,19 @@
 # Estado y pendientes
 
-Revisión: 9/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 13/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.3.1` (9/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.4.0` (13/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
   la `v1.1.0` el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android, y el
   relieve de la `v1.2.0` el 8/10/2026 en el navegador de escritorio; la ampliación y los
-  modelos de la `v1.3.0`, el 8 y el 9/10/2026 en el navegador de escritorio.
+  modelos de la `v1.3.0`, el 8 y el 9/10/2026 en el navegador de escritorio, y la mejora
+  gráfica de la `v1.4.0`, el 13/10/2026 en el portátil.
 - No verificado: iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
   teselas en móvil.
 
@@ -30,6 +31,17 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Novedades de `v1.4.0`
+
+- **Relieve junto a las calzadas**: el terreno ya no queda escalonado respecto a las
+  calles en cuesta ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)).
+- **Mejora gráfica** ([PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md)): luz y
+  exposición nuevas, ventanas continuas en los muros genéricos, sombras más estables,
+  grano cercano en suelo y pavimento, menos llamadas de dibujo en las fachadas, y el modo
+  ligero oculta fachadas y vegetación lejanas.
+- **Árboles sobre las copas reales**: 2.347 árboles y 766 arbustos detectados en la
+  ortofoto PNOA y filtrados con la altura de vegetación del IGN (`web/vegetation.json`).
 
 ## Novedades de `v1.3.1`
 
