@@ -2,7 +2,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/materials.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
-import { surfaceTexture } from '../engine/textures.js';
+import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside, boundaryDistance } from '../core/math.js';
@@ -313,11 +313,13 @@ export function buildStreetSurfaces() {
     geo.computeVertexNormals();
     let mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshStandardMaterial({
-        map: g.tex,
-        roughness: g.roughness ?? 0.96,
-        side: THREE.DoubleSide,
-      }),
+      applyGroundDetail(
+        new THREE.MeshStandardMaterial({
+          map: g.tex,
+          roughness: g.roughness ?? 0.96,
+          side: THREE.DoubleSide,
+        }),
+      ),
     );
     mesh.receiveShadow = true;
     gfx.scene.add(mesh);

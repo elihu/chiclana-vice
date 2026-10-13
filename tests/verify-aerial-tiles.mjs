@@ -28,8 +28,24 @@ export async function verifyAerialTiles({
   ])
     for (const anchor of anchors) assert(THREE.ShaderLib.standard[stage].includes(anchor));
   const groundMaterials = g.scene.getObjectByName('terrain-ground').children.map((o) => o.material);
+  const tileMaterialCount = groundMaterials.length;
+  g.scene.traverse((o) => {
+    if (
+      o.material?.map?.isCanvasTexture &&
+      o.material.customProgramCacheKey() === 'ground-detail-v1'
+    )
+      groundMaterials.push(o.material);
+  });
+  const bandKinds = new Set(
+    world.surfaces.platforms.flatMap((p) => p.bands.map((b) => b.material)),
+  );
+  assert.equal(
+    groundMaterials.length - tileMaterialCount,
+    3 + bandKinds.size,
+    'todos los lotes de pavimento y bandas tienen detalle',
+  );
   for (const material of groundMaterials) {
-    assert.equal(material.customProgramCacheKey(), 'aerial-detail-v1');
+    assert.equal(material.customProgramCacheKey(), 'ground-detail-v1');
     const shader = { uniforms: {}, ...THREE.ShaderLib.standard };
     material.onBeforeCompile(shader);
     for (const [name, uniform] of Object.entries(detailUniforms))
@@ -41,7 +57,7 @@ export async function verifyAerialTiles({
   }
   g.scene.traverse((o) => {
     if (o.material && !groundMaterials.includes(o.material))
-      assert.notEqual(o.material.customProgramCacheKey(), 'aerial-detail-v1', 'solo el suelo');
+      assert.notEqual(o.material.customProgramCacheKey(), 'ground-detail-v1', 'solo el suelo');
   });
   const grain = detailUniforms.uDetailMap.value;
   assert.equal(grain.image.width, 256);

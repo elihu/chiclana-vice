@@ -242,8 +242,10 @@ export function installInspector(api, { root = document.body } = {}) {
   window.__luz = adjustLight;
   const params = new URLSearchParams(globalThis.location?.search ?? ''),
     light = {};
-  for (const name of ['exposure', 'hemi', 'sun', 'aerial'])
-    if (params.has(name)) light[name] = Number(params.get(name));
+  for (const name of ['exposure', 'hemi', 'sun', 'aerial', 'detail'])
+    if (params.has(name))
+      light[name] =
+        name === 'detail' ? { strength: Number(params.get(name)) } : Number(params.get(name));
   adjustLight(light);
   const make = (tag, className, text) => {
     const e = document.createElement(tag);

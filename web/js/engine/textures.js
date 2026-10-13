@@ -11,6 +11,42 @@ export const detailUniforms = {
 };
 let detailStrength = 0.35;
 
+export function applyGroundDetail(material) {
+  detailUniforms.uDetailMap.value ??= groundDetailTexture();
+  material.customProgramCacheKey = () => 'ground-detail-v1';
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, detailUniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;',
+      )
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vec4 detailWorld = modelMatrix * vec4(transformed, 1.0);
+        vDetailXZ = detailWorld.xz;
+        vDetailDist = distance(detailWorld.xyz, cameraPosition);`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uDetailMap;
+        uniform float uDetailScale, uDetailNear, uDetailFar, uDetailStrength;
+        varying vec2 vDetailXZ; varying float vDetailDist;`,
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        float detailFade = 1.0 - smoothstep(uDetailNear, uDetailFar, vDetailDist);
+        vec3 detail = texture2D(uDetailMap, vDetailXZ / uDetailScale).rgb * 2.0;
+        diffuseColor.rgb *= mix(vec3(1.0), detail, detailFade * uDetailStrength);`,
+      );
+  };
+  return material;
+}
+
 export function applyGroundDetailQuality() {
   detailUniforms.uDetailStrength.value = gfx.quality === 'low' ? 0 : detailStrength;
 }
