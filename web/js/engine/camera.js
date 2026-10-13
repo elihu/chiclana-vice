@@ -6,6 +6,7 @@ import {
   camPos,
   camTarget,
   chunks,
+  detailCells,
   gfx,
   player,
   view,
@@ -19,6 +20,11 @@ import {
   surfaceCeilingAt,
   placeVehicle,
 } from './terrain-sampling.js';
+
+// Alcances en metros del detalle ligero; la banda evita alternar al cruzar el límite.
+const DETAIL_REACH = { facade: 200, vegetation: 300 },
+  AERIAL_DETAIL_REACH = 380,
+  DETAIL_HYSTERESIS = 10;
 
 export function updateCameraVisibility() {
   if (view.firstPersonCar && (view.mode !== 1 || view.firstPersonCar !== player.car))
@@ -163,6 +169,13 @@ export function updateCamera(dt) {
     let m = group.children[0],
       c = m.geometry.boundingSphere;
     group.visible = Math.hypot(c.center.x - ox, c.center.z - oz) < reach + c.radius;
+  }
+  for (const cell of detailCells) {
+    const limit = view.mode === 2 ? AERIAL_DETAIL_REACH : DETAIL_REACH[cell.kind];
+    cell.object.visible =
+      !low ||
+      Math.hypot(cell.x - ox, cell.z - oz) <
+        limit + cell.radius + (cell.object.visible ? DETAIL_HYSTERESIS : 0);
   }
 }
 

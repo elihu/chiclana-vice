@@ -15,6 +15,7 @@ export const input = {
   jy: 0,
 };
 export const keys = {};
+export const detailCells = [];
 export const holdPointers = new Map();
 // Valores por defecto; loadSavedProgress() aplica la partida guardada.
 export const state = {
