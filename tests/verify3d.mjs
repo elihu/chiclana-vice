@@ -747,15 +747,17 @@ function referenceRoute(graph, from, to, driveOnly) {
   assert(vehicles.length > 0);
   g.player.x = g.player.z = 10000; // far away: traffic does not stop for the player
   if (g.player.car) Object.assign(g.player.car, { x: 10000, z: 10000 });
-  const arrivals = vehicles.map(() => 0);
+  const arrivals = vehicles.map(() => 0),
+    travelled = vehicles.map(() => 0);
   let wrongWay = 0,
     alleyExits = 0,
     swaps = 0;
   for (let i = 0; i < 1500; i++) {
-    const before = vehicles.map((c) => [c.node, c.stuck || 0]);
+    const before = vehicles.map((c) => [c.node, c.stuck || 0, c.x, c.z]);
     for (const c of vehicles) g.stepAgent(c, 0.04);
     vehicles.forEach((c, k) => {
-      const [from, stuck] = before[k];
+      const [from, stuck, x, z] = before[k];
+      travelled[k] += Math.hypot(c.x - x, c.z - z);
       if (c.node === from) return;
       // A collision escape swaps node/next (pre-existing behaviour), not an arrival.
       if (stuck > 0 && c.stuck === 0) {
@@ -774,7 +776,8 @@ function referenceRoute(graph, from, to, driveOnly) {
     'every vehicle has a next node',
   );
   assert.equal(wrongWay, 0, 'traffic never drives against a respected oneway');
-  const moving = arrivals.filter((n) => n >= 5).length;
+  // Un coche lento en un tramo largo llega a pocos nodos pero sigue avanzando.
+  const moving = arrivals.filter((n, k) => n >= 5 || travelled[k] >= 300).length;
   assert.equal(moving, vehicles.length, 'all traffic keeps moving through the network');
   console.log('Traffic simulation', { vehicles: vehicles.length, moving, swaps, alleyExits });
 }
