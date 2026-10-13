@@ -585,6 +585,19 @@ la zona del piloto de fachadas (`zones.frontagePilot` de `city-design.json`).
 Documenta en `docs/MAP_SOURCES.md` el método, el umbral y que las posiciones son
 aproximadas (no un inventario de arbolado).
 
+**Resultado (13/10/2026).** La detección por color de la ortofoto sola confundía campos
+de césped, pavimentos verdosos y arbustos con copas, y al filtrarla por textura y sombra
+perdía muchos árboles reales. El usuario aprobó combinarla con el MDSnV del IGN
+(2008–2015): se conserva una copa si la ortofoto la detecta y el IGN da al menos 3 m, o
+si pasa el filtro de imagen (árboles jóvenes). Resultan 3.113 copas, todas aceptadas
+sin revisión manual (zona que cubre el mundo en `source-data/tree-review.json`). El
+usuario retiró el relleno aleatorio de parques y, por los arbustos de las rotondas, pidió
+dibujar como arbustos las copas con IGN < 5 m no confirmadas solo por imagen (766 de 3.113). Medido con SwiftShader antes de quitar
+ese relleno: las llamadas apenas cambian y los triángulos crecen del 15 al 115 % según
+el punto (Plaza Mayor en seguimiento, 1,27 → 2,17 millones en normal y 0,54 → 0,67 en
+ligero); las copas de radio ≤ 2 m usan icosaedros sin subdivisión. Sin prueba en GPU
+real, móvil ni FPS.
+
 ---
 
 ## Más adelante (fuera de este plan)

@@ -1045,3 +1045,59 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
 }
 
 console.log('Facade kit, validator, composer and map corrections passed');
+
+// Archivo de autor G5.2: queda vacío hasta que el usuario revise la ortofoto.
+{
+  const fs = await import('node:fs'),
+    { createHash } = await import('node:crypto'),
+    { validateTreeReview, treeCandidateStatus } = await import('../web/js/debug/inspector.js'),
+    bytes = fs.readFileSync('source-data/tree-candidates.json'),
+    data = JSON.parse(bytes),
+    fingerprint = createHash('sha256').update(bytes).digest('hex'),
+    review = JSON.parse(fs.readFileSync('source-data/tree-review.json', 'utf8'));
+  validateTreeReview(review, data.candidates, fingerprint);
+  const c = { id: 'test', x: 4, z: 5 },
+    draft = {
+      version: 1,
+      candidatesSha256: fingerprint,
+      acceptedZones: [],
+      excludedCandidates: [],
+    };
+  assert.equal(treeCandidateStatus(c, draft), 'pendiente');
+  draft.acceptedZones.push({ id: 'zona', rect: [4, 6, 5, 9] });
+  assert.equal(treeCandidateStatus(c, draft), 'aceptado', 'bordes incluidos');
+  draft.excludedCandidates.push(c.id);
+  assert.equal(treeCandidateStatus(c, draft), 'excluido', 'exclusión prevalece sobre zona');
+  validateTreeReview(draft, [c], fingerprint);
+  assert.throws(() => validateTreeReview(draft, [c], 'otra instantánea'));
+  assert.throws(() =>
+    validateTreeReview({ ...draft, excludedCandidates: ['desconocido'] }, [c], fingerprint),
+  );
+  assert.throws(() =>
+    validateTreeReview({ ...draft, excludedCandidates: ['test', 'test'] }, [c], fingerprint),
+  );
+  for (const rect of [
+    [1, 1, 2, 3],
+    [2, 1, 2, 3],
+    [1, 2, NaN, 3],
+    [1, 2],
+  ])
+    assert.throws(() =>
+      validateTreeReview({ ...draft, acceptedZones: [{ id: 'mal', rect }] }, [c], fingerprint),
+    );
+  assert.throws(() =>
+    validateTreeReview(
+      { ...draft, acceptedZones: [...draft.acceptedZones, ...draft.acceptedZones] },
+      [c],
+      fingerprint,
+    ),
+  );
+  assert.equal(treeCandidateStatus({ id: 'fuera', x: 50, z: 50 }, draft), 'pendiente');
+  // El generador registra exactamente la instantánea leída; evita revisar datos desfasados.
+  for (const [file, expected] of Object.entries(data.provenance.inputs))
+    assert.equal(createHash('sha256').update(fs.readFileSync(file)).digest('hex'), expected, file);
+  assert.equal(new Set(data.candidates.map((c) => c.id)).size, data.candidates.length);
+  for (const c of data.candidates)
+    assert([c.x, c.z, c.r, c.score].every(Number.isFinite) && c.r > 0);
+  console.log('Revisión de copas: instantánea, rectángulos, exclusiones y precedencia verificados');
+}

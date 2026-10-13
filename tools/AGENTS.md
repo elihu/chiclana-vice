@@ -11,7 +11,7 @@ en `docs/DATOS.md`.
 - Los scripts escriben en `web/` y `source-data/`. Revisa `git diff --stat` después de
   ejecutarlos y no confirmes cambios de datos que la tarea no pida.
 - Orden obligatorio tras cambiar datos: generador (`rebuild-map.py`, `prepare-world.mjs`,
-  `audit-ign-heights.py` o `export-facades.mjs`), después `node tools/export-provenance.mjs`
+  `audit-ign-heights.py`, `export-facades.mjs` o `export-vegetation.mjs`), después `node tools/export-provenance.mjs`
   y al final `npm test`. Sin `export-provenance`, los checksums y las copias de `web/`
   quedan desfasados y `tests/verify-world.mjs` falla.
 - Las descargas originales (Catastro, OSM, recortes IGN, ortofotos) van a la caché

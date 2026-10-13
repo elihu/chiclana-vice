@@ -164,7 +164,7 @@ actores se declara por separado en `city-design.json.randomSeed`.
 ## Aproximaciones
 
 - [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.
-- Árboles: puntos de OSM más una plantación aproximada y determinista.
+- Árboles: copas aproximadas de ortofoto y puntos OSM; sin la capa, relleno determinista de parques.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
   El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
@@ -190,3 +190,106 @@ La rejilla derivada (`terrain.json` y `terrain.bin`) está en Git desde el 8/10/
 El original recuperado coincide con la auditoría del 7/10/2026 y el exportador
 reproduce las cotas. Tras la revisión visual del usuario, la auditoría registra la
 decisión `validado para el juego`; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md#validación-8102026).
+
+## Candidatos de copas en revisión (G5.1)
+
+`tools/detect-tree-crowns.py` deriva `source-data/tree-candidates.json` de las teselas
+PNOA de julio de 2022 y las capas actuales de edificios y OSM, sin publicar una capa
+ni sustituir los árboles del juego. Usa canales normalizados por R+G+B,
+ExG = 2g − r − b > 0,10 y brillo medio ≥ 45/255. Apertura de un píxel, cierre de
+tres y relleno de huecos. La detección amplia admite piezas desde 3 m²; la vía de imagen exige 6 m² por copa partida. Excluye edificios (respetando patios),
+agua y calzadas con la mitad de la anchura de cada vía; no excluye vías peatonales.
+Vuelve a aplicar las exclusiones tras cerrar y rellenar la máscara.
+
+Separa componentes por máximos locales de distancia, con separación mínima de 3 m,
+y asigna sus píxeles al máximo más cercano. Conserva solo centros dentro de los límites
+del mundo y del núcleo de cada tesela, usando el margen para evitar cortes artificiales.
+Posición en el máximo y radio equivalente a la superficie asignada: son aproximaciones,
+no un inventario de arbolado ni precisión topográfica. El campo `ign` guarda el máximo MDSnV muestreado en metros; no mide la altura actual de cada árbol.
+
+La vía de imagen exige textura: luminancia RGB con pesos
+0,2126/0,7152/0,0722, desviación en ventanas de 5 × 5 píxeles (1,25 m), mediana
+≥ 5/255 dentro de cada pieza erosionada dos píxeles para evitar el contraste del
+borde. Si no queda interior, se mide la pieza completa. Así se descartan también
+las partes lisas de componentes grandes, sin consultar usos deportivos en OSM.
+
+La dirección de sombra se estima de nuevo en cada generación con las huellas de
+edificios y la imagen a 1 m/píxel: se desplazan las huellas 2, 4, 6 y 8 m en
+24 direcciones, se excluyen los edificios y se maximiza la fracción de luminancia
+< 65. En esta pasada da 240° (x este, z sur; vector −0,5/−0,866), con fracción
+0,333 frente a 0,113 en la dirección de menor evidencia. No es un cálculo astronómico.
+Para cada copa se busca fuera de su pieza y de edificios, entre 0,8 y 2,5 radios
+en esa dirección y hasta 0,8 radios a cada lado. Debe haber una región oscura
+conectada de al menos max(0,5 m², 8 % del área de copa), con luminancia menor que
+min(65, 65 % de la luminancia media de copa). Todos los parámetros y las fracciones
+por dirección quedan en `method` del JSON.
+
+Se conservan ExG > 0,10 y brillo ≥ 45, sin añadir mínimo de saturación: el césped del campo ya tiene ExG mediano
+0,279, por lo que subir ligeramente el umbral no lo separa. La textura interior
+sí lo separa; las piezas asociadas a las copas de las muestras tienen ExG medio
+0,139–0,206, inferior al del campo. Endurecer el color perjudica copas apagadas. Los 6 m² (radio
+equivalente 1,38 m) eliminan piezas pequeñas: en las jardineras de calibración
+hay piezas de 3,12–5,94 m², mientras la alineación de calle tiene piezas de
+10,31–38,19 m². También se pierden árboles pequeños; no hay excepciones por lugar.
+
+La imagen sola **no separa bien todos los arbustos**: los grandes con textura y
+sombra, o cerca de sombras ajenas, pueden pasar. La sombra obligatoria pierde
+copas reales con sombra oculta o fusionada y las palmeras y copas oscuras siguen
+faltando. El resultado requiere revisión manual; véase la calibración en DATOS.
+
+El campo `zone` clasifica centros por prioridad: parque OSM, plaza OSM, entorno de
+calzada (hasta 8 m desde su borde), resto. Son categorías para revisar resultados,
+no especies ni usos de suelo certificados.
+
+La combinación aprobada el 13/10/2026 conserva una pieza amplia si el MDSnV es
+≥ 3 m **o** si pasa el filtro de imagen anterior. `source` distingue `ign`, `imagen`
+y `ambos`; la deduplicación global mantiene la separación de 3 m. El IGN se muestrea
+con pyproj, de WGS84 a EPSG:3042, usando la conversión local del auditor de alturas;
+se toma el máximo válido no negativo del centro ±1 celda (3 × 3, unos 7,5 m).
+La celda central pierde demasiadas copas por desfase y resolución; la ventana por
+radio puede heredar la altura de una copa vecina. Comparación con el recorte inicial del revisor sobre los 4.203 centros
+anteriores: centro 1.800, ±1 celda 2.947, ±2 celdas 3.337 y ±ceil(r/2,5) 3.055
+superan 3 m. La unión con los 1.305 centros de imagen da respectivamente 2.295,
+3.099, 3.412 y 3.182, antes de volver a deduplicar la salida combinada.
+
+Fuente: [WCS MDS del IGN](https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities),
+GetCoverage `mdsn_v025`, resolución nominal 2,5 m, EPSG:3042. Primera cobertura
+**2008–2015**, sin fecha local confirmada, anterior a la ortofoto de 2022: faltan
+árboles jóvenes y pueden persistir alturas de vegetación retirada. Se descarga solo
+la caja de los límites del mundo más 20 m; el original y la fecha de acceso quedan
+en la caché externa. `provenance.ign` registra consulta, fecha, SHA-256 y resolución.
+No es un inventario de arbolado: centros, radios y correspondencias temporales son
+aproximados. El máximo puede aún tomar una copa vecina a menos de una celda; arbustos
+altos o con textura/sombra pasan y las copas oscuras o palmeras siguen ausentes.
+La decisión de aceptación y la publicación se describen en G5.3, más abajo.
+
+Con el recorte regenerado (consulta con margen de 20 m, acceso 13/10/2026), los mismos
+4.203 centros dan: central 1.884 (unión 2.369), ±1 2.975 (unión 3.115), ±2 3.334
+(unión 3.411) y por radio 3.079 (unión 3.198). El WCS ajusta ligeramente la rejilla
+al rectángulo solicitado; el SHA del recorte fija qué muestreo se ha usado.
+Tras regenerar y deduplicar quedan **3.113**: parque 1.182, plaza 82, calle 686,
+resto 1.163; `ign` 1.811, `imagen` 137 y `ambos` 1.165. La vía de imagen preserva
+la fila joven de plaza en `-1_0`, aunque aún faltan algunos centros visibles.
+Superposiciones de revisión en `/tmp/g5-arboles/combinado/{-1_0,-2_-3,2_0,0_0}.jpg`:
+IGN verde vivo, imagen verde claro, ambos verde oscuro y descartados rojo.
+
+## Copas publicadas y vegetación del juego (G5.3)
+
+El usuario acepta los 3.113 candidatos combinados el 13/10/2026 mediante una zona
+`todo-el-mundo` que cubre la caja de todos los límites, sin exclusiones.
+`tools/export-vegetation.mjs` aplica esa revisión y publica centros y radios a
+0,01 m en `web/vegetation.json`; las exclusiones por ID permiten retirar copas
+más adelante sin modificar código. El método y sus umbrales son los de G5.1,
+con los límites temporales y de detección descritos arriba. Las posiciones y tamaños
+siguen siendo aproximados; la aceptación completa no constituye un inventario de arbolado.
+
+El juego carga la capa opcional y escala cada árbol con `clamp(r / 1,6, 0,6, 1,8)`.
+Añade los puntos OSM y los árboles de plaza que no tengan otro centro a menos de
+`max(vegetation.spacing, radio detectado)`. Las copas con altura MDSnV menor de 5 m que no
+salen solo de la vía de imagen se publican aparte como `shrubs` y se dibujan como arbustos
+a su tamaño: en isletas de rotondas y jardines el IGN no separa bien arbustos de árboles
+pequeños. Con la capa no hay relleno aleatorio de
+parques: lo retiró el usuario tras ver la densidad de copas detectadas. Sin capa
+conserva exactamente la vegetación anterior, relleno incluido.
+Las copas detectadas de radio ≤ 2 m usan icosaedros sin subdivisión en sus cinco
+piezas; las mayores y los árboles anteriores conservan una subdivisión.

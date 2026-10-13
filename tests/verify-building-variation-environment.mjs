@@ -1,8 +1,11 @@
-// Sonda aislada: vegetación inicial y 600 pasos de actores, comparables con 60c3e7a.
+// Sonda aislada: vegetación inicial y 600 pasos de actores. G5.3 adopta las copas
+// revisadas; --without-vegetation conserva la comparación con el entorno anterior.
 import { createHash } from 'node:crypto';
 import { createRuntime } from './runtime-harness.mjs';
 
-const { g } = await createRuntime();
+const { g } = await createRuntime({
+  failedAssets: process.argv.includes('--without-vegetation') ? ['vegetation.json'] : [],
+});
 const hash = () => createHash('sha256');
 const bytes = (array) => Buffer.from(array.buffer, array.byteOffset, array.byteLength);
 const geometryHash = (geometry) => {

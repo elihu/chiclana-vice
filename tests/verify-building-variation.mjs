@@ -125,6 +125,6 @@ assert.equal(probe.status, 0, probe.stderr);
 assert.deepEqual(
   JSON.parse(probe.stdout),
   baseline.environment,
-  'vegetación inicial y 600 pasos de actores idénticos a la rama anterior',
+  'vegetación inicial y 600 pasos de actores idénticos a la referencia adoptada',
 );
-console.log('Vegetación y actores conservados con randomSeed=' + design.randomSeed);
+console.log('Vegetación y actores coinciden con la referencia; randomSeed=' + design.randomSeed);

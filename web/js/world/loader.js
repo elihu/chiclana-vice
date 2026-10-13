@@ -117,6 +117,7 @@ export async function loadLayers() {
     streetObjects,
     designs,
     cityDesign,
+    vegetation,
   ] = await Promise.all([
     loadWorld(),
     orthophoto,
@@ -139,6 +140,9 @@ export async function loadLayers() {
       if (!r.ok) throw Error('No se ha podido cargar el diseño de la ciudad');
       return r.json();
     }),
+    fetch(asset('vegetation.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const { terrain, warning } = await loadTerrain(
     (file) => fetch(asset(file)),
@@ -160,6 +164,7 @@ export async function loadLayers() {
     streetObjects,
     designs,
     cityDesign,
+    vegetation,
     terrain,
     warning: terrain.manifest?.preview
       ? 'Relieve provisional: superficies y accesos pendientes de revisión'

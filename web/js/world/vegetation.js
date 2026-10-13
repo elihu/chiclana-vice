@@ -1,7 +1,7 @@
 import { insideBounds } from './bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
-import { TAU, lerp, pInside } from '../core/math.js';
+import { TAU, clamp, lerp, pInside } from '../core/math.js';
 import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts } from '../engine/materials.js';
@@ -49,13 +49,29 @@ function addVegetationCells(root, source, kind, cellSize = 255) {
 }
 
 export function buildTrees() {
+  const started = performance.now();
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
   gfx.scene.add(vegetation);
   // Densidad, separaciones y árboles de la plaza en web/city-design.json (sección `vegetation`).
   const rules = world.cityDesign.vegetation;
-  let points = [...world.city.trees];
-  for (const a of world.city.areas) {
+  const layer = world.vegetation;
+  if (layer && (layer.version !== 1 || !Array.isArray(layer.trees)))
+    throw Error('Capa de vegetación incompatible');
+  let points = (layer?.trees ?? []).map((p) => {
+    if (p.length !== 3 || !p.every(Number.isFinite) || p[2] <= 0) throw Error('Copa incompatible');
+    return p;
+  });
+  const counts = { layer: points.length, osm: 0, market: 0, park: 0 };
+  const nearTree = (x, z) =>
+    points.some((p) => Math.hypot(x - p[0], z - p[1]) < Math.max(rules.spacing, p[2] ?? 0));
+  for (const p of world.city.trees) {
+    if (layer && nearTree(...p)) continue;
+    points.push(p);
+    counts.osm++;
+  }
+  // Con la capa de copas, los parques ya tienen sus árboles: no se rellenan al azar.
+  for (const a of layer ? [] : world.city.areas) {
     if (a.kind !== 'park' || a.p.length < 3) continue;
     let xs = a.p.map((p) => p[0]),
       zs = a.p.map((p) => p[1]),
@@ -77,10 +93,11 @@ export function buildTrees() {
         inBuilding(x, z, rules.buildingClearance) ||
         !near ||
         near.d < near.s.width / 2 + rules.roadClearance ||
-        points.some((p) => Math.hypot(x - p[0], z - p[1]) < rules.spacing)
+        nearTree(x, z)
       )
         continue;
       points.push([x, z]);
+      counts.park++;
     }
   }
   // Street trees at the market plaza, kept off the carriageway and facades.
@@ -90,14 +107,17 @@ export function buildTrees() {
       z = lerp(market.from[1], market.to[1], i / (market.count - 1)) + market.shift[1];
     let near = nearestRoad(x, z);
     if (
+      (!layer || !nearTree(x, z)) &&
       !inBuilding(x, z, market.buildingClearance) &&
       near &&
       near.d > near.s.width / 2 + market.roadClearance &&
       !streetEnvironment.colliders.some(
         (p) => Math.hypot(x - p.x, z - p.z) < market.colliderClearance,
       )
-    )
+    ) {
       points.push([x, z]);
+      counts.market++;
+    }
   }
   const branchGeometry = new THREE.CylinderGeometry(0.045, 0.09, 2, 5),
     trunkGeometry = new THREE.CylinderGeometry(0.13, 0.23, 3.3, 7),
@@ -120,18 +140,27 @@ export function buildTrees() {
       mat('#ffffff', { roughness: 1 }),
       points.length * 5,
     ),
+    smallCrowns = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(1, 0),
+      crowns.material,
+      points.filter((p) => p.length === 3 && p[2] <= 2).length * 5,
+    ),
     dummy = new THREE.Object3D(),
     color = new THREE.Color();
-  let k = 0;
+  let k = 0,
+    smallK = 0;
   points.forEach((p, i) => {
-    let size = 0.8 + rnd() * 0.55,
+    let randomSize = 0.8 + rnd() * 0.55,
+      size = p.length === 3 ? clamp(p[2] / 1.6, 0.6, 1.8) : randomSize,
       h = 3.3 * size,
-      baseY = surfaceHeightAt(...p);
+      baseY = surfaceHeightAt(p[0], p[1]);
     dummy.position.set(p[0], baseY + h / 2, p[1]);
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(size, size, size);
     dummy.updateMatrix();
     wood.setMatrixAt(i, dummy.matrix);
+    const small = p.length === 3 && p[2] <= 2,
+      crownMesh = small ? smallCrowns : crowns;
     for (let j = 0; j < 5; j++) {
       let angle = (j * TAU) / 5 + rnd() * 0.3,
         rad = j === 4 ? 0 : 1.05 * size;
@@ -147,24 +176,33 @@ export function buildTrees() {
         (1.4 + rnd() * 0.35) * size,
       );
       dummy.updateMatrix();
-      crowns.setMatrixAt(k, dummy.matrix);
+      const index = small ? smallK++ : k++;
+      crownMesh.setMatrixAt(index, dummy.matrix);
       color.setHSL(0.23 + rnd() * 0.08, 0.18 + rnd() * 0.13, 0.24 + rnd() * 0.13);
-      crowns.setColorAt(k++, color);
+      crownMesh.setColorAt(index, color);
     }
     if (!streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
       streetEnvironment.colliders.push({
         x: p[0],
         z: p[1],
         r: 0.23 * size,
-        y: surfaceHeightAt(...p),
+        y: baseY,
       });
   });
-  wood.castShadow = crowns.castShadow = true;
-  crowns.receiveShadow = true;
+  crowns.count = k;
+  wood.castShadow = crowns.castShadow = smallCrowns.castShadow = true;
+  crowns.receiveShadow = smallCrowns.receiveShadow = true;
   addVegetationCells(vegetation, wood, 'wood');
   addVegetationCells(vegetation, crowns, 'crowns');
+  addVegetationCells(vegetation, smallCrowns, 'crowns-small');
   streetEnvironment.trees = points.length;
   // Low shrubs use the same compact instancing approach in mapped green areas.
+  // Copas bajas de la capa (ver tools/export-vegetation.mjs): arbustos a su tamaño.
+  const layerShrubs = (layer?.shrubs ?? []).map((p) => {
+    if (p.length !== 3 || !p.every(Number.isFinite) || p[2] <= 0)
+      throw Error('Arbusto incompatible');
+    return p;
+  });
   const shrubs = [];
   for (const a of world.city.areas) {
     if (a.kind !== 'park') continue;
@@ -184,7 +222,7 @@ export function buildTrees() {
   let leaves = new THREE.InstancedMesh(
     new THREE.IcosahedronGeometry(1, 1),
     mat('#667f51'),
-    shrubs.length,
+    shrubs.length + layerShrubs.length,
   );
   shrubs.forEach((p, i) => {
     dummy.position.set(p[0], surfaceHeightAt(...p) + 0.42, p[1]);
@@ -193,6 +231,17 @@ export function buildTrees() {
     dummy.updateMatrix();
     leaves.setMatrixAt(i, dummy.matrix);
   });
+  layerShrubs.forEach(([x, z, r], i) => {
+    const w = clamp(r * 0.8, 0.6, 2.4),
+      h = clamp(r * 0.45, 0.45, 1.2);
+    dummy.position.set(x, surfaceHeightAt(x, z) + h * 0.75, z);
+    dummy.rotation.set(0, i, 0);
+    dummy.scale.set(w, h, w * 0.92);
+    dummy.updateMatrix();
+    leaves.setMatrixAt(shrubs.length + i, dummy.matrix);
+  });
   leaves.castShadow = true;
   addVegetationCells(vegetation, leaves, 'shrubs');
+  streetEnvironment.treeSources = counts;
+  streetEnvironment.treeBuildMs = performance.now() - started;
 }

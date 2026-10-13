@@ -179,7 +179,20 @@ try {
         return {total,main:{calls:i.calls,triangles:i.triangles}};
       } finally {gfx.sun.castShadow=cast;r.info.autoReset=true;r.render(gfx.scene,gfx.camera);}
     })()`);
-      views.push({ point: point.name, camera: cameras[mode], ...measured });
+      const vegetation = await evaluate(`(async()=>{
+        const {gfx}=await import('./js/core/state.js');
+        const THREE=await import('./vendor/three.module.min.js');
+        const frustum=new THREE.Frustum().setFromProjectionMatrix(
+          new THREE.Matrix4().multiplyMatrices(gfx.camera.projectionMatrix,gfx.camera.matrixWorldInverse));
+        let instances=0,triangles=0,batches=0;
+        gfx.scene.traverse(o=>{
+          if(!o.isInstancedMesh || !o.name.startsWith('vegetation-') || !o.visible || !frustum.intersectsObject(o))return;
+          instances+=o.count;batches++;
+          triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*o.count;
+        });
+        return {instances,triangles,batches};
+      })()`);
+      views.push({ point: point.name, camera: cameras[mode], ...measured, vegetation });
       console.log(point.name, cameras[mode], JSON.stringify(measured));
       if (options.shots) {
         const shot = await send('Page.captureScreenshot', { format: 'png' });
@@ -202,7 +215,8 @@ try {
       triangles+=t;if(o.castShadow)shadowTriangles+=t;
     });
     return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.programs.length,
-      facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,quality:gfx.quality};
+      facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
+      treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);
   if (options.low && inventory.quality !== 'low') throw Error('Calidad ligera no aplicada');
   if (errors.length) throw Error('Errores de página:\n' + errors.join('\n'));

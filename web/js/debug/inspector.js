@@ -271,6 +271,7 @@ export function installInspector(api, { root = document.body } = {}) {
   buttons.appendChild(copyAnchor);
   buttons.appendChild(copyFix);
   root.appendChild(panel);
+  const selectTree = installTreeReview(root, api.scene);
 
   let current = null;
   const show = (info) => {
@@ -314,10 +315,293 @@ export function installInspector(api, { root = document.body } = {}) {
     )
       return;
     const point = pickPoint(e, api.scene);
-    if (point) show(inspectPoint(point.x, point.z, point.y));
+    if (point) {
+      if (!selectTree(point)) show(inspectPoint(point.x, point.z, point.y));
+    }
   });
   canvas.addEventListener('pointercancel', () => {
     down = null;
   });
   return { panel, show };
+}
+
+// Archivos locales de revisión: no se solicitan desde web/ ni afectan al mundo jugable.
+export function validateTreeReview(review, candidates, fingerprint) {
+  if (review?.version !== 1 || review.candidatesSha256 !== fingerprint)
+    throw Error('La revisión corresponde a otra instantánea de candidatos.');
+  if (!Array.isArray(review.acceptedZones) || !Array.isArray(review.excludedCandidates))
+    throw Error('Zonas y exclusiones deben ser listas.');
+  const ids = new Set(candidates.map((c) => c.id)),
+    zoneIds = new Set();
+  for (const zone of review.acceptedZones) {
+    const r = zone.rect;
+    if (
+      typeof zone.id !== 'string' ||
+      !zone.id.trim() ||
+      zoneIds.has(zone.id) ||
+      !Array.isArray(r) ||
+      r.length !== 4 ||
+      !r.every(Number.isFinite) ||
+      r[0] >= r[1] ||
+      r[2] >= r[3]
+    )
+      throw Error('Zona aceptada inválida o repetida.');
+    zoneIds.add(zone.id);
+  }
+  if (
+    review.excludedCandidates.some((id) => !ids.has(id)) ||
+    new Set(review.excludedCandidates).size !== review.excludedCandidates.length
+  )
+    throw Error('Exclusión desconocida o repetida.');
+  return review;
+}
+
+export function treeCandidateStatus(candidate, review) {
+  if (review.excludedCandidates.includes(candidate.id)) return 'excluido';
+  return review.acceptedZones.some(
+    ({ rect: r }) =>
+      candidate.x >= r[0] && candidate.x <= r[1] && candidate.z >= r[2] && candidate.z <= r[3],
+  )
+    ? 'aceptado'
+    : 'pendiente';
+}
+
+function installTreeReview(root, scene) {
+  const make = (tag, text) => {
+    const e = document.createElement(tag);
+    if (text) e.textContent = text;
+    return e;
+  };
+  const toggle = make('button', 'Revisar copas'),
+    panel = make('aside'),
+    status = make('p', 'Carga tree-candidates.json. Cambios en memoria: descarga antes de cerrar.'),
+    candidatesInput = make('input'),
+    reviewInput = make('input'),
+    rect = make('input'),
+    zoneId = make('input'),
+    zones = make('select'),
+    selected = make('p', 'Toca cerca del centro de un anillo para seleccionarlo.'),
+    exclude = make('button', 'Excluir / restaurar candidato'),
+    save = make('button', 'Descargar tree-review.json'),
+    accept = make('button', 'Aceptar rectángulo'),
+    pilot = make('button', 'Rellenar rectángulo del piloto'),
+    remove = make('button', 'Quitar zona seleccionada');
+  toggle.className = 'treeReviewToggle';
+  panel.className = 'treeReviewPanel';
+  panel.hidden = true;
+  panel.setAttribute('aria-label', 'Revisión de copas');
+  const label = (text, input) => {
+    const l = make('label', text);
+    l.appendChild(input);
+    panel.appendChild(l);
+  };
+  panel.appendChild(make('strong', 'Copas: amarillo pendiente · verde aceptado · rojo excluido'));
+  panel.appendChild(status);
+  for (const input of [candidatesInput, reviewInput]) {
+    input.type = 'file';
+    input.accept = '.json,application/json';
+  }
+  label('Candidatos locales', candidatesInput);
+  label('Revisión existente (opcional)', reviewInput);
+  zoneId.value = 'zona-1';
+  label('Nombre único de zona', zoneId);
+  rect.placeholder = 'x0, x1, z0, z1';
+  label('Rectángulo en metros', rect);
+  for (const e of [pilot, accept, zones, remove, selected, exclude, save]) panel.appendChild(e);
+  root.appendChild(toggle);
+  root.appendChild(panel);
+  const overlay = new THREE.Group();
+  overlay.name = 'debug-tree-candidates';
+  overlay.visible = false;
+  scene.add(overlay);
+  let candidates = [],
+    review = null,
+    fingerprint = '',
+    current = null;
+  const redraw = () => {
+    for (const child of [...overlay.children]) {
+      child.geometry.dispose();
+      child.material.dispose();
+      overlay.remove(child);
+    }
+    if (!review) return;
+    const positions = [],
+      colors = [],
+      totals = { pendiente: 0, aceptado: 0, excluido: 0 },
+      palette = { pendiente: 0xffcc00, aceptado: 0x22ee55, excluido: 0xff3344 };
+    const segment = (x, z, nx, nz, color) => {
+      for (const [px, pz] of [
+        [x, z],
+        [nx, nz],
+      ]) {
+        positions.push(px, groundHeightAt(px, pz) + 0.4, pz);
+        colors.push(color.r, color.g, color.b);
+      }
+    };
+    for (const c of candidates) {
+      const state = treeCandidateStatus(c, review),
+        color = new THREE.Color(palette[state]);
+      totals[state]++;
+      for (let k = 0; k < 24; k++) {
+        const a = (k * Math.PI * 2) / 24,
+          b = ((k + 1) * Math.PI * 2) / 24;
+        segment(
+          c.x + c.r * Math.cos(a),
+          c.z + c.r * Math.sin(a),
+          c.x + c.r * Math.cos(b),
+          c.z + c.r * Math.sin(b),
+          color,
+        );
+      }
+    }
+    for (const { rect: r } of review.acceptedZones) {
+      const corners = [
+        [r[0], r[2]],
+        [r[1], r[2]],
+        [r[1], r[3]],
+        [r[0], r[3]],
+      ];
+      for (let k = 0; k < 4; k++)
+        segment(...corners[k], ...corners[(k + 1) % 4], new THREE.Color(0x22ddff));
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const lines = new THREE.LineSegments(
+      geometry,
+      new THREE.LineBasicMaterial({ vertexColors: true, depthTest: false, depthWrite: false }),
+    );
+    lines.renderOrder = 999;
+    overlay.add(lines);
+    zones.replaceChildren();
+    for (const zone of review.acceptedZones) {
+      const option = make('option', zone.id);
+      option.value = zone.id;
+      zones.appendChild(option);
+    }
+    status.textContent = `${candidates.length} copas: ${totals.pendiente} pendientes, ${totals.aceptado} aceptadas, ${totals.excluido} excluidas. Cambios en memoria: descarga para guardar.`;
+    selected.textContent = current
+      ? `${current.id}: ${treeCandidateStatus(current, review)} · radio ${current.r} m · ExG ${current.score}`
+      : 'Toca cerca del centro de un anillo.';
+    gfx.needsRender = true;
+  };
+  const action = (fn) => async () => {
+    try {
+      await fn();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  };
+  toggle.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    overlay.visible = !panel.hidden;
+    gfx.needsRender = true;
+  });
+  candidatesInput.addEventListener(
+    'change',
+    action(async () => {
+      const file = candidatesInput.files[0];
+      if (!file) return;
+      const text = await file.text(),
+        data = JSON.parse(text),
+        ids = new Set();
+      if (data.version !== 1 || !Array.isArray(data.candidates))
+        throw Error('Candidatos inválidos.');
+      for (const c of data.candidates) {
+        if (
+          typeof c.id !== 'string' ||
+          ids.has(c.id) ||
+          ![c.x, c.z, c.r, c.score].every(Number.isFinite) ||
+          c.r <= 0
+        )
+          throw Error('Candidato inválido o repetido.');
+        ids.add(c.id);
+      }
+      fingerprint = sha256Hex(new TextEncoder().encode(text));
+      candidates = data.candidates;
+      review = {
+        version: 1,
+        candidatesSha256: fingerprint,
+        acceptedZones: [],
+        excludedCandidates: [],
+      };
+      current = null;
+      redraw();
+    }),
+  );
+  reviewInput.addEventListener(
+    'change',
+    action(async () => {
+      if (!review) throw Error('Carga los candidatos primero.');
+      if (!reviewInput.files[0]) return;
+      review = validateTreeReview(
+        JSON.parse(await reviewInput.files[0].text()),
+        candidates,
+        fingerprint,
+      );
+      redraw();
+    }),
+  );
+  pilot.addEventListener('click', () => {
+    zoneId.value = 'frontagePilot';
+    rect.value = world.cityDesign.zones.frontagePilot.join(', ');
+  });
+  accept.addEventListener(
+    'click',
+    action(() => {
+      if (!review) throw Error('Carga los candidatos primero.');
+      const next = {
+        ...review,
+        acceptedZones: [
+          ...review.acceptedZones,
+          {
+            id: zoneId.value.trim(),
+            rect: rect.value.split(',').map((v) => (v.trim() ? Number(v) : NaN)),
+          },
+        ],
+      };
+      review = validateTreeReview(next, candidates, fingerprint);
+      redraw();
+    }),
+  );
+  remove.addEventListener('click', () => {
+    if (!review) return;
+    review.acceptedZones = review.acceptedZones.filter((zone) => zone.id !== zones.value);
+    redraw();
+  });
+  exclude.addEventListener('click', () => {
+    if (!current || !review) return;
+    const ids = review.excludedCandidates;
+    review.excludedCandidates = ids.includes(current.id)
+      ? ids.filter((id) => id !== current.id)
+      : [...ids, current.id];
+    redraw();
+  });
+  save.addEventListener(
+    'click',
+    action(() => {
+      if (!review) throw Error('Carga los candidatos primero.');
+      validateTreeReview(review, candidates, fingerprint);
+      const url = URL.createObjectURL(
+          new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }),
+        ),
+        link = make('a');
+      link.href = url;
+      link.download = 'tree-review.json';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }),
+  );
+  return (point) => {
+    if (panel.hidden || !review) return;
+    current =
+      candidates
+        .filter((c) => Math.hypot(c.x - point.x, c.z - point.z) <= Math.min(10, c.r + 2))
+        .sort(
+          (a, b) =>
+            Math.hypot(a.x - point.x, a.z - point.z) - Math.hypot(b.x - point.x, b.z - point.z),
+        )[0] ?? null;
+    redraw();
+    return true;
+  };
 }

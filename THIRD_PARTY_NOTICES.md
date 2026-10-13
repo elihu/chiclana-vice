@@ -72,6 +72,13 @@ origen y cuantizadas a 0,1 m. No se distribuye el ráster original. Fecha exacta
 adquisición y referencia vertical del recorte sin confirmar; la cuantización no
 implica precisión de 10 cm.
 Fuente: https://servicios.idee.es/wcs-inspire/mdt
+`vegetation.json`: obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE
+(scne.es) y de MDSNV 2008-2015 CC-BY 4.0 scne.es, consultado el 13/10/2026.
+Detección de copas y tamaños estimados por el proyecto, con filtros de imagen y
+altura normalizada de vegetación; centros y radios redondeados a 0,01 m y selección
+mediante zonas aceptadas y exclusiones. Posiciones aproximadas, no un inventario de
+arbolado. El MDSNV es anterior a la ortofoto y la fecha local del vuelo no está
+confirmada. No se redistribuye el ráster original.
 Conservar esta atribución y señalar modificaciones futuras.
 https://www.ign.es/web/ign/portal/politica-datos
 https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf

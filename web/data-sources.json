@@ -102,6 +102,19 @@
     },
     {
       "files": [
+        "vegetation.json"
+      ],
+      "source": "PNOA 2022-07 + MDSnV 2008–2015; detección y tamaños estimados por el proyecto",
+      "conditions": "CC-BY-4.0",
+      "attribution": "Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es) y de MDSNV 2008-2015 CC-BY 4.0 scne.es; detección de copas y tamaños estimados por el proyecto, posiciones aproximadas, no un inventario de arbolado",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "transformation": "Copas aceptadas por zonas y exclusiones; centros y radios redondeados a 0,01 m",
+      "sha256": {
+        "vegetation.json": "f303d522e07e7c15bfb04b54d863804eaf22af456579bf72c8534935f14f9b66"
+      }
+    },
+    {
+      "files": [
         "aerial/index.json",
         "aerial/hi/-4_-5.jpg",
         "aerial/lo/-4_-5.jpg",
