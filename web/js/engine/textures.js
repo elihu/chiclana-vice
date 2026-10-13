@@ -1,6 +1,46 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx } from '../core/state.js';
 
+// Un único juego de uniformes para todo el suelo; los tejados no los usan.
+export const detailUniforms = {
+  uDetailMap: { value: null },
+  uDetailScale: { value: 1.5 },
+  uDetailNear: { value: 8 },
+  uDetailFar: { value: 60 },
+  uDetailStrength: { value: 0.35 },
+};
+let detailStrength = 0.35;
+
+export function applyGroundDetailQuality() {
+  detailUniforms.uDetailStrength.value = gfx.quality === 'low' ? 0 : detailStrength;
+}
+
+export function setGroundDetail({ scale, near, far, strength } = {}) {
+  const next = {
+    scale: scale ?? detailUniforms.uDetailScale.value,
+    near: near ?? detailUniforms.uDetailNear.value,
+    far: far ?? detailUniforms.uDetailFar.value,
+    strength: strength ?? detailStrength,
+  };
+  if (
+    !Object.values(next).every(Number.isFinite) ||
+    next.scale <= 0 ||
+    next.near < 0 ||
+    next.far <= next.near ||
+    next.strength < 0 ||
+    next.strength > 1
+  )
+    throw Error(
+      'Detalle de suelo inválido: escala > 0, 0 ≤ cerca < lejos e intensidad entre 0 y 1',
+    );
+  detailUniforms.uDetailScale.value = next.scale;
+  detailUniforms.uDetailNear.value = next.near;
+  detailUniforms.uDetailFar.value = next.far;
+  detailStrength = next.strength;
+  applyGroundDetailQuality();
+  gfx.needsRender = true;
+}
+
 // Dato gris reproducible: no consume el azar compartido del mundo.
 export function groundDetailTexture() {
   const canvas = document.createElement('canvas');

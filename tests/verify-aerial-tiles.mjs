@@ -10,6 +10,9 @@ import {
 } from '../web/js/world/aerial-tiles.js';
 import { terrainGeometry, terrainTiles } from '../web/js/world/terrain-mesh.js';
 import { boundsBox } from '../web/js/world/bounds.js';
+import { detailUniforms } from '../web/js/engine/textures.js';
+import { applyQuality } from '../web/js/engine/renderer.js';
+import { adjustLight } from '../web/js/debug/inspector.js';
 
 export async function verifyAerialTiles({
   g,
@@ -18,6 +21,65 @@ export async function verifyAerialTiles({
   initialDesiredTiles,
   assetVersion,
 }) {
+  // Las cuatro anclas del parche deben existir en el vendor que realmente se publica.
+  for (const [stage, anchors] of [
+    ['vertexShader', ['#include <common>', '#include <project_vertex>']],
+    ['fragmentShader', ['#include <common>', '#include <map_fragment>']],
+  ])
+    for (const anchor of anchors) assert(THREE.ShaderLib.standard[stage].includes(anchor));
+  const groundMaterials = g.scene.getObjectByName('terrain-ground').children.map((o) => o.material);
+  for (const material of groundMaterials) {
+    assert.equal(material.customProgramCacheKey(), 'aerial-detail-v1');
+    const shader = { uniforms: {}, ...THREE.ShaderLib.standard };
+    material.onBeforeCompile(shader);
+    for (const [name, uniform] of Object.entries(detailUniforms))
+      assert.equal(shader.uniforms[name], uniform, 'uniformes compartidos entre teselas');
+    assert(shader.vertexShader.includes('vDetailXZ = detailWorld.xz'));
+    assert(shader.vertexShader.includes('distance(detailWorld.xyz, cameraPosition)'));
+    assert(shader.fragmentShader.includes('smoothstep(uDetailNear, uDetailFar, vDetailDist)'));
+    assert(shader.fragmentShader.includes('texture2D(uDetailMap, vDetailXZ / uDetailScale)'));
+  }
+  g.scene.traverse((o) => {
+    if (o.material && !groundMaterials.includes(o.material))
+      assert.notEqual(o.material.customProgramCacheKey(), 'aerial-detail-v1', 'solo el suelo');
+  });
+  const grain = detailUniforms.uDetailMap.value;
+  assert.equal(grain.image.width, 256);
+  assert.equal(grain.image.height, 256);
+  assert.equal(grain.wrapS, THREE.RepeatWrapping);
+  assert.equal(grain.wrapT, THREE.RepeatWrapping);
+  assert.equal(grain.colorSpace, THREE.NoColorSpace);
+  assert.equal(grain.anisotropy, Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4));
+  const savedQuality = gfx.quality,
+    versions = groundMaterials.map((m) => m.version);
+  gfx.quality = 'auto';
+  applyQuality();
+  assert.equal(detailUniforms.uDetailStrength.value, 0.35);
+  adjustLight({ detail: { scale: 2, near: 10, far: 50, strength: 0.2 } });
+  assert.equal(detailUniforms.uDetailScale.value, 2);
+  assert.equal(detailUniforms.uDetailNear.value, 10);
+  assert.equal(detailUniforms.uDetailFar.value, 50);
+  assert.equal(detailUniforms.uDetailStrength.value, 0.2);
+  gfx.quality = 'low';
+  applyQuality();
+  assert.equal(detailUniforms.uDetailStrength.value, 0);
+  adjustLight({ detail: { strength: 0.4 } });
+  assert.equal(detailUniforms.uDetailStrength.value, 0, 'debug respeta ligero');
+  gfx.quality = 'auto';
+  applyQuality();
+  assert.equal(detailUniforms.uDetailStrength.value, 0.4, 'restaura intensidad elegida');
+  assert.deepEqual(
+    groundMaterials.map((m) => m.version),
+    versions,
+    'detalle sin recompilación',
+  );
+  for (const detail of [{ scale: 0 }, { near: -1 }, { far: 10 }, { strength: 2 }, { near: NaN }])
+    assert.throws(() => adjustLight({ detail }), /Detalle de suelo inválido/);
+  adjustLight({ detail: { scale: 1.5, near: 8, far: 60, strength: 0.35 } });
+  gfx.quality = savedQuality;
+  applyQuality();
+  console.log('Detalle del suelo: anclas del vendor, uniformes compartidos, debug y calidad OK');
+
   const initial = initialAerialRequests.filter((u) => /aerial\/(hi|lo)\//.test(u));
   assert(initial.length <= 9, 'solo las teselas del radio al arrancar');
   assert(

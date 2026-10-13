@@ -8,14 +8,16 @@ import { pInside, pointSeg } from '../core/math.js';
 import { sha256Hex } from '../world/corrections.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { setAerialTint } from '../world/aerial-tiles.js';
+import { setGroundDetail } from '../engine/textures.js';
 
-export function adjustLight({ exposure, hemi, sun, aerial } = {}) {
+export function adjustLight({ exposure, hemi, sun, aerial, detail } = {}) {
   for (const [name, value] of Object.entries({ exposure, hemi, sun, aerial }))
     if (
       value !== undefined &&
       (!Number.isFinite(value) || value < 0 || (name === 'aerial' && value > 1))
     )
       throw Error(`Parámetro de luz inválido: ${name}`);
+  if (detail !== undefined) setGroundDetail(detail);
   if (exposure !== undefined) gfx.renderer.toneMappingExposure = exposure;
   if (hemi !== undefined)
     gfx.scene.traverse((object) => {

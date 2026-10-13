@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
+import { detailUniforms, groundDetailTexture } from '../engine/textures.js';
 
 // Gris sRGB elegido en G2.2 (combinación B).
 const AERIAL_TINT = 0.78,
@@ -35,14 +36,49 @@ export const aerialLevel = () => (gfx.quality === 'low' || gfx.coarse ? 'lo' : '
 export const tileKey = (i, j) => `${i}_${j}`;
 
 export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
+  const { detail, ...materialOptions } = options;
   const key = tileKey(i, j);
   if (!materials.has(key)) materials.set(key, new Set());
   const m = new THREE.MeshStandardMaterial({
     map: loaded.get(key)?.texture ?? world.groundTexture,
-    ...options,
+    ...materialOptions,
   });
   m.userData.plainColor = plainColor;
   m.color.set(m.map ? aerialTint() : plainColor);
+  if (detail) {
+    detailUniforms.uDetailMap.value ??= groundDetailTexture();
+    m.customProgramCacheKey = () => 'aerial-detail-v1';
+    m.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, detailUniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          '#include <common>',
+          '#include <common>\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;',
+        )
+        .replace(
+          '#include <project_vertex>',
+          `#include <project_vertex>
+          vec4 detailWorld = modelMatrix * vec4(transformed, 1.0);
+          vDetailXZ = detailWorld.xz;
+          vDetailDist = distance(detailWorld.xyz, cameraPosition);`,
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform sampler2D uDetailMap;
+          uniform float uDetailScale, uDetailNear, uDetailFar, uDetailStrength;
+          varying vec2 vDetailXZ; varying float vDetailDist;`,
+        )
+        .replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>
+          float detailFade = 1.0 - smoothstep(uDetailNear, uDetailFar, vDetailDist);
+          vec3 detail = texture2D(uDetailMap, vDetailXZ / uDetailScale).rgb * 2.0;
+          diffuseColor.rgb *= mix(vec3(1.0), detail, detailFade * uDetailStrength);`,
+        );
+    };
+  }
   materials.get(key).add(m);
   return m;
 }

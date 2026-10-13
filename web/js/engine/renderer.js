@@ -2,6 +2,7 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { $ } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
+import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
 const EXPOSURE = 1.05,
@@ -98,6 +99,7 @@ export function resizeRenderer() {
 // Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
 export function applyQuality() {
   const low = gfx.quality === 'low';
+  applyGroundDetailQuality();
   gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
   gfx.renderer.shadowMap.enabled = !low;
   gfx.sun.castShadow = !low;
