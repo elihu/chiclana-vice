@@ -2,7 +2,9 @@
 import { createHash } from 'node:crypto';
 import { createRuntime } from './runtime-harness.mjs';
 
-const { g } = await createRuntime();
+const { g } = await createRuntime({
+  failedAssets: process.argv.includes('--without-vegetation') ? ['vegetation.json'] : [],
+});
 const hash = () => createHash('sha256');
 const bytes = (array) => Buffer.from(array.buffer, array.byteOffset, array.byteLength);
 const geometryHash = (geometry) => {

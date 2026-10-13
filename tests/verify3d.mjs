@@ -33,6 +33,7 @@ assert(
     'facade-designs.json',
     'city-design.json',
     'street-objects.json',
+    'vegetation.json',
   ])
     assert(requested.includes(file + '?v=' + assetVersion), 'versioned ' + file);
   assert(
@@ -390,6 +391,37 @@ const count = (kind) =>
     .reduce((n, m) => n + m.count, 0);
 assert.equal(count('wood'), g.streetEnvironment.trees);
 assert.equal(count('crowns'), g.streetEnvironment.trees * 5);
+{
+  const layer = JSON.parse(fs.readFileSync('web/vegetation.json'));
+  const counts = g.streetEnvironment.treeSources;
+  assert.equal(counts.layer, layer.trees.length);
+  assert.equal(
+    Object.values(counts).reduce((a, b) => a + b, 0),
+    g.streetEnvironment.trees,
+  );
+  const wood = vegetation.children.filter((m) => m.name.startsWith('vegetation-wood-'));
+  const matrix = new Real.Matrix4(),
+    position = new Real.Vector3(),
+    scale = new Real.Vector3();
+  const instances = [];
+  for (const mesh of wood)
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, matrix);
+      matrix.decompose(position, new Real.Quaternion(), scale);
+      instances.push({ x: position.x, z: position.z, size: scale.x, y: position.y });
+    }
+  for (const [x, z, r] of layer.trees) {
+    const matches = instances.filter((p) => Math.hypot(p.x - x, p.z - z) < 0.001);
+    assert.equal(matches.length, 1, 'cada copa tiene un único tronco');
+    const p = matches[0],
+      size = Math.max(0.6, Math.min(1.8, r / 1.6));
+    assert(Math.abs(p.size - size) < 1e-5, 'tamaño según radio');
+    assert(
+      Math.abs(p.y - g.surfaceHeightAt(x, z) - (3.3 * size) / 2) < 1e-4,
+      'tronco sobre superficie',
+    );
+  }
+}
 for (const m of vegetation.children) {
   assert(m.isInstancedMesh);
   assert(Number.isFinite(m.boundingSphere.radius));

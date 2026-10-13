@@ -1,4 +1,5 @@
 import './verify-bounds.mjs';
+import './verify-vegetation.mjs';
 import { insideBounds, validBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';

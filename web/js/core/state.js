@@ -69,6 +69,7 @@ export const streetEnvironment = {
 // --- Grupos de escalares (pasos 1.4 a 1.7) ---
 export const world = {
   city: null,
+  vegetation: null,
   facadeProfiles: null,
   facadeDesigns: null,
   cityDesign: null,

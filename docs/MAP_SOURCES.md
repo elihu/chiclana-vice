@@ -164,7 +164,7 @@ actores se declara por separado en `city-design.json.randomSeed`.
 ## Aproximaciones
 
 - [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.
-- Árboles: puntos de OSM más una plantación aproximada y determinista.
+- Árboles: copas aproximadas de ortofoto, puntos OSM y relleno determinista en huecos.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
   El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
@@ -261,7 +261,7 @@ en la caché externa. `provenance.ign` registra consulta, fecha, SHA-256 y resol
 No es un inventario de arbolado: centros, radios y correspondencias temporales son
 aproximados. El máximo puede aún tomar una copa vecina a menos de una celda; arbustos
 altos o con textura/sombra pasan y las copas oscuras o palmeras siguen ausentes.
-La revisión manual G5.2 sigue pendiente; la atribución publicada se abordará en G5.3.
+La decisión de aceptación y la publicación se describen en G5.3, más abajo.
 
 Con el recorte regenerado (consulta con margen de 20 m, acceso 13/10/2026), los mismos
 4.203 centros dan: central 1.884 (unión 2.369), ±1 2.975 (unión 3.115), ±2 3.334
@@ -272,3 +272,21 @@ resto 1.163; `ign` 1.811, `imagen` 137 y `ambos` 1.165. La vía de imagen preser
 la fila joven de plaza en `-1_0`, aunque aún faltan algunos centros visibles.
 Superposiciones de revisión en `/tmp/g5-arboles/combinado/{-1_0,-2_-3,2_0,0_0}.jpg`:
 IGN verde vivo, imagen verde claro, ambos verde oscuro y descartados rojo.
+
+## Copas publicadas y vegetación del juego (G5.3)
+
+El usuario acepta los 3.113 candidatos combinados el 13/10/2026 mediante una zona
+`todo-el-mundo` que cubre la caja de todos los límites, sin exclusiones.
+`tools/export-vegetation.mjs` aplica esa revisión y publica centros y radios a
+0,01 m en `web/vegetation.json`; las exclusiones por ID permiten retirar copas
+más adelante sin modificar código. El método y sus umbrales son los de G5.1,
+con los límites temporales y de detección descritos arriba. Las posiciones y tamaños
+siguen siendo aproximados; la aceptación completa no constituye un inventario de arbolado.
+
+El juego carga la capa opcional y escala cada árbol con `clamp(r / 1,6, 0,6, 1,8)`.
+Añade los puntos OSM y los árboles de plaza que no tengan otro centro a menos de
+`max(vegetation.spacing, radio detectado)`. Mantiene el relleno determinista de
+parques únicamente en huecos con esa misma separación, conservando las exclusiones
+de edificios, calzadas y límites. Sin capa conserva exactamente la vegetación anterior.
+Las copas detectadas de radio ≤ 2 m usan icosaedros sin subdivisión en sus cinco
+piezas; las mayores y los árboles anteriores conservan una subdivisión.

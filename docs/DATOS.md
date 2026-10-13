@@ -438,8 +438,8 @@ exactos del archivo de candidatos), `acceptedZones: [{ id, rect }]` y
 `excludedCandidates: [id]`. `tests/verify-design.mjs` valida la instantánea, zonas
 finitas de área positiva, identificadores únicos y exclusiones conocidas. Si se
 regeneran candidatos y cambia el SHA, hay que revisar una nueva instantánea: no se
-trasladan decisiones silenciosamente. La revisión inicial está vacía; G5.3 queda
-pendiente de la revisión del usuario, incluida la zona del piloto.
+trasladan decisiones silenciosamente. La revisión inicial estaba vacía; el usuario acepta toda la instantánea
+en G5.3 (13/10/2026), incluida la zona del piloto.
 
 Comprobaciones G5.1–G5.2: regeneración byte a byte idéntica, pruebas Python sintéticas
 (coordenadas, brillo, exclusión y separación de copas), `npm run check` antes de cada
@@ -447,7 +447,7 @@ commit y flujo de revisión en Chrome sin interfaz con SwiftShader (carga de los
 archivos, rectángulo del piloto, selección, exclusión/restauración, visibilidad y
 JSON descargado). La aceptación del piloto usada en esa prueba no se conserva en el
 archivo de autor. No se ha revisado manualmente todo el arbolado ni se ha probado
-rendimiento, GPU física o móvil; queda pendiente la revisión del usuario antes de G5.3.
+GPU física o móvil; la medición de presupuesto de G5.3 se documenta aparte.
 
 ## Copas publicadas (G5.3)
 
