@@ -317,3 +317,44 @@ frente a 33. La inspección de la superposición en esa tesela sigue sin recuper
 la alineación de árboles pequeños de Plaza Mayor. No se relajan el brillo ni los
 3 m² mínimos y no se añaden excepciones geográficas. Las imágenes de comparación
 quedan en `/tmp/g5-arboles/*-g51.jpg`; no son parte del repositorio.
+
+## 8. Revisión de copas (G5.2, archivo de autor)
+
+1. Sirve `web/` como se indica en DESARROLLO y abre `http://localhost:8080/?debug`.
+   Pulsa «Revisar copas»; carga `source-data/tree-candidates.json` en «Candidatos
+   locales» y después `source-data/tree-review.json` en «Revisión existente».
+   El selector permite abrir archivos fuera de la carpeta servida; no hay que copiarlos
+   a `web/`. Usa la vista aérea para comparar los anillos con la ortofoto.
+2. Amarillo = pendiente, verde = centro dentro de una zona aceptada, rojo = exclusión
+   individual (prevalece sobre cualquier zona). Los rectángulos aceptados llevan borde
+   cian. Los radios y centros son estimados; los anillos se dibujan sobre el terreno y
+   visibles a través de edificios para facilitar la revisión.
+3. Para aceptar una zona, escribe un nombre único y `x0, x1, z0, z1`, en metros,
+   y pulsa «Aceptar rectángulo». «Rellenar rectángulo del piloto» coloca
+   `zones.frontagePilot` de `city-design.json` en esos campos: **no lo acepta**.
+   Revisa esa zona antes de aceptarla. Puedes quitar una zona con el selector y
+   «Quitar zona seleccionada». Los límites del rectángulo están incluidos.
+4. Toca cerca del centro de un anillo (si hay varios se elige el más cercano) y pulsa
+   «Excluir / restaurar candidato». El identificador y estado aparecen en el panel.
+   Un arrastre de cámara no selecciona candidatos.
+5. «Descargar tree-review.json» guarda el borrador. Sustituye con esa descarga
+   `source-data/tree-review.json` y ejecuta `npm run check`. El navegador **no escribe
+   en el repositorio**: hasta descargar, los cambios solo están en memoria; cargar
+   candidatos de nuevo reinicia el borrador. Para continuar, vuelve a cargar candidatos
+   y la revisión guardada. No hay guardado automático ni persistencia local oculta.
+
+El archivo de autor lleva `version: 1`, `candidatesSha256` (SHA-256 de los bytes UTF-8
+exactos del archivo de candidatos), `acceptedZones: [{ id, rect }]` y
+`excludedCandidates: [id]`. `tests/verify-design.mjs` valida la instantánea, zonas
+finitas de área positiva, identificadores únicos y exclusiones conocidas. Si se
+regeneran candidatos y cambia el SHA, hay que revisar una nueva instantánea: no se
+trasladan decisiones silenciosamente. La revisión inicial está vacía; G5.3 queda
+pendiente de la revisión del usuario, incluida la zona del piloto.
+
+Comprobaciones G5.1–G5.2: regeneración byte a byte idéntica, pruebas Python sintéticas
+(coordenadas, brillo, exclusión y separación de copas), `npm run check` antes de cada
+commit y flujo de revisión en Chrome sin interfaz con SwiftShader (carga de los dos
+archivos, rectángulo del piloto, selección, exclusión/restauración, visibilidad y
+JSON descargado). La aceptación del piloto usada en esa prueba no se conserva en el
+archivo de autor. No se ha revisado manualmente todo el arbolado ni se ha probado
+rendimiento, GPU física o móvil; queda pendiente la revisión del usuario antes de G5.3.

@@ -337,3 +337,14 @@ sustituye a una prueba en móvil físico.
 - Código nuevo en el módulo de su capa (ver «Módulos del juego»); un módulo nuevo solo si
   la responsabilidad no encaja en uno existente.
 - Guías en `docs/` con nombres descriptivos en mayúsculas.
+
+### Revisión de copas en `?debug`
+
+«Revisar copas» abre la superposición local de candidatos PNOA. Carga los archivos
+`source-data/tree-candidates.json` y `source-data/tree-review.json` con sus selectores:
+no se publican ni se descargan como recursos del juego. Amarillo indica pendiente,
+verde aceptado por rectángulo y rojo excluido por candidato. El botón del piloto
+rellena su rectángulo para revisarlo; no acepta nada automáticamente. Las decisiones
+se descargan y se copian al archivo de autor; procedimiento y validación en
+[DATOS.md](DATOS.md#8-revisión-de-copas-g52-archivo-de-autor). La vegetación del juego
+sigue igual hasta G5.3.

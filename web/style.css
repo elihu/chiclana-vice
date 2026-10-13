@@ -1184,3 +1184,46 @@ textarea {
     11px/1.35 ui-monospace,
     monospace;
 }
+
+.treeReviewToggle {
+  position: fixed;
+  top: 5rem;
+  left: 0.5rem;
+  z-index: 80;
+}
+.treeReviewPanel {
+  position: fixed;
+  top: 8rem;
+  left: 0.5rem;
+  z-index: 80;
+  width: min(360px, calc(100vw - 1rem));
+  max-height: calc(100vh - 9rem);
+  overflow: auto;
+  padding: 0.8rem;
+  background: #17202bef;
+  color: white;
+  border: 1px solid #92a6bd;
+  border-radius: 8px;
+}
+.treeReviewPanel label {
+  display: block;
+  margin: 0.5rem 0;
+}
+.treeReviewPanel input,
+.treeReviewPanel select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+.treeReviewPanel button {
+  margin: 0.25rem;
+}
+.treeReviewPanel button,
+.treeReviewToggle {
+  color: white;
+  background: #344c35;
+  border: 1px solid #9cae81;
+  border-radius: 4px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
