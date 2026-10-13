@@ -4,12 +4,12 @@ import { gfx } from '../core/state.js';
 // Un único juego de uniformes para todo el suelo; los tejados no los usan.
 export const detailUniforms = {
   uDetailMap: { value: null },
-  uDetailScale: { value: 1.5 },
+  uDetailScale: { value: 8 },
   uDetailNear: { value: 8 },
   uDetailFar: { value: 60 },
-  uDetailStrength: { value: 0.35 },
+  uDetailStrength: { value: 1 },
 };
-let detailStrength = 0.35;
+let detailStrength = 1;
 
 export function applyGroundDetail(material) {
   detailUniforms.uDetailMap.value ??= groundDetailTexture();

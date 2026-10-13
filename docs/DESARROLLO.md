@@ -152,7 +152,7 @@ Probado a mano en un móvil Android; no en iOS.
 Para revisar el grano cercano del suelo, abre `?debug` y ajusta en la consola:
 
 ```js
-__luz({ detail: { scale: 1.5, near: 8, far: 60, strength: 0.35 } });
+__luz({ detail: { scale: 8, near: 8, far: 60, strength: 1 } });
 ```
 
 `scale` es el tamaño de repetición en metros; `near` y `far` son las distancias

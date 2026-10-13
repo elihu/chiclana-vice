@@ -70,7 +70,7 @@ export async function verifyAerialTiles({
     versions = groundMaterials.map((m) => m.version);
   gfx.quality = 'auto';
   applyQuality();
-  assert.equal(detailUniforms.uDetailStrength.value, 0.35);
+  assert.equal(detailUniforms.uDetailStrength.value, 1);
   adjustLight({ detail: { scale: 2, near: 10, far: 50, strength: 0.2 } });
   assert.equal(detailUniforms.uDetailScale.value, 2);
   assert.equal(detailUniforms.uDetailNear.value, 10);
@@ -91,7 +91,7 @@ export async function verifyAerialTiles({
   );
   for (const detail of [{ scale: 0 }, { near: -1 }, { far: 10 }, { strength: 2 }, { near: NaN }])
     assert.throws(() => adjustLight({ detail }), /Detalle de suelo inválido/);
-  adjustLight({ detail: { scale: 1.5, near: 8, far: 60, strength: 0.35 } });
+  adjustLight({ detail: { scale: 8, near: 8, far: 60, strength: 1 } });
   gfx.quality = savedQuality;
   applyQuality();
   console.log('Detalle del suelo: anclas del vendor, uniformes compartidos, debug y calidad OK');

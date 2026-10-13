@@ -518,6 +518,11 @@ una acera ancha. El usuario ajusta escala, distancias e intensidad con `?debug` 
 falta (extiende `__luz` con `detail`). Comprueba que en la vista aérea no cambia nada
 (fuera de 60 m no hay grano).
 
+**Resultado de la revisión (13/10/2026).** Con los valores de este plan el grano no se veía:
+solo cubría la ortofoto, no el pavimento, y a 1,5 m por repetición cada grano medía unos
+6 mm, por debajo de un píxel, así que el filtrado lo promediaba a gris. Se extendió a
+calzadas, aceras y plazas, y el usuario eligió en vivo `scale: 8` y `strength: 1`.
+
 ---
 
 ## Fase G5: árboles sobre las copas reales
