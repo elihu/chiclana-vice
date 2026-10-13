@@ -99,7 +99,10 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   ortofoto 0,78), ventanas continuas en los muros genéricos, anisotropía del suelo y
   sombra del sol encajada en su rejilla. G3 integrada el 13/10/2026: en ligero se ocultan
   fachadas y vegetación lejanas (Plaza Mayor: 283 llamadas frente a 471 en normal);
-  revisada por el usuario en el portátil, sin prueba en móvil ni FPS medidos; es el contenido de
+  revisada por el usuario en el portátil, sin prueba en móvil ni FPS medidos. G4 integrada el
+  13/10/2026: grano cercano en ortofoto y pavimento (escala 8 m, intensidad 1, se apaga
+  entre 8 y 60 m y en ligero), elegido por el usuario en vivo. Falta G5 (árboles sobre las
+  copas reales). Todo ello es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
