@@ -97,7 +97,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   en seguimiento, hasta un 9,6 % más de triángulos dibujados; G1.3 descartada). G2 integrada el
   13/10/2026 tras la revisión del usuario: luz B (exposición 1,05, cielo 1,7, sol 3,2 y
   ortofoto 0,78), ventanas continuas en los muros genéricos, anisotropía del suelo y
-  sombra del sol encajada en su rejilla; es el contenido de
+  sombra del sol encajada en su rejilla. G3 integrada el 13/10/2026: en ligero se ocultan
+  fachadas y vegetación lejanas (Plaza Mayor: 283 llamadas frente a 471 en normal);
+  revisada por el usuario en el portátil, sin prueba en móvil ni FPS medidos; es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
