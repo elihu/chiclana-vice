@@ -1,6 +1,16 @@
 {
   "version": 1,
   "candidatesSha256": "abb8fc1c2d50d5f975bd03b63fe5f754c32aa5ab6ea0f805287a077b46b94046",
-  "acceptedZones": [],
+  "acceptedZones": [
+    {
+      "id": "todo-el-mundo",
+      "rect": [
+        -820,
+        671.835,
+        -1120,
+        650
+      ]
+    }
+  ],
   "excludedCandidates": []
 }

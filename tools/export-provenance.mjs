@@ -77,6 +77,18 @@ const records = [
     transformation: 'Guarded edits of road attributes and vertices; base layers unchanged',
   },
 ];
+if (fs.existsSync(directory + '/vegetation.json')) {
+  const vegetation = JSON.parse(fs.readFileSync(directory + '/vegetation.json', 'utf8'));
+  records.push({
+    files: ['vegetation.json'],
+    source: vegetation.source,
+    conditions: vegetation.license,
+    attribution: vegetation.attribution,
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    transformation:
+      'Copas aceptadas por zonas y exclusiones; centros y radios redondeados a 0,01 m',
+  });
+}
 if (fs.existsSync(directory + '/aerial/index.json')) {
   const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
   records.push({

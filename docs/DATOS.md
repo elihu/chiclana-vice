@@ -448,3 +448,22 @@ archivos, rectángulo del piloto, selección, exclusión/restauración, visibili
 JSON descargado). La aceptación del piloto usada en esa prueba no se conserva en el
 archivo de autor. No se ha revisado manualmente todo el arbolado ni se ha probado
 rendimiento, GPU física o móvil; queda pendiente la revisión del usuario antes de G5.3.
+
+## Copas publicadas (G5.3)
+
+`source-data/tree-review.json` acepta zonas rectangulares (`id`, `rect` con
+`[x0, x1, z0, z1]`) y permite excluir candidatos por ID en `excludedCandidates`.
+La revisión debe corresponder al SHA-256 de `tree-candidates.json`; una exclusión
+prevalece sobre cualquier zona. La zona `todo-el-mundo` cubre la caja de todos los
+límites actuales, sin exclusiones, por decisión del usuario del 13/10/2026.
+
+```sh
+node tools/export-vegetation.mjs
+node tools/export-provenance.mjs
+npm test
+```
+
+El generador publica `web/vegetation.json` con centros y radios redondeados a
+0,01 m, sin puntuaciones ni campos de revisión. Conserva fuente y atribución.
+Tras regenerar candidatos, revisa de nuevo y actualiza la huella de la revisión;
+no reutilices exclusiones sobre otra instantánea sin comprobar sus IDs.
