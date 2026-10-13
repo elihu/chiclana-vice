@@ -1,6 +1,26 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx } from '../core/state.js';
 
+// Dato gris reproducible: no consume el azar compartido del mundo.
+export function groundDetailTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const context = canvas.getContext('2d');
+  let seed = 1949;
+  for (let y = 0; y < 256; y++)
+    for (let x = 0; x < 256; x++) {
+      seed = (seed * 16807) % 2147483647;
+      const value = 128 + (seed % 37) - 18;
+      context.fillStyle = `rgb(${value},${value},${value})`;
+      context.fillRect(x, y, 1, 1);
+    }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.anisotropy = Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+  return texture;
+}
+
 export function facadeTexture() {
   let c = document.createElement('canvas');
   c.width = 128;
