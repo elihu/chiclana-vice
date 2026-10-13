@@ -299,10 +299,10 @@ Las pruebas JS de contrato, malla y rampa están incluidas en `npm test`.
 ## 7. Candidatos de copas (G5.1, sin publicar)
 
 ```sh
-UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely python tools/detect-tree-crowns.py
+UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely --with rasterio --with pyproj python tools/detect-tree-crowns.py
 node tools/export-provenance.mjs
 npm run check
-UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely python tests/verify-tree-tools.py
+UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely --with rasterio --with pyproj python tests/verify-tree-tools.py
 ```
 
 Genera `source-data/tree-candidates.json`, nunca `web/vegetation.json`. Conserva SHA-256
@@ -314,7 +314,30 @@ descarte (`área`, `textura`, `sombra`); incluye márgenes y puntos fuera del mu
 El radio equivale a la superficie segmentada, no a una medida
 de altura. `score` es el ExG medio, no una probabilidad de que sea un árbol.
 
-Calibración del filtro tras la revisión del usuario (13/10/2026): las imágenes
+Combinación IGN (13/10/2026): añade `--download` la primera vez para obtener
+`~/.cache/chiclana-vice/ign/chiclana-ign-mdsn-v025-first.tif` y su `.access-date`.
+Sin el flag reutiliza la caché y falla si falta. Solo admite GeoTIFF georreferenciado
+EPSG:3042 de 2,5 m, hasta 10 MB y 1.000 × 1.000 celdas, cubriendo el mundo con margen.
+El recorte se solicita con GetCoverage desde los límites actuales más 20 m; nunca
+se guarda en Git. Se necesitan también `--with rasterio --with pyproj`.
+
+Conserva `(pieza amplia y máximo IGN ≥ 3 m) o filtro de imagen`, y guarda `ign`
+(en metros, `null` sin muestras válidas) y `source` (`ign`, `imagen`, `ambos`).
+La ventana elegida es centro ±1 celda; comparación y límites temporales en
+[MAP_SOURCES.md](MAP_SOURCES.md#candidatos-de-copas-en-revisión-g51).
+`--audit-dir /tmp/g5-arboles/combinado` guarda medidas y motivos de imagen de
+cada pieza; `source: null` identifica descartes evaluados dentro del núcleo y mundo.
+Tras regenerar, actualiza `candidatesSha256` de `source-data/tree-review.json`
+solo si la revisión está vacía; con decisiones existentes se requiere revisión
+explícita porque cambian los candidatos. Las pruebas sintéticas cubren además
+máximo, nodata, bordes, vecino lejano, unión de filtros y proyección de la consulta.
+Las 16 pruebas sintéticas pasan con rasterio y pyproj; la salida combinada se
+reproduce byte a byte con el mismo recorte y versiones. Se comprobaron además IDs
+únicos, separación global de 3 m, coherencia de `source`, recuentos y SHA de revisión.
+Las comparaciones y tablas siguientes corresponden exclusivamente al filtro de
+imagen anterior, no al resultado combinado.
+
+Calibración histórica del filtro de imagen tras la revisión del usuario (13/10/2026): las imágenes
 `/tmp/g5-arboles/filtro/{tesela}-antes.jpg` conservan los anillos originales;
 `{tesela}-despues.jpg` muestran verde = conservado y rojo = descartado, con motivo.
 Los JSON `*-audit.json` permiten consultar las medidas. No se incorporan imágenes
@@ -377,7 +400,7 @@ pavimento que el detector anterior ya rechazaba. Las superficies deportivas lisa
 se eliminan por textura, pero las copas densas y palmeras siguen dando pérdidas.
 La revisión `source-data/tree-review.json` permanece vacía; solo se actualiza su SHA.
 
-Las diez pruebas de `tests/verify-tree-tools.py` cubren coordenadas, segmentación,
+Las pruebas sintéticas de `tests/verify-tree-tools.py` cubren coordenadas, segmentación,
 exclusiones, separación, área pequeña, superficies lisas, textura, dirección de sombra,
 sombra ausente, sombra sobre edificio y oscuridad desconectada. Se ejecutan aparte
 con el comando `uv` anterior: `package.json` solo encadena verificadores Node;

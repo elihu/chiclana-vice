@@ -11,6 +11,62 @@ spec.loader.exec_module(module)
 
 
 class CrownsTest(unittest.TestCase):
+    def test_height_window_and_neighbour(self):
+        values = np.zeros((7, 7))
+        values[3, 5] = 12
+        self.assertEqual(module.sample_height(values, 3, 3), 0)
+        self.assertEqual(module.sample_height(values, 3, 3, 2), 12)
+        values[2, 3] = 3
+        self.assertEqual(module.sample_height(values, 3, 3), 3)
+        self.assertIsNone(module.sample_height(values, -1, 3))
+        self.assertEqual(module.sample_height(values, 0, 0), 0)
+        self.assertIsNone(module.sample_height(np.full((3, 3), np.nan), 1, 1))
+        self.assertIsNone(module.sample_height(np.full((3, 3), -1.), 1, 1))
+
+    def test_combined_decision(self):
+        self.assertEqual(module.candidate_source(3, False), 'ign')
+        self.assertEqual(module.candidate_source(0, True), 'imagen')
+        self.assertEqual(module.candidate_source(None, True), 'imagen')
+        self.assertEqual(module.candidate_source(3, True), 'ambos')
+        self.assertIsNone(module.candidate_source(2.99, False))
+        self.assertIsNone(module.candidate_source(None, False))
+
+    def test_wcs_bounds_and_projection(self):
+        from urllib.parse import parse_qs, urlparse
+        world = dict(origin=[-6.15, 36.42], bounds=[[-820, 672, -1120, 650]])
+        query = parse_qs(urlparse(module.coverage_url(world)).query)
+        self.assertEqual(query['coverageid'], ['mdsn_v025'])
+        project = module.game_projection(world, 3042)
+        subsets = query['subset']
+        for axis, value in zip(subsets, project(-820, -1120)):
+            low, high = map(float, axis[2:-1].split(','))
+            self.assertLess(low, value)
+            self.assertGreater(high, value)
+
+    def test_rejected_image_remains_broad(self):
+        rgb, part = self.fixture()
+        blocked = np.zeros(part.shape, dtype=bool)
+        audit = []
+        found = module.crowns(rgb, blocked, .25, direction=(-1, 0), audit=audit, keep_rejected=True)
+        self.assertTrue(found)
+        self.assertTrue(all(a['reason'] == 'sombra' for a in audit))
+
+    def test_missing_cache_message(self):
+        import tempfile
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(module.Path, 'home', return_value=Path(directory)):
+                with self.assertRaisesRegex(ValueError, 'Falta el recorte IGN.*--download'):
+                    module.load_height(dict(origin=[-6.15, 36.42], bounds=[[-10, 10, -10, 10]]), False)
+
+    def test_invalid_geotiff(self):
+        import rasterio
+        with rasterio.io.MemoryFile() as memory:
+            with memory.open(driver='GTiff', width=5, height=5, count=1, dtype='float32',
+                             crs='EPSG:4326', transform=rasterio.transform.from_origin(0, 0, 2.5, 2.5)) as raster:
+                with self.assertRaisesRegex(ValueError, 'EPSG:3042'):
+                    module.validate_raster(raster)
+
     def test_coordinates(self):
         index = dict(tile=255, margin=20.5, levels=dict(hi=[1184, .25]))
         self.assertEqual(module.pixel_to_game(0, 0, 0, 0, index), (-20.375, -20.375))

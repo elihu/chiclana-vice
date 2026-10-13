@@ -1,8 +1,11 @@
 """Candidatos aproximados PNOA, sin modificar ninguna capa publicada.
 
-uv run --no-project --with numpy --with pillow --with scipy --with shapely python tools/detect-tree-crowns.py
+uv run --no-project --with numpy --with pillow --with scipy --with shapely --with rasterio --with pyproj python tools/detect-tree-crowns.py
 """
 import argparse
+from datetime import date
+from urllib.parse import urlencode
+from urllib.request import urlopen
 import hashlib
 import importlib.metadata
 import json
@@ -10,6 +13,8 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pyproj
+import rasterio
 from PIL import Image
 from scipy import ndimage as ndi
 from scipy.spatial import cKDTree
@@ -18,6 +23,88 @@ from shapely.geometry import LineString, Polygon, box
 from shapely.ops import unary_union
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+ENDPOINT = 'https://wcs-mds.idee.es/mds'
+COVERAGE = 'mdsn_v025'
+
+
+def game_projection(world, crs):
+    origin = world['origin']
+    sx = 111320 * math.cos(math.radians(origin[1]))
+    transformer = pyproj.Transformer.from_crs(4326, crs, always_xy=True)
+    return lambda x, z: transformer.transform(origin[0] + x / sx, origin[1] - z / 111320)
+
+
+def coverage_url(world):
+    project = game_projection(world, 3042)
+    points = [project(x, z) for b in world['bounds']
+              for x in (b[0] - 20, b[1] + 20) for z in (b[2] - 20, b[3] + 20)]
+    xs, ys = zip(*points)
+    return ENDPOINT + '?' + urlencode([
+        ('service', 'WCS'), ('version', '2.0.1'), ('request', 'GetCoverage'),
+        ('coverageid', COVERAGE),
+        ('subset', f'x({math.floor(min(xs))},{math.ceil(max(xs))})'),
+        ('subset', f'y({math.floor(min(ys))},{math.ceil(max(ys))})'),
+        ('format', 'image/tiff')])
+
+
+def validate_raster(raster):
+    if (raster.driver != 'GTiff' or raster.crs != rasterio.crs.CRS.from_epsg(3042)
+            or raster.count != 1 or raster.width > 1000 or raster.height > 1000
+            or not all(2.4 < value < 2.6 for value in raster.res)):
+        raise ValueError('Se esperaba un recorte GeoTIFF local MDSnV EPSG:3042 de 2,5 m')
+
+
+def load_height(world, download):
+    path = Path.home() / '.cache/chiclana-vice/ign/chiclana-ign-mdsn-v025-first.tif'
+    url = coverage_url(world)
+    if download:
+        with urlopen(url, timeout=60) as response:
+            data = response.read(10_000_001)
+        if len(data) > 10_000_000 or data[:4] not in (b'II*\x00', b'MM\x00*'):
+            raise ValueError('El WCS no devolvió un GeoTIFF de menos de 10 MB')
+        with rasterio.io.MemoryFile(data) as memory:
+            with memory.open() as raster:
+                validate_raster(raster)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        path.with_suffix('.access-date').write_text(date.today().isoformat() + '\n')
+    if not path.exists():
+        raise ValueError(f'Falta el recorte IGN en {path}; ejecuta con --download')
+    if path.stat().st_size > 10_000_000:
+        raise ValueError('La caché IGN supera el máximo de 10 MB')
+    with rasterio.open(path) as raster:
+        validate_raster(raster)
+        values = raster.read(1, masked=True).astype(float).filled(np.nan)
+        transform = raster.transform
+        project = game_projection(world, raster.crs)
+        for b in world['bounds']:
+            for x in (b[0], b[1]):
+                for z in (b[2], b[3]):
+                    row, col = raster.index(*project(x, z))
+                    if not (1 <= row < raster.height - 1 and 1 <= col < raster.width - 1):
+                        raise ValueError('El recorte IGN no cubre los límites del mundo con margen')
+    provenance = dict(coverageid=COVERAGE, requestUrl=url,
+                      accessDate=path.with_suffix('.access-date').read_text().strip()
+                      if path.with_suffix('.access-date').exists() else None,
+                      sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                      period='2008–2015; fecha local del vuelo no confirmada',
+                      crs='EPSG:3042', resolution=list(raster.res))
+    return values, transform, project, provenance
+
+
+def sample_height(values, row, col, cells=1):
+    if not (0 <= row < values.shape[0] and 0 <= col < values.shape[1]):
+        return None
+    window = values[max(0, row-cells):row+cells+1, max(0, col-cells):col+cells+1]
+    valid = window[np.isfinite(window) & (window >= 0)]
+    return float(valid.max()) if valid.size else None
+
+
+def candidate_source(height, image_pass):
+    ign_pass = height is not None and height >= 3
+    return 'ambos' if ign_pass and image_pass else 'ign' if ign_pass else 'imagen' if image_pass else None
 
 
 def pixel_to_game(i, j, u, v, index):
@@ -76,7 +163,7 @@ def filter_crown(rgb, part, u, v, step, direction, buildings=None):
     return reason, dict(area=area, texture=texture, shadow=shadow)
 
 
-def crowns(rgb, blocked, step, opening=1, direction=None, buildings=None, audit=None):
+def crowns(rgb, blocked, step, opening=1, direction=None, buildings=None, audit=None, keep_rejected=False):
     norm = rgb / np.maximum(rgb.sum(axis=2, keepdims=True), 1)
     exg = 2 * norm[:, :, 1] - norm[:, :, 0] - norm[:, :, 2]
     raw = (exg > .10) & (rgb.mean(axis=2) >= 45) & ~blocked
@@ -126,7 +213,7 @@ def crowns(rgb, blocked, step, opening=1, direction=None, buildings=None, audit=
                                                direction, buildings[crop] if buildings is not None else None)
                 if audit is not None:
                     audit.append(dict(u=int(u), v=int(v), r=math.sqrt(area/math.pi), reason=reason, **metrics))
-                if reason:
+                if reason and not keep_rejected:
                     continue
             result.append((u, v,
                            math.sqrt(area / math.pi), float(exg[region][part].mean())))
@@ -137,11 +224,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=ROOT / 'source-data/tree-candidates.json')
     parser.add_argument('--audit-dir', type=Path)
+    parser.add_argument('--download', action='store_true', help='Descargar el recorte IGN a la caché externa')
     parser.add_argument('--opening', type=int, choices=[1, 2], default=1)
     args = parser.parse_args()
     read = lambda name: json.loads((ROOT / name).read_text())
     index, buildings, osm, world = map(read, ['web/aerial/index.json', 'web/buildings.json',
                                            'web/osm-world.json', 'web/world.json'])
+    try:
+        values, height_transform, project, ign_provenance = load_height(world, args.download)
+    except (ValueError, OSError, rasterio.errors.RasterioError) as error:
+        parser.error(str(error))
     polygons = [Polygon(b['p'], b.get('holes', [])).buffer(0) for b in buildings['buildings']]
     water = [Polygon(a['p']) for a in osm['areas'] if a['kind'] == 'water']
     roads = [LineString(r['p']).buffer(r['w'] / 2) for r in osm['roads']
@@ -179,9 +271,8 @@ def main():
         blocked = intersects_xy(geometry, x, z)
         footprint = intersects_xy(all_buildings, x, z)
         audit = []
-        found = crowns(rgb, blocked, step, args.opening, direction, footprint, audit)
-        if args.audit_dir:
-            (args.audit_dir / f'{tile}-audit.json').write_text(json.dumps(audit, ensure_ascii=False, indent=2))
+        found = crowns(rgb, blocked, step, args.opening, direction, footprint, audit, keep_rejected=True)
+        image_results = {(a['u'], a['v']): a for a in audit}
         for u, v, radius, score in found:
             cx, cz = pixel_to_game(i, j, u, v, index)
             # Solo el núcleo de la tesela: los márgenes permiten detectar sin duplicar.
@@ -189,11 +280,21 @@ def main():
                     j * index['tile'] <= cz < (j + 1) * index['tile'] and
                     intersects_xy(bounds, cx, cz)):
                 continue
+            row, col = rasterio.transform.rowcol(height_transform, *project(cx, cz))
+            height = sample_height(values, row, col)
+            evidence_row = image_results[(u, v)]
+            source = candidate_source(height, evidence_row['reason'] is None)
+            evidence_row.update(ign=height, source=source)
+            if source is None:
+                continue
             zone = ('parque' if contains_xy(parks, cx, cz) else 'plaza' if contains_xy(squares, cx, cz)
                     else 'calle' if contains_xy(streets, cx, cz) else 'otro')
             counts[zone] += 1
             candidates.append(dict(id=f'{tile}:{u}:{v}', x=round(cx, 3), z=round(cz, 3),
-                                   r=round(radius, 3), score=round(score, 4), tile=tile, zone=zone))
+                                   r=round(radius, 3), score=round(score, 4), tile=tile, zone=zone,
+                                   ign=height, source=source))
+        if args.audit_dir:
+            (args.audit_dir / f'{tile}-audit.json').write_text(json.dumps(audit, ensure_ascii=False, indent=2) + '\n')
         print(tile, len(candidates), flush=True)
     # Deduplicación global de bordes: la separación también rige entre teselas.
     accepted, cells = [], {}
@@ -210,12 +311,15 @@ def main():
     files = ['web/aerial/index.json', 'web/buildings.json', 'web/osm-world.json', 'web/world.json']
     files += [f'web/aerial/hi/{i}_{j}.jpg' for i, j in index['tiles']]
     provenance = dict(acquisition=index['acquisition'], source=index['source'],
-                      height='estimación por radio de copa; sin MDSnV',
+                      height='MDSnV IGN; máximo centro ±1 celda, en metros', ign=ign_provenance,
                       inputs={f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in files},
-                      versions={p: importlib.metadata.version(p) for p in ['numpy', 'pillow', 'scipy', 'shapely']})
+                      versions={p: importlib.metadata.version(p) for p in ['numpy', 'pillow', 'scipy', 'shapely', 'rasterio', 'pyproj']})
     output = dict(version=1, provenance=provenance,
                   method=dict(exgThreshold=.10, brightnessMin=45, opening=args.opening, closing=3,
-                              minimumArea=6, texture=dict(luminanceWeights=[.2126, .7152, .0722], windowPixels=5, minimumMedianLocalLuminanceStd=5,
+                              minimumArea=3, imageMinimumArea=6,
+                              height=dict(minimumMetres=3, windowCells=1, statistic='máximo válido no negativo',
+                              decision='(detección amplia y IGN >= 3 m) o filtro de imagen',
+                              windowDecision='±1 limita alturas vecinas sin exigir coincidencia en la celda central; comparación de ventanas documentada en docs/MAP_SOURCES.md'), texture=dict(luminanceWeights=[.2126, .7152, .0722], windowPixels=5, minimumMedianLocalLuminanceStd=5,
                               interiorErosionPixels=2, explanation='mediana interior sin bordes; rechaza superficies lisas también tras partir componentes grandes'),
                               shadow=dict(directionDegrees=angle, directionXZ=direction,
                               estimation='máximo de fracción oscura fuera de huellas de edificios desplazadas 2,4,6,8 m; pasos 15 grados; rejilla 1 m',
@@ -225,7 +329,8 @@ def main():
                               colourDecision='ExG 0,10 y brillo 45 conservados; sin mínimo de saturación: césped ExG 0,279 y pavimento ExG 0,030; endurecer color pierde copas apagadas',
                               peakSeparation=3, pixelSize=step,
                               radius='sqrt(área segmentada/pi)', score='ExG medio; no probabilidad'),
-                  counts=counts, candidates=candidates)
+                  counts=counts, sourceCounts={source: sum(c['source'] == source for c in candidates)
+                  for source in ['ign', 'imagen', 'ambos']}, candidates=candidates)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + '\n')
     print('Total:', len(candidates), counts)
 

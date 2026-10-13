@@ -197,8 +197,7 @@ decisión `validado para el juego`; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md
 PNOA de julio de 2022 y las capas actuales de edificios y OSM, sin publicar una capa
 ni sustituir los árboles del juego. Usa canales normalizados por R+G+B,
 ExG = 2g − r − b > 0,10 y brillo medio ≥ 45/255. Apertura de un píxel, cierre de
-tres y relleno de huecos. El filtro final exige 6 m² por copa partida (la
-auditoría conserva también las piezas desde 3 m² del detector anterior). Excluye edificios (respetando patios),
+tres y relleno de huecos. La detección amplia admite piezas desde 3 m²; la vía de imagen exige 6 m² por copa partida. Excluye edificios (respetando patios),
 agua y calzadas con la mitad de la anchura de cada vía; no excluye vías peatonales.
 Vuelve a aplicar las exclusiones tras cerrar y rellenar la máscara.
 
@@ -206,10 +205,9 @@ Separa componentes por máximos locales de distancia, con separación mínima de
 y asigna sus píxeles al máximo más cercano. Conserva solo centros dentro de los límites
 del mundo y del núcleo de cada tesela, usando el margen para evitar cortes artificiales.
 Posición en el máximo y radio equivalente a la superficie asignada: son aproximaciones,
-no un inventario de arbolado ni precisión topográfica. La altura futura se estimará por
-el radio, por decisión del usuario, sin MDSnV.
+no un inventario de arbolado ni precisión topográfica. El campo `ign` guarda el máximo MDSnV muestreado en metros; no mide la altura actual de cada árbol.
 
-Tras la revisión del usuario se exige textura: luminancia RGB con pesos
+La vía de imagen exige textura: luminancia RGB con pesos
 0,2126/0,7152/0,0722, desviación en ventanas de 5 × 5 píxeles (1,25 m), mediana
 ≥ 5/255 dentro de cada pieza erosionada dos píxeles para evitar el contraste del
 borde. Si no queda interior, se mide la pieza completa. Así se descartan también
@@ -242,3 +240,35 @@ faltando. El resultado requiere revisión manual; véase la calibración en DATO
 El campo `zone` clasifica centros por prioridad: parque OSM, plaza OSM, entorno de
 calzada (hasta 8 m desde su borde), resto. Son categorías para revisar resultados,
 no especies ni usos de suelo certificados.
+
+La combinación aprobada el 13/10/2026 conserva una pieza amplia si el MDSnV es
+≥ 3 m **o** si pasa el filtro de imagen anterior. `source` distingue `ign`, `imagen`
+y `ambos`; la deduplicación global mantiene la separación de 3 m. El IGN se muestrea
+con pyproj, de WGS84 a EPSG:3042, usando la conversión local del auditor de alturas;
+se toma el máximo válido no negativo del centro ±1 celda (3 × 3, unos 7,5 m).
+La celda central pierde demasiadas copas por desfase y resolución; la ventana por
+radio puede heredar la altura de una copa vecina. Comparación con el recorte inicial del revisor sobre los 4.203 centros
+anteriores: centro 1.800, ±1 celda 2.947, ±2 celdas 3.337 y ±ceil(r/2,5) 3.055
+superan 3 m. La unión con los 1.305 centros de imagen da respectivamente 2.295,
+3.099, 3.412 y 3.182, antes de volver a deduplicar la salida combinada.
+
+Fuente: [WCS MDS del IGN](https://wcs-mds.idee.es/mds?service=WCS&request=GetCapabilities),
+GetCoverage `mdsn_v025`, resolución nominal 2,5 m, EPSG:3042. Primera cobertura
+**2008–2015**, sin fecha local confirmada, anterior a la ortofoto de 2022: faltan
+árboles jóvenes y pueden persistir alturas de vegetación retirada. Se descarga solo
+la caja de los límites del mundo más 20 m; el original y la fecha de acceso quedan
+en la caché externa. `provenance.ign` registra consulta, fecha, SHA-256 y resolución.
+No es un inventario de arbolado: centros, radios y correspondencias temporales son
+aproximados. El máximo puede aún tomar una copa vecina a menos de una celda; arbustos
+altos o con textura/sombra pasan y las copas oscuras o palmeras siguen ausentes.
+La revisión manual G5.2 sigue pendiente; la atribución publicada se abordará en G5.3.
+
+Con el recorte regenerado (consulta con margen de 20 m, acceso 13/10/2026), los mismos
+4.203 centros dan: central 1.884 (unión 2.369), ±1 2.975 (unión 3.115), ±2 3.334
+(unión 3.411) y por radio 3.079 (unión 3.198). El WCS ajusta ligeramente la rejilla
+al rectángulo solicitado; el SHA del recorte fija qué muestreo se ha usado.
+Tras regenerar y deduplicar quedan **3.113**: parque 1.182, plaza 82, calle 686,
+resto 1.163; `ign` 1.811, `imagen` 137 y `ambos` 1.165. La vía de imagen preserva
+la fila joven de plaza en `-1_0`, aunque aún faltan algunos centros visibles.
+Superposiciones de revisión en `/tmp/g5-arboles/combinado/{-1_0,-2_-3,2_0,0_0}.jpg`:
+IGN verde vivo, imagen verde claro, ambos verde oscuro y descartados rojo.
