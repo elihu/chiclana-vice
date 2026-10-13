@@ -90,3 +90,39 @@ Las huellas geográficas, paleta, semilla, rutas y parámetros de render se cons
 Las capturas de Alameda en seguimiento muestran que la alineación permanece
 y cambian tamaños y siluetas; la vista aérea permite revisar la densidad nueva.
 Queda pendiente la valoración visual del usuario.
+
+## Referencias actualizadas por decisión del usuario
+
+La referencia de paleta sigue en `60c3e7a`: 7.862 índices, SHA-256
+`5cb717ca2fe87bdc451d5e30952490b73b5a3b09d1087bce60af869d004a85f2` y semilla `2165021796` idénticos.
+Solo cambian `environment.vegetation` y `environment.trace`:
+
+- Vegetación: `56a76b5c577c203b8403b92ac1d95f56936284541bdbad096262019efc01707c` → `43c15c8f65af78ecac4ffb8233a50b46f85aafea3134c02a64dcbcdccd619904`.
+- Traza de 600 pasos (también `behaviour.trace` de `scene-fingerprint`):
+  `e63172d1d226305486b3e7d81696b551274f377f7c1b7316f30300170badecca` → `e8760e06c233c80f5a94ffde40fa6fb07e3eaf55db1ab14f951181269f082d93`.
+
+La primera huella recoge más árboles, matrices, colores y geometría simplificada
+de copas pequeñas. La segunda cambia por las colisiones nuevas y por la secuencia
+compartida de azar: más árboles consumen más muestras antes de crear los actores.
+No se modifica `randomSeed` ni se fuerzan posiciones para recuperar la traza antigua.
+`behaviour.domAfterInit` y `domAfterTrace`, `routes` y `render` son idénticos.
+La actualización queda en un commit separado para revisión; no altera contornos,
+plantas, alturas, carreteras ni referencias geográficas.
+
+`verify-building-variation-environment.mjs --without-vegetation` reproduce exactamente
+las dos huellas antiguas; el verificador normal usa la referencia nueva.
+Todos los commits se comprobaron con `npm run check` sobre el árbol final,
+con la actualización autorizada de referencias pendiente hasta su commit separado.
+La instantánea intermedia del juego necesita ese último commit para pasar la
+comparación de entorno. No se rebajan aserciones ni se regenera la paleta.
+
+La comparación de capturas da 0,000217–32,881510 % de píxeles distintos en normal
+y 0–31,809570 % en ligero. Supera deliberadamente el umbral de 0,5 % en 9/15
+vistas normales y 8/15 ligeras; destaca Santa Ana, donde aparecen muchas copas
+antes ausentes. Se inspeccionaron Alameda en seguimiento, Plaza Mayor en seguimiento
+y Santa Ana aérea: diferencias de densidad, tamaños y siluetas, sin cambios de
+encuadre ni en las bases cartográficas. Las 60 capturas quedan disponibles para
+la revisión visual del usuario.
+
+Regenerar capa y procedencia reproduce sus bytes. Servidores propios cerrados
+y comprobación final sin procesos Chrome `chiclana-*` ni servidores de medición.
