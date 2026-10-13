@@ -197,6 +197,12 @@ export function buildTrees() {
   addVegetationCells(vegetation, smallCrowns, 'crowns-small');
   streetEnvironment.trees = points.length;
   // Low shrubs use the same compact instancing approach in mapped green areas.
+  // Copas bajas de la capa (ver tools/export-vegetation.mjs): arbustos a su tamaño.
+  const layerShrubs = (layer?.shrubs ?? []).map((p) => {
+    if (p.length !== 3 || !p.every(Number.isFinite) || p[2] <= 0)
+      throw Error('Arbusto incompatible');
+    return p;
+  });
   const shrubs = [];
   for (const a of world.city.areas) {
     if (a.kind !== 'park') continue;
@@ -216,7 +222,7 @@ export function buildTrees() {
   let leaves = new THREE.InstancedMesh(
     new THREE.IcosahedronGeometry(1, 1),
     mat('#667f51'),
-    shrubs.length,
+    shrubs.length + layerShrubs.length,
   );
   shrubs.forEach((p, i) => {
     dummy.position.set(p[0], surfaceHeightAt(...p) + 0.42, p[1]);
@@ -224,6 +230,15 @@ export function buildTrees() {
     dummy.scale.set(0.8, 0.55, 0.75);
     dummy.updateMatrix();
     leaves.setMatrixAt(i, dummy.matrix);
+  });
+  layerShrubs.forEach(([x, z, r], i) => {
+    const w = clamp(r * 0.8, 0.6, 2.4),
+      h = clamp(r * 0.45, 0.45, 1.2);
+    dummy.position.set(x, surfaceHeightAt(x, z) + h * 0.75, z);
+    dummy.rotation.set(0, i, 0);
+    dummy.scale.set(w, h, w * 0.92);
+    dummy.updateMatrix();
+    leaves.setMatrixAt(shrubs.length + i, dummy.matrix);
   });
   leaves.castShadow = true;
   addVegetationCells(vegetation, leaves, 'shrubs');

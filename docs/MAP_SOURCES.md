@@ -285,7 +285,10 @@ siguen siendo aproximados; la aceptación completa no constituye un inventario d
 
 El juego carga la capa opcional y escala cada árbol con `clamp(r / 1,6, 0,6, 1,8)`.
 Añade los puntos OSM y los árboles de plaza que no tengan otro centro a menos de
-`max(vegetation.spacing, radio detectado)`. Con la capa no hay relleno aleatorio de
+`max(vegetation.spacing, radio detectado)`. Las copas con altura MDSnV menor de 5 m que no
+salen solo de la vía de imagen se publican aparte como `shrubs` y se dibujan como arbustos
+a su tamaño: en isletas de rotondas y jardines el IGN no separa bien arbustos de árboles
+pequeños. Con la capa no hay relleno aleatorio de
 parques: lo retiró el usuario tras ver la densidad de copas detectadas. Sin capa
 conserva exactamente la vegetación anterior, relleno incluido.
 Las copas detectadas de radio ≤ 2 m usan icosaedros sin subdivisión en sus cinco

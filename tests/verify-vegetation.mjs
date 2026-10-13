@@ -15,12 +15,13 @@ const review = validateTreeReview(
 const layer = JSON.parse(fs.readFileSync('web/vegetation.json'));
 assert.equal(layer.version, 1);
 assert(layer.source && layer.license && layer.attribution);
-assert.deepEqual(
-  layer.trees,
-  candidates
-    .filter((c) => treeCandidateStatus(c, review) === 'aceptado')
-    .map((c) => [c.x, c.z, c.r].map((n) => Math.round(n * 100) / 100)),
-);
+const accepted = candidates.filter((c) => treeCandidateStatus(c, review) === 'aceptado'),
+  shrub = (c) => c.source !== 'imagen' && c.ign < layer.shrubMaxHeight,
+  round = (c) => [c.x, c.z, c.r].map((n) => Math.round(n * 100) / 100);
+assert.equal(layer.shrubMaxHeight, 5);
+assert.deepEqual(layer.trees, accepted.filter((c) => !shrub(c)).map(round));
+assert.deepEqual(layer.shrubs, accepted.filter(shrub).map(round));
+assert(layer.shrubs.length > 0 && layer.trees.length > layer.shrubs.length);
 const child = spawnSync(
   process.execPath,
   ['tests/verify-building-variation-environment.mjs', '--without-vegetation'],
