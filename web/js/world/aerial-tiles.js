@@ -2,8 +2,9 @@ import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
 
-const AERIAL_TINT = '#ffffff',
-  tint = new THREE.Color(AERIAL_TINT);
+// Gris sRGB elegido en G2.2 (combinación B).
+const AERIAL_TINT = 0.78,
+  tint = new THREE.Color().setRGB(AERIAL_TINT, AERIAL_TINT, AERIAL_TINT, THREE.SRGBColorSpace);
 export const aerialTint = () => tint;
 
 export function setAerialTint(color) {
