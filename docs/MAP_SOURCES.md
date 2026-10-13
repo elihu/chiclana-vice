@@ -197,7 +197,8 @@ decisión `validado para el juego`; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md
 PNOA de julio de 2022 y las capas actuales de edificios y OSM, sin publicar una capa
 ni sustituir los árboles del juego. Usa canales normalizados por R+G+B,
 ExG = 2g − r − b > 0,10 y brillo medio ≥ 45/255. Apertura de un píxel, cierre de
-tres, relleno de huecos y área mínima de 3 m². Excluye edificios (respetando patios),
+tres y relleno de huecos. El filtro final exige 6 m² por copa partida (la
+auditoría conserva también las piezas desde 3 m² del detector anterior). Excluye edificios (respetando patios),
 agua y calzadas con la mitad de la anchura de cada vía; no excluye vías peatonales.
 Vuelve a aplicar las exclusiones tras cerrar y rellenar la máscara.
 
@@ -206,8 +207,37 @@ y asigna sus píxeles al máximo más cercano. Conserva solo centros dentro de l
 del mundo y del núcleo de cada tesela, usando el margen para evitar cortes artificiales.
 Posición en el máximo y radio equivalente a la superficie asignada: son aproximaciones,
 no un inventario de arbolado ni precisión topográfica. La altura futura se estimará por
-el radio, por decisión del usuario, sin MDSnV. Césped, matorral y superficies verdes
-pueden generar candidatos; las palmeras y copas oscuras pueden faltar.
+el radio, por decisión del usuario, sin MDSnV.
+
+Tras la revisión del usuario se exige textura: luminancia RGB con pesos
+0,2126/0,7152/0,0722, desviación en ventanas de 5 × 5 píxeles (1,25 m), mediana
+≥ 5/255 dentro de cada pieza erosionada dos píxeles para evitar el contraste del
+borde. Si no queda interior, se mide la pieza completa. Así se descartan también
+las partes lisas de componentes grandes, sin consultar usos deportivos en OSM.
+
+La dirección de sombra se estima de nuevo en cada generación con las huellas de
+edificios y la imagen a 1 m/píxel: se desplazan las huellas 2, 4, 6 y 8 m en
+24 direcciones, se excluyen los edificios y se maximiza la fracción de luminancia
+< 65. En esta pasada da 240° (x este, z sur; vector −0,5/−0,866), con fracción
+0,333 frente a 0,113 en la dirección de menor evidencia. No es un cálculo astronómico.
+Para cada copa se busca fuera de su pieza y de edificios, entre 0,8 y 2,5 radios
+en esa dirección y hasta 0,8 radios a cada lado. Debe haber una región oscura
+conectada de al menos max(0,5 m², 8 % del área de copa), con luminancia menor que
+min(65, 65 % de la luminancia media de copa). Todos los parámetros y las fracciones
+por dirección quedan en `method` del JSON.
+
+Se conservan ExG > 0,10 y brillo ≥ 45, sin añadir mínimo de saturación: el césped del campo ya tiene ExG mediano
+0,279, por lo que subir ligeramente el umbral no lo separa. La textura interior
+sí lo separa; las piezas asociadas a las copas de las muestras tienen ExG medio
+0,139–0,206, inferior al del campo. Endurecer el color perjudica copas apagadas. Los 6 m² (radio
+equivalente 1,38 m) eliminan piezas pequeñas: en las jardineras de calibración
+hay piezas de 3,12–5,94 m², mientras la alineación de calle tiene piezas de
+10,31–38,19 m². También se pierden árboles pequeños; no hay excepciones por lugar.
+
+La imagen sola **no separa bien todos los arbustos**: los grandes con textura y
+sombra, o cerca de sombras ajenas, pueden pasar. La sombra obligatoria pierde
+copas reales con sombra oculta o fusionada y las palmeras y copas oscuras siguen
+faltando. El resultado requiere revisión manual; véase la calibración en DATOS.
 
 El campo `zone` clasifica centros por prioridad: parque OSM, plaza OSM, entorno de
 calzada (hasta 8 m desde su borde), resto. Son categorías para revisar resultados,

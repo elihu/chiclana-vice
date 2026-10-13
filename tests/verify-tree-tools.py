@@ -40,5 +40,62 @@ class CrownsTest(unittest.TestCase):
         self.assertGreaterEqual(np.hypot(found[0][0] - found[1][0], found[0][1] - found[1][1]) * .25, 3)
 
 
+    def fixture(self, radius=8):
+        yy, xx = np.indices((90, 90))
+        part = (xx - 40)**2 + (yy - 40)**2 <= radius**2
+        rgb = np.full((90, 90, 3), 160., dtype=float)
+        variation = ((xx + yy) % 2) * 40
+        rgb[part] = np.column_stack((60 + variation[part], 100 + variation[part], 60 + variation[part]))
+        rgb[35:46, 49:59] = 30
+        return rgb, part
+
+    def test_textured_crown_with_directional_shadow(self):
+        rgb, part = self.fixture()
+        reason, metrics = module.filter_crown(rgb, part, 40, 40, .25, (1, 0))
+        self.assertIsNone(reason)
+        self.assertGreater(metrics['texture'], 5)
+        self.assertGreaterEqual(metrics['shadow'], metrics['area'] * .08)
+
+    def test_filters_in_segmentation(self):
+        rgb, part = self.fixture()
+        blocked = np.zeros(part.shape, dtype=bool)
+        self.assertTrue(module.crowns(rgb, blocked, .25, direction=(1, 0)))
+        self.assertEqual(module.crowns(rgb, blocked, .25, direction=(-1, 0)), [])
+
+    def test_smooth_large_surface_and_split(self):
+        for radius in (8, 25):
+            rgb, part = self.fixture(radius)
+            rgb[part] = [60, 120, 60]
+            self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (1, 0))[0], 'textura')
+
+    def test_small_shrub(self):
+        rgb, part = self.fixture(5)
+        self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (1, 0))[0], 'área')
+
+    def test_shadow_wrong_side_absent_or_building(self):
+        rgb, part = self.fixture()
+        self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (-1, 0))[0], 'sombra')
+        buildings = np.zeros(part.shape, dtype=bool)
+        buildings[35:46, 49:59] = True
+        self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (1, 0), buildings)[0], 'sombra')
+        rgb[35:46, 49:59] = 160
+        self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (1, 0))[0], 'sombra')
+
+    def test_disconnected_dark_pixels_are_not_shadow(self):
+        rgb, part = self.fixture()
+        rgb[35:46, 49:59] = 160
+        rgb[35:46:2, 49:59:2] = 30
+        self.assertEqual(module.filter_crown(rgb, part, 40, 40, .25, (1, 0))[0], 'sombra')
+
+    def test_shadow_estimation_from_building(self):
+        rgb = np.full((60, 60, 3), 180.)
+        buildings = np.zeros((60, 60), dtype=bool)
+        buildings[20:40, 20:40] = True
+        rgb[20:40, 40:48] = 30
+        scores = module.shadow_scores(rgb, buildings, 1)
+        fractions = scores[:, 0] / np.maximum(scores[:, 1], 1)
+        self.assertEqual(int(np.argmax(fractions)) * 15, 0)
+
+
 if __name__ == '__main__':
     unittest.main()

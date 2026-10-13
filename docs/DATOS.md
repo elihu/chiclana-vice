@@ -308,15 +308,82 @@ UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pi
 Genera `source-data/tree-candidates.json`, nunca `web/vegetation.json`. Conserva SHA-256
 por entrada, versiones Python, fecha del vuelo y parámetros; no descarga imágenes.
 `--output ruta` permite comparaciones fuera del repositorio; `--opening 2` reproduce
-la apertura de G5.0. El radio equivale a la superficie segmentada, no a una medida
+la apertura de G5.0. `--audit-dir /tmp/g5-arboles/filtro` escribe por tesela
+centros de la segmentación anterior, área, textura, sombra y primer motivo de
+descarte (`área`, `textura`, `sombra`); incluye márgenes y puntos fuera del mundo.
+El radio equivale a la superficie segmentada, no a una medida
 de altura. `score` es el ExG medio, no una probabilidad de que sea un árbol.
 
-Comparación G5.1: apertura 1 deja 4.203 candidatos (parque 1.357, plaza 99,
-entorno de calzada 881, resto 1.866); apertura 2 deja 3.742. En `0_0` son 35
-frente a 33. La inspección de la superposición en esa tesela sigue sin recuperar
-la alineación de árboles pequeños de Plaza Mayor. No se relajan el brillo ni los
-3 m² mínimos y no se añaden excepciones geográficas. Las imágenes de comparación
-quedan en `/tmp/g5-arboles/*-g51.jpg`; no son parte del repositorio.
+Calibración del filtro tras la revisión del usuario (13/10/2026): las imágenes
+`/tmp/g5-arboles/filtro/{tesela}-antes.jpg` conservan los anillos originales;
+`{tesela}-despues.jpg` muestran verde = conservado y rojo = descartado, con motivo.
+Los JSON `*-audit.json` permiten consultar las medidas. No se incorporan imágenes
+ni datos de revisión ficticios al repositorio. Se preparó el detector experimental
+y las comparaciones en `/tmp` antes de sustituir el script del repositorio.
+
+Se inspeccionaron `-1_-2` (campo de fútbol y alineación sur del río), `-1_1`
+(pistas del complejo deportivo), `-2_1` (parque y jardineras), `2_0` (plaza de
+pavimento geométrico de tonos verdosos y pistas), `1_0` (bordes del río) y `0_-1`
+(palmeras de la Alameda). Los rectángulos se expresan en píxeles de las imágenes
+originales de 1184 × 1184, con origen arriba a la izquierda; no son reglas del filtro.
+
+El campo, recorte `[930,270,1150,450]` de `-1_-2`, tiene desviación local mediana
+4,17/255 y ExG mediano 0,279. El pavimento, recorte `[310,470,420,560]` de `2_0`,
+tiene ExG mediano 0,030: ya queda fuera del umbral en su interior, aunque los bordes
+vegetales requieren revisión. En las jardineras `[675,160,780,230]` de `-2_1`
+se ven piezas de 3,12–5,94 m² eliminadas por el nuevo mínimo y otras de 7,25–19,31 m²
+que todavía pasan. No se afirma que toda vegetación de ese recorte sea arbusto.
+
+Para cuantificar pérdidas se marcaron dos muestras pequeñas de seis copas visibles
+cada una; no es un censo de las teselas completas. Centros aproximados `(u,v)`:
+
+- Calle, `-1_-2`: `(226,652)`, `(265,667)`, `(309,683)`, `(345,703)`, `(386,709)`, `(436,743)`.
+- Parque, `-2_1`: `(537,268)`, `(577,266)`, `(626,266)`, `(661,264)`, `(693,261)`, `(718,263)`.
+
+Se considera localizada una copa cuando un centro de candidato queda a una distancia
+≤ max(8, min(4r, 16)) píxeles del punto marcado. Se publican aquí los puntos y el
+criterio para evitar confundir número de candidatos con número de árboles reales.
+En calle se localizan 6/6 antes y 6/6 después; en parque 3/6 antes y 2/6 después:
+se pierde **una copa real adicional** de las nueve localizadas inicialmente; tres
+copas de parque ya faltaban. Los puntos de muestra están numerados en
+`/tmp/g5-arboles/filtro/muestra-{calle,parque}-{antes,despues}.jpg` y guardados en
+`muestras-reales.json`. Esto no cuantifica las pérdidas en toda la extensión, donde
+la inspección de los anillos muestra más copas reales rechazadas por sombra.
+
+| Categoría | Antes | Después |
+| --------- | ----: | ------: |
+| Parque    | 1.357 |     526 |
+| Plaza     |    99 |      32 |
+| Calle     |   881 |     273 |
+| Otro      | 1.866 |     474 |
+| Total     | 4.203 |   1.305 |
+
+| Tesela inspeccionada | Antes | Después |
+| -------------------- | ----: | ------: |
+| `-1_-2`              |   178 |      59 |
+| `-1_1`               |   229 |      51 |
+| `-2_1`               |   524 |     225 |
+| `1_0`                |   181 |      33 |
+| `2_0`                |   147 |      54 |
+| `0_-1`               |    31 |       5 |
+
+En el interior del campo `[930,270,1150,450]` desaparecen los cuatro candidatos; en la pista verde de `2_0`,
+recorte `[50,740,170,850]`, pasan de 14 a 0.
+En el recorte de jardineras `[675,160,780,230]` bajan de 7 a 3: no basta para separar
+arbustos grandes de árboles. La plaza de pavimento geométrico de `2_0` sirve de
+control negativo: su interior ya queda excluido por color; un punto del borde
+`[280,490,400,680]` pasa de 1 a 0. No se atribuye al filtro una mejora sobre un
+pavimento que el detector anterior ya rechazaba. Las superficies deportivas lisas
+se eliminan por textura, pero las copas densas y palmeras siguen dando pérdidas.
+La revisión `source-data/tree-review.json` permanece vacía; solo se actualiza su SHA.
+
+Las diez pruebas de `tests/verify-tree-tools.py` cubren coordenadas, segmentación,
+exclusiones, separación, área pequeña, superficies lisas, textura, dirección de sombra,
+sombra ausente, sombra sobre edificio y oscuridad desconectada. Se ejecutan aparte
+con el comando `uv` anterior: `package.json` solo encadena verificadores Node;
+las otras pruebas Python (`verify-tools.py`, `verify-terrain-tools.py`) también son
+manuales y no hay precedente de NumPy/SciPy en `npm test`. No se fuerza su instalación
+ni se modifica la CI. `npm run check` sigue siendo obligatorio además de estas pruebas.
 
 ## 8. Revisión de copas (G5.2, archivo de autor)
 
