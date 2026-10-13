@@ -101,8 +101,12 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   fachadas y vegetación lejanas (Plaza Mayor: 283 llamadas frente a 471 en normal);
   revisada por el usuario en el portátil, sin prueba en móvil ni FPS medidos. G4 integrada el
   13/10/2026: grano cercano en ortofoto y pavimento (escala 8 m, intensidad 1, se apaga
-  entre 8 y 60 m y en ligero), elegido por el usuario en vivo. Falta G5 (árboles sobre las
-  copas reales). Todo ello es el contenido de
+  entre 8 y 60 m y en ligero), elegido por el usuario en vivo. G5 integrada el 13/10/2026: 2.347 árboles y 766 arbustos
+  sobre copas detectadas en la ortofoto PNOA y filtradas con la altura MDSnV del IGN
+  (`web/vegetation.json`), sin relleno aleatorio de parques; aceptados todos los
+  candidatos (`source-data/tree-review.json` admite exclusiones). Más triángulos (hasta
+  ~2× en algún punto, medido antes de los últimos ajustes); sin prueba en GPU real, móvil
+  ni FPS. Plan terminado. Todo ello es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
