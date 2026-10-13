@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
+import { applyGroundDetail } from '../engine/textures.js';
 
 // Gris sRGB elegido en G2.2 (combinación B).
 const AERIAL_TINT = 0.78,
@@ -35,14 +36,16 @@ export const aerialLevel = () => (gfx.quality === 'low' || gfx.coarse ? 'lo' : '
 export const tileKey = (i, j) => `${i}_${j}`;
 
 export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
+  const { detail, ...materialOptions } = options;
   const key = tileKey(i, j);
   if (!materials.has(key)) materials.set(key, new Set());
   const m = new THREE.MeshStandardMaterial({
     map: loaded.get(key)?.texture ?? world.groundTexture,
-    ...options,
+    ...materialOptions,
   });
   m.userData.plainColor = plainColor;
   m.color.set(m.map ? aerialTint() : plainColor);
+  if (detail) applyGroundDetail(m);
   materials.get(key).add(m);
   return m;
 }

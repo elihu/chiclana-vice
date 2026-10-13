@@ -1,6 +1,102 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { gfx } from '../core/state.js';
 
+// Un único juego de uniformes para todo el suelo; los tejados no los usan.
+export const detailUniforms = {
+  uDetailMap: { value: null },
+  uDetailScale: { value: 8 },
+  uDetailNear: { value: 8 },
+  uDetailFar: { value: 60 },
+  uDetailStrength: { value: 1 },
+};
+let detailStrength = 1;
+
+export function applyGroundDetail(material) {
+  detailUniforms.uDetailMap.value ??= groundDetailTexture();
+  material.customProgramCacheKey = () => 'ground-detail-v1';
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, detailUniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;',
+      )
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vec4 detailWorld = modelMatrix * vec4(transformed, 1.0);
+        vDetailXZ = detailWorld.xz;
+        vDetailDist = distance(detailWorld.xyz, cameraPosition);`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uDetailMap;
+        uniform float uDetailScale, uDetailNear, uDetailFar, uDetailStrength;
+        varying vec2 vDetailXZ; varying float vDetailDist;`,
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        float detailFade = 1.0 - smoothstep(uDetailNear, uDetailFar, vDetailDist);
+        vec3 detail = texture2D(uDetailMap, vDetailXZ / uDetailScale).rgb * 2.0;
+        diffuseColor.rgb *= mix(vec3(1.0), detail, detailFade * uDetailStrength);`,
+      );
+  };
+  return material;
+}
+
+export function applyGroundDetailQuality() {
+  detailUniforms.uDetailStrength.value = gfx.quality === 'low' ? 0 : detailStrength;
+}
+
+export function setGroundDetail({ scale, near, far, strength } = {}) {
+  const next = {
+    scale: scale ?? detailUniforms.uDetailScale.value,
+    near: near ?? detailUniforms.uDetailNear.value,
+    far: far ?? detailUniforms.uDetailFar.value,
+    strength: strength ?? detailStrength,
+  };
+  if (
+    !Object.values(next).every(Number.isFinite) ||
+    next.scale <= 0 ||
+    next.near < 0 ||
+    next.far <= next.near ||
+    next.strength < 0 ||
+    next.strength > 1
+  )
+    throw Error(
+      'Detalle de suelo inválido: escala > 0, 0 ≤ cerca < lejos e intensidad entre 0 y 1',
+    );
+  detailUniforms.uDetailScale.value = next.scale;
+  detailUniforms.uDetailNear.value = next.near;
+  detailUniforms.uDetailFar.value = next.far;
+  detailStrength = next.strength;
+  applyGroundDetailQuality();
+  gfx.needsRender = true;
+}
+
+// Dato gris reproducible: no consume el azar compartido del mundo.
+export function groundDetailTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const context = canvas.getContext('2d');
+  let seed = 1949;
+  for (let y = 0; y < 256; y++)
+    for (let x = 0; x < 256; x++) {
+      seed = (seed * 16807) % 2147483647;
+      const value = 128 + (seed % 37) - 18;
+      context.fillStyle = `rgb(${value},${value},${value})`;
+      context.fillRect(x, y, 1, 1);
+    }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.anisotropy = Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+  return texture;
+}
+
 export function facadeTexture() {
   let c = document.createElement('canvas');
   c.width = 128;

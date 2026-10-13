@@ -149,6 +149,19 @@ calle a menos de 3 m, el monumento que lo contiene y la posición y el rumbo del
 o `localhost`). El procedimiento de edición está en [DATOS.md](DATOS.md#diseños-y-correcciones-a-mano).
 Probado a mano en un móvil Android; no en iOS.
 
+Para revisar el grano cercano del suelo, abre `?debug` y ajusta en la consola:
+
+```js
+__luz({ detail: { scale: 8, near: 8, far: 60, strength: 1 } });
+```
+
+`scale` es el tamaño de repetición en metros; `near` y `far` son las distancias
+desde la cámara entre las que se desvanece el grano, también en metros. `strength`
+va de 0 a 1. Se admiten cambios parciales; en ligero la intensidad efectiva siempre
+es cero y al volver a normal se recupera la elegida. Los valores de referencia
+dejan la vista aérea fuera del alcance del detalle. El ajuste no recompila el shader
+y solo afecta al suelo, sin modificar las cubiertas.
+
 ## Mundo y límites
 
 `world.json.bounds` declara una lista de rectángulos `[x0, x1, z0, z1]` en
@@ -205,6 +218,7 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
   pantalla).
 - Acerca el final de la niebla para dibujar menos a lo lejos.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
+- Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste.
 - Oculta las celdas más allá del final de la niebla.
 - Descarta el detalle de fachadas a 200 m y la vegetación a 300 m de la cámara;
   en vista aérea, el alcance es 380 m para ambos. Se suma el radio de la esfera
