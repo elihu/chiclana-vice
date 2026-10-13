@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, pInside } from '../core/math.js';
-import { facadeWork, gfx, world } from '../core/state.js';
+import { detailCells, facadeWork, gfx, world } from '../core/state.js';
 import { composeBuilding, composeFront } from './facade-composer.js';
 import { createFacadeKit, outwardOf } from './facade-kit.js';
 import { nearestRoad } from './spatial.js';
@@ -202,5 +202,17 @@ export function buildDetailedFacades() {
     root.add(m);
   }
   gfx.scene.add(root);
+  root.updateMatrixWorld(true);
+  for (const object of root.children) {
+    object.geometry.computeBoundingSphere();
+    const sphere = object.geometry.boundingSphere.clone().applyMatrix4(object.matrixWorld);
+    detailCells.push({
+      object,
+      x: sphere.center.x,
+      z: sphere.center.z,
+      radius: sphere.radius,
+      kind: 'facade',
+    });
+  }
   facadeWork.meshes = root.children.length;
 }

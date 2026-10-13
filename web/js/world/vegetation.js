@@ -2,7 +2,7 @@ import { insideBounds } from './bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.module.min.js';
 import { TAU, lerp, pInside } from '../core/math.js';
-import { gfx, streetEnvironment, world } from '../core/state.js';
+import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts } from '../engine/materials.js';
 import { rnd } from '../core/random.js';
@@ -36,6 +36,14 @@ function addVegetationCells(root, source, kind, cellSize = 255) {
     mesh.computeBoundingBox();
     mesh.computeBoundingSphere();
     root.add(mesh);
+    const sphere = mesh.boundingSphere;
+    detailCells.push({
+      object: mesh,
+      x: sphere.center.x,
+      z: sphere.center.z,
+      radius: sphere.radius,
+      kind: 'vegetation',
+    });
   }
   source.dispose();
 }

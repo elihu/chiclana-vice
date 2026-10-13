@@ -1,4 +1,4 @@
-import { chunks, gfx } from '../web/js/core/state.js';
+import { chunks, detailCells, gfx } from '../web/js/core/state.js';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -560,8 +560,60 @@ for (const group of g.chunks) {
     dist = Math.hypot(c.center.x - g.view.position[0], c.center.z - g.view.position[2]);
   assert.equal(group.visible, dist < fogFar + c.radius, 'light chunks end at fog');
 }
+const detailObjects = new Set(detailCells.map((cell) => cell.object));
+g.scene.traverse((object) => {
+  if (
+    object.parent?.name === 'reference-led-facades' ||
+    (object.isInstancedMesh && object.parent?.name === 'vegetation-cells')
+  )
+    assert(detailObjects.has(object), 'every facade and vegetation mesh has a detail cell');
+});
+assert.equal(detailObjects.size, detailCells.length, 'detail cells do not repeat objects');
+const savedPosition = { x: g.player.x, z: g.player.z };
+for (let mode = 0; mode < 3; mode++) {
+  while (g.view.mode !== mode) g.cycleCamera();
+  for (const offset of [0, 1500, 0]) {
+    Object.assign(g.player, { x: savedPosition.x + offset, z: savedPosition.z + offset });
+    g.updateCamera(1);
+    for (const cell of detailCells) {
+      const reach = mode === 2 ? 380 : cell.kind === 'facade' ? 200 : 300,
+        dist = Math.hypot(cell.x - g.view.position[0], cell.z - g.view.position[2]);
+      assert(Number.isFinite(cell.radius) && cell.radius > 0, 'detail radius is valid');
+      assert(
+        cell.object.visible ? dist < reach + cell.radius + 10 : dist >= reach + cell.radius,
+        'light detail respects reach and hysteresis in every camera mode',
+      );
+    }
+  }
+}
+// Dentro de la banda, conserva tanto la visibilidad como el descarte anteriores.
+const probe = { object: { visible: true }, x: 0, z: 0, radius: 1, kind: 'facade' };
+detailCells.push(probe);
+while (g.view.mode !== 1) g.cycleCamera();
+g.updateCamera(1);
+probe.x = g.view.position[0] + 206;
+probe.z = g.view.position[2];
+probe.object.visible = true;
+g.updateCamera(1);
+assert(probe.object.visible, 'visible detail stays visible inside hysteresis band');
+probe.object.visible = false;
+g.updateCamera(1);
+assert(!probe.object.visible, 'hidden detail stays hidden inside hysteresis band');
+probe.x = g.view.position[0] + 200;
+g.updateCamera(1);
+assert(probe.object.visible, 'hidden detail reappears within reach plus radius');
+probe.x = g.view.position[0] + 212;
+g.updateCamera(1);
+assert(!probe.object.visible, 'visible detail disappears beyond hysteresis band');
+detailCells.pop();
+while (g.view.mode !== 0) g.cycleCamera();
 g.pauseMenu();
 els.quality.onclick();
+g.updateCamera(1);
+assert(
+  detailCells.every((cell) => cell.object.visible),
+  'normal restores all detail',
+);
 assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto');
 assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'auto');
 console.log('Light mode shadows, persistence and fog culling passed');
