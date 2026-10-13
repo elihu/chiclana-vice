@@ -94,7 +94,10 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md). G0 integrada el 9/10/2026
   (`tools/scene-budget.mjs` y `tools/compare-shots.py`, capturas deterministas) y G1 el
   mismo día (fachadas agrupadas por material y troncos con ramas: 21–38 % menos llamadas
-  en seguimiento, hasta un 9,6 % más de triángulos dibujados; G1.3 descartada); es el contenido de
+  en seguimiento, hasta un 9,6 % más de triángulos dibujados; G1.3 descartada). G2 integrada el
+  13/10/2026 tras la revisión del usuario: luz B (exposición 1,05, cielo 1,7, sol 3,2 y
+  ortofoto 0,78), ventanas continuas en los muros genéricos, anisotropía del suelo y
+  sombra del sol encajada en su rejilla; es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
