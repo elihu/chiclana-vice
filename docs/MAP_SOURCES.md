@@ -190,3 +190,25 @@ La rejilla derivada (`terrain.json` y `terrain.bin`) está en Git desde el 8/10/
 El original recuperado coincide con la auditoría del 7/10/2026 y el exportador
 reproduce las cotas. Tras la revisión visual del usuario, la auditoría registra la
 decisión `validado para el juego`; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md#validación-8102026).
+
+## Candidatos de copas en revisión (G5.1)
+
+`tools/detect-tree-crowns.py` deriva `source-data/tree-candidates.json` de las teselas
+PNOA de julio de 2022 y las capas actuales de edificios y OSM, sin publicar una capa
+ni sustituir los árboles del juego. Usa canales normalizados por R+G+B,
+ExG = 2g − r − b > 0,10 y brillo medio ≥ 45/255. Apertura de un píxel, cierre de
+tres, relleno de huecos y área mínima de 3 m². Excluye edificios (respetando patios),
+agua y calzadas con la mitad de la anchura de cada vía; no excluye vías peatonales.
+Vuelve a aplicar las exclusiones tras cerrar y rellenar la máscara.
+
+Separa componentes por máximos locales de distancia, con separación mínima de 3 m,
+y asigna sus píxeles al máximo más cercano. Conserva solo centros dentro de los límites
+del mundo y del núcleo de cada tesela, usando el margen para evitar cortes artificiales.
+Posición en el máximo y radio equivalente a la superficie asignada: son aproximaciones,
+no un inventario de arbolado ni precisión topográfica. La altura futura se estimará por
+el radio, por decisión del usuario, sin MDSnV. Césped, matorral y superficies verdes
+pueden generar candidatos; las palmeras y copas oscuras pueden faltar.
+
+El campo `zone` clasifica centros por prioridad: parque OSM, plaza OSM, entorno de
+calzada (hasta 8 m desde su borde), resto. Son categorías para revisar resultados,
+no especies ni usos de suelo certificados.

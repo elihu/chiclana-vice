@@ -295,3 +295,25 @@ admite `--directory` para una copia de revisión fuera del árbol publicado.
 
 Pruebas del exportador: `uv run --no-project python tests/verify-terrain-tools.py`.
 Las pruebas JS de contrato, malla y rampa están incluidas en `npm test`.
+
+## 7. Candidatos de copas (G5.1, sin publicar)
+
+```sh
+UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely python tools/detect-tree-crowns.py
+node tools/export-provenance.mjs
+npm run check
+UV_CACHE_DIR=/tmp/g5-arboles/uv-cache uv run --no-project --with numpy --with pillow --with scipy --with shapely python tests/verify-tree-tools.py
+```
+
+Genera `source-data/tree-candidates.json`, nunca `web/vegetation.json`. Conserva SHA-256
+por entrada, versiones Python, fecha del vuelo y parámetros; no descarga imágenes.
+`--output ruta` permite comparaciones fuera del repositorio; `--opening 2` reproduce
+la apertura de G5.0. El radio equivale a la superficie segmentada, no a una medida
+de altura. `score` es el ExG medio, no una probabilidad de que sea un árbol.
+
+Comparación G5.1: apertura 1 deja 4.203 candidatos (parque 1.357, plaza 99,
+entorno de calzada 881, resto 1.866); apertura 2 deja 3.742. En `0_0` son 35
+frente a 33. La inspección de la superposición en esa tesela sigue sin recuperar
+la alineación de árboles pequeños de Plaza Mayor. No se relajan el brillo ni los
+3 m² mínimos y no se añaden excepciones geográficas. Las imágenes de comparación
+quedan en `/tmp/g5-arboles/*-g51.jpg`; no son parte del repositorio.
