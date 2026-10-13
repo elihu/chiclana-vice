@@ -206,6 +206,12 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Acerca el final de la niebla para dibujar menos a lo lejos.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
 - Oculta las celdas más allá del final de la niebla.
+- Descarta el detalle de fachadas a 200 m y la vegetación a 300 m de la cámara;
+  en vista aérea, el alcance es 380 m para ambos. Se suma el radio de la esfera
+  envolvente de cada celda. Hay 10 m de histéresis: una celda visible se oculta al
+  alcanzar `alcance + radio + 10`, y una oculta reaparece al bajar de
+  `alcance + radio`. Al volver a calidad normal, todo este detalle vuelve a ser
+  visible, sin descarte por distancia.
 - En ligero o en un dispositivo táctil, carga las teselas de ortofoto `lo` (0,5 m/píxel),
   como mucho 9 en un radio de 220 m; en calidad normal sin pantalla táctil, las `hi`
   (0,25 m/píxel), hasta 12 en 300 m. Al cambiar la calidad durante la partida se
