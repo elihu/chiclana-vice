@@ -1,9 +1,27 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
 
-const { uniform, vec3, mix, smoothstep, saturate, pow, dot, normalize, positionLocal } = THREE.TSL;
+const {
+  uniform,
+  vec3,
+  float,
+  mix,
+  smoothstep,
+  saturate,
+  pow,
+  max,
+  dot,
+  normalize,
+  length,
+  positionLocal,
+  positionWorld,
+  cameraPosition,
+  pmremTexture,
+  fog,
+  rangeFogFactor,
+} = THREE.TSL;
 
-// Valores ajustables del cielo y la luz de entorno (colores en sRGB). Los uniformes se
+// Valores ajustables del cielo, la luz de entorno y la niebla (colores en sRGB). Los uniformes se
 // pueden cambiar en vivo desde la consola con `setSky({ zenith: '#5588bb' })`.
 export const SKY = {
   // Degradado: el horizonte coincide con el color de la niebla de G2; el cenit es más azul.
@@ -23,6 +41,11 @@ export const SKY = {
   // Luz ambiente del cielo horneado y de la hemisférica de apoyo.
   envIntensity: 0.35,
   hemiIntensity: 1.1,
+  // Niebla: altura mínima del rayo sobre el horizonte al muestrear el entorno, desenfoque
+  // (0 nítido, 1 muy difuso) y cuánto aclara con la altura de la cámara entre 20 y 400 m.
+  fogHorizonY: 0.02,
+  fogBlur: 0.3,
+  fogBrighten: 0.25,
 };
 
 export const skyUniforms = {
@@ -34,6 +57,9 @@ export const skyUniforms = {
   haloWide: uniform(SKY.haloWide),
   haloTight: uniform(SKY.haloTight),
   halo: uniform(SKY.haloStrength),
+  fogNear: uniform(175),
+  fogFar: uniform(620),
+  fogBrighten: uniform(SKY.fogBrighten),
 };
 
 const colorKeys = ['horizon', 'zenith', 'ground', 'haloColor'],
@@ -42,9 +68,10 @@ const colorKeys = ['horizon', 'zenith', 'ground', 'haloColor'],
     haloWide: 'haloWide',
     haloTight: 'haloTight',
     haloStrength: 'halo',
+    fogBrighten: 'fogBrighten',
   };
 
-// Cambia valores de SKY en vivo (colores y halo). La luz ambiente (envIntensity,
+// Cambia valores de SKY en vivo (colores, halo, niebla). La luz ambiente (envIntensity,
 // hemiIntensity) se aplica con `applySkyLight()`; para rehornear el entorno, `bakeSkyEnvironment()`.
 export function setSky(patch = {}) {
   Object.assign(SKY, patch);
@@ -111,6 +138,7 @@ export async function bakeSkyEnvironment() {
   }
   gfx.scene.environment = envTarget.texture;
   applySkyLight();
+  gfx.scene.fogNode = createSkyFogNode(envTarget.texture);
   return performance.now() - t0;
 }
 
@@ -118,4 +146,25 @@ export async function bakeSkyEnvironment() {
 export function applySkyLight() {
   if (gfx.scene) gfx.scene.environmentIntensity = SKY.envIntensity;
   if (hemiLight) hemiLight.intensity = SKY.hemiIntensity;
+}
+
+// Niebla del color del cielo. Mismas distancias que la `Fog` lineal de la escena (que sigue ahí
+// para la cámara y el descarte); el color sale del entorno horneado, hacia el horizonte en la
+// dirección de la vista, y aclara con la altura de la cámara.
+function createSkyFogNode(envTexture) {
+  const toFrag = positionWorld.sub(cameraPosition),
+    dir = toFrag.div(max(length(toFrag), 0.001)),
+    lift = smoothstep(20, 400, cameraPosition.y),
+    horizonDir = normalize(vec3(dir.x, max(dir.y, SKY.fogHorizonY), dir.z)),
+    haze = pmremTexture(envTexture, horizonDir, float(SKY.fogBlur)).rgb,
+    color = mix(haze, vec3(1), lift.mul(skyUniforms.fogBrighten));
+  return fog(color, rangeFogFactor(skyUniforms.fogNear, skyUniforms.fogFar));
+}
+
+// Mantiene los uniformes de la niebla del cielo iguales a los de `scene.fog`.
+export function syncSkyFog() {
+  const f = gfx.scene?.fog;
+  if (!f) return;
+  skyUniforms.fogNear.value = f.near;
+  skyUniforms.fogFar.value = f.far;
 }

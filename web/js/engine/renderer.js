@@ -2,7 +2,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
-import { applySkyLight, bakeSkyEnvironment, createSky, SKY, updateSky } from './sky.js';
+import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
@@ -139,5 +139,6 @@ export function applyQuality() {
   gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
   setSunShadows(!low);
   gfx.scene.fog.far = low ? 380 : 620;
+  syncSkyFog();
   gfx.needsRender = true;
 }
