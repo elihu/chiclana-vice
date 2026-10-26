@@ -1,6 +1,7 @@
+import { urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 
-// Medición en pantalla con `?fps`: motor activo, FPS medios y peor frame de los últimos 2 s.
+// Medición en pantalla con `?fps` o `#fps`: motor activo, FPS medios y peor frame de los últimos 2 s.
 // Pensada para comparar WebGPU y WebGL 2 en el mismo móvil; sin `?fps` no hace nada.
 const WINDOW_MS = 2000;
 let el = null,
@@ -9,7 +10,7 @@ let el = null,
 const samples = [];
 
 export function installPerf() {
-  if (!new URLSearchParams(globalThis.location?.search ?? '').has('fps')) return;
+  if (!urlOptions().has('fps')) return;
   el = document.createElement('div');
   el.id = 'perf';
   el.setAttribute('aria-hidden', 'true');

@@ -31,3 +31,10 @@ export function setStyle(target, prop, value) {
 export function sleepFrame() {
   return new Promise((r) => requestAnimationFrame(r));
 }
+
+// Opciones de prueba de la URL (`?fps`, `?motor=webgl`), también en el fragmento (`#fps`)
+// para enlaces de visores que no conservan la consulta.
+export function urlOptions() {
+  const loc = globalThis.location;
+  return new URLSearchParams(`${loc?.search ?? ''}&${(loc?.hash ?? '').slice(1)}`);
+}

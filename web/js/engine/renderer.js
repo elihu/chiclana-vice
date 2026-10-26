@@ -1,5 +1,5 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
-import { $ } from '../core/dom.js';
+import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 import { applyGroundDetailQuality } from './textures.js';
@@ -33,8 +33,7 @@ export function placeSun(x, y, z) {
 // WebGPURenderer usa WebGPU cuando el navegador lo ofrece y si no WebGL 2; `?motor=webgl`
 // fuerza WebGL 2 para comparar los dos motores en el mismo equipo.
 export async function setupRenderer() {
-  const forceWebGL =
-    new URLSearchParams(globalThis.location?.search ?? '').get('motor') === 'webgl';
+  const forceWebGL = urlOptions().get('motor') === 'webgl';
   gfx.renderer = new gfx.platform.Renderer({
     canvas: $('world'),
     antialias: true,
