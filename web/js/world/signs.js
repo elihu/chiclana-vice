@@ -1,5 +1,5 @@
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
 import { mat } from '../engine/materials.js';

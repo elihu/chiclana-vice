@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { modelBox, modelMaterial, modelParts } from '../engine/materials.js';
 import { carModel } from './car-model.js';
 import { blocked } from '../world/spatial.js';

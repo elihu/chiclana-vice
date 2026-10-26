@@ -87,12 +87,12 @@ https://creativecommons.org/licenses/by/4.0/
 
 ## Three.js
 
-Three.js 0.169.0, MIT, Copyright © 2010–2024 three.js authors.
-`vendor/three.module.min.js`: build minificada oficial sin modificar, tomada de
-`build/three.module.min.js` del paquete npm three@0.169.0 (integridad
-sha512-Ed906MA3dR4TS5riErd4QBsRGPcx+HBDX2O5yYE5GqJeFQTPU+M56Va/f/Oph9X7uZo3W3o4l2ZhBZ6f6qUv0w==);
-conserva la cabecera de licencia.
-Mantener `vendor/LICENSE-three.txt` junto a la librería.
+Three.js 0.186.1, MIT, Copyright © 2010–2026 three.js authors.
+`vendor/three.webgpu.min.js`: `build/three.webgpu.js` del paquete npm three@0.186.1 con
+`build/three.core.js` empaquetados en un único módulo y minificados, sin otros cambios:
+`npx esbuild@0.25 node_modules/three/build/three.webgpu.js --bundle --format=esm --minify
+--legal-comments=inline --outfile=web/vendor/three.webgpu.min.js`. Conserva la cabecera de
+licencia. Mantener `vendor/LICENSE-three.txt` junto a la librería.
 
 ## slop-newyork
 

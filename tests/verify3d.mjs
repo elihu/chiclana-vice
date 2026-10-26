@@ -2,7 +2,7 @@ import { chunks, detailCells, gfx } from '../web/js/core/state.js';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-import * as Real from '../web/vendor/three.module.min.js';
+import * as Real from '../web/vendor/three.webgpu.min.js';
 import { JOBS, PLACES, POPULATION, VIEWPOINTS, SAVE_KEY } from '../web/game-data.js';
 import './verify-progress.mjs';
 import { createRuntime } from './runtime-harness.mjs';
@@ -577,12 +577,19 @@ g.cycleCamera();
 assert(g.character.mesh.visible, 'body restored in follow');
 console.log('First-person fixed eye, hidden own models, free yaw/pitch and restoration passed');
 
-// Light mode: shadow casting follows the shadow map, persists and culls chunks at the fog end.
-assert(g.sun.castShadow && g.renderer.shadowMap.enabled, 'normal quality casts shadows');
+// Light mode: no shadow pass and no shadow darkening, persists and culls chunks at the fog end.
+// With WebGPURenderer the sun always casts (toggling it at runtime breaks cached pipelines);
+// light mode stops updating the shadow map and sets its intensity to 0, both plain uniforms.
+const sunShadows = () =>
+  g.sun.castShadow &&
+  g.renderer.shadowMap.enabled &&
+  g.sun.shadow.autoUpdate &&
+  g.sun.shadow.intensity === 1;
+assert(sunShadows(), 'normal quality casts shadows');
 g.pauseMenu();
 els.quality.onclick();
 assert.equal(g.quality, 'low');
-assert(!g.sun.castShadow && !g.renderer.shadowMap.enabled, 'light mode disables sun shadows');
+assert(!g.sun.shadow.autoUpdate && g.sun.shadow.intensity === 0, 'light mode disables sun shadows');
 assert.equal(g.renderer.pixelRatio, 1);
 assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'low', 'quality persisted');
 g.updateCamera(0.016);
@@ -646,7 +653,7 @@ assert(
   detailCells.every((cell) => cell.object.visible),
   'normal restores all detail',
 );
-assert(g.sun.castShadow && g.renderer.shadowMap.enabled && g.quality === 'auto');
+assert(sunShadows() && g.quality === 'auto');
 assert.equal(JSON.parse(storage[SAVE_KEY]).quality, 'auto');
 console.log('Light mode shadows, persistence and fog culling passed');
 

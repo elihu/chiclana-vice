@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
 import { modelCylinder, modelGeometry, modelMaterial, modelParts } from '../engine/materials.js';
 

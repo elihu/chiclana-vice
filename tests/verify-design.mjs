@@ -126,7 +126,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
 // Kit, validador y compositor.
 {
   const fs = await import('node:fs');
-  const THREE = await import('../web/vendor/three.module.min.js');
+  const THREE = await import('../web/vendor/three.webgpu.min.js');
   const { createFacadeKit, KIT_PIECES } = await import('../web/js/world/facade-kit.js');
   const { composeBuilding, composeFront } = await import('../web/js/world/facade-composer.js');
   const { validateCityDesign, validateFacadeDesigns } =

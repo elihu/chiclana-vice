@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $ } from '../core/dom.js';
 import { PLACES, JOBS as jobs } from '../../game-data.js';
 import { actors, gfx, pois, state } from '../core/state.js';
@@ -40,7 +40,8 @@ export function createMissionMarkers() {
     new THREE.MeshBasicMaterial({
       color: '#ffc177',
       transparent: true,
-      opacity: 0.13,
+      // WebGPURenderer mezcla en espacio lineal: un 5 % tiñe como el 13 % de WebGL.
+      opacity: 0.05,
       side: THREE.DoubleSide,
       depthWrite: false,
     }),

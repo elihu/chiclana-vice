@@ -170,18 +170,18 @@ try {
       );
       await sleep(1000);
       const measured = await evaluate(`(async()=>{
-      const {gfx}=await import('./js/core/state.js'),r=gfx.renderer,i=r.info.render;
+      const {gfx}=await import('./js/core/state.js'),{setSunShadows}=await import('./js/engine/renderer.js'),r=gfx.renderer,i=r.info.render;
       const cast=gfx.sun.castShadow;
       try {
         r.info.autoReset=false;r.info.reset();r.render(gfx.scene,gfx.camera);
-        const total={calls:i.calls,triangles:i.triangles};
-        gfx.sun.castShadow=false;r.info.reset();r.render(gfx.scene,gfx.camera);
-        return {total,main:{calls:i.calls,triangles:i.triangles}};
-      } finally {gfx.sun.castShadow=cast;r.info.autoReset=true;r.render(gfx.scene,gfx.camera);}
+        const total={calls:i.drawCalls??i.calls,triangles:i.triangles};
+        setSunShadows(false);r.info.reset();r.render(gfx.scene,gfx.camera);
+        return {total,main:{calls:i.drawCalls??i.calls,triangles:i.triangles},backend:gfx.backend};
+      } finally {setSunShadows(cast);r.info.autoReset=true;r.render(gfx.scene,gfx.camera);}
     })()`);
       const vegetation = await evaluate(`(async()=>{
         const {gfx}=await import('./js/core/state.js');
-        const THREE=await import('./vendor/three.module.min.js');
+        const THREE=await import('./vendor/three.webgpu.min.js');
         const frustum=new THREE.Frustum().setFromProjectionMatrix(
           new THREE.Matrix4().multiplyMatrices(gfx.camera.projectionMatrix,gfx.camera.matrixWorldInverse));
         let instances=0,triangles=0,batches=0;
@@ -214,7 +214,7 @@ try {
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);
       triangles+=t;if(o.castShadow)shadowTriangles+=t;
     });
-    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.programs.length,
+    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.programs?.length??null,backend:gfx.backend,
       facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
       treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);

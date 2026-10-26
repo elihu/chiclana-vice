@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { TAU, pInside } from '../core/math.js';
 import { detailCells, facadeWork, gfx, world } from '../core/state.js';
 import { composeBuilding, composeFront } from './facade-composer.js';

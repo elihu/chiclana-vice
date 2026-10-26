@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 
 // Carrocería por secciones (loft) en vez de cajas. Adaptado de slop-newyork
 // (https://github.com/mrdoob/slop-newyork, js/actor-models.js, MIT, Copyright (c) 2026 Mr.doob),

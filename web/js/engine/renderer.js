@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $ } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
@@ -30,12 +30,21 @@ export function placeSun(x, y, z) {
   gfx.sun.target.updateMatrixWorld();
 }
 
-export function setupRenderer() {
-  gfx.renderer = new gfx.platform.WebGLRenderer({
+// WebGPURenderer usa WebGPU cuando el navegador lo ofrece y si no WebGL 2; `?motor=webgl`
+// fuerza WebGL 2 para comparar los dos motores en el mismo equipo.
+export async function setupRenderer() {
+  const forceWebGL =
+    new URLSearchParams(globalThis.location?.search ?? '').get('motor') === 'webgl';
+  gfx.renderer = new gfx.platform.Renderer({
     canvas: $('world'),
     antialias: true,
     powerPreference: 'high-performance',
+    forceWebGL,
   });
+  await gfx.renderer.init();
+  gfx.backend = gfx.renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
+  // La pérdida del dispositivo WebGPU usa el mismo aviso que la del contexto WebGL.
+  gfx.renderer.onDeviceLost = () => $('world').dispatchEvent(new Event('webglcontextlost'));
   gfx.renderer.setSize(gfx.W, gfx.H);
   gfx.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   gfx.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -96,13 +105,29 @@ export function resizeRenderer() {
   gfx.needsRender = true;
 }
 
+// Sombras del sol. Con WebGPURenderer (r186), cambiar en marcha `shadowMap.enabled` o
+// `castShadow` deja nodos de sombra destruidos en pipelines de la caché y el render lanza una
+// excepción que detiene el bucle. El sol proyecta siempre; sin sombras, el mapa deja de
+// actualizarse (no hay pasada de sombras, que es lo caro) y su intensidad es 0. Los dos son
+// uniformes: no se recompila nada.
+export function setSunShadows(on) {
+  const shadow = gfx.sun.shadow;
+  gfx.renderer.shadowMap.enabled = true;
+  gfx.sun.castShadow = true;
+  if (gfx.sunShadows === on) return;
+  gfx.sunShadows = on;
+  shadow.autoUpdate = on;
+  shadow.needsUpdate = on;
+  shadow.intensity = on ? 1 : 0;
+  gfx.needsRender = true;
+}
+
 // Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
 export function applyQuality() {
   const low = gfx.quality === 'low';
   applyGroundDetailQuality();
   gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
-  gfx.renderer.shadowMap.enabled = !low;
-  gfx.sun.castShadow = !low;
+  setSunShadows(!low);
   gfx.scene.fog.far = low ? 380 : 620;
   gfx.needsRender = true;
 }

@@ -52,20 +52,20 @@ se versiona. El juego no necesita `node_modules`.
 
 ## Estructura
 
-| Ruta             | Contenido                                                          |
-| ---------------- | ------------------------------------------------------------------ |
-| `web/`           | Juego, capas de datos y recursos publicados en Pages               |
-| `web/game3d.js`  | Entrada del juego: lee `?v=` y llama a `startGame()`               |
-| `web/js/`        | Módulos ES del juego, por capas (ver «Módulos del juego»)          |
-| `web/vendor/`    | Three.js r169 y su licencia; no se reformatea                      |
-| `web/licenses/`  | Textos completos de licencias de datos                             |
-| `web/measure.js` | Medición opcional en el navegador; el juego no la importa          |
-| `tools/`         | Conversores y generadores de datos (ver `tools/AGENTS.md`)         |
-| `tests/`         | Verificadores en Node                                              |
-| `source-data/`   | Catálogo de frentes y auditoría IGN que usan los conversores       |
-| `docs/`          | Guías                                                              |
-| `.github/`       | CI, despliegue en Pages y Dependabot                               |
-| `.agents/`       | Habilidades compartidas por agentes (`.claude/skills/` las enlaza) |
+| Ruta             | Contenido                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `web/`           | Juego, capas de datos y recursos publicados en Pages                                       |
+| `web/game3d.js`  | Entrada del juego: lee `?v=` y llama a `startGame()`                                       |
+| `web/js/`        | Módulos ES del juego, por capas (ver «Módulos del juego»)                                  |
+| `web/vendor/`    | Three.js 0.186.1 (WebGPURenderer, con WebGL 2 de respaldo) y su licencia; no se reformatea |
+| `web/licenses/`  | Textos completos de licencias de datos                                                     |
+| `web/measure.js` | Medición opcional en el navegador; el juego no la importa                                  |
+| `tools/`         | Conversores y generadores de datos (ver `tools/AGENTS.md`)                                 |
+| `tests/`         | Verificadores en Node                                                                      |
+| `source-data/`   | Catálogo de frentes y auditoría IGN que usan los conversores                               |
+| `docs/`          | Guías                                                                                      |
+| `.github/`       | CI, despliegue en Pages y Dependabot                                                       |
+| `.agents/`       | Habilidades compartidas por agentes (`.claude/skills/` las enlaza)                         |
 
 Copias intencionadas, que no se editan a mano: `web/LICENSE` y `web/THIRD_PARTY_NOTICES.md`
 (copias de la raíz). Se regeneran con `node tools/export-provenance.mjs` y
@@ -261,10 +261,11 @@ recarga las teselas de ortofoto y espera otro segundo en cada vista. `--low` gua
 la calidad ligera antes de cargar y comprueba que se haya aplicado.
 
 El JSON incluye llamadas de dibujo y triángulos por vista: `total` suma el pase
-principal y el de sombras; `main` excluye sombras. Three.js r169 reinicia
-`renderer.info` después del pase de sombras: la herramienta usa
-`info.autoReset = false` y `info.reset()` antes de cada medida, y restaura el sol y
-el reinicio automático al terminar. También registra una vez el inventario de
+principal y el de sombras; `main` excluye sombras (`setSunShadows(false)`: sin pasada
+de sombras). Con WebGPURenderer las llamadas salen de `info.render.drawCalls`; la
+herramienta usa `info.autoReset = false` y `info.reset()` antes de cada medida, y
+restaura las sombras y el reinicio automático al terminar. El JSON anota el motor
+(`backend`: WebGPU o WebGL 2); comparar solo medidas del mismo motor. También registra una vez el inventario de
 mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
 sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.
 `--compare` muestra las cifras anteriores y actuales y su diferencia porcentual;

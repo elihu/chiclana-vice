@@ -1,5 +1,5 @@
 import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
 import { loadProgress } from '../ui/feedback.js';

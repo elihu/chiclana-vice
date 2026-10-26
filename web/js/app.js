@@ -1,6 +1,6 @@
 import { setRandomSeed } from './core/random.js';
 import { boundsBox } from './world/bounds.js';
-import * as THREE from '../vendor/three.module.min.js';
+import * as THREE from '../vendor/three.webgpu.min.js';
 import { $, sleepFrame, ui } from './core/dom.js';
 import { SPAWN_POSITION } from '../game-data.js';
 import {
@@ -17,6 +17,7 @@ import {
   world,
 } from './core/state.js';
 import { addGroundPlanes, placeSun, setupRenderer } from './engine/renderer.js';
+import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
@@ -92,7 +93,7 @@ async function init() {
   world.aerialIndex = aerialIndex;
   world.aerialBox = aerialIndex?.general.box ?? boundsBox();
   loadProgress('Preparando el mundo 3D…', 25);
-  setupRenderer();
+  await setupRenderer();
   buildRoadGraph();
   indexBuildings();
   prepareTerrainPlacement();
@@ -173,7 +174,9 @@ function frame(now) {
   if (!gfx.contextLost && (!session.started || !session.paused || gfx.needsRender)) {
     gfx.renderer.render(gfx.scene, gfx.camera);
     gfx.needsRender = false;
-  }
+    if (session.started && session.paused) resetPerf();
+    else tickPerf(now);
+  } else resetPerf();
   if (session.started && !session.paused && frameCount++ % 3 === 0) {
     let mini = ui('mini');
     if (mini.width !== 280) {
@@ -203,10 +206,11 @@ export async function startGame({ version = null, platform: injected = {} } = {}
   loadSavedProgress();
   installControls();
   gfx.platform = {
-    WebGLRenderer: THREE.WebGLRenderer,
+    Renderer: THREE.WebGPURenderer,
     TextureLoader: THREE.TextureLoader,
     ...injected,
   };
+  installPerf();
   try {
     await init();
   } catch (err) {

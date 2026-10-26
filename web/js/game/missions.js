@@ -96,7 +96,7 @@ export function updateMarkers(goal) {
     ring.position.set(goal.x, cached.ground + 0.16, goal.z);
     ring.scale.setScalar(1 + Math.sin(session.t * 2) * 0.025);
     actors.beam.position.set(goal.x, cached.ground + 2, goal.z);
-    actors.beam.material.opacity = 0.1 + Math.sin(session.t * 2) * 0.025;
+    actors.beam.material.opacity = 0.04 + Math.sin(session.t * 2) * 0.01;
     actors.arrow.visible = true;
     actors.arrow.position.set(goal.x, cached.ground + 6 + Math.sin(session.t * 2) * 0.4, goal.z);
     actors.arrow.rotation.z = Math.PI;
