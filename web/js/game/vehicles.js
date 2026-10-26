@@ -39,6 +39,7 @@ export function createCar(color = '#b9b8aa', cop = false) {
         geometry,
       );
   }
+  group.name = 'vehicle';
   outside.attach(group, key, ['trim', 'alloy', 'plate', 'plateBand', 'head', 'tail', 'livery']);
   inside.attach(cabin, key + '-cabin', ['frame']);
   const occluders = [...cabin.children];

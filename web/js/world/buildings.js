@@ -222,10 +222,10 @@ export async function buildBuildings() {
         aerialMaterial(g.i, g.j, { roughness: 0.98, side: THREE.DoubleSide }, '#b4a58f'),
       );
     let group = new THREE.Group();
-    for (const [pos, uv, colors, material, hag] of [
-      [g.w, g.wu, g.wc, wallMat, g.wh],
-      [g.dw, g.dwu, g.dwc, plainWallMat, g.dwh],
-      [g.r, g.ru, null, g === overflow ? roofMat : roofMaterials.get(key)],
+    for (const [name, pos, uv, colors, material, hag] of [
+      ['building-walls', g.w, g.wu, g.wc, wallMat, g.wh],
+      ['building-plain-walls', g.dw, g.dwu, g.dwc, plainWallMat, g.dwh],
+      ['building-roofs', g.r, g.ru, null, g === overflow ? roofMat : roofMaterials.get(key)],
     ]) {
       if (!pos?.length) continue;
       let geo = new THREE.BufferGeometry();
@@ -236,6 +236,7 @@ export async function buildBuildings() {
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       let mesh = new THREE.Mesh(geo, material);
+      mesh.name = name;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);

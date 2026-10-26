@@ -305,11 +305,23 @@ try {
     const inventory = await evaluate(`(async()=>{
     const {gfx,facadeWork,chunks,streetEnvironment}=await import('./js/core/state.js');
     let meshes=0,triangles=0,shadowTriangles=0;
+    // Categoría por nombre de la malla o de un ancestro; lo no reconocido va a «otros».
+    const categories=[['arboles',/^vegetation-/],['fachadas',/^facade-cell-|^reference-led-facades$/],
+      ['muros',/^building-(plain-)?walls$/],['tejados',/^building-roofs$/],
+      ['mobiliario',/^urban-furniture$|^street-sign/],['puentes',/^bridge-/],
+      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicle$/]];
+    const shadowByCategory={};
     gfx.scene.traverse(o=>{if(!o.isMesh)return;meshes++;
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);
-      triangles+=t;if(o.castShadow)shadowTriangles+=t;
+      triangles+=t;
+      if(!o.castShadow)return;
+      shadowTriangles+=t;
+      let category=o.isSkinnedMesh?'actores':null;
+      for(let p=o;p&&!category;p=p.parent)category=categories.find(([,re])=>re.test(p.name))?.[0]??null;
+      const row=shadowByCategory[category??'otros']??={meshes:0,triangles:0};
+      row.meshes++;row.triangles+=t;
     });
-    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.memory.programs,backend:gfx.backend,
+    return {meshes,triangles,shadowTriangles,shadowByCategory,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.memory.programs,backend:gfx.backend,
       facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
       treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);

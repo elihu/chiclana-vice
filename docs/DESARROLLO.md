@@ -287,7 +287,8 @@ de cada medida: la gradación solo vuelve a dibujar la escena una vez por tick d
 renderizador, y dos dibujos seguidos medirían solo la pasada de salida. El JSON anota el motor
 (`backend`: WebGPU o WebGL 2); comparar solo medidas del mismo motor. También registra una vez el inventario de
 mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
-sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.
+sombras (con el desglose por categoría en `shadowByCategory`: árboles, fachadas, muros,
+tejados, mobiliario, puentes, actores), memoria del renderizador, programas, mallas de fachada, celdas y árboles.
 `--compare` muestra las cifras anteriores y actuales y su diferencia porcentual;
 no impone un umbral de presupuesto. Los errores de página hacen fallar la ejecución.
 La espera de arranque tolera fallos de `Runtime.evaluate` durante la navegación
