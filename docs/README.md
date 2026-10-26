@@ -35,6 +35,8 @@ documento; los demás enlazan a él.
 - [Plan de mejora gráfica y presupuesto de render](PLAN-MEJORA-GRAFICA.md): medición de
   llamadas y triángulos, agrupación de fachadas, luz, modo ligero, suelo cercano y árboles
   sobre la ortofoto; sin empezar.
+- [Plan de motor WebGPU, eficiencia y gráficos](PLAN-MOTOR-GRAFICOS.md): rama base con
+  three.js 0.186.1, pase de sombras, llamadas, cielo, entorno, niebla y color.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
