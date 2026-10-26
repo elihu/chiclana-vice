@@ -267,7 +267,7 @@ try {
       try {
         // El pase de sombras se omite si ya se actualizó en este mismo frame de nodos (el bucle
         // del juego pudo renderizar en el último rAF): se avanza el contador para forzarlo.
-        await tick();r.info.autoReset=false;frames.frameId++;gfx.sun.shadow.needsUpdate=true;
+        await tick();r.info.autoReset=false;frames.frameId++;gfx.sun.shadow.needsUpdate=gfx.sunShadows;
         r.info.reset();renderFrame();
         const total={calls:i.drawCalls??i.calls,triangles:i.triangles};
         setSunShadows(false);await tick();r.info.reset();renderFrame();
