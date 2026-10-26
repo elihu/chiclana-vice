@@ -657,6 +657,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           { name: 'Ayuntamiento', detailType: 'townhall', minimumFloors: 3, height: 15.1 },
         ],
         wallUvWidth: 4.8,
+        partyWall: { color: '#d9d3c6', blend: 0.6 },
       },
       vegetation: {
         parkDensity: 105,
@@ -736,6 +737,8 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.buildings.variation.seed = 4294967296), /variation.seed/);
     check((c) => (c.buildings.variation.paletteAssignments = {}), /clave desconocida/);
     check((c) => (c.buildings.wallUvWidth = 0), /wallUvWidth: .*positivo/);
+    check((c) => (c.buildings.partyWall.blend = 0), /partyWall.blend: .*\(0, 1\]/);
+    check((c) => (c.buildings.partyWall.color = 'gris'), /partyWall.color: .*#rrggbb/);
   }
   delete globalThis.document;
 }
