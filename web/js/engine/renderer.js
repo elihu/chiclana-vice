@@ -2,6 +2,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
+import { createSky, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
@@ -50,11 +51,11 @@ export async function setupRenderer() {
   gfx.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   gfx.renderer.toneMappingExposure = EXPOSURE;
   gfx.scene = new THREE.Scene();
-  gfx.scene.background = new THREE.Color('#a5bbc8');
   gfx.scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   gfx.camera = new THREE.PerspectiveCamera(62, gfx.W / gfx.H, 0.15, 1800);
   const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', HEMI_INTENSITY);
   gfx.scene.add(hemi);
+  createSky(SUN_OFFSET);
   gfx.sun = new THREE.DirectionalLight('#fff0d6', SUN_INTENSITY);
   gfx.sun.position.set(-100, 150, 60);
   gfx.sun.shadow.mapSize.set(1024, 1024);
@@ -71,6 +72,12 @@ export async function setupRenderer() {
   gfx.sun.shadow.normalBias = 0.09;
   gfx.scene.add(gfx.sun, gfx.sun.target);
   applyQuality();
+}
+
+// Dibuja un fotograma.
+export function renderFrame() {
+  updateSky(gfx.camera);
+  gfx.renderer.render(gfx.scene, gfx.camera);
 }
 
 export function addGroundPlanes(tiles, exterior) {

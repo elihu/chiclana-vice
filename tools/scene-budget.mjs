@@ -259,14 +259,17 @@ try {
         );
         await sleep(1000);
         const measured = await evaluate(`(async()=>{
-      const {gfx}=await import('./js/core/state.js'),{setSunShadows}=await import('./js/engine/renderer.js'),r=gfx.renderer,i=r.info.render;
+      const {gfx}=await import('./js/core/state.js'),{setSunShadows,renderFrame}=await import('./js/engine/renderer.js'),r=gfx.renderer,i=r.info.render;
+      // La gradación (RenderPipeline) solo vuelve a dibujar la escena una vez por tick del renderizador:
+      // hay que esperar entre una medida y la siguiente.
+      const tick=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
       const cast=gfx.sun.castShadow;
       try {
-        r.info.autoReset=false;r.info.reset();r.render(gfx.scene,gfx.camera);
+        await tick();r.info.autoReset=false;r.info.reset();renderFrame();
         const total={calls:i.drawCalls??i.calls,triangles:i.triangles};
-        setSunShadows(false);r.info.reset();r.render(gfx.scene,gfx.camera);
+        setSunShadows(false);await tick();r.info.reset();renderFrame();
         return {total,main:{calls:i.drawCalls??i.calls,triangles:i.triangles},backend:gfx.backend};
-      } finally {setSunShadows(cast);r.info.autoReset=true;r.render(gfx.scene,gfx.camera);}
+      } finally {setSunShadows(cast);r.info.autoReset=true;await tick();renderFrame();}
     })()`);
         const vegetation = await evaluate(`(async()=>{
         const {gfx}=await import('./js/core/state.js');
