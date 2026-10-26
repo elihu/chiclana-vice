@@ -166,13 +166,14 @@ export function modelParts() {
         z,
       );
     },
-    attach(parent, key, receive = []) {
+    // `noCast`: ranuras demasiado pequeñas o pegadas a la carrocería para dar sombra visible.
+    attach(parent, key, receive = [], noCast = []) {
       for (const [slot, { material, parts }] of slots) {
         const m = new THREE.Mesh(
           modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
           material,
         );
-        m.castShadow = true;
+        m.castShadow = !noCast.includes(slot);
         m.receiveShadow = receive.includes(slot);
         parent.add(m);
       }
