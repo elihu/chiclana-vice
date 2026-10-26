@@ -2,12 +2,12 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
-import { createSky, updateSky } from './sky.js';
+import { applySkyLight, bakeSkyEnvironment, createSky, SKY, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
+// La hemisférica de apoyo y la luz del cielo horneado se reparten en `SKY` (sky.js).
 const EXPOSURE = 1.05,
-  HEMI_INTENSITY = 1.7,
   SUN_INTENSITY = 3.2;
 
 const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
@@ -53,9 +53,9 @@ export async function setupRenderer() {
   gfx.scene = new THREE.Scene();
   gfx.scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   gfx.camera = new THREE.PerspectiveCamera(62, gfx.W / gfx.H, 0.15, 1800);
-  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', HEMI_INTENSITY);
+  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', SKY.hemiIntensity);
   gfx.scene.add(hemi);
-  createSky(SUN_OFFSET);
+  createSky(SUN_OFFSET, hemi);
   gfx.sun = new THREE.DirectionalLight('#fff0d6', SUN_INTENSITY);
   gfx.sun.position.set(-100, 150, 60);
   gfx.sun.shadow.mapSize.set(1024, 1024);
@@ -71,6 +71,10 @@ export async function setupRenderer() {
   gfx.sun.shadow.bias = -0.0002;
   gfx.sun.shadow.normalBias = 0.09;
   gfx.scene.add(gfx.sun, gfx.sun.target);
+  // Con el renderizador simulado de las pruebas no hay entorno horneado.
+  if (gfx.renderer instanceof THREE.Renderer) {
+    gfx.skyBakeMs = await bakeSkyEnvironment();
+  } else applySkyLight();
   applyQuality();
 }
 

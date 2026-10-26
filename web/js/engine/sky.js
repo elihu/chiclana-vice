@@ -3,7 +3,7 @@ import { gfx } from '../core/state.js';
 
 const { uniform, vec3, mix, smoothstep, saturate, pow, dot, normalize, positionLocal } = THREE.TSL;
 
-// Valores ajustables del cielo (colores en sRGB). Los uniformes se
+// Valores ajustables del cielo y la luz de entorno (colores en sRGB). Los uniformes se
 // pueden cambiar en vivo desde la consola con `setSky({ zenith: '#5588bb' })`.
 export const SKY = {
   // Degradado: el horizonte coincide con el color de la niebla de G2; el cenit es más azul.
@@ -18,6 +18,11 @@ export const SKY = {
   haloWide: 0.28,
   haloTight: 0.9,
   haloStrength: 1,
+  // Fuerza del halo dentro del entorno horneado (la luz directa ya la pone el sol).
+  envHalo: 0.5,
+  // Luz ambiente del cielo horneado y de la hemisférica de apoyo.
+  envIntensity: 0.35,
+  hemiIntensity: 1.1,
 };
 
 export const skyUniforms = {
@@ -39,11 +44,13 @@ const colorKeys = ['horizon', 'zenith', 'ground', 'haloColor'],
     haloStrength: 'halo',
   };
 
-// Cambia valores de SKY en vivo (colores y halo).
+// Cambia valores de SKY en vivo (colores y halo). La luz ambiente (envIntensity,
+// hemiIntensity) se aplica con `applySkyLight()`; para rehornear el entorno, `bakeSkyEnvironment()`.
 export function setSky(patch = {}) {
   Object.assign(SKY, patch);
   for (const key of colorKeys) skyUniforms[key].value.set(SKY[key]);
   for (const [key, name] of Object.entries(numberKeys)) skyUniforms[name].value = SKY[key];
+  applySkyLight();
   gfx.needsRender = true;
 }
 
@@ -56,10 +63,12 @@ function skyColorAt(dir, sunDir) {
   return mix(mix(u.horizon, u.zenith, up), u.ground, below).add(u.haloColor.mul(halo));
 }
 
-let sky = null;
+let sky = null,
+  hemiLight = null;
 
 // Cúpula unida a la cámara. Sin profundidad ni niebla: se dibuja primero y lo demás la tapa.
-export function createSky(sunDirection) {
+export function createSky(sunDirection, hemi) {
+  hemiLight = hemi;
   const sunDir = vec3(...sunDirection.clone().normalize().toArray()),
     material = new THREE.MeshBasicNodeMaterial({
       side: THREE.BackSide,
@@ -80,4 +89,33 @@ export function createSky(sunDirection) {
 
 export function updateSky(camera) {
   if (sky) sky.dome.position.copy(camera.position);
+}
+
+let pmrem = null,
+  envTarget = null;
+
+// Hornea el cielo una sola vez (cubo PMREM). Devuelve los milisegundos que ha costado.
+export async function bakeSkyEnvironment() {
+  const t0 = performance.now(),
+    envScene = new THREE.Scene(),
+    dome = new THREE.Mesh(sky.dome.geometry, sky.material);
+  dome.scale.setScalar(50);
+  envScene.add(dome);
+  pmrem ??= new THREE.PMREMGenerator(gfx.renderer);
+  const base = skyUniforms.halo.value;
+  skyUniforms.halo.value = base * SKY.envHalo;
+  try {
+    envTarget = await pmrem.fromSceneAsync(envScene, 0, 0.1, 100, { renderTarget: envTarget });
+  } finally {
+    skyUniforms.halo.value = base;
+  }
+  gfx.scene.environment = envTarget.texture;
+  applySkyLight();
+  return performance.now() - t0;
+}
+
+// Reparto de la luz ambiente entre el entorno horneado y la hemisférica. Son uniformes.
+export function applySkyLight() {
+  if (gfx.scene) gfx.scene.environmentIntensity = SKY.envIntensity;
+  if (hemiLight) hemiLight.intensity = SKY.hemiIntensity;
 }
