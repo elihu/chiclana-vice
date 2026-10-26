@@ -28,6 +28,7 @@ import { validateCityDesign, validateFacadeDesigns } from './world/design-valida
 import { buildRoadDetails, buildStreetSurfaces } from './world/streets.js';
 import { buildRoadGraph, connectOpenSpaces, orientDriveGraph } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
+import { buildShadowProxies } from './world/shadow-proxies.js';
 import { buildUrbanFurniture } from './world/furniture.js';
 import { clamp } from './core/math.js';
 import { createCar } from './game/vehicles.js';
@@ -118,6 +119,7 @@ async function init() {
   buildUrbanFurniture();
   buildTrees();
   addSigns();
+  buildShadowProxies();
   setupPOIs();
   let spawn = safePoint(SPAWN_POSITION.x, SPAWN_POSITION.z, true);
   Object.assign(base, spawn);

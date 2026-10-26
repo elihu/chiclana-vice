@@ -309,7 +309,7 @@ try {
     const categories=[['arboles',/^vegetation-/],['fachadas',/^facade-cell-|^reference-led-facades$/],
       ['muros',/^building-(plain-)?walls$/],['tejados',/^building-roofs$/],
       ['mobiliario',/^urban-furniture$|^street-sign/],['puentes',/^bridge-/],
-      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicle$/]];
+      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicle$/],['sustitutos',/^shadow-proxies$/]];
     const shadowByCategory={};
     gfx.scene.traverse(o=>{if(!o.isMesh)return;meshes++;
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);

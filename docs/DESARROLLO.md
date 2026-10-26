@@ -255,6 +255,17 @@ La elección se guarda en el navegador (`chiclana-real-v2`) y nunca se activa so
 Funciona en un móvil Android (comprobado a mano); su efecto en el rendimiento no se ha
 medido en un móvil físico.
 
+## Sustitutos de sombra
+
+`web/js/world/shadow-proxies.js` (`buildShadowProxies`, tras `addSigns`) copia los proyectores
+estáticos grandes (muros, tejados, fachadas, mobiliario, puentes) a geometría solo de
+posición, un material por cara (`side`) y una malla por celda de 160 m, y sustituye las copas
+de los árboles por un icosaedro de 20 triángulos que comparte las matrices de instancia. Los
+sustitutos viven en la capa 1, que solo ve la cámara de sombra (`sun.shadow.camera.layers`);
+las originales pasan a `castShadow = false`. Las facetas de fachada de menos de 0,02 m² (por
+debajo del texel del mapa) no se copian. Quien añada un proyector estático nuevo debe incluir
+su nombre en `STATIC` de ese módulo; si no, sigue proyectando él mismo.
+
 ## Medir en el navegador
 
 Para medir el presupuesto de render, sirve `web/` y ejecuta:
