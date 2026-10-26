@@ -2,6 +2,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
+import { createPost } from './post.js';
 import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 
@@ -71,17 +72,22 @@ export async function setupRenderer() {
   gfx.sun.shadow.bias = -0.0002;
   gfx.sun.shadow.normalBias = 0.09;
   gfx.scene.add(gfx.sun, gfx.sun.target);
-  // Con el renderizador simulado de las pruebas no hay entorno horneado.
+  // Con el renderizador simulado de las pruebas no hay entorno horneado ni gradación.
   if (gfx.renderer instanceof THREE.Renderer) {
     gfx.skyBakeMs = await bakeSkyEnvironment();
+    post = createPost();
   } else applySkyLight();
   applyQuality();
 }
 
-// Dibuja un fotograma.
+// Dibuja un fotograma: con gradación (RenderPipeline) o directo en el modo ligero.
+let post = null,
+  postOn = false;
+
 export function renderFrame() {
   updateSky(gfx.camera);
-  gfx.renderer.render(gfx.scene, gfx.camera);
+  if (postOn) post.render();
+  else gfx.renderer.render(gfx.scene, gfx.camera);
 }
 
 export function addGroundPlanes(tiles, exterior) {
@@ -132,7 +138,7 @@ export function setSunShadows(on) {
   gfx.needsRender = true;
 }
 
-// Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
+// Light mode: DPR 1, no shadows, shorter fog and no colour grading (it adds a full-screen pass).
 export function applyQuality() {
   const low = gfx.quality === 'low';
   applyGroundDetailQuality();
@@ -140,5 +146,6 @@ export function applyQuality() {
   setSunShadows(!low);
   gfx.scene.fog.far = low ? 380 : 620;
   syncSkyFog();
+  postOn = !low && post !== null;
   gfx.needsRender = true;
 }
