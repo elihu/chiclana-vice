@@ -94,6 +94,14 @@ sha512-Ed906MA3dR4TS5riErd4QBsRGPcx+HBDX2O5yYE5GqJeFQTPU+M56Va/f/Oph9X7uZo3W3o4l
 conserva la cabecera de licencia.
 Mantener `vendor/LICENSE-three.txt` junto a la librería.
 
+## slop-newyork
+
+`web/js/game/car-model.js` adapta el generador de carrocerías por secciones de
+slop-newyork (https://github.com/mrdoob/slop-newyork, `js/actor-models.js`), MIT,
+Copyright (c) 2026 Mr.doob, que parte a su vez de `LoftGeometry` y `CarGenerator` del
+ejemplo `webgpu_generator_city` de three.js (MIT, three.js authors). Se conservan la
+geometría y las tablas de diseño, ajustadas de tamaño; el material TSL original no se usa.
+
 ## Fachadas, monumentos y referencias
 
 Modelos aproximados construidos con primitivas y reglas de juego. Se interpretan
