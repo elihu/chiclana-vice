@@ -263,7 +263,7 @@ try {
       // La gradación (RenderPipeline) solo vuelve a dibujar la escena una vez por tick del renderizador:
       // hay que esperar entre una medida y la siguiente.
       const tick=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
-      const cast=gfx.sun.castShadow,frames=r._nodes.nodeFrame;
+      const cast=gfx.sunShadows,frames=r._nodes.nodeFrame;
       try {
         // El pase de sombras se omite si ya se actualizó en este mismo frame de nodos (el bucle
         // del juego pudo renderizar en el último rAF): se avanza el contador para forzarlo.
