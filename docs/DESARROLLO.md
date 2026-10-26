@@ -388,3 +388,9 @@ capa, OSM, plaza y relleno de parques (cero con la capa); `treeBuildMs` mide la 
 árboles y arbustos con `performance.now()`. El presupuesto por vista incluye también
 instancias, triángulos y lotes de vegetación visibles en el frustum principal.
 Son medidas de CPU y recuentos, no FPS ni tiempo de GPU.
+
+`scene-budget` imprime también, por vista, el desglose del pase principal por categoría y
+por material (`breakdown` en el JSON: llamadas, triángulos y materiales por categoría, y los
+25 materiales con más llamadas). Los coches se dibujan como instancias por ranura de material
+(`js/game/car-batch.js`): cada coche conserva su `mesh` como ancla y `syncCarBatches` copia su
+matriz a las instancias de los coches a la vista justo antes de dibujar.
