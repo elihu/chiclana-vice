@@ -13,7 +13,7 @@ const _vector = new THREE.Vector3();
 
 // Superficie por secciones transversales con el mismo número de puntos; `closed` cierra cada
 // sección sobre sí misma y `capStart` / `capEnd` tapan los extremos.
-class LoftGeometry extends THREE.BufferGeometry {
+export class LoftGeometry extends THREE.BufferGeometry {
   constructor(sections = [], { closed = true, capStart = false, capEnd = false } = {}) {
     super();
     if (!sections.length) return; // clone() construye vacío y copia después

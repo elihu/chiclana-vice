@@ -4,7 +4,7 @@ import { blocked, inBuilding, safePoint } from '../world/spatial.js';
 import { cars, graph, people, player, segments, session, traffic } from '../core/state.js';
 import { clamp, d, lerp } from '../core/math.js';
 import { createCar } from './vehicles.js';
-import { createPerson } from './people.js';
+import { animateWalk, createPerson } from './people.js';
 import { rnd } from '../core/random.js';
 
 export function spawnTraffic() {
@@ -41,7 +41,8 @@ export function spawnTraffic() {
     let s = segments[Math.floor(rnd() * segments.length)];
     if (s.length < 8) continue;
     let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
-    Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1 });
+    // Fase de paso propia (sin consumir el azar compartido): no andan todos al compás.
+    Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1, phase: i * 2.39 });
     people.push(person);
   }
 }
@@ -112,6 +113,6 @@ export function updatePedestrians(dt) {
     p.surfaceY = surfaceHeightAt(x, z, p.surfaceY ?? null, p.s.roadId);
     p.mesh.position.set(x, p.surfaceY, z);
     p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
-    p.limbs.forEach((l, i) => (l.rotation.x = Math.sin(session.t * 7 + (i % 2) * Math.PI) * 0.35));
+    animateWalk(p, session.t * 7 + p.phase, 0.35);
   }
 }

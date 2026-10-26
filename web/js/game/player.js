@@ -1,4 +1,5 @@
 import { actorHeightAt } from '../engine/terrain-sampling.js';
+import { animateWalk } from './people.js';
 import {
   actors,
   base,
@@ -175,11 +176,7 @@ export function updatePlayer(dt) {
     player.speed = v;
     player.surfaceY = actorHeightAt(player);
     actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
-    actors.character.limbs.forEach(
-      (l, i) =>
-        (l.rotation.x =
-          Math.sin(session.t * (boost ? 12 : 8) + (i % 2) * Math.PI) * Math.min(0.65, v * 0.13)),
-    );
+    animateWalk(actors.character, session.t * (boost ? 12 : 8), Math.min(0.65, v * 0.13));
   }
   updateEngineSound();
 }

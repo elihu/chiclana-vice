@@ -374,15 +374,30 @@ const cop = g.createCar('#123456', true);
 assert.equal(carMeshes(cop).length, 12, 'patrol keeps separate siren');
 assert(cop.siren.isGroup && cop.siren.children.length === 2);
 assert(a.firstPersonOccluders.every((m) => m.parent === a.mesh && am.includes(m)));
-assert.equal(carMeshes({ mesh: person.mesh }).length, 12, 'person merged per material');
+// A person is one skinned mesh (one draw call); hips/shoulders and knees/elbows are bones.
+const personMeshes = carMeshes({ mesh: person.mesh });
+assert.equal(personMeshes.length, 1, 'person is a single mesh');
+assert(personMeshes[0].isSkinnedMesh && personMeshes[0].skeleton.bones.length === 11);
 assert.equal(person.limbs.length, 4);
-for (const limb of person.limbs) assert(limb.isGroup && limb.children.length === 2);
-const otherPerson = g.createPerson();
-assert.equal(
-  person.mesh.children[0].geometry,
-  otherPerson.mesh.children[0].geometry,
-  'person spheres shared',
+assert.equal(person.joints.length, 4);
+for (const bone of [...person.limbs, ...person.joints]) assert(bone.isBone);
+g.animateWalk(person, 1, 0.5);
+assert(
+  person.joints.slice(0, 2).some((k) => k.rotation.x > 0),
+  'a knee bends while walking',
 );
+g.animateWalk(person, 0, 0);
+const twin = (k) => g.createPerson('#78805a', { variant: k });
+assert.equal(
+  twin(0).mesh.children[0].geometry,
+  twin(0).mesh.children[0].geometry,
+  'same look shares geometry',
+);
+assert.notEqual(twin(0).mesh.children[0].geometry, twin(1).mesh.children[0].geometry);
+for (let k = 0; k < 6; k++) {
+  const box = new Real.Box3().setFromObject(twin(k).mesh);
+  assert(box.max.y < 1.76 && box.min.y >= -0.001, 'every variant at human scale, feet grounded');
+}
 const vegetation = g.scene.getObjectByName('vegetation-cells');
 assert(vegetation, 'vegetation spatial groups exist');
 const count = (kind) =>

@@ -101,6 +101,8 @@ slop-newyork (https://github.com/mrdoob/slop-newyork, `js/actor-models.js`), MIT
 Copyright (c) 2026 Mr.doob, que parte a su vez de `LoftGeometry` y `CarGenerator` del
 ejemplo `webgpu_generator_city` de three.js (MIT, three.js authors). Se conservan la
 geometría y las tablas de diseño, ajustadas de tamaño; el material TSL original no se usa.
+`web/js/game/people.js` reutiliza esa `LoftGeometry` para el torso; la idea de un cuerpo
+continuo con esqueleto viene de sus peatones, pero el modelo y la animación son propios.
 
 ## Fachadas, monumentos y referencias
 
