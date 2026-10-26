@@ -166,13 +166,18 @@ export function modelParts() {
         z,
       );
     },
+    // Una pieza fusionada por ranura, con la geometría compartida en caché por `key`.
+    slotMeshes(key) {
+      return [...slots].map(([slot, { material, parts }]) => ({
+        slot,
+        material,
+        geometry: modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
+      }));
+    },
     // `noCast`: ranuras demasiado pequeñas o pegadas a la carrocería para dar sombra visible.
     attach(parent, key, receive = [], noCast = []) {
-      for (const [slot, { material, parts }] of slots) {
-        const m = new THREE.Mesh(
-          modelGeometry('merged:' + key + ':' + slot, () => mergeParts(parts)),
-          material,
-        );
+      for (const { slot, material, geometry } of this.slotMeshes(key)) {
+        const m = new THREE.Mesh(geometry, material);
         m.castShadow = !noCast.includes(slot);
         m.receiveShadow = receive.includes(slot);
         parent.add(m);

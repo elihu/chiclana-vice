@@ -2,17 +2,23 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { modelBox, modelMaterial, modelParts } from '../engine/materials.js';
 import { addContactShadow } from '../engine/contact-shadows.js';
 import { carModel } from './car-model.js';
+import { registerCar } from './car-batch.js';
 import { blocked } from '../world/spatial.js';
 import { d } from '../core/math.js';
 import { gfx, player, vehicles } from '../core/state.js';
 
 // Carrocería, cristales y techo por secciones (car-model.js). Las piezas fijas se agrupan por
-// material en una malla cada una (los neumáticos van con las piezas negras); cristal y techo
-// van aparte porque la primera persona los oculta.
-export function createCar(color = '#b9b8aa', cop = false) {
-  const { slots, roofY } = carModel('sedan'),
-    group = new THREE.Group(),
-    paint = modelMaterial(color, { metalness: 0.35, roughness: 0.32 }),
+// material en una malla cada una (los neumáticos van con las piezas negras) y todos los coches
+// del mismo tipo las dibujan como instancias (car-batch.js). Cristal y techo van aparte porque
+// la primera persona los oculta. El color de la carrocería es el color de cada instancia.
+const BODY = { metalness: 0.35, roughness: 0.32 };
+const RECEIVE = ['trim', 'alloy', 'plate', 'plateBand', 'head', 'tail', 'livery', 'frame'];
+// Piezas demasiado pequeñas o pegadas a la carrocería para dar sombra visible.
+const NO_CAST = ['alloy', 'plate', 'plateBand', 'head', 'tail', 'livery'];
+
+function carSlots(cop) {
+  const { slots } = carModel('sedan'),
+    paint = modelMaterial('#ffffff', BODY),
     materials = {
       paint,
       frame: paint,
@@ -27,8 +33,7 @@ export function createCar(color = '#b9b8aa', cop = false) {
     },
     key = cop ? 'cop' : 'car',
     outside = modelParts(),
-    inside = modelParts(),
-    cabin = new THREE.Group();
+    inside = modelParts();
   for (const [name, geometries] of Object.entries(slots)) {
     if (name === 'livery' && !cop) continue;
     const slot = name === 'tyre' ? 'trim' : name;
@@ -39,16 +44,22 @@ export function createCar(color = '#b9b8aa', cop = false) {
         geometry,
       );
   }
+  const describe = (parts, suffix, cabin) =>
+    parts.slotMeshes(key + suffix).map((m) => ({
+      ...m,
+      cabin,
+      tinted: m.slot === 'paint' || m.slot === 'frame',
+      receive: RECEIVE.includes(m.slot),
+      cast: !NO_CAST.includes(m.slot),
+    }));
+  return [...describe(outside, '', false), ...describe(inside, '-cabin', true)];
+}
+
+export function createCar(color = '#b9b8aa', cop = false) {
+  const { roofY } = carModel('sedan'),
+    group = new THREE.Group(),
+    key = cop ? 'cop' : 'car';
   group.name = 'vehicle';
-  outside.attach(
-    group,
-    key,
-    ['trim', 'alloy', 'plate', 'plateBand', 'head', 'tail', 'livery'],
-    ['alloy', 'plate', 'plateBand', 'head', 'tail', 'livery'],
-  );
-  inside.attach(cabin, key + '-cabin', ['frame']);
-  const occluders = [...cabin.children];
-  group.add(...occluders);
   let siren = null;
   if (cop) {
     siren = new THREE.Group();
@@ -79,9 +90,11 @@ export function createCar(color = '#b9b8aa', cop = false) {
   }
   gfx.scene.add(group);
   addContactShadow(group, 'car');
-  return {
+  const car = {
     mesh: group,
-    firstPersonOccluders: occluders,
+    firstPersonOccluders: [],
+    cabinHidden: false,
+    paintColor: new THREE.Color(color),
     x: 0,
     z: 0,
     a: 0,
@@ -92,6 +105,17 @@ export function createCar(color = '#b9b8aa', cop = false) {
     name: cop ? 'PATRULLA' : 'COSTA GT',
     radius: 1.12,
   };
+  // Para la cámara, cristal y techo son un interruptor `visible` (car-batch.js los omite).
+  car.firstPersonOccluders.push({
+    get visible() {
+      return !car.cabinHidden;
+    },
+    set visible(v) {
+      car.cabinHidden = !v;
+    },
+  });
+  registerCar(key, () => carSlots(cop), car);
+  return car;
 }
 
 export function nearestCar() {
