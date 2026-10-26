@@ -164,28 +164,32 @@ export function buildUrbanFurniture() {
       const [key, value] = tag.split('=');
       if (p.tags[key] === value) builders[kind](p);
     }
-  // Static batching keeps all furniture to one draw call per material.
+  // Una sola malla con el color de cada pieza en un atributo de vértice: una llamada de dibujo
+  // para todo el mobiliario, con los mismos colores (y la misma rugosidad) que los materiales.
   staging.updateMatrixWorld(true);
-  let batches = new Map();
+  const position = [],
+    normal = [],
+    color = [],
+    tint = new THREE.Color();
   staging.traverse((o) => {
     if (!o.isMesh) return;
     let geo = o.geometry.toNonIndexed();
     geo.applyMatrix4(o.matrixWorld);
-    let key = o.material.color.getHexString();
-    if (!batches.has(key)) batches.set(key, { p: [], n: [], mat: o.material });
-    let b = batches.get(key);
-    b.p.push(...geo.getAttribute('position').array);
-    b.n.push(...geo.getAttribute('normal').array);
+    tint.copy(o.material.color);
+    for (const v of geo.getAttribute('position').array) position.push(v);
+    for (const v of geo.getAttribute('normal').array) normal.push(v);
+    for (let i = 0; i < geo.getAttribute('position').count; i++) color.push(tint.r, tint.g, tint.b);
     geo.dispose();
   });
   let root = new THREE.Group();
   root.name = 'urban-furniture';
-  for (let b of batches.values()) {
+  if (position.length) {
     let g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(b.p, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(b.n, 3));
+    g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
     g.computeBoundingSphere();
-    let m = new THREE.Mesh(g, b.mat);
+    let m = new THREE.Mesh(g, mat('#ffffff', { vertexColors: true }));
     m.castShadow = m.receiveShadow = true;
     root.add(m);
   }
