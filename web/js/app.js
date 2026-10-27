@@ -38,8 +38,9 @@ import { createPublicApi, createTestApi } from './test-api.js';
 import { drawLabels, updateHUD } from './ui/hud.js';
 import { drawMap, prepareMap } from './ui/map.js';
 import { indexBuildings, safePoint } from './world/spatial.js';
-import { installControls, installTouchDetection } from './ui/controls.js';
+import { describeTime, installControls, installTouchDetection } from './ui/controls.js';
 import { loadProgress, toast } from './ui/feedback.js';
+import { initialTime, setTimeOfDay } from './engine/time-of-day.js';
 import { loadSavedProgress } from './game/save.js';
 import { setAssetVersion } from './core/assets.js';
 import { spawnTraffic, updatePedestrians } from './game/traffic.js';
@@ -97,7 +98,10 @@ async function init() {
   world.aerialIndex = aerialIndex;
   world.aerialBox = aerialIndex?.general.box ?? boundsBox();
   loadProgress('Preparando el mundo 3D…', 25);
-  await setupRenderer();
+  await setupRenderer(() => {
+    setTimeOfDay(initialTime(), { bake: false });
+    describeTime();
+  });
   buildRoadGraph();
   indexBuildings();
   prepareTerrainPlacement();

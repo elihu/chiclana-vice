@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { normalizeProgress, readProgress } from '../web/progress.js';
 import { PROGRESS_LIMITS as limits, JOBS, PLACES, SAVE_KEY } from '../web/game-data.js';
 
-const defaults = { cash: limits.cash, job: 0, found: [], quality: 'auto' };
+const defaults = { cash: limits.cash, job: 0, found: [], quality: 'auto', time: 'tarde' };
 for (const value of [null, [], 42, 'old-save', {}, { cash: -5, job: 1.5, found: {} }])
   assert.deepEqual(normalizeProgress(value, limits), defaults, 'invalid save recovers defaults');
 for (const value of [null, '{bad json', 'null', '{"found":{}}'])
@@ -18,7 +18,13 @@ assert.deepEqual(
   ),
   defaults,
 );
-const valid = { cash: 800, job: JOBS.length, found: [0, PLACES.length - 1], quality: 'low' };
+const valid = {
+  cash: 800,
+  job: JOBS.length,
+  found: [0, PLACES.length - 1],
+  quality: 'low',
+  time: 'anochecer',
+};
 assert.deepEqual(
   readProgress(
     {
@@ -36,6 +42,7 @@ assert.deepEqual(
   [0],
 );
 assert.equal(normalizeProgress({ job: JOBS.length + 1 }, limits).job, 0);
+assert.equal(normalizeProgress({ time: 'medianoche' }, limits).time, 'tarde');
 console.log('Invalid saves recover; valid progress and quality preserved');
 
 assert.deepEqual(

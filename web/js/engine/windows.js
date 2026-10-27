@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { skyUniforms } from './sky.js';
 import { wallMaterial } from './wall-ao.js';
 
 const {
@@ -46,6 +47,12 @@ export const WINDOWS = {
   plinthHeight: 0.1, // zócalo: fracción de la altura de planta
   signTones: ['#7d2f2a', '#25495f', '#5f5a2b'], // rótulos de los locales (granate, azul, oliva)
   plinthTones: ['#8a7f70', '#a79c88', '#6e6a63'], // zócalos por edificio
+  // Noche (uniforme `night` del cielo, de 0 a 1): ventanas y escaparates encendidos.
+  litWindows: 0.3, // fracción de ventanas con la luz encendida (las de persiana bajada, no)
+  litColor: '#ffbd6a', // luz cálida de las ventanas
+  litStrength: 1.5, // intensidad de las ventanas
+  litShops: 0.65, // fracción de escaparates iluminados
+  litShopStrength: 0.55, // intensidad del escaparate
 };
 
 const u = {
@@ -61,7 +68,12 @@ const u = {
   shopShutter: uniform(WINDOWS.shopShutter),
   barsShade: uniform(WINDOWS.barsShade),
   plinthHeight: uniform(WINDOWS.plinthHeight),
+  litWindows: uniform(WINDOWS.litWindows),
+  litStrength: uniform(WINDOWS.litStrength),
+  litShops: uniform(WINDOWS.litShops),
+  litShopStrength: uniform(WINDOWS.litShopStrength),
 };
+const litColor = uniform(new THREE.Color(WINDOWS.litColor));
 const tones = WINDOWS.tones.map((hex) => uniform(new THREE.Color(hex))),
   signTones = WINDOWS.signTones.map((hex) => uniform(new THREE.Color(hex))),
   plinthTones = WINDOWS.plinthTones.map((hex) => uniform(new THREE.Color(hex)));
@@ -72,6 +84,7 @@ export function setWindows(patch = {}) {
   WINDOWS.tones.forEach((hex, i) => tones[i].value.set(hex));
   WINDOWS.signTones.forEach((hex, i) => signTones[i].value.set(hex));
   WINDOWS.plinthTones.forEach((hex, i) => plinthTones[i].value.set(hex));
+  litColor.value.set(WINDOWS.litColor);
   gfx.needsRender = true;
 }
 
@@ -198,9 +211,17 @@ export function windowWallMaterial(parameters) {
     color = mix(color, garageColor, garageDoor);
     color = mix(color, vec3(u.barsShade), bars);
     color = mix(color, plinthColor, plinth);
-    const glass = glassBase.max(shopGlass);
+    const glass = glassBase.max(shopGlass),
+      // Luz de noche: cada ventana con cristal visible se enciende según su hash (distinto del de
+      // la persiana); el brillo varía un poco entre ventanas. Los escaparates, algo iluminados.
+      windowOn = step(windowHash(cell, seed, float(11)), u.litWindows).mul(glassBase),
+      windowGlow = float(0.7).add(windowHash(cell, seed, float(12)).mul(0.6)),
+      shopOn = step(windowHash(cell, seed, float(13)), u.litShops).mul(shopGlass),
+      lit = windowOn.mul(windowGlow).mul(u.litStrength).add(shopOn.mul(u.litShopStrength)),
+      emissive = vec3(litColor).mul(lit).mul(skyUniforms.night);
     return {
       color,
+      emissive,
       roughness: mix(float(material.roughness), u.glassRoughness, glass),
       metalness: glass.mul(u.glassMetalness),
     };
@@ -208,5 +229,6 @@ export function windowWallMaterial(parameters) {
   material.colorNode = nodes.color;
   material.roughnessNode = nodes.roughness;
   material.metalnessNode = nodes.metalness;
+  material.emissiveNode = nodes.emissive;
   return material;
 }

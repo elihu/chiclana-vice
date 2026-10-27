@@ -5,6 +5,12 @@ import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/sta
 import { inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
+import { addLampGlow } from '../engine/night-glow.js';
+import { skyUniforms } from '../engine/sky.js';
+
+const { attribute, vec3 } = THREE.TSL;
+// Cristales de las farolas al anochecer: color e intensidad del emisivo.
+const LAMP_GLASS = { color: new THREE.Color('#ffb860'), intensity: 2.6 };
 
 export function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -14,15 +20,19 @@ export function buildUrbanFurniture() {
     if (!materials.has(col)) materials.set(col, mat(col));
     return materials.get(col);
   }
-  function cube(g, x, y, z, w, h, d, c) {
+  // Los cristales de las farolas se marcan (`userData.glass`) para encenderlos de noche en la
+  // malla fusionada (atributo `glow`).
+  function cube(g, x, y, z, w, h, d, c, glass = false) {
     let m = new THREE.Mesh(unitBox, ma(c));
+    m.userData.glass = glass;
     m.position.set(x, y, z);
     m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
-  function cyl(g, x, y, z, rt, rb, h, c) {
+  function cyl(g, x, y, z, rt, rb, h, c, glass = false) {
     let m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 7), ma(c));
+    m.userData.glass = glass;
     m.position.set(x, y, z);
     g.add(m);
     return m;
@@ -58,14 +68,15 @@ export function buildUrbanFurniture() {
     cyl(g, 0, h / 2, 0, 0.055, 0.085, h, col);
     if (modern) {
       cyl(g, 0, h, 0, 0.43, 0.43, 0.09, col);
-      cyl(g, 0, h - 0.08, 0, 0.28, 0.28, 0.07, '#e8dabb');
+      cyl(g, 0, h - 0.08, 0, 0.28, 0.28, 0.07, '#e8dabb', true);
     } else {
       cube(g, 0, h - 0.2, 0, 0.38, 0.5, 0.38, col);
-      for (let x of [-0.2, 0.2]) cube(g, x, h - 0.2, 0, 0.025, 0.36, 0.28, '#d5cba8');
-      for (let z of [-0.2, 0.2]) cube(g, 0, h - 0.2, z, 0.28, 0.36, 0.025, '#d5cba8');
+      for (let x of [-0.2, 0.2]) cube(g, x, h - 0.2, 0, 0.025, 0.36, 0.28, '#d5cba8', true);
+      for (let z of [-0.2, 0.2]) cube(g, 0, h - 0.2, z, 0.28, 0.36, 0.025, '#d5cba8', true);
       cyl(g, 0, h + 0.16, 0, 0.02, 0.36, 0.23, col);
     }
     collider(x, z, 0.18);
+    addLampGlow(x, g.position.y, z);
     streetEnvironment.lamps++;
   }
   function bench(x, z, a = 0) {
@@ -170,6 +181,7 @@ export function buildUrbanFurniture() {
   const position = [],
     normal = [],
     color = [],
+    glow = [],
     tint = new THREE.Color();
   staging.traverse((o) => {
     if (!o.isMesh) return;
@@ -178,7 +190,10 @@ export function buildUrbanFurniture() {
     tint.copy(o.material.color);
     for (const v of geo.getAttribute('position').array) position.push(v);
     for (const v of geo.getAttribute('normal').array) normal.push(v);
-    for (let i = 0; i < geo.getAttribute('position').count; i++) color.push(tint.r, tint.g, tint.b);
+    for (let i = 0; i < geo.getAttribute('position').count; i++) {
+      color.push(tint.r, tint.g, tint.b);
+      glow.push(o.userData.glass ? 1 : 0);
+    }
     geo.dispose();
   });
   let root = new THREE.Group();
@@ -188,8 +203,15 @@ export function buildUrbanFurniture() {
     g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
+    g.setAttribute('glow', new THREE.Float32BufferAttribute(glow, 1));
     g.computeBoundingSphere();
-    let m = new THREE.Mesh(g, mat('#ffffff', { vertexColors: true }));
+    const material = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.78 });
+    // Cristales de las farolas encendidos al anochecer: emisivo cálido por `night` del cielo.
+    material.emissiveNode = vec3(LAMP_GLASS.color)
+      .mul(attribute('glow', 'float'))
+      .mul(skyUniforms.night)
+      .mul(LAMP_GLASS.intensity);
+    let m = new THREE.Mesh(g, material);
     m.castShadow = m.receiveShadow = true;
     root.add(m);
   }

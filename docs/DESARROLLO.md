@@ -234,6 +234,23 @@ aproximaciones de autor revisadas visualmente, no mediciones. El inventario ante
   intensidad: sol de tarde, bajo y cálido); se cambia en vivo con `setSun({ intensity: 3 })`.
 - `SKY.envZenithBlend` (`sky.js`) acerca el cenit al horizonte solo dentro del entorno
   horneado, para que las caras en sombra queden neutras y no azules sin cambiar la cúpula.
+- `js/engine/time-of-day.js`: horas del día. `TIMES` (`manana`, `mediodia`, `tarde`,
+  `anochecer`) fija `SUN`, `SKY`, el color de `scene.fog`, `GRADE` y el uniforme `night`
+  (0 a 1); la tarde se toma de los valores iniciales de esos objetos, así que es la de
+  siempre. `setTimeOfDay(id)` solo cambia uniformes y valores (ni materiales ni shaders
+  nuevos) y rehornea el entorno una vez; el tiempo queda en `gfx.timeBakeMs`. Al arrancar
+  se aplica antes del horneado inicial. Botón **Hora** (`#timeBtn`, junto a Cámara, Mapa y
+  Pausa) que rota entre las horas y la guarda con la partida (`time` en `progress.js`);
+  `#hora=manana|mediodia|tarde|anochecer` en la URL la fuerza para pruebas. En modo ligero
+  funcionan igual (son valores, no pases).
+- Noche: `skyUniforms.night` enciende la emisión de las ventanas (`WINDOWS.lit*` en
+  `windows.js`: una fracción al azar con `windowHash`, las de persiana bajada no, y
+  escaparates algo iluminados) y sube el emisivo de faros y pilotos de los coches
+  (`registerNightLamp` en `sky.js`). No hay luces dinámicas nuevas.
+- `js/engine/night-glow.js`: luz falsa de noche con tres `InstancedMesh` aditivas (opacidad =
+  `night`, ocultas de día): mancha bajo cada farola, haz de faros delante de cada coche y
+  brillo rojo tras los pilotos (`NIGHT_GLOW`, en vivo con `setNightGlow`). Los cristales de las
+  farolas usan un material emisivo compartido registrado con `registerNightLamp`.
 - `js/engine/wall-ao.js`: oclusión falsa de la luz ambiente en la base de muros y fachadas
   (`WALL_AO`: luz que queda al pie, altura a la que se recupera y diferencia entre plantas
   bajas y altas), con el atributo `hag` (altura sobre la base) de la geometría; en vivo con

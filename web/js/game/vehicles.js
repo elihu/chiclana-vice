@@ -1,10 +1,12 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { modelBox, modelMaterial, modelParts } from '../engine/materials.js';
 import { addContactShadow } from '../engine/contact-shadows.js';
+import { addCarGlow } from '../engine/night-glow.js';
 import { carModel } from './car-model.js';
 import { registerCar } from './car-batch.js';
 import { blocked } from '../world/spatial.js';
 import { d } from '../core/math.js';
+import { registerNightLamp } from '../engine/sky.js';
 import { gfx, player, vehicles } from '../core/state.js';
 
 // Carrocería, cristales y techo por secciones (car-model.js). Las piezas fijas se agrupan por
@@ -34,6 +36,9 @@ function carSlots(cop) {
     key = cop ? 'cop' : 'car',
     outside = modelParts(),
     inside = modelParts();
+  // Faros y pilotos brillan más al anochecer (sin luces dinámicas).
+  registerNightLamp(materials.head, 0.5, 3.2);
+  registerNightLamp(materials.tail, 0.4, 2.4);
   for (const [name, geometries] of Object.entries(slots)) {
     if (name === 'livery' && !cop) continue;
     const slot = name === 'tyre' ? 'trim' : name;
@@ -90,6 +95,7 @@ export function createCar(color = '#b9b8aa', cop = false) {
   }
   gfx.scene.add(group);
   addContactShadow(group, 'car');
+  addCarGlow(group);
   const car = {
     mesh: group,
     firstPersonOccluders: [],
