@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Revisión: 13/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 27/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
@@ -16,6 +16,21 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   gráfica de la `v1.4.0`, el 13/10/2026 en el portátil.
 - No verificado: iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
   teselas en móvil.
+
+## En `main` sin publicar
+
+Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
+
+- **Motor**: three.js 0.186.1 con WebGPURenderer, que usa WebGPU donde el navegador lo
+  ofrece (solo en HTTPS o `localhost`) y WebGL 2 si no. `#fps` muestra el motor y los FPS;
+  `#motor=webgl` fuerza WebGL 2.
+- **Sin tirones al girar**: las mallas instanciadas comparten shader (de 194 a 25
+  pipelines con SwiftShader). El usuario lo probó el 27/10/2026 en su Android con WebGPU
+  real (por `localhost` con `adb reverse`) y con WebGL 2 de respaldo: sin tirones y, en
+  sus palabras, «va bien»; `main` anterior iba a 90 FPS fijos. No probado en iOS ni en el
+  portátil tras el arreglo.
+- Medianeras ciegas y muros compartidos ocultos, coche por secciones (adaptado de
+  slop-newyork) y personas con esqueleto en una sola malla.
 
 ## Decisiones vigentes
 
@@ -121,6 +136,12 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   ni FPS. Plan terminado. Todo ello es el contenido de
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
+
+- Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): ramas sin
+  integrar `perf/precompilar-shaders` (E0.3, compilar al cargar; quizá innecesario tras la
+  prueba), `perf/pase-sombras` (E1), `perf/llamadas-materiales` (E2) y
+  `feat/cielo-entorno` (V1). V1 queda demasiado suave según el usuario: hay que hacerla
+  claramente visible antes de enseñarla. Hay que rehacer E1, E2 y V1 sobre el `main` actual.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Verificación en iOS y revisión visual de las fachadas en FrontSide.
