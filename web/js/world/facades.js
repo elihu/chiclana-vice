@@ -5,6 +5,7 @@ import { composeBuilding, composeFront } from './facade-composer.js';
 import { createFacadeKit, outwardOf } from './facade-kit.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { wallMaterial } from '../engine/wall-ao.js';
+import { createGroundFloors } from './ground-floors.js';
 import { nearestRoad } from './spatial.js';
 
 // Reference-led facade upgrade: civic landmarks and the streets listed in city-design.json.
@@ -13,6 +14,7 @@ export function prepareFacades() {
     [pilotMinX, pilotMaxX, pilotMinZ, pilotMaxZ] = world.cityDesign.zones.frontagePilot,
     [origMinX, origMaxX, origMinZ, origMaxZ] = world.cityDesign.zones.frontageOriginal;
   facadeWork.streetNames = [...rules.streets];
+  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors);
   const special = world.city.landmarks.filter((p) =>
     /Ayuntamiento de Chiclana|Mercado Municipal/.test(p.name),
   );
@@ -60,6 +62,8 @@ export function prepareFacades() {
       if (!b.detailType) b.newDetailOnly = !original;
       else if (original) b.newDetailOnly = false;
       b.detailType = 'street';
+      // Clase del bajo: indicios del Catastro y de OSM combinados con el tipo de la calle.
+      const ground = groundFloors.classify(buildingIndex, b.floors, a, q, nx, nz, road.s.type);
       facadeWork.fronts.push({
         id: `building-${buildingIndex}-edge-${i}`,
         buildingIndex,
@@ -73,6 +77,7 @@ export function prepareFacades() {
         h: b.visualH ?? b.h,
         floors: b.floors,
         street: road.s.name,
+        ground,
         seed: Math.abs(Math.round(cx * 7 + cz * 13)),
       });
     }

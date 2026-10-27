@@ -112,7 +112,9 @@ function run(body, scope, g, env) {
 
 // Muro de un frente catastral y variables predefinidas de su receta: `hash` y `seed` son el
 // mismo hash determinista por frente, `street` el nombre de la calle y `commercialStreet` que
-// esa calle no figura en `context.residentialStreets` (city-design.json, frontages).
+// esa calle no figura en `context.residentialStreets` (city-design.json, frontages). La clase del
+// bajo (`f.ground`, de js/world/ground-floors.js) llega como `isShop`, `isBlock`, `isHouse` e
+// `isGarage` (solo una es cierta; sin clase, `isHouse`) y `mainStreet`.
 function frontWall(kit, f, context) {
   const w = kit.wall(f.a, f.q, [f.nx, f.nz]);
   w.g.position.y = f.baseY ?? 0;
@@ -125,6 +127,11 @@ function frontWall(kit, f, context) {
       hash: f.seed,
       street: f.street,
       commercialStreet: !(context.residentialStreets || []).includes(f.street),
+      isShop: f.ground?.kind === 'shop',
+      isBlock: f.ground?.kind === 'block',
+      isHouse: !['shop', 'block', 'garage'].includes(f.ground?.kind),
+      isGarage: f.ground?.kind === 'garage',
+      mainStreet: !!f.ground?.main,
     },
   };
 }

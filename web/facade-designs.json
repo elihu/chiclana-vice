@@ -1533,7 +1533,7 @@
       ]
     },
     "street-generic": {
-      "description": "Generic street frontage: plastered wall with plinth and cornice, shopfronts or doors and framed openings with shutters or balconies per storey. Variants depend on `hash`. Equivalent to the street frontage loop of buildDetailedFacades in main 5666928.",
+      "description": "Generic street frontage: plastered wall with plinth and cornice, and a ground floor chosen by the front's class (isShop, isBlock, isHouse, isGarage; mainStreet): shopfront with metal shutter or awning, portal, house door or garage door, and barred windows. Framed openings with shutters or balconies per storey. Variants depend on `hash`.",
       "params": {
         "bayWidth": 3.35
       },
@@ -1543,35 +1543,74 @@
             "floors": "max(1, floors)",
             "storey": "(h - 0.4) / floors",
             "shade": {
-              "pick": ["#e9e5db", "#f4eee0", "#e4d8c4", "#e8e8df"],
+              "pick": [
+                "#e9e5db",
+                "#f4eee0",
+                "#e4d8c4",
+                "#e8e8df"
+              ],
               "index": "hash % 4"
             },
             "trim": {
-              "pick": ["$cream", "#c9b78e"],
+              "pick": [
+                "$cream",
+                "#c9b78e"
+              ],
               "index": "hash % 3 == 0 ? 1 : 0"
             }
           }
         },
         {
-          "box": ["len / 2", "h / 2", 0.055, "len", "h", 0.08],
+          "box": [
+            "len / 2",
+            "h / 2",
+            0.055,
+            "len",
+            "h",
+            0.08
+          ],
           "color": "shade"
         },
         {
-          "box": ["len / 2", 0.37, 0.15, "len", 0.74, 0.19],
+          "box": [
+            "len / 2",
+            0.37,
+            0.15,
+            "len",
+            0.74,
+            0.19
+          ],
           "color": {
-            "pick": ["#b7ab96", "#aaa59b"],
+            "pick": [
+              "#b7ab96",
+              "#aaa59b"
+            ],
             "index": "hash % 2"
           }
         },
         {
-          "box": ["len / 2", "h - 0.15", 0.18, "len + 0.08", 0.17, 0.35],
+          "box": [
+            "len / 2",
+            "h - 0.15",
+            0.18,
+            "len + 0.08",
+            0.17,
+            0.35
+          ],
           "color": "trim"
         },
         {
           "if": "floors > 1",
           "then": [
             {
-              "box": ["len / 2", "storey + 0.03", 0.16, "len", 0.13, 0.24],
+              "box": [
+                "len / 2",
+                "storey + 0.03",
+                0.16,
+                "len",
+                0.13,
+                0.24
+              ],
               "color": "trim"
             }
           ]
@@ -1592,68 +1631,151 @@
               "let": {
                 "x": "(j + 0.5) * step",
                 "w": "min(1.32, step * 0.52)",
-                "commercial": "commercialStreet && hash % 3 != 0"
+                "kind": "isShop ? 0 : isBlock ? (j == floor(bays / 2) ? 1 : mainStreet ? 0 : 2) : isGarage ? (j == 0 ? 3 : 2) : j == 0 ? 4 : 2"
               }
             },
             {
-              "if": "commercial",
+              "if": "kind == 0",
               "then": [
                 {
                   "let": {
-                    "width": "step * 0.8"
+                    "width": "step * 0.8",
+                    "closed": "(hash + floor(j / 2)) % 4 == 0"
                   }
                 },
                 {
-                  "box": ["x", 1.43, 0.145, "width + 0.2", 2.65, 0.14],
+                  "box": [
+                    "x",
+                    1.43,
+                    0.145,
+                    "width + 0.2",
+                    2.65,
+                    0.14
+                  ],
                   "color": "#b5ada0"
                 },
                 {
-                  "box": ["x", 1.44, 0.235, "width", 2.42, 0.04],
+                  "box": [
+                    "x",
+                    1.44,
+                    0.235,
+                    "width",
+                    2.42,
+                    0.04
+                  ],
                   "color": {
-                    "pick": ["#8d9590", "$glass"],
-                    "index": "hash % 4 == 0 ? 0 : 1"
+                    "pick": [
+                      "#8d9590",
+                      "$glass"
+                    ],
+                    "index": "closed ? 0 : 1"
                   }
                 },
                 {
-                  "if": "hash % 4 == 0",
+                  "if": "closed",
                   "then": [
                     {
+                      "box": [
+                        "x",
+                        1.44,
+                        0.27,
+                        "width",
+                        2.4,
+                        0.03
+                      ],
+                      "color": "#9aa09a"
+                    },
+                    {
+                      "box": [
+                        "x",
+                        2.72,
+                        0.3,
+                        "width + 0.1",
+                        0.2,
+                        0.14
+                      ],
+                      "color": "#7d837d"
+                    },
+                    {
                       "for": "y",
-                      "from": 0.35,
-                      "while": "y < 2.65",
-                      "step": 0.12,
+                      "from": 0.5,
+                      "while": "y < 2.6",
+                      "step": 0.4,
                       "body": [
                         {
-                          "box": ["x", "y", 0.268, "width", 0.022, 0.025],
-                          "color": "#b3b7ad"
+                          "box": [
+                            "x",
+                            "y",
+                            0.3,
+                            "width",
+                            0.03,
+                            0.02
+                          ],
+                          "color": "#767c76"
                         }
                       ]
                     }
                   ],
                   "else": [
                     {
-                      "box": ["x", 1.45, 0.28, 0.06, 2.4, 0.06],
+                      "box": [
+                        "x",
+                        1.45,
+                        0.28,
+                        0.06,
+                        2.4,
+                        0.06
+                      ],
                       "color": "#5f6763"
                     },
                     {
-                      "box": ["x", 2.87, 0.25, "width + 0.12", 0.32, 0.15],
+                      "box": [
+                        "x",
+                        2.87,
+                        0.25,
+                        "width + 0.12",
+                        0.32,
+                        0.15
+                      ],
                       "color": {
-                        "pick": ["#586d63", "#94765a", "#5e6b79"],
+                        "pick": [
+                          "#586d63",
+                          "#94765a",
+                          "#5e6b79"
+                        ],
                         "index": "hash % 3"
                       }
                     }
                   ]
                 },
                 {
-                  "if": "j == 0 && hash % 3 == 1",
+                  "if": "!closed && hash % 3 == 1",
                   "then": [
                     {
-                      "box": ["x", 2.7, 0.66, "width + 0.25", 0.08, 1.12],
+                      "box": [
+                        "x",
+                        2.7,
+                        0.66,
+                        "width + 0.25",
+                        0.08,
+                        1.12
+                      ],
                       "color": "#d0c4a7",
-                      "rotation": [0.16, 0, 0]
+                      "rotation": [
+                        0.16,
+                        0,
+                        0
+                      ]
                     },
                     {
-                      "box": ["x", 2.58, 1.19, "width + 0.25", 0.22, 0.045],
+                      "box": [
+                        "x",
+                        2.58,
+                        1.19,
+                        "width + 0.25",
+                        0.22,
+                        0.045
+                      ],
                       "color": "#c6b895"
                     }
                   ]
@@ -1661,33 +1783,244 @@
               ],
               "else": [
                 {
-                  "if": "j == 0",
+                  "if": "kind == 1",
                   "then": [
                     {
-                      "box": ["x", 1.36, 0.2, "w + 0.22", 2.7, 0.15],
+                      "box": [
+                        "x - 0.78",
+                        1.4,
+                        0.2,
+                        0.2,
+                        2.8,
+                        0.15
+                      ],
                       "color": "trim"
                     },
                     {
-                      "box": ["x", 1.32, 0.3, "w", 2.54, 0.05],
-                      "color": "$wood"
+                      "box": [
+                        "x + 0.78",
+                        1.4,
+                        0.2,
+                        0.2,
+                        2.8,
+                        0.15
+                      ],
+                      "color": "trim"
                     },
                     {
-                      "for": "k",
-                      "from": 0,
-                      "while": "k < 3",
-                      "step": 1,
-                      "body": [
-                        {
-                          "box": ["x", "0.5 + k * 0.72", 0.34, "w * 0.72", 0.51, 0.024],
-                          "color": "#6e6050"
-                        }
+                      "box": [
+                        "x",
+                        2.85,
+                        0.2,
+                        1.76,
+                        0.2,
+                        0.15
+                      ],
+                      "color": "trim"
+                    },
+                    {
+                      "box": [
+                        "x",
+                        0.05,
+                        0.3,
+                        1.9,
+                        0.1,
+                        0.42
+                      ],
+                      "color": "#b7ab96"
+                    },
+                    {
+                      "piece": "door",
+                      "args": [
+                        "x",
+                        0.1,
+                        1.36,
+                        2.5
                       ]
+                    },
+                    {
+                      "box": [
+                        "x + 1.0",
+                        1.35,
+                        0.2,
+                        0.18,
+                        0.3,
+                        0.03
+                      ],
+                      "color": "$iron"
                     }
                   ],
                   "else": [
                     {
-                      "piece": "pane",
-                      "args": ["x", 1.75, "w", 1.63, 0.13, true]
+                      "if": "kind == 3",
+                      "then": [
+                        {
+                          "let": {
+                            "gw": "min(step * 0.84, 3)"
+                          }
+                        },
+                        {
+                          "box": [
+                            "x - gw / 2 - 0.1",
+                            1.35,
+                            0.18,
+                            0.2,
+                            2.7,
+                            0.16
+                          ],
+                          "color": "trim"
+                        },
+                        {
+                          "box": [
+                            "x + gw / 2 + 0.1",
+                            1.35,
+                            0.18,
+                            0.2,
+                            2.7,
+                            0.16
+                          ],
+                          "color": "trim"
+                        },
+                        {
+                          "box": [
+                            "x",
+                            2.7,
+                            0.18,
+                            "gw + 0.4",
+                            0.2,
+                            0.16
+                          ],
+                          "color": "trim"
+                        },
+                        {
+                          "box": [
+                            "x",
+                            1.25,
+                            0.2,
+                            "gw",
+                            2.5,
+                            0.06
+                          ],
+                          "color": {
+                            "pick": [
+                              "#6f7a72",
+                              "#7a6a58",
+                              "#5d6670"
+                            ],
+                            "index": "hash % 3"
+                          }
+                        },
+                        {
+                          "for": "k",
+                          "from": 1,
+                          "while": "k < 4",
+                          "step": 1,
+                          "body": [
+                            {
+                              "box": [
+                                "x",
+                                "k * 0.62",
+                                0.24,
+                                "gw",
+                                0.03,
+                                0.03
+                              ],
+                              "color": "#4b524d"
+                            }
+                          ]
+                        }
+                      ],
+                      "else": [
+                        {
+                          "if": "kind == 4",
+                          "then": [
+                            {
+                              "box": [
+                                "x",
+                                1.36,
+                                0.2,
+                                "w + 0.22",
+                                2.7,
+                                0.15
+                              ],
+                              "color": "trim"
+                            },
+                            {
+                              "box": [
+                                "x",
+                                1.32,
+                                0.3,
+                                "w",
+                                2.54,
+                                0.05
+                              ],
+                              "color": "$wood"
+                            },
+                            {
+                              "for": "k",
+                              "from": 0,
+                              "while": "k < 3",
+                              "step": 1,
+                              "body": [
+                                {
+                                  "box": [
+                                    "x",
+                                    "0.5 + k * 0.72",
+                                    0.34,
+                                    "w * 0.72",
+                                    0.51,
+                                    0.024
+                                  ],
+                                  "color": "#6e6050"
+                                }
+                              ]
+                            }
+                          ],
+                          "else": [
+                            {
+                              "piece": "pane",
+                              "args": [
+                                "x",
+                                1.75,
+                                "w",
+                                1.63,
+                                0.13,
+                                true
+                              ]
+                            },
+                            {
+                              "for": "k",
+                              "from": -2,
+                              "while": "k <= 2",
+                              "step": 1,
+                              "body": [
+                                {
+                                  "box": [
+                                    "x + (k * w) / 5",
+                                    1.75,
+                                    0.33,
+                                    0.03,
+                                    1.7,
+                                    0.03
+                                  ],
+                                  "color": "$iron"
+                                }
+                              ]
+                            },
+                            {
+                              "box": [
+                                "x",
+                                1.75,
+                                0.33,
+                                "w + 0.1",
+                                0.04,
+                                0.04
+                              ],
+                              "color": "$iron"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 }
@@ -1707,14 +2040,27 @@
                 },
                 {
                   "piece": "pane",
-                  "args": ["x", "y", "w", "openingH", 0.12, "hash % 3 == 0"]
+                  "args": [
+                    "x",
+                    "y",
+                    "w",
+                    "openingH",
+                    0.12,
+                    "hash % 3 == 0"
+                  ]
                 },
                 {
                   "if": "hash % 3 != 2",
                   "then": [
                     {
                       "piece": "balcony",
-                      "args": ["x", "y - openingH / 2 - 0.085", "w + 0.32", "$iron", 0.42]
+                      "args": [
+                        "x",
+                        "y - openingH / 2 - 0.085",
+                        "w + 0.32",
+                        "$iron",
+                        0.42
+                      ]
                     }
                   ],
                   "else": [
@@ -1725,7 +2071,14 @@
                       "step": 1,
                       "body": [
                         {
-                          "box": ["x + (k * w) / 5", "y - 0.43", 0.26, 0.024, 0.9, 0.035],
+                          "box": [
+                            "x + (k * w) / 5",
+                            "y - 0.43",
+                            0.26,
+                            0.024,
+                            0.9,
+                            0.035
+                          ],
                           "color": "$iron"
                         }
                       ]

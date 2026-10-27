@@ -84,7 +84,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
-        "facade-designs.json": "bfd1a74b5f2d4727ef144d7723673070624f92a2e94d83bdc887d71faeb0fa67",
+        "facade-designs.json": "5bd4f1edc6993622c3da6490f3d61a75b163685f20992bd38d1aa6fedd5f3f1c",
         "city-design.json": "a7c343bd3a67f7f3896bf0cd2928442d48912be2f9c487d0dbde14dcaea81274"
       }
     },
