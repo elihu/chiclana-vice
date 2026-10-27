@@ -34,6 +34,12 @@ Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
   probó en el móvil el 27/10/2026: «va bien». No probado en iOS ni en el portátil.
 - Medianeras ciegas y muros compartidos ocultos, coche por secciones (adaptado de
   slop-newyork) y personas con esqueleto en una sola malla.
+- **Cielo, luz y sombras** (`feat/luz-visible`, fase VL): cúpula de cielo azul con halo del
+  sol, luz ambiente horneada desde el cielo, niebla con su color, sol de tarde más bajo y
+  cálido, gradación de color con viñeta (no en ligero), base de los muros más oscura
+  (`wall-ao.js`) y sombras de contacto bajo coches y personas, también en ligero
+  (`contact-shadows.js`). +2 llamadas por vista con SwiftShader. Integrado a petición del
+  usuario el 27/10/2026; sin medida de FPS en el móvil con este cambio.
 
 ## Decisiones vigentes
 
@@ -141,9 +147,10 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
 - Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): ramas sin
-  integrar `perf/pase-sombras` (E1), `perf/llamadas-materiales` (E2) y
-  `feat/cielo-entorno` (V1). V1 queda demasiado suave según el usuario: hay que hacerla
-  claramente visible antes de enseñarla. Hay que rehacer E1, E2 y V1 sobre el `main` actual.
+  integrar `perf/pase-sombras` (E1) y `perf/llamadas-materiales` (E2), que hay que rehacer
+  sobre el `main` actual. De VL: documentar en `DESARROLLO.md` `SUN`, `WALL_AO`,
+  `CONTACT_SHADOW` y `envZenithBlend`; comprobar que la cámara de sombras cubre las sombras
+  más largas del sol bajo; medir FPS en el móvil.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Verificación en iOS y revisión visual de las fachadas en FrontSide.
