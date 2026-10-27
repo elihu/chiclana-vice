@@ -128,10 +128,22 @@ export async function buildBuildings() {
           // Altura sobre el suelo del vértice (para la oclusión ambiental de la base).
           out[3].push(vertices[j][1] - (j === 0 || j === 3 ? ground0 : ground1));
         }
-        cornice(out, a, q, ground0, ground1, b.baseY + h, col);
       }
       u = u1;
     }
+    // Una sola cornisa por arista: lo alto del muro es horizontal aunque el pie siga el terreno.
+    const first = edge[0],
+      last = edge[edge.length - 1];
+    if (Math.hypot(last[0] - first[0], last[1] - first[1]) >= 0.1)
+      cornice(
+        out,
+        first,
+        last,
+        groundHeightAt(...first),
+        groundHeightAt(...last),
+        b.baseY + h,
+        col,
+      );
   }
   // Medianera: un cuadrilátero liso desde el tejado vecino (5 cm por debajo, sin rendija)
   // hasta el propio. Va en la misma malla que su muro para no añadir llamadas de dibujo: en
