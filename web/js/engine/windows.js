@@ -21,14 +21,16 @@ const {
   vec3,
 } = THREE.TSL;
 
-// Ventanas de los muros genéricos: cristal que refleja el cielo y persianas variadas por ventana.
+// Ventanas de los muros genéricos: cristal que refleja el cielo y persianas. Cada edificio tiene un
+// tono y un estado habitual de persiana; solo una parte de sus ventanas se sale de él.
 // Cambia en vivo desde la consola con `(await import('./js/engine/windows.js')).setWindows({ glassRoughness: 0.3 })`.
 // El rectángulo de cristal está en el lienzo de `facadeTexture()` (x 32–90, y 24–93 de 128 px).
 export const WINDOWS = {
   glassRoughness: 0.1, // rugosidad del cristal (el resto del muro conserva la suya)
   glassMetalness: 0.35, // metal del cristal: sube el reflejo del cielo horneado
-  shutterDown: 0.2, // fracción de ventanas con la persiana bajada del todo
-  shutterHalf: 0.25, // fracción con la persiana a medias (el resto, subida)
+  shutterDown: 0.2, // fracción de edificios con la persiana habitual bajada del todo
+  shutterHalf: 0.25, // fracción con la habitual a medias (el resto, subida)
+  variety: 0.2, // fracción de ventanas que se salen del estado habitual de su edificio
   shutterHalfCover: 0.5, // parte del cristal que tapa la persiana «a medias»
   shutterUpCover: 0.1, // tira de persiana recogida arriba (cajón); 0 = nada
   slats: 16, // lamas por ventana
@@ -44,6 +46,7 @@ const u = {
   glassMetalness: uniform(WINDOWS.glassMetalness),
   shutterDown: uniform(WINDOWS.shutterDown),
   shutterHalf: uniform(WINDOWS.shutterHalf),
+  variety: uniform(WINDOWS.variety),
   shutterHalfCover: uniform(WINDOWS.shutterHalfCover),
   shutterUpCover: uniform(WINDOWS.shutterUpCover),
   slats: uniform(WINDOWS.slats),
@@ -90,8 +93,14 @@ export function windowWallMaterial(parameters) {
       inV = step(GLASS.v0, f.y).mul(step(f.y, GLASS.v1)),
       inGlass = inU.mul(inV),
       t = f.y.sub(GLASS.v0).div(GLASS.v1 - GLASS.v0), // 0 abajo del cristal, 1 arriba
-      r1 = windowHash(cell, seed, float(0)),
-      r2 = windowHash(cell, seed, float(1)),
+      whole = vec2(0),
+      // Estado: el habitual del edificio, salvo `variety` de las ventanas, que eligen el suyo.
+      r1 = select(
+        windowHash(cell, seed, float(3)).lessThan(u.variety),
+        windowHash(cell, seed, float(0)),
+        windowHash(whole, seed, float(0)),
+      ),
+      r2 = windowHash(whole, seed, float(1)), // un solo tono por edificio
       cover = select(
         r1.lessThan(u.shutterDown),
         float(1),
