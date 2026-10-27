@@ -40,6 +40,13 @@ Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
   (`wall-ao.js`) y sombras de contacto bajo coches y personas, también en ligero
   (`contact-shadows.js`). +2 llamadas por vista con SwiftShader. Integrado a petición del
   usuario el 27/10/2026; sin medida de FPS en el móvil con este cambio.
+- **Ahorro de render** (`perf/ahorro-render`, E1 + E2 rehechas sobre `main`): sustitutos
+  solo de sombra por celdas (`shadow-proxies.js`), copas de 20 triángulos en la sombra,
+  piezas pequeñas sin sombra, coches agrupados por material (`car-batch.js`) y mobiliario
+  en una malla. Con SwiftShader, en «sigue»: de 479 a 290 llamadas (Alameda), de 378 a 207
+  (Mercado), de 558 a 351 (Plaza Mayor), de 438 a 249 (Santa Ana) y de 432 a 239 (San
+  Telmo); capturas iguales salvo bordes de sombras de copas (hasta 2 % de píxeles en
+  Santa Ana). El usuario lo probó en el móvil el 27/10/2026: «va bien».
 
 ## Decisiones vigentes
 
@@ -146,9 +153,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
-- Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): ramas sin
-  integrar `perf/pase-sombras` (E1) y `perf/llamadas-materiales` (E2), que hay que rehacer
-  sobre el `main` actual. De VL: documentar en `DESARROLLO.md` `SUN`, `WALL_AO`,
+- Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): de VL, documentar en `DESARROLLO.md` `SUN`, `WALL_AO`,
   `CONTACT_SHADOW` y `envZenithBlend`; comprobar que la cámara de sombras cubre las sombras
   más largas del sol bajo; medir FPS en el móvil.
 
