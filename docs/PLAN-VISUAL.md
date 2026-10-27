@@ -178,6 +178,10 @@ y Mercado «sigue», y una calle de bloques y una de casas bajas a pie.
 
 ### F3. Árboles con viento y contraluz (`feat/arboles-viento`)
 
+> **Integrada el 27/10/2026** con cambios tras la revisión del usuario: sin el paso 2 (las
+> manchas de ruido salían como un tablero) y con el viento como balanceo de la copa entera
+> (el temblor por vértice hacía «burbujear» los icosaedros).
+
 Hoy las copas son icosaedros instanciados (`vegetation.js`), quietos y de color liso.
 
 1. **Viento**: `positionNode` en el material de las copas que desplaza los vértices con la

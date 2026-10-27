@@ -153,8 +153,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   OSM y tipo de calle), bajos según su uso en la receta `street-generic`, relieve en las 45
   calles con nombre de `frontagePilot` (de 277 a 796 frentes) y bajos pintados en los muros
   genéricos. Con SwiftShader en «sigue»: +1–4 % de llamadas y +12–31 % de triángulos (por
-  encima del 25 % en Alameda, Mercado y San Telmo); sin FPS medidos en el móvil. Siguen F3 y
-  F4.
+  encima del 25 % en Alameda, Mercado y San Telmo); sin FPS medidos en el móvil. F3 integrada el 27/10/2026 tras la
+  revisión del usuario («lo integramos así»): las copas se mecen enteras con el viento y luz
+  cálida a contraluz suave (`foliage.js`); se descartaron las manchas de hojas (patrón de
+  tablero) y el temblor por vértice («burbujeaban»). Sin llamadas nuevas previstas; sin
+  medida final de scene-budget ni FPS. Sigue F4 (horas del día).
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
