@@ -81,3 +81,40 @@ export function createGroundFloors(layer, rules) {
     },
   };
 }
+
+// Tipo de la vía más cercana a un punto (hasta `reach` m), con una rejilla de segmentos: los muros
+// genéricos de toda la ciudad lo consultan una vez por arista.
+export function createRoadLookup(segments, reach) {
+  const CELL = 40,
+    grid = new Map();
+  for (const s of segments) {
+    const x0 = Math.min(s.a[0], s.b[0]) - reach,
+      x1 = Math.max(s.a[0], s.b[0]) + reach,
+      z0 = Math.min(s.a[1], s.b[1]) - reach,
+      z1 = Math.max(s.a[1], s.b[1]) + reach;
+    for (let gx = Math.floor(x0 / CELL); gx <= Math.floor(x1 / CELL); gx++)
+      for (let gz = Math.floor(z0 / CELL); gz <= Math.floor(z1 / CELL); gz++) {
+        const key = gx + ',' + gz;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(s);
+      }
+  }
+  return (x, z) => {
+    let best = null,
+      md = reach;
+    for (const s of grid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)) ?? []) {
+      const dx = s.b[0] - s.a[0],
+        dz = s.b[1] - s.a[1],
+        u = Math.min(
+          1,
+          Math.max(0, ((x - s.a[0]) * dx + (z - s.a[1]) * dz) / (dx * dx + dz * dz || 1)),
+        ),
+        d = Math.hypot(x - s.a[0] - dx * u, z - s.a[1] - dz * u);
+      if (d < md) {
+        md = d;
+        best = s;
+      }
+    }
+    return best?.type ?? null;
+  };
+}

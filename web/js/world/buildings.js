@@ -1,6 +1,6 @@
 import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
-import { chunks, gfx, world } from '../core/state.js';
+import { chunks, gfx, segments, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
 import { WINDOWS, windowWallMaterial } from '../engine/windows.js';
 import { wallMaterial } from '../engine/wall-ao.js';
@@ -9,6 +9,7 @@ import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
 import { edgeKey, sharedWallSpans } from './party-walls.js';
+import { createGroundFloors, createRoadLookup, groundCode } from './ground-floors.js';
 
 export async function buildBuildings() {
   // UV de tejados en el recuadro de la ortofoto.
@@ -51,6 +52,7 @@ export async function buildBuildings() {
         wu: [],
         wc: [],
         wh: [],
+        wk: [],
         dw: [],
         dwu: [],
         dwc: [],
@@ -89,12 +91,14 @@ export async function buildBuildings() {
         out[1].push(...PLASTER_UV);
         out[2].push(corniceColor.r, corniceColor.g, corniceColor.b);
         out[3].push(vertices[j][1] - (j === 0 || j === 3 ? ground0 : ground1));
+        out[4]?.push(0);
       }
   }
   // Muro con ventanas entre los puntos a y q de una arista; u0 es la coordenada U de a.
-  function windowWall(g, b, col, h, a0, q0, u0, uScale) {
+  // `code` es la clase del bajo (js/world/ground-floors.js, 0 = ninguna), pintada en el shader.
+  function windowWall(g, b, col, h, a0, q0, u0, uScale, code = 0) {
     const edge = terrainEdge(a0, q0),
-      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh];
+      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh, g.wk];
     let u = u0;
     for (let k = 1; k < edge.length; k++) {
       const a = edge[k - 1],
@@ -127,6 +131,7 @@ export async function buildBuildings() {
           out[2].push(col.r, col.g, col.b);
           // Altura sobre el suelo del vértice (para la oclusión ambiental de la base).
           out[3].push(vertices[j][1] - (j === 0 || j === 3 ? ground0 : ground1));
+          out[4]?.push(code);
         }
       }
       u = u1;
@@ -157,12 +162,13 @@ export async function buildBuildings() {
         [q[0], top, q[1]],
         [a[0], top, a[1]],
       ],
-      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh];
+      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh, g.wk];
     for (const j of [0, 1, 2, 0, 2, 3]) {
       out[0].push(...vertices[j]);
       out[1].push(...PLASTER_UV);
       out[2].push(color.r, color.g, color.b);
       out[3].push(vertices[j][1] - groundHeightAt(vertices[j][0], vertices[j][2]));
+      out[4]?.push(0);
     }
   }
 
@@ -189,6 +195,19 @@ export async function buildBuildings() {
     partyTint = new THREE.Color(rules.partyWall.color),
     stats = { hiddenArea: 0, partyArea: 0 };
   world.wallStats = stats;
+  // Clase del bajo de cada arista exterior de los muros genéricos (indicios del Catastro y de OSM
+  // más el tipo de la calle más cercana, con las reglas de city-design.json → groundFloors).
+  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors),
+    roadTypeAt = createRoadLookup(segments, world.cityDesign.frontages.maximumRoadDistance);
+  function groundOf(index, b, start, end, length) {
+    const nx = ((end[1] - start[1]) / length) * outward,
+      nz = (-(end[0] - start[0]) / length) * outward,
+      mx = (start[0] + end[0]) / 2 + nx,
+      mz = (start[1] + end[1]) / 2 + nz;
+    return groundCode(
+      groundFloors.classify(index, b.floors, start, end, nx, nz, roadTypeAt(mx, mz)),
+    );
+  }
 
   let count = 0;
   for (const [index, b] of world.city.buildings.entries()) {
@@ -215,9 +234,13 @@ export async function buildBuildings() {
           length = Math.hypot(end[0] - start[0], end[1] - start[1]),
           bays = Math.max(1, Math.round(length / rules.wallUvWidth)),
           uScale = length > 0 ? bays / length : 0,
-          spans = shared.get(edgeKey(index, ringIndex, i));
+          spans = shared.get(edgeKey(index, ringIndex, i)),
+          code =
+            b.detailType || ringIndex > 0 || length < 1
+              ? 0
+              : groundOf(index, b, start, end, length);
         if (!spans) {
-          windowWall(g, b, col, h, start, end, 0, uScale);
+          windowWall(g, b, col, h, start, end, 0, uScale, code);
           continue;
         }
         const at = (t) => [
@@ -233,7 +256,7 @@ export async function buildBuildings() {
             stats.hiddenArea += (t1 - t0) * (cover - ground);
             stats.partyArea += (t1 - t0) * (top - cover);
             partyWall(g, b, partyCol, a, q, cover, top);
-          } else windowWall(g, b, col, h, a, q, t0 * uScale, uScale);
+          } else windowWall(g, b, col, h, a, q, t0 * uScale, uScale, code);
         }
       }
     });
@@ -270,8 +293,8 @@ export async function buildBuildings() {
         aerialMaterial(g.i, g.j, { roughness: 0.98, side: THREE.DoubleSide }, '#b4a58f'),
       );
     let group = new THREE.Group();
-    for (const [name, pos, uv, colors, material, hag] of [
-      ['building-walls', g.w, g.wu, g.wc, wallMat, g.wh],
+    for (const [name, pos, uv, colors, material, hag, bajo] of [
+      ['building-walls', g.w, g.wu, g.wc, wallMat, g.wh, g.wk],
       ['building-plain-walls', g.dw, g.dwu, g.dwc, plainWallMat, g.dwh],
       ['building-roofs', g.r, g.ru, null, g === overflow ? roofMat : roofMaterials.get(key)],
     ]) {
@@ -281,6 +304,7 @@ export async function buildBuildings() {
       geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
       if (colors) geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
       if (hag) geo.setAttribute('hag', new THREE.Float32BufferAttribute(hag, 1));
+      if (bajo) geo.setAttribute('bajo', new THREE.Float32BufferAttribute(bajo, 1));
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       let mesh = new THREE.Mesh(geo, material);
