@@ -17,6 +17,7 @@ import {
   world,
 } from './core/state.js';
 import { addGroundPlanes, placeSun, setupRenderer } from './engine/renderer.js';
+import { precompileShaders } from './engine/precompile.js';
 import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
@@ -139,6 +140,11 @@ async function init() {
   gfx.camera.lookAt(camTarget);
   $('streetCount').textContent =
     new Set(world.city.roads.filter((r) => r.name).map((r) => r.name)).size + ' calles con nombre';
+  loadProgress('Compilando los shaders…', 80);
+  await sleepFrame();
+  await precompileShaders(({ loaded, total }) =>
+    loadProgress('Compilando los shaders…', 80 + Math.round((loaded / total) * 19)),
+  );
   loadProgress('Centro de Chiclana listo.', 100);
   updateHUD();
   prepareMap();

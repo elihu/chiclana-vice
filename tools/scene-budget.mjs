@@ -159,7 +159,10 @@ try {
     // Dos giros de 360° seguidos en primera persona, sin avanzar la partida. Cada frame se
     // dibuja a mano; se anota su duración (con `finish` si el motor es WebGL) y los
     // pipelines y programas que se crearon en él.
-    const turns = [];
+    const turns = [],
+      counts = `(async()=>{const {gfx}=await import('./js/core/state.js'),r=gfx.renderer;
+        return {pipelines:r._pipelines.caches.size,programs:r.info.memory.programs}})()`,
+      afterLoad = await evaluate(counts);
     for (const point of points.filter((p) =>
       ['Alameda', 'Plaza Mayor', 'San Telmo'].includes(p.name),
     ))
@@ -205,6 +208,19 @@ try {
           `${point.name} giro ${turn}: máx ${summary.maxMs} ms, p95 ${summary.p95Ms}, mediana ${summary.medianMs}, >100 ms: ${summary.over100}, pipelines nuevos ${summary.pipelines}, programas nuevos ${summary.programs}`,
         );
       }
+    // Cambio de calidad en marcha: ningún pipeline nuevo si el calentamiento cubrió los dos modos.
+    const switched = await evaluate(`(async()=>{
+      const {gfx}=await import('./js/core/state.js'),{applyQuality}=await import('./js/engine/renderer.js'),r=gfx.renderer,
+        nextFrame=()=>new Promise(res=>requestAnimationFrame(()=>res())),out=[];
+      for(const quality of ['low','auto']){
+        const p0=r._pipelines.caches.size,g0=r.info.memory.programs;
+        gfx.quality=quality;applyQuality();await nextFrame();
+        const t0=performance.now();r.render(gfx.scene,gfx.camera);r.backend?.gl?.finish();
+        out.push({quality,ms:+(performance.now()-t0).toFixed(1),pipelines:r._pipelines.caches.size-p0,programs:r.info.memory.programs-g0});
+      }
+      return out;
+    })()`);
+    console.log('cambio de calidad', JSON.stringify(switched));
     const totals = await evaluate(`(async()=>{
       const {gfx}=await import('./js/core/state.js'),r=gfx.renderer;
       return {pipelines:r._pipelines.caches.size,programs:r.info.memory.programs,programsSize:r.info.memory.programsSize,
@@ -212,8 +228,18 @@ try {
     })()`);
     if (errors.length) throw Error('Errores de página:\n' + errors.join('\n'));
     fs.mkdirSync(path.dirname(options.out), { recursive: true });
-    fs.writeFileSync(options.out, JSON.stringify({ url, loadMs, totals, turns }, null, 2) + '\n');
-    console.log('carga', loadMs, 'ms; totales', JSON.stringify(totals));
+    fs.writeFileSync(
+      options.out,
+      JSON.stringify({ url, loadMs, afterLoad, totals, switched, turns }, null, 2) + '\n',
+    );
+    console.log(
+      'carga',
+      loadMs,
+      'ms; tras la carga',
+      JSON.stringify(afterLoad),
+      '; totales',
+      JSON.stringify(totals),
+    );
   } else {
     const cameras = ['sigue', 'primera-persona', 'aerea'],
       views = [];
