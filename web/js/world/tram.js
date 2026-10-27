@@ -1,5 +1,5 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
-import { mat } from '../engine/materials.js';
+import { flatGeometry, mat } from '../engine/materials.js';
 import { gfx, world } from '../core/state.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { inBuilding, nearestRoad } from './spatial.js';
@@ -108,6 +108,292 @@ function addMesh(name, positions, material, receive = true) {
   mesh.receiveShadow = receive;
   gfx.scene.add(mesh);
   return positions.length / 9;
+}
+
+// Eje de vía más cercano a un punto: tangente (sentido de la vía) y punto del eje.
+function nearestAxis(x, z) {
+  let best = null;
+  for (const track of world.tram.tracks)
+    for (let i = 1; i < track.p.length; i++) {
+      const a = track.p[i - 1],
+        b = track.p[i],
+        ex = b[0] - a[0],
+        ez = b[1] - a[1],
+        length = Math.hypot(ex, ez) || 1,
+        u = Math.max(0, Math.min(1, ((x - a[0]) * ex + (z - a[1]) * ez) / (length * length))),
+        d = Math.hypot(x - a[0] - ex * u, z - a[1] - ez * u);
+      if (!best || d < best.d) best = { d, t: [ex / length, ez / length] };
+    }
+  return best;
+}
+
+// Caras con color por vértice (una sola malla) y cristal aparte (transparente).
+function solid() {
+  return { position: [], color: [] };
+}
+function paint(group, hex, vertices) {
+  const c = new THREE.Color(hex);
+  for (const v of vertices) {
+    group.position.push(...v);
+    group.color.push(c.r, c.g, c.b);
+  }
+}
+const faceOf = (a, b, c, d) => [a, b, c, a, c, d];
+
+// Andenes, marquesinas y postes con nombre de las paradas (solo visual).
+function buildStops(layer, cfg, stats) {
+  const stop = cfg.stop,
+    shelter = stop.shelter,
+    sign = stop.sign,
+    body = solid(),
+    glass = [],
+    plates = { position: [], uv: [], index: [] },
+    names = [];
+  for (const entry of layer.stops) {
+    const platform = layer.platforms.find((p) => p.id === entry.platform);
+    if (!platform) continue;
+    const axis = nearestAxis(entry.x, entry.z),
+      t = axis.t,
+      n = [-t[1], t[0]],
+      polygon = platform.p,
+      ground = (x, z) => surfaceHeightAt(x, z),
+      top = (x, z) => ground(x, z) + stop.platformHeight,
+      // Coordenadas en el marco de la vía: u a lo largo, v lateral (hacia n) desde la parada.
+      frame = (p) => [
+        (p[0] - entry.x) * t[0] + (p[1] - entry.z) * t[1],
+        (p[0] - entry.x) * n[0] + (p[1] - entry.z) * n[1],
+      ],
+      local = polygon.map(frame),
+      lateral = local.reduce((sum, p) => sum + p[1], 0) / local.length,
+      away = Math.sign(lateral) || 1,
+      outer = away > 0 ? Math.max(...local.map((p) => p[1])) : Math.min(...local.map((p) => p[1])),
+      at = (u, v, y) => [entry.x + t[0] * u + n[0] * v, y, entry.z + t[1] * u + n[1] * v];
+
+    // Cara superior triangulada y canto vertical bajo cada lado hasta la cota del suelo.
+    const geo = flatGeometry(polygon),
+      index = geo.index,
+      pos = geo.getAttribute('position');
+    for (let i = 0; i < index.count; i += 3)
+      paint(
+        body,
+        stop.platformColor,
+        [0, 1, 2].map((k) => {
+          const x = pos.getX(index.getX(i + k)),
+            z = pos.getZ(index.getX(i + k));
+          return [x, top(x, z), z];
+        }),
+      );
+    geo.dispose();
+    for (let i = 0; i < polygon.length; i++) {
+      const a = polygon[i],
+        b = polygon[(i + 1) % polygon.length];
+      paint(
+        body,
+        stop.edgeColor,
+        faceOf(
+          [a[0], top(...a), a[1]],
+          [b[0], top(...b), b[1]],
+          [b[0], ground(...b) - 0.1, b[1]],
+          [a[0], ground(...a) - 0.1, a[1]],
+        ),
+      );
+    }
+    // Banda táctil: el lado largo del andén que queda más cerca del eje de la vía.
+    let edge = null;
+    for (let i = 0; i < polygon.length; i++) {
+      const a = polygon[i],
+        b = polygon[(i + 1) % polygon.length],
+        length = Math.hypot(b[0] - a[0], b[1] - a[1]),
+        d = Math.min(
+          ...[0.25, 0.5, 0.75].map((f) =>
+            tramDistance(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f),
+          ),
+        );
+      if (length > 5 && (!edge || d < edge.d)) edge = { a, b, d };
+    }
+    if (edge) {
+      const length = Math.hypot(edge.b[0] - edge.a[0], edge.b[1] - edge.a[1]),
+        dx = (edge.b[0] - edge.a[0]) / length,
+        dz = (edge.b[1] - edge.a[1]) / length,
+        mid = [(edge.a[0] + edge.b[0]) / 2, (edge.a[1] + edge.b[1]) / 2],
+        perp = [-dz, dx],
+        toward = (entry.x - mid[0]) * perp[0] + (entry.z - mid[1]) * perp[1],
+        into = toward > 0 ? -1 : 1,
+        off = [perp[0] * stop.tactileWidth * into, perp[1] * stop.tactileWidth * into],
+        lift = 0.004;
+      const p = [
+        edge.a,
+        edge.b,
+        [edge.b[0] + off[0], edge.b[1] + off[1]],
+        [edge.a[0] + off[0], edge.a[1] + off[1]],
+      ].map((q) => [q[0], top(q[0], q[1]) + lift, q[1]]);
+      paint(body, stop.tactileColor, faceOf(...p));
+    }
+
+    // Marquesina: cristal trasero y laterales, cuatro postes y tejado, junto al borde exterior.
+    const v1 = outer - away * shelter.backMargin,
+      v0 = v1 - away * shelter.depth,
+      u0 = -shelter.length / 2,
+      u1 = shelter.length / 2,
+      yb = (u, v) => top(...[at(u, v, 0)[0], at(u, v, 0)[2]]),
+      post = (u, v) => {
+        const w = shelter.postWidth / 2,
+          y0 = yb(u, v),
+          c = [
+            at(u - w, v - w, 0),
+            at(u + w, v - w, 0),
+            at(u + w, v + w, 0),
+            at(u - w, v + w, 0),
+          ].map((q) => [q[0], q[2]]);
+        for (let k = 0; k < 4; k++) {
+          const a = c[k],
+            b = c[(k + 1) % 4];
+          paint(
+            body,
+            shelter.frameColor,
+            faceOf(
+              [a[0], y0, a[1]],
+              [b[0], y0, b[1]],
+              [b[0], y0 + shelter.height, b[1]],
+              [a[0], y0 + shelter.height, a[1]],
+            ),
+          );
+        }
+      };
+    for (const u of [u0 + 0.2, u1 - 0.2]) for (const v of [v0, v1]) post(u, v);
+    const roof = (y) => [at(u0, v0, y), at(u1, v0, y), at(u1, v1, y), at(u0, v1, y)],
+      y0 = yb(0, (v0 + v1) / 2),
+      high = roof(y0 + shelter.height + shelter.roofThickness),
+      low = roof(y0 + shelter.height);
+    paint(body, shelter.frameColor, faceOf(...high));
+    paint(body, shelter.frameColor, faceOf(low[3], low[2], low[1], low[0]));
+    for (let k = 0; k < 4; k++)
+      paint(body, shelter.frameColor, faceOf(low[k], low[(k + 1) % 4], high[(k + 1) % 4], high[k]));
+    // Cristal: pared trasera y los dos laterales hasta la cota del tejado.
+    const g = (ua, va, ub, vb) =>
+      glass.push(
+        ...faceOf(
+          at(ua, va, y0 + 0.15),
+          at(ub, vb, y0 + 0.15),
+          at(ub, vb, y0 + shelter.height),
+          at(ua, va, y0 + shelter.height),
+        ).flat(),
+      );
+    g(u0 + 0.2, v1, u1 - 0.2, v1);
+    g(u0 + 0.2, v0, u0 + 0.2, v1);
+    g(u1 - 0.2, v0, u1 - 0.2, v1);
+
+    // Poste con el nombre: placa perpendicular a la vía, visible a lo largo del andén.
+    const su = sign.alongOffset,
+      sv = outer - away * sign.backMargin,
+      sy = yb(su, sv),
+      pw = sign.poleWidth / 2,
+      pc = [
+        at(su - pw, sv - pw, 0),
+        at(su + pw, sv - pw, 0),
+        at(su + pw, sv + pw, 0),
+        at(su - pw, sv + pw, 0),
+      ];
+    for (let k = 0; k < 4; k++) {
+      const a = pc[k],
+        b = pc[(k + 1) % 4];
+      paint(
+        body,
+        sign.poleColor,
+        faceOf(
+          [a[0], sy, a[2]],
+          [b[0], sy, b[2]],
+          [b[0], sy + sign.poleHeight, b[2]],
+          [a[0], sy + sign.poleHeight, a[2]],
+        ),
+      );
+    }
+    const slot = names.length,
+      base = plates.position.length / 3;
+    names.push(entry.name);
+    for (const [u, v] of [
+      [0, 1],
+      [1, 1],
+      [0, 0],
+      [1, 0],
+    ]) {
+      const q = at(
+        su,
+        sv + (u - 0.5) * sign.plateWidth,
+        sy + sign.plateBase + v * sign.plateHeight,
+      );
+      plates.position.push(...q);
+      plates.uv.push(u, slot + v);
+    }
+    plates.index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
+  }
+  let triangles = 0;
+  if (body.position.length) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(body.position, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(body.color, 3));
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(
+      geo,
+      mat('#ffffff', { vertexColors: true, side: THREE.DoubleSide, roughness: 0.9 }),
+    );
+    mesh.name = 'tram-stops';
+    mesh.receiveShadow = mesh.castShadow = true;
+    gfx.scene.add(mesh);
+    triangles += body.position.length / 9;
+  }
+  triangles += addMesh(
+    'tram-stop-glass',
+    glass,
+    mat(shelter.glassColor, {
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: shelter.glassOpacity,
+      roughness: 0.2,
+      depthWrite: false,
+    }),
+    false,
+  );
+  if (names.length) {
+    // Una celda por parada, apiladas en vertical; la UV de la placa solo usa su celda.
+    const cellW = 512,
+      cellH = 96,
+      canvas = document.createElement('canvas');
+    canvas.width = cellW;
+    canvas.height = cellH * names.length;
+    const c = canvas.getContext('2d');
+    c.fillStyle = sign.background;
+    c.fillRect(0, 0, canvas.width, canvas.height);
+    c.strokeStyle = sign.foreground;
+    c.fillStyle = sign.foreground;
+    c.lineWidth = 5;
+    c.font = 'bold 36px Arial';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    names.forEach((name, i) => {
+      const y = (names.length - 1 - i) * cellH;
+      c.strokeRect(8, y + 8, cellW - 16, cellH - 16);
+      c.fillText(name.toUpperCase(), cellW / 2, y + cellH / 2 + 2, cellW - 40);
+    });
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    // v: celda `slot` ocupa [slot, slot + 1] / names.length desde abajo.
+    const uv = plates.uv.map((v, i) => (i % 2 ? v / names.length : v));
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(plates.position, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(plates.index);
+    geo.computeBoundingSphere();
+    const mesh = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }),
+    );
+    mesh.name = 'tram-stop-signs';
+    gfx.scene.add(mesh);
+    triangles += plates.index.length / 3;
+  }
+  stats.stops = names.length;
+  stats.triangles += triangles;
 }
 
 export function buildTram() {
@@ -276,6 +562,7 @@ export function buildTram() {
       mat(cat.color, { side: THREE.DoubleSide, roughness: 0.7 }),
       false,
     );
+  buildStops(layer, cfg, stats);
   world.tramStats = stats;
   return stats;
 }

@@ -573,7 +573,8 @@
         "grassColor",
         "pavedDistance",
         "rails",
-        "catenary"
+        "catenary",
+        "stop"
       ],
       "additionalProperties": false,
       "properties": {
@@ -674,6 +675,148 @@
             "color": {
               "type": "string",
               "pattern": "^#[0-9a-f]{6}$"
+            }
+          }
+        }
+      },
+      "stop": {
+        "description": "Paradas del tranvía: andén elevado con bordillo, marquesina y poste con el nombre.",
+        "type": "object",
+        "required": [
+          "platformHeight",
+          "platformColor",
+          "edgeColor",
+          "tactileColor",
+          "tactileWidth",
+          "shelter",
+          "sign"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "platformHeight": {
+            "$ref": "#/$defs/positive",
+            "description": "Altura del andén sobre la cota del tablero o la calzada."
+          },
+          "platformColor": {
+            "type": "string",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "edgeColor": {
+            "type": "string",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "tactileColor": {
+            "type": "string",
+            "pattern": "^#[0-9a-f]{6}$"
+          },
+          "tactileWidth": {
+            "$ref": "#/$defs/positive",
+            "description": "Ancho de la banda táctil junto al borde que da a la vía."
+          },
+          "shelter": {
+            "description": "Marquesina sencilla: tejado, postes y cristal.",
+            "type": "object",
+            "required": [
+              "length",
+              "depth",
+              "height",
+              "backMargin",
+              "roofThickness",
+              "postWidth",
+              "frameColor",
+              "glassColor",
+              "glassOpacity"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "length": {
+                "$ref": "#/$defs/positive",
+                "description": "Longitud a lo largo de la vía."
+              },
+              "depth": {
+                "$ref": "#/$defs/positive"
+              },
+              "height": {
+                "$ref": "#/$defs/positive"
+              },
+              "backMargin": {
+                "$ref": "#/$defs/nonNegative",
+                "description": "Distancia entre el cristal trasero y el borde exterior del andén."
+              },
+              "roofThickness": {
+                "$ref": "#/$defs/positive"
+              },
+              "postWidth": {
+                "$ref": "#/$defs/positive"
+              },
+              "frameColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "glassColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "glassOpacity": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "sign": {
+            "description": "Poste con el nombre de la parada.",
+            "type": "object",
+            "required": [
+              "alongOffset",
+              "backMargin",
+              "poleHeight",
+              "poleWidth",
+              "poleColor",
+              "plateWidth",
+              "plateHeight",
+              "plateBase",
+              "background",
+              "foreground"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "alongOffset": {
+                "type": "number",
+                "description": "Desplazamiento a lo largo de la vía desde la parada."
+              },
+              "backMargin": {
+                "$ref": "#/$defs/nonNegative",
+                "description": "Distancia al borde exterior del andén."
+              },
+              "poleHeight": {
+                "$ref": "#/$defs/positive"
+              },
+              "poleWidth": {
+                "$ref": "#/$defs/positive"
+              },
+              "poleColor": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "plateWidth": {
+                "$ref": "#/$defs/positive"
+              },
+              "plateHeight": {
+                "$ref": "#/$defs/positive"
+              },
+              "plateBase": {
+                "$ref": "#/$defs/nonNegative",
+                "description": "Altura del borde inferior de la placa."
+              },
+              "background": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "foreground": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              }
             }
           }
         }
