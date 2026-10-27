@@ -4,7 +4,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { TAU, clamp, lerp, pInside } from '../core/math.js';
 import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
-import { mat, mergeParts } from '../engine/materials.js';
+import { mat, mergeParts, shareInstanceShader } from '../engine/materials.js';
 import { rnd } from '../core/random.js';
 
 // Partition static vegetation without changing any instance transform or color.
@@ -35,6 +35,7 @@ function addVegetationCells(root, source, kind, cellSize = 255) {
     });
     mesh.computeBoundingBox();
     mesh.computeBoundingSphere();
+    shareInstanceShader(mesh);
     root.add(mesh);
     const sphere = mesh.boundingSphere;
     detailCells.push({

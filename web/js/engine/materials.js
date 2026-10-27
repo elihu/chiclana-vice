@@ -1,7 +1,21 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
+import { gfx } from '../core/state.js';
 
 export function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.78, ...extra });
+}
+
+// three.js 0.186 declara las matrices de un InstancedMesh como un búfer uniforme con su
+// nombre dentro del shader mientras `instanceMatrix.count * 64` cabe en el límite del
+// dispositivo, y entonces cada malla instanciada tiene su propio programa. Por encima del
+// límite las lee de un atributo instanciado y el shader se comparte. Para no reservar memoria
+// que no se usa, se declara a la matriz una capacidad mayor que ese límite: el atributo
+// conserva su `array` real (el búfer instanciado sale de él) y `mesh.count` sigue mandando en
+// las instancias que se dibujan. Llamar antes del primer render.
+export function shareInstanceShader(mesh) {
+  const limit = gfx.renderer?.backend?.capabilities?.getUniformBufferLimit?.() ?? 1 << 16;
+  mesh.instanceMatrix.count = Math.max(mesh.instanceMatrix.count, Math.floor(limit / 64) + 1);
+  return mesh;
 }
 
 export function flatGeometry(p, holes = []) {

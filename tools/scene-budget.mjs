@@ -277,7 +277,7 @@ try {
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);
       triangles+=t;if(o.castShadow)shadowTriangles+=t;
     });
-    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.programs?.length??null,backend:gfx.backend,
+    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.memory.programs,backend:gfx.backend,
       facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
       treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);
