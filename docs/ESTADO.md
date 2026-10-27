@@ -6,7 +6,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.5.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.6.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
@@ -15,8 +15,9 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   modelos de la `v1.3.0`, el 8 y el 9/10/2026 en el navegador de escritorio, y la mejora
   gráfica de la `v1.4.0`, el 13/10/2026 en el portátil. El motor WebGPU, la luz y el ahorro
   de render de la `v1.5.0`, el 27/10/2026 en un móvil Android, con WebGPU (por `localhost`)
-  y con WebGL 2.
-- No verificado: la `v1.5.0` en el portátil, iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
+  y con WebGL 2. Las fases visuales de la `v1.6.0`, el 27/10/2026, una a una, servidas en
+  `localhost`.
+- No verificado: la `v1.6.0` junta con FPS medidos, la `v1.5.0` en el portátil, iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
   teselas en móvil.
 
 ## Decisiones vigentes
@@ -33,6 +34,22 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Novedades de `v1.6.0`
+
+Plan: [PLAN-VISUAL.md](PLAN-VISUAL.md). Cada fase la revisó el usuario antes de integrarla.
+
+- **Río Iro** con ondas, reflejo del cielo y orillas oscuras (`water.js`).
+- **Ventanas**: cristales que reflejan el cielo, persianas con tono y estado habitual por
+  edificio y cornisa en los muros genéricos (`windows.js`).
+- **Bajos según su uso**: local, portal de bloque, casa o cochera a partir del Catastro
+  (uso, inmuebles y viviendas), los comercios de OSM y el tipo de calle (capa
+  `ground-floors.json` y reglas `groundFloors` en `city-design.json`). Fachadas con relieve
+  en las 45 calles del centro (de 277 a 796 frentes) y bajos pintados en el resto.
+- **Árboles** que se mecen con el viento y luz cálida a contraluz (`foliage.js`).
+- **Horas del día**: mañana, mediodía, tarde y anochecer con el botón «Hora» (y `#hora=`);
+  al anochecer, ventanas, escaparates y farolas encendidos y haz de faros y pilotos
+  (`time-of-day.js`, `night-glow.js`).
 
 ## Novedades de `v1.5.0`
 
@@ -133,35 +150,12 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
   pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
-- Gráficos: el plan anterior ([PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md)) está
-  terminado y publicado en `v1.4.0`; de él quedan las fachadas genéricas más variadas, aceras
-  y patios, cornisas y pretiles, y reflejos en cristales. De
-  [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md) quedan V3–V5 (árboles, cristales, horas
-  del día). Todo ello, más el agua del río, está en
-  [PLAN-VISUAL.md](PLAN-VISUAL.md). F1 (río) integrada sin publicar el 27/10/2026 y aprobada
-  por el usuario («está muy bien»): agua con ondas, reflejo del cielo y orillas
-  oscuras (`water.js`), 0 llamadas nuevas y unos 15.000 triángulos más (orillas); sin FPS
-  medidos. F2 (ventanas) integrada sin publicar el 27/10/2026 y aprobada por el usuario («va
-  bien»): cristales que reflejan el cielo, persianas variadas por ventana (`windows.js`) y
-  cornisa en los muros genéricos (una por arista); 0 llamadas nuevas y +1,8–2,3 % de
-  triángulos en «sigue» (+1,2–1,3 % en el pase principal) con SwiftShader; sin FPS medidos.
-  Persianas con tono y estado habitual por edificio (revisión del usuario). F2b integrada el
-  27/10/2026: capa `ground-floors.json` (75 KB) con uso, inmuebles y viviendas del Catastro por
-  parte y 231 comercios de OSM, aún sin uso visible; aviso ODbL añadido con el visto bueno del
-  usuario. F2c integrada el 27/10/2026 y aprobada por el usuario («está bien»):
-  reglas `groundFloors` en `city-design.json` (local, bloque, casa o cochera según Catastro,
-  OSM y tipo de calle), bajos según su uso en la receta `street-generic`, relieve en las 45
-  calles con nombre de `frontagePilot` (de 277 a 796 frentes) y bajos pintados en los muros
-  genéricos. Con SwiftShader en «sigue»: +1–4 % de llamadas y +12–31 % de triángulos (por
-  encima del 25 % en Alameda, Mercado y San Telmo); sin FPS medidos en el móvil. F3 integrada el 27/10/2026 tras la
-  revisión del usuario («lo integramos así»): las copas se mecen enteras con el viento y luz
-  cálida a contraluz suave (`foliage.js`); se descartaron las manchas de hojas (patrón de
-  tablero) y el temblor por vértice («burbujeaban»). Sin llamadas nuevas previstas; sin
-  medida final de scene-budget ni FPS. F4 integrada el 27/10/2026 tras la revisión del
-  usuario («lo veo bastante bien»): mañana, mediodía, tarde y anochecer (`time-of-day.js`,
-  botón «Hora» y `#hora=`), ventanas y escaparates encendidos, cristales de farolas, manchas de
-  luz bajo las farolas y haz de faros y pilotos (`night-glow.js`), sin luces dinámicas ni
-  bloom. Sin capturas, scene-budget ni FPS (a petición del usuario).
+- Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
+  (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
+  cercanas, farolas en todas las calles y bloom), aceras y patios, y pretiles. Los bajos con
+  relieve suben los triángulos un 12–31 % en «sigue» con SwiftShader (más del 25 % en
+  Alameda, Mercado y San Telmo): medir FPS en el móvil y, si hace falta, simplificar balcones
+  y postigos de las plantas altas.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
