@@ -217,6 +217,51 @@ La implementación, la validación y los límites del recorte están en
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
+## Aceras
+
+`world/sidewalks.js` (llamado desde `buildStreetSurfaces`) añade, solo como geometría visual,
+una acera con bordillo a cada lado de las vías cuyo tipo está en
+`pavements.sidewalks.roadTypes` (`city-design.json`; esquema en `schemas/` y validación en
+`design-validate.js`). No cambia las cotas de `surfaceHeightAt` ni la transitabilidad: el
+jugador pisa la cota de la calzada, así que sus pies quedan `curbHeight` (10 cm) por debajo de
+la baldosa.
+
+- Cada pieza (`step`, 3 m) toma la cota de la calzada (`surfaceHeightAt(x, z, null, road.id)`),
+  no la del MDT, y sigue la cuesta. La baldosa va en la malla `slabs` de las bandas
+  (preajustada, sin proyectar al terreno); el bordillo (cara vertical hacia la calzada y tapa
+  de `curbWidth`) va en una malla nueva, `street-curbs`, con un material propio.
+- Sin acera en vías de menos de `minimumRoadLength` (enlaces, ramales) ni por el lado donde
+  otra calzada (incluida la propia vía en tramos paralelos, glorietas y dobles calzadas) queda
+  a menos de medio ancho + ancho de acera del eje en la mitad o más del tramo. Cada pieza se
+  descarta si una esquina, un borde o su centro cae a menos de medio ancho + margen del eje de
+  cualquier otro tramo dibujado (puentes, peatonales y servicio incluidos); solo se ignoran
+  los tramos vecinos casi colineales que continúan la misma calle.
+- Recorte por pieza: se prueban el borde interior y el exterior (extremos y centro) contra
+  edificios (`inBuilding`, `buildingMargin`), agua, tableros de plataforma y otras calzadas
+  (medio ancho de la que cruza más `junctionMargin`; las vías del mismo nombre casi
+  paralelas, que son una calle partida, no cuentan). Si el ancho completo no cabe se prueba
+  con 66 % y 33 %; por debajo de `minimumWidth` no hay acera. En los cruces las aceras se
+  cortan antes de la calzada que cruza, sin solapes; las esquinas quedan abiertas.
+- Faldones: en el borde exterior de cada acera (o de la calzada si no tiene acera, incluidas las
+  vías peatonales) se baja una cara vertical del color del bordillo hasta
+  `skirtTerrainMargin` por debajo del terreno muestreado (`groundHeightAt`), con un máximo de
+  `skirtMaxDepth`, y solo donde el borde queda más de `skirtMinGap` por encima del terreno.
+  Así tapan huecos y piezas flotantes en terraplenes y accesos de puentes, sin geometría
+  donde el terreno ya llega al borde. Los puentes no llevan faldón propio: su tablero ya
+  tiene canto (`platformGeometry`) y barandillas; sí lo llevan las vías de acceso, cuyo
+  perfil sube hacia el tablero (Puente VII Centenario, OSM 142805148, y Puente Nuestra
+  Señora de los Remedios, OSM 50664224).
+- Las vías peatonales y los puentes no reciben acera (los tableros ya tienen la suya en
+  `platforms[].bands`). El ancho de acera debe caber en `terrainSurfaces.roads.shoulder` para
+  que la cota de la calzada siga siendo la del modelo.
+- Plazas: con relieve (`world.surfaces`), `buildStreetSurfaces` pavimenta todas las áreas
+  `square` del mapa, no solo las de `zones.pavedSquares` (que queda para el modo sin modelo
+  de superficies). Sigue sin pavimentar la plaza que ya es un tablero (`platforms[].area`) o
+  que coincide con él en más del 80 % de su contorno (a menos de 3 m), para no duplicar.
+  Las baldosas de las plazas se proyectan al terreno con el muestreo general.
+- Con terreno de rejilla sin modelo de superficies no se dibujan; el modo ligero es igual que el
+  normal (geometría estática y barata).
+
 ## Cielo, entorno y color
 
 - `js/engine/sky.js`: cúpula con degradado y halo del sol (se dibuja primero, sin

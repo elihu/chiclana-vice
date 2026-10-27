@@ -63,7 +63,7 @@
         },
         "pavedSquares": {
           "$ref": "#/$defs/rect",
-          "description": "Se pavimentan las plazas con algún punto estrictamente dentro."
+          "description": "Solo sin modelo de superficies: se pavimentan las plazas con algún punto estrictamente dentro. Con relieve se pavimentan todas las plazas."
         }
       }
     },
@@ -306,7 +306,13 @@
     "pavements": {
       "description": "Pavimentos de calles y plazas.",
       "type": "object",
-      "required": ["pedestrianTypes", "nonDrivableTypes", "minimumHalfWidth", "layerHeights"],
+      "required": [
+        "pedestrianTypes",
+        "nonDrivableTypes",
+        "minimumHalfWidth",
+        "sidewalks",
+        "layerHeights"
+      ],
       "additionalProperties": false,
       "properties": {
         "pedestrianTypes": {
@@ -329,6 +335,76 @@
         },
         "minimumHalfWidth": {
           "$ref": "#/$defs/positive"
+        },
+        "sidewalks": {
+          "description": "Aceras con bordillo a ambos lados de las vías rodadas (solo visual; no cambia cotas ni transitabilidad). Se recortan contra edificios, agua, tableros y otras calzadas.",
+          "type": "object",
+          "required": [
+            "roadTypes",
+            "width",
+            "minimumWidth",
+            "curbWidth",
+            "curbHeight",
+            "curbColor",
+            "step",
+            "junctionMargin",
+            "buildingMargin",
+            "minimumRoadLength",
+            "skirtMaxDepth",
+            "skirtTerrainMargin",
+            "skirtMinGap"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "roadTypes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true,
+              "description": "Tipos de vía OSM con acera."
+            },
+            "width": {
+              "$ref": "#/$defs/positive",
+              "description": "Ancho de acera en metros, contado desde el borde de la calzada. Debe caber en terrainSurfaces.roads.shoulder para seguir la cota de la calzada."
+            },
+            "minimumWidth": {
+              "$ref": "#/$defs/positive",
+              "description": "Ancho mínimo al recortar contra edificios; por debajo no se dibuja acera."
+            },
+            "curbWidth": { "$ref": "#/$defs/positive" },
+            "curbHeight": {
+              "$ref": "#/$defs/positive",
+              "description": "Altura de la acera sobre la cota de la calzada."
+            },
+            "curbColor": { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+            "step": {
+              "$ref": "#/$defs/positive",
+              "description": "Longitud máxima de cada pieza de acera, en metros."
+            },
+            "junctionMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Margen en metros antes del borde de otra calzada que cruza."
+            },
+            "buildingMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Margen en metros respecto a los muros de edificios."
+            },
+            "minimumRoadLength": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Longitud mínima de la vía (suma de sus tramos) para llevar acera; enlaces y ramales cortos no la llevan."
+            },
+            "skirtMaxDepth": {
+              "$ref": "#/$defs/positive",
+              "description": "Profundidad máxima en metros del faldón vertical bajo el borde exterior de calzadas y aceras."
+            },
+            "skirtTerrainMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Metros que el faldón baja por debajo del terreno para no dejar rendija."
+            },
+            "skirtMinGap": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Desnivel mínimo entre el borde y el terreno para dibujar faldón."
+            }
+          }
         },
         "layerHeights": {
           "description": "Altura en metros de cada capa sobre el suelo; ver docs/plan-modular/TERRENO.md.",

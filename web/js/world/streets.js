@@ -3,6 +3,7 @@ import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/material
 import { shoreGeometry, waterMaterial } from '../engine/water.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
+import { buildSidewalks } from './sidewalks.js';
 import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
@@ -209,6 +210,8 @@ export function buildStreetSurfaces() {
       }
       geo.dispose();
     }
+  const localRoad = (road) =>
+    road.p.some((p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ);
   function tri(g, pts, uv) {
     for (let i of [0, 1, 2, 0, 2, 3]) {
       g.p.push(...pts[i]);
@@ -217,11 +220,8 @@ export function buildStreetSurfaces() {
   }
   for (const road of world.city.roads) {
     if (road.bridge && !world.surfaces) continue;
-    let pedestrian = paved.pedestrianTypes.includes(road.type),
-      local = road.p.some(
-        (p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ,
-      );
-    if (!local && !world.surfaces) continue;
+    let pedestrian = paved.pedestrianTypes.includes(road.type);
+    if (!world.surfaces && !localRoad(road)) continue;
     let output = groups[pedestrian ? 'stone' : 'asphalt'],
       g = world.surfaces ? { p: [], uv: [] } : output,
       along = 0;
@@ -264,6 +264,10 @@ export function buildStreetSurfaces() {
       output.uv.push(...mesh.uv);
     }
   }
+  // Aceras con bordillo (visual; ver sidewalks.js). Con terreno de rejilla sin modelo de
+  // superficies no hay cota de calzada que seguir, y no se dibujan.
+  if (world.surfaces || world.terrain?.kind !== 'grid')
+    buildSidewalks(bands.slabs, paved, (road) => world.surfaces || localRoad(road));
   // Mapped pedestrian squares retain their real polygon outlines.
   // Evita pavimento duplicado cuando >80% del contorno coincide con un tablero;
   // 3 m tolera el margen de acera entre dos huellas de una misma plaza. Son criterios
@@ -281,8 +285,11 @@ export function buildStreetSurfaces() {
       )
     )
       continue;
+    // Con relieve se pavimentan todas las plazas; `zones.pavedSquares` solo limita el modo
+    // sin modelo de superficies (escena anterior).
+    if (a.kind !== 'square') continue;
     if (
-      a.kind !== 'square' ||
+      !world.surfaces &&
       !a.p.some(
         (p) => p[0] > squareMinX && p[0] < squareMaxX && p[1] > squareMinZ && p[1] < squareMaxZ,
       )
