@@ -3,6 +3,7 @@ import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 import { updateContactShadows } from './contact-shadows.js';
+import { updateNightGlow } from './night-glow.js';
 import { createPost } from './post.js';
 import {
   applySkyLight,
@@ -120,6 +121,7 @@ let post = null,
 export function renderFrame(force = false) {
   updateSky(gfx.camera);
   updateContactShadows();
+  updateNightGlow();
   if (post && (postOn || force)) post.render();
   else gfx.renderer.render(gfx.scene, gfx.camera);
 }

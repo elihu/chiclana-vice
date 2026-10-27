@@ -247,6 +247,10 @@ aproximaciones de autor revisadas visualmente, no mediciones. El inventario ante
   `windows.js`: una fracción al azar con `windowHash`, las de persiana bajada no, y
   escaparates algo iluminados) y sube el emisivo de faros y pilotos de los coches
   (`registerNightLamp` en `sky.js`). No hay luces dinámicas nuevas.
+- `js/engine/night-glow.js`: luz falsa de noche con tres `InstancedMesh` aditivas (opacidad =
+  `night`, ocultas de día): mancha bajo cada farola, haz de faros delante de cada coche y
+  brillo rojo tras los pilotos (`NIGHT_GLOW`, en vivo con `setNightGlow`). Los cristales de las
+  farolas usan un material emisivo compartido registrado con `registerNightLamp`.
 - `js/engine/wall-ao.js`: oclusión falsa de la luz ambiente en la base de muros y fachadas
   (`WALL_AO`: luz que queda al pie, altura a la que se recupera y diferencia entre plantas
   bajas y altas), con el atributo `hag` (altura sobre la base) de la geometría; en vivo con

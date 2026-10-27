@@ -5,6 +5,8 @@ import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/sta
 import { inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
+import { addLampGlow } from '../engine/night-glow.js';
+import { registerNightLamp } from '../engine/sky.js';
 
 export function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -14,15 +16,25 @@ export function buildUrbanFurniture() {
     if (!materials.has(col)) materials.set(col, mat(col));
     return materials.get(col);
   }
-  function cube(g, x, y, z, w, h, d, c) {
-    let m = new THREE.Mesh(unitBox, ma(c));
+  // Cristales de las farolas: emisivo cálido que se enciende con la noche (material compartido).
+  const lit = new Map();
+  function litMa(col) {
+    if (!lit.has(col)) {
+      const m = mat(col, { emissive: '#ffb860' });
+      registerNightLamp(m, 0, 2.6);
+      lit.set(col, m);
+    }
+    return lit.get(col);
+  }
+  function cube(g, x, y, z, w, h, d, c, glass = false) {
+    let m = new THREE.Mesh(unitBox, glass ? litMa(c) : ma(c));
     m.position.set(x, y, z);
     m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
-  function cyl(g, x, y, z, rt, rb, h, c) {
-    let m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 7), ma(c));
+  function cyl(g, x, y, z, rt, rb, h, c, glass = false) {
+    let m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 7), glass ? litMa(c) : ma(c));
     m.position.set(x, y, z);
     g.add(m);
     return m;
@@ -58,14 +70,15 @@ export function buildUrbanFurniture() {
     cyl(g, 0, h / 2, 0, 0.055, 0.085, h, col);
     if (modern) {
       cyl(g, 0, h, 0, 0.43, 0.43, 0.09, col);
-      cyl(g, 0, h - 0.08, 0, 0.28, 0.28, 0.07, '#e8dabb');
+      cyl(g, 0, h - 0.08, 0, 0.28, 0.28, 0.07, '#e8dabb', true);
     } else {
       cube(g, 0, h - 0.2, 0, 0.38, 0.5, 0.38, col);
-      for (let x of [-0.2, 0.2]) cube(g, x, h - 0.2, 0, 0.025, 0.36, 0.28, '#d5cba8');
-      for (let z of [-0.2, 0.2]) cube(g, 0, h - 0.2, z, 0.28, 0.36, 0.025, '#d5cba8');
+      for (let x of [-0.2, 0.2]) cube(g, x, h - 0.2, 0, 0.025, 0.36, 0.28, '#d5cba8', true);
+      for (let z of [-0.2, 0.2]) cube(g, 0, h - 0.2, z, 0.28, 0.36, 0.025, '#d5cba8', true);
       cyl(g, 0, h + 0.16, 0, 0.02, 0.36, 0.23, col);
     }
     collider(x, z, 0.18);
+    addLampGlow(x, g.position.y, z);
     streetEnvironment.lamps++;
   }
   function bench(x, z, a = 0) {
