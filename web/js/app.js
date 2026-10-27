@@ -64,12 +64,14 @@ async function init() {
     cityDesign,
     vegetation,
     groundFloors,
+    tram,
     terrain,
     warning,
   } = await loadLayers();
   world.city = res;
   world.vegetation = vegetation;
   world.groundFloors = groundFloors;
+  world.tram = tram;
   world.terrain = terrain;
   if (warning) toast(warning, 5);
   world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];

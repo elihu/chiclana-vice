@@ -309,3 +309,14 @@ Límites: son indicios, no certeza. Más inmuebles que viviendas puede ser local
 trastero; 4 o más viviendas sugiere un bloque de pisos, pero el recuento es del edificio
 catastral entero, no de la planta baja. Los puntos de OSM están incompletos y no se vinculan
 a una parte. No es un dato catastral certificado.
+
+## Vías y paradas del tranvía
+
+`tools/export-tram.py` publica `web/tram.json` desde `osm-ampliado.xml` (misma proyección que
+`tools/rebuild-map.py`): las vías `railway=tram` recortadas a los límites del mundo (una con
+`bridge=yes`/`layer=1` sobre el puente de Nuestra Señora de los Remedios), las paradas
+`railway=tram_stop`, los andenes `railway=platform` y los cruces `tram_level_crossing` y
+`tram_crossing`. Dentro del mundo quedan 7 tramos (unos 1.037 m), 1 parada, 1 andén, 5 cruces
+a nivel y 2 pasos peatonales; el resto de la línea, fuera del mapa. Licencia ODbL como
+`osm-world.json`. Límites: OSM traza un solo eje por vía (sin separar los dos sentidos) y la
+geometría del juego es una aproximación visual; no hay tranvía en marcha.

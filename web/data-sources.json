@@ -128,6 +128,19 @@
     },
     {
       "files": [
+        "tram.json"
+      ],
+      "source": "OpenStreetMap (railway=tram, tram_stop, platform, tram_level_crossing, tram_crossing), descarga local 2026",
+      "conditions": "ODbL-1.0 as a whole (derived database from OpenStreetMap)",
+      "attribution": "© OpenStreetMap contributors",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "transformation": "Tram tracks clipped to the world bounds, stops, platforms and crossings in local metres rounded to 0.01 m",
+      "sha256": {
+        "tram.json": "10447915285e1d097951cdb4a69ad677f59e59dfe245cc6b301ffbdb3a81edc1"
+      }
+    },
+    {
+      "files": [
         "aerial/index.json",
         "aerial/hi/-4_-5.jpg",
         "aerial/lo/-4_-5.jpg",

@@ -71,6 +71,7 @@ export const world = {
   city: null,
   vegetation: null,
   groundFloors: null,
+  tram: null,
   facadeProfiles: null,
   facadeDesigns: null,
   cityDesign: null,

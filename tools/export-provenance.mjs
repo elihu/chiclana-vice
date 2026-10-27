@@ -102,6 +102,18 @@ if (fs.existsSync(directory + '/ground-floors.json')) {
       'Use, building units and dwellings of the cadastral building containing each game part; OSM commerce points in local metres',
   });
 }
+if (fs.existsSync(directory + '/tram.json')) {
+  const tram = JSON.parse(fs.readFileSync(directory + '/tram.json', 'utf8'));
+  records.push({
+    files: ['tram.json'],
+    source: tram.source,
+    conditions: 'ODbL-1.0 as a whole (derived database from OpenStreetMap)',
+    attribution: tram.attribution,
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
+    transformation:
+      'Tram tracks clipped to the world bounds, stops, platforms and crossings in local metres rounded to 0.01 m',
+  });
+}
 if (fs.existsSync(directory + '/aerial/index.json')) {
   const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
   records.push({
