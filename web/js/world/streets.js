@@ -268,6 +268,35 @@ export function buildStreetSurfaces() {
           [0, (along + (len * (k + 1)) / count) / 4],
         ]);
       }
+      // Cuña exterior en cada quiebro de la polilínea: sin ella, cada tramo termina en un corte
+      // recto y queda un triángulo sin asfalto (se ve la ortofoto) en el lado de fuera.
+      if (i > 1) {
+        const px = a[0] - road.p[i - 2][0],
+          pz = a[1] - road.p[i - 2][1],
+          plen = Math.hypot(px, pz);
+        if (plen >= 0.1) {
+          const pnx = -pz / plen,
+            pnz = px / plen;
+          for (const side of [1, -1]) {
+            const c1 = [a[0] + pnx * half * side, a[1] + pnz * half * side],
+              c2 = [a[0] + nx * half * side, a[1] + nz * half * side];
+            // Hueco solo si la esquina del tramo nuevo queda por delante del corte del anterior.
+            if (((c2[0] - c1[0]) * px + (c2[1] - c1[1]) * pz) / plen < 0.01) continue;
+            const corners = [
+              [a, half / 4],
+              [c1, side > 0 ? 0 : half / 2],
+              [c2, side > 0 ? 0 : half / 2],
+            ];
+            // Mismo sentido de giro que los rectángulos (normal hacia abajo, como ellos).
+            if ((c1[1] - a[1]) * (c2[0] - a[0]) - (c1[0] - a[0]) * (c2[1] - a[1]) > 0)
+              corners.push(corners.splice(1, 1)[0]);
+            for (const [point, u] of corners) {
+              g.p.push(point[0], y, point[1]);
+              g.uv.push(u, along / 4);
+            }
+          }
+        }
+      }
       along += len;
       streetEnvironment.surfaces++;
     }
