@@ -138,7 +138,10 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   y patios, cornisas y pretiles, y reflejos en cristales. De
   [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md) quedan V3–V5 (árboles, cristales, horas
   del día). Todo ello, más el agua del río, está en
-  [PLAN-VISUAL.md](PLAN-VISUAL.md), sin empezar.
+  [PLAN-VISUAL.md](PLAN-VISUAL.md). F1 (río) integrada sin publicar el 27/10/2026 y aprobada
+  por el usuario («está muy bien»): agua con ondas, reflejo del cielo y orillas
+  oscuras (`water.js`), 0 llamadas nuevas y unos 15.000 triángulos más (orillas); sin FPS
+  medidos. Siguen F2–F4.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
