@@ -4,6 +4,7 @@ import { gfx, segments, waterAreas, world } from '../core/state.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside } from '../core/math.js';
 import { inBuilding } from './spatial.js';
+import { tramBlocks } from './tram.js';
 
 // Aceras con bordillo y faldones de las calzadas. Todo es visual: no cambia las cotas que
 // devuelve surfaceHeightAt ni la transitabilidad. Las reglas están en
@@ -69,6 +70,7 @@ export function buildSidewalks(slabs, paved, include) {
   const free = (x, z, a, b, len) =>
     !inBuilding(x, z, cfg.buildingMargin) &&
     !nearOther(x, z, a, b, len) &&
+    !tramBlocks(x, z, cfg.junctionMargin) &&
     !platforms.some((p) => pInside(x, z, p.polygon)) &&
     !waterAreas.some((w) => pInside(x, z, w.p));
 

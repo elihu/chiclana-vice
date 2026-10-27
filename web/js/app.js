@@ -20,6 +20,7 @@ import { addGroundPlanes, placeSun, renderFrame, setupRenderer } from './engine/
 import { precompileShaders } from './engine/precompile.js';
 import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
+import { buildTram } from './world/tram.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
 import { KIT_PIECES } from './world/facade-kit.js';
@@ -64,12 +65,14 @@ async function init() {
     cityDesign,
     vegetation,
     groundFloors,
+    tram,
     terrain,
     warning,
   } = await loadLayers();
   world.city = res;
   world.vegetation = vegetation;
   world.groundFloors = groundFloors;
+  world.tram = tram;
   world.terrain = terrain;
   if (warning) toast(warning, 5);
   world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
@@ -122,6 +125,7 @@ async function init() {
   await sleepFrame();
   buildStreetSurfaces();
   buildRoadDetails();
+  buildTram();
   buildUrbanFurniture();
   buildTrees();
   addSigns();

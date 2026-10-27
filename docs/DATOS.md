@@ -489,3 +489,26 @@ Publica `web/ground-floors.json` sin tocar `buildings.json`. Se regenera cada ve
 - Más `version`, `origin`, `buildingsSha256`, `source`, `license`, `attribution` y `limits`.
 
 El juego la carga como `world.groundFloors` (opcional) y de momento no la usa.
+
+## 10. Vías y paradas del tranvía
+
+```sh
+uv run --no-project --with shapely python tools/export-tram.py --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
+node tools/export-provenance.mjs
+npm test
+```
+
+Publica `web/tram.json` (ODbL, como `osm-world.json`) solo con lo que cae dentro de
+`world.json:bounds`; `tests/verify-tram.mjs` comprueba formato, atribución y límites. Formato:
+
+- `tracks`: `{id, bridge, gauge, p}`, eje de cada vía (`railway=tram`) en metros locales,
+  recortado al mundo (un recorte con varias partes añade el sufijo `.n` al `id`); `gauge` en
+  metros.
+- `platforms`: `{id, bridge, shelter, p}`, contorno del andén (`railway=platform`).
+- `stops`: `{id, name, x, z, platform}`, paradas (`railway=tram_stop`) con el andén más
+  cercano a menos de 40 m.
+- `crossings`: `{id, kind, x, z}`; `level` (`tram_level_crossing`) o `pedestrian`
+  (`tram_crossing`).
+- Más `version`, `origin`, `source`, `license`, `attribution` y `limits`.
+
+El juego la carga como `world.tram` (opcional; sin ella no hay tranvía).

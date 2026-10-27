@@ -119,6 +119,7 @@ export async function loadLayers() {
     cityDesign,
     vegetation,
     groundFloors,
+    tram,
   ] = await Promise.all([
     loadWorld(),
     orthophoto,
@@ -148,6 +149,10 @@ export async function loadLayers() {
     fetch(asset('ground-floors.json'))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
+    // Optional layer: tram tracks, stops, platforms and crossings inside the world (OSM).
+    fetch(asset('tram.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const { terrain, warning } = await loadTerrain(
     (file) => fetch(asset(file)),
@@ -171,6 +176,7 @@ export async function loadLayers() {
     cityDesign,
     vegetation,
     groundFloors,
+    tram,
     terrain,
     warning: terrain.manifest?.preview
       ? 'Relieve provisional: superficies y accesos pendientes de revisión'

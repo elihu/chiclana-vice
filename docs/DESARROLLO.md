@@ -242,6 +242,9 @@ la baldosa.
   paralelas, que son una calle partida, no cuentan). Si el ancho completo no cabe se prueba
   con 66 % y 33 %; por debajo de `minimumWidth` no hay acera. En los cruces las aceras se
   cortan antes de la calzada que cruza, sin solapes; las esquinas quedan abiertas.
+- Tranvía: cada pieza se descarta también si cae sobre la franja del tranvía (más
+  `junctionMargin`) o en un cruce a nivel (`tram.crossingClearance`); los tramos de la vía
+  empotrados en una calzada no la recortan (ver «Tranvía»).
 - Tramos sueltos: una sucesión continua de piezas por un mismo lado de una vía más corta que
   `minimumRun` (10 m) no se dibuja (queda el faldón de la calzada). Evita franjas aisladas
   entre recortes junto a cruces anchos, peatonales y plazas.
@@ -264,6 +267,38 @@ la baldosa.
   Las baldosas de las plazas se proyectan al terreno con el muestreo general.
 - Con terreno de rejilla sin modelo de superficies no se dibujan; el modo ligero es igual que el
   normal (geometría estática y barata).
+
+## Tranvía
+
+`world/tram.js` (`buildTram`, tras `buildRoadDetails`) dibuja, solo como geometría visual, las
+vías de `web/tram.json` (capa OSM, ver `docs/DATOS.md`): no cambia cotas, colisiones ni
+transitabilidad. Parámetros de autor en `city-design.json` (sección `tram`; esquema en
+`schemas/` y validación en `design-validate.js`).
+
+- Cada muestra (cada `sampleStep`) tiene uno de tres tipos, a `bedHeight` sobre la cota de
+  `surfaceHeightAt` (calzada, tablero o terreno):
+  - `lane`: el eje queda dentro de una calzada (Calle Mendizábal, Virgen del Carmen, San
+    Antonio, Alameda Solano: calles hoy de sentido único con el otro carril reservado al
+    tranvía). Carril exclusivo de `stripWidth` con superficie `laneColor` (hormigón claro,
+    distinta del asfalto) y una línea blanca continua en cada borde; los raíles van empotrados.
+    El carril se desplaza hacia el eje de la calle lo justo (suavizado) para caber en la
+    calzada con `laneMargin`, de modo que no pisa la acera, que se mantiene.
+  - `paved`: puentes, cruces a nivel y medianas pegadas a las calzadas; franja `pavedColor`.
+  - `grass`: franja de césped separada de la calzada (Avenida de los Reyes Católicos). Los
+    tramos de césped de menos de `minimumGrassRun` entre tramos empotrados se pavimentan.
+    Las empotradas toman la cota del eje en ambos lados; la de césped, la de cada esquina.
+- Dos raíles separados el ancho de vía de OSM (1,668 m) y, cada `poleSpacing` (28 m), un poste
+  con brazo, por el lado con más espacio libre y fuera de edificios; el hilo de contacto se
+  dibuja a `wireHeight` en tramos rectos de `wireStep`.
+- Mallas agrupadas por material: `tram-bed-paved`, `tram-bed-grass`, `tram-lane` (color por
+  vértice: hormigón y líneas), `tram-rails`, `tram-catenary` y, para las paradas, `tram-stops`
+  (color por vértice), `tram-stop-glass` y `tram-stop-signs`: ocho llamadas en total.
+- Paradas: andén (contorno de OSM) elevado `platformHeight` con canto y banda táctil en el
+  borde que da a la vía, marquesina (tejado, postes y cristal) junto al borde exterior y poste
+  con el nombre de la parada (`stop` en `city-design.json`).
+- `tramBlocks(x, z, margin)` (usado por `sidewalks.js`) indica si un punto cae sobre la franja
+  (salvo en tramos `lane`) o a menos de `crossingClearance` de un cruce a nivel o paso peatonal:
+  ahí no hay acera, bordillo ni faldón.
 
 ## Cielo, entorno y color
 
