@@ -265,6 +265,26 @@ la baldosa.
 - Con terreno de rejilla sin modelo de superficies no se dibujan; el modo ligero es igual que el
   normal (geometría estática y barata).
 
+## Tranvía
+
+`world/tram.js` (`buildTram`, tras `buildRoadDetails`) dibuja, solo como geometría visual, las
+vías de `web/tram.json` (capa OSM, ver `docs/DATOS.md`): no cambia cotas, colisiones ni
+transitabilidad. Parámetros de autor en `city-design.json` (sección `tram`; esquema en
+`schemas/` y validación en `design-validate.js`).
+
+- Franja de `stripWidth` (2,6 m) remuestreada cada `sampleStep`, a `bedHeight` sobre la cota
+  de `surfaceHeightAt` (calzada, tablero o terreno). Es pavimentada (empotrada) en puentes,
+  cruces a nivel y donde el eje queda a menos de medio ancho de calzada + medio ancho de
+  franja + `pavedDistance` de una calzada; si no, de césped. La pavimentada toma la cota del
+  eje en ambos lados; la de césped, la de cada esquina.
+- Dos raíles separados el ancho de vía de OSM (1,668 m) y, cada `poleSpacing` (28 m), un poste
+  con brazo, por el lado con más espacio libre y fuera de edificios; el hilo de contacto se
+  dibuja a `wireHeight` en tramos rectos de `wireStep`.
+- Cuatro mallas agrupadas por material (`tram-bed-paved`, `tram-bed-grass`, `tram-rails`,
+  `tram-catenary`): cuatro llamadas de dibujo y unos 7.800 triángulos con la capa actual.
+- `tramDistance(x, z)` expone la distancia al eje más cercano para que otros constructores
+  (aceras) respeten la franja.
+
 ## Cielo, entorno y color
 
 - `js/engine/sky.js`: cúpula con degradado y halo del sol (se dibuja primero, sin

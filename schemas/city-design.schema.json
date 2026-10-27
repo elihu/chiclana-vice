@@ -14,6 +14,7 @@
     "crossings",
     "centerLines",
     "signs",
+    "tram",
     "vegetation",
     "buildings",
     "randomSeed"
@@ -558,6 +559,123 @@
         "minimumPoints": {
           "type": "integer",
           "minimum": 1
+        }
+      }
+    },
+    "tram": {
+      "description": "Vías y paradas del tranvía (capa web/tram.json): solo visual, sin colisiones ni cambio de cotas.",
+      "type": "object",
+      "required": [
+        "stripWidth",
+        "sampleStep",
+        "bedHeight",
+        "pavedColor",
+        "grassColor",
+        "pavedDistance",
+        "rails",
+        "catenary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stripWidth": {
+          "$ref": "#/$defs/positive",
+          "description": "Ancho en metros de la franja del tranvía; las aceras y bordillos no la invaden."
+        },
+        "sampleStep": {
+          "$ref": "#/$defs/positive",
+          "description": "Separación en metros de las muestras de cota a lo largo de la vía."
+        },
+        "bedHeight": {
+          "$ref": "#/$defs/nonNegative",
+          "description": "Altura de la franja sobre la cota de la calzada, el tablero o el terreno."
+        },
+        "pavedColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "grassColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "pavedDistance": {
+          "$ref": "#/$defs/nonNegative",
+          "description": "Margen en metros: la franja se pavimenta (empotrada) si la vía queda a menos de medio ancho de calzada más medio ancho de franja más este margen; si no, es de césped."
+        },
+        "rails": {
+          "description": "Raíles (separación = ancho de vía de OSM).",
+          "type": "object",
+          "required": ["width", "height", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "width": {
+              "$ref": "#/$defs/positive"
+            },
+            "height": {
+              "$ref": "#/$defs/positive"
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-f]{6}$"
+            }
+          }
+        },
+        "catenary": {
+          "description": "Postes, brazos e hilo de contacto.",
+          "type": "object",
+          "required": [
+            "poleSpacing",
+            "poleOffset",
+            "poleWidth",
+            "poleHeight",
+            "armHeight",
+            "armWidth",
+            "wireHeight",
+            "wireWidth",
+            "wireStep",
+            "buildingClearance",
+            "color"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "poleSpacing": {
+              "$ref": "#/$defs/positive",
+              "description": "Separación entre postes en metros."
+            },
+            "poleOffset": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Distancia del poste al borde de la franja."
+            },
+            "poleWidth": {
+              "$ref": "#/$defs/positive"
+            },
+            "poleHeight": {
+              "$ref": "#/$defs/positive"
+            },
+            "armHeight": {
+              "$ref": "#/$defs/positive"
+            },
+            "armWidth": {
+              "$ref": "#/$defs/positive"
+            },
+            "wireHeight": {
+              "$ref": "#/$defs/positive"
+            },
+            "wireWidth": {
+              "$ref": "#/$defs/positive"
+            },
+            "wireStep": {
+              "$ref": "#/$defs/positive",
+              "description": "Longitud máxima de cada tramo recto del hilo."
+            },
+            "buildingClearance": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Margen respecto a edificios para colocar un poste."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-f]{6}$"
+            }
+          }
         }
       }
     },

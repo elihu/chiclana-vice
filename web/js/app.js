@@ -20,6 +20,7 @@ import { addGroundPlanes, placeSun, renderFrame, setupRenderer } from './engine/
 import { precompileShaders } from './engine/precompile.js';
 import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
+import { buildTram } from './world/tram.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
 import { KIT_PIECES } from './world/facade-kit.js';
@@ -124,6 +125,7 @@ async function init() {
   await sleepFrame();
   buildStreetSurfaces();
   buildRoadDetails();
+  buildTram();
   buildUrbanFurniture();
   buildTrees();
   addSigns();

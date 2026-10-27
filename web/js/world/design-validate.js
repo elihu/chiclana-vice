@@ -531,6 +531,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'crossings',
     'centerLines',
     'signs',
+    'tram',
     'vegetation',
     'buildings',
   ];
@@ -732,6 +733,32 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       shrubBuildingClearance: 'nonneg',
     },
     'vegetation',
+  );
+  check(
+    json.tram,
+    {
+      stripWidth: 'pos',
+      sampleStep: 'pos',
+      bedHeight: 'nonneg',
+      pavedColor: 'color',
+      grassColor: 'color',
+      pavedDistance: 'nonneg',
+      rails: { width: 'pos', height: 'pos', color: 'color' },
+      catenary: {
+        poleSpacing: 'pos',
+        poleOffset: 'nonneg',
+        poleWidth: 'pos',
+        poleHeight: 'pos',
+        armHeight: 'pos',
+        armWidth: 'pos',
+        wireHeight: 'pos',
+        wireWidth: 'pos',
+        wireStep: 'pos',
+        buildingClearance: 'nonneg',
+        color: 'color',
+      },
+    },
+    'tram',
   );
   check(
     json.buildings,
