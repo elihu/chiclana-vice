@@ -27,7 +27,9 @@ export async function verifyAerialTiles({
   assetVersion,
 }) {
   // Un único nodo de color TSL, compartido por la ortofoto, el pavimento y las bandas.
-  const detailNode = groundDetailNode();
+  // Las teselas de ortofoto comparten el nodo con suelo cercano; los pavimentos, el de solo grano.
+  const detailNode = groundDetailNode(),
+    orthoNode = groundDetailNode(true);
   const groundMaterials = g.scene.getObjectByName('terrain-ground').children.map((o) => o.material);
   const tileMaterialCount = groundMaterials.length;
   g.scene.traverse((o) => {
@@ -42,9 +44,13 @@ export async function verifyAerialTiles({
     3 + bandKinds.size,
     'todos los lotes de pavimento y bandas tienen detalle',
   );
-  for (const material of groundMaterials) {
+  for (const [index, material] of groundMaterials.entries()) {
     assert(material.isMeshStandardNodeMaterial, 'suelo con material de nodos');
-    assert.equal(material.colorNode, detailNode, 'nodo y uniformes compartidos entre teselas');
+    assert.equal(
+      material.colorNode,
+      index < tileMaterialCount ? orthoNode : detailNode,
+      'nodo y uniformes compartidos entre teselas',
+    );
     assert.equal(material.userData.groundDetail, true);
   }
   assert.throws(
@@ -52,8 +58,10 @@ export async function verifyAerialTiles({
     /MeshStandardNodeMaterial/,
   );
   g.scene.traverse((o) => {
-    if (o.material && !groundMaterials.includes(o.material))
+    if (o.material && !groundMaterials.includes(o.material)) {
       assert.notEqual(o.material.colorNode, detailNode, 'solo el suelo');
+      assert.notEqual(o.material.colorNode, orthoNode, 'solo el suelo');
+    }
   });
   const grain = detailUniforms.uDetailMap.value;
   assert.equal(grain.image.width, 256);

@@ -29,6 +29,7 @@ import { validateCityDesign, validateFacadeDesigns } from './world/design-valida
 import { buildRoadDetails, buildStreetSurfaces } from './world/streets.js';
 import { buildRoadGraph, connectOpenSpaces, orientDriveGraph } from './game/graph.js';
 import { buildTrees } from './world/vegetation.js';
+import { prepareGroundClean } from './world/ground-clean.js';
 import { buildShadowProxies } from './world/shadow-proxies.js';
 import { buildUrbanFurniture } from './world/furniture.js';
 import { clamp } from './core/math.js';
@@ -128,6 +129,7 @@ async function init() {
   buildTram();
   buildUrbanFurniture();
   buildTrees();
+  prepareGroundClean();
   addSigns();
   buildShadowProxies();
   setupPOIs();

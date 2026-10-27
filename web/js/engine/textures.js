@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { applyGroundNearQuality, groundNearColor, groundTintNode } from './ground-near.js';
 
 const { texture, uniform, positionWorld, cameraPosition, smoothstep, mix, vec3, vec4, float } =
   THREE.TSL;
@@ -18,35 +19,40 @@ export const detailUniforms = {
   uDetailStrength: uniform(1),
 };
 let detailStrength = 1,
-  detailColor = null;
+  detailColor = null,
+  orthoColor = null;
 
 // Grano cercano sobre ortofoto y pavimento: color del material (color × mapa) por el gris del
-// grano en coordenadas de mundo, que se apaga entre `near` y `far` metros de la cámara.
-export function groundDetailNode() {
-  if (detailColor) return detailColor;
+// grano en coordenadas de mundo, que se apaga entre `near` y `far` metros de la cámara. Con
+// `ortho` (teselas de ortofoto del terreno) además aplica el suelo cercano de ground-near.js:
+// copas limpias y sombras suavizadas, con el mismo alcance.
+export function groundDetailNode(ortho = false) {
+  if (ortho ? orthoColor : detailColor) return ortho ? orthoColor : detailColor;
   detailUniforms.uDetailMap.value = groundDetailTexture();
   const u = detailUniforms,
     fade = float(1).sub(
       smoothstep(u.uDetailNear, u.uDetailFar, positionWorld.distance(cameraPosition)),
     ),
-    grain = u.uDetailMap.sample(positionWorld.xz.div(u.uDetailScale)).rgb.mul(2);
-  detailColor = vec4(
-    THREE.TSL.materialColor.rgb.mul(mix(vec3(1), grain, fade.mul(u.uDetailStrength))),
-    1,
-  );
-  return detailColor;
+    grain = u.uDetailMap.sample(positionWorld.xz.div(u.uDetailScale)).rgb.mul(2),
+    photo = THREE.TSL.materialColor.rgb,
+    base = ortho ? groundNearColor(photo, groundTintNode(), fade) : photo,
+    node = vec4(base.mul(mix(vec3(1), grain, fade.mul(u.uDetailStrength))), 1);
+  if (ortho) orthoColor = node;
+  else detailColor = node;
+  return node;
 }
 
-export function applyGroundDetail(material) {
+export function applyGroundDetail(material, { ortho = false } = {}) {
   if (!material.isMeshStandardNodeMaterial)
     throw Error('El detalle del suelo necesita MeshStandardNodeMaterial');
-  material.colorNode = groundDetailNode();
+  material.colorNode = groundDetailNode(ortho);
   material.userData.groundDetail = true;
   return material;
 }
 
 export function applyGroundDetailQuality() {
   detailUniforms.uDetailStrength.value = gfx.quality === 'low' ? 0 : detailStrength;
+  applyGroundNearQuality();
 }
 
 export function setGroundDetail({ scale, near, far, strength } = {}) {

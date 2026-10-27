@@ -217,6 +217,24 @@ La implementación, la validación y los límites del recorte están en
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
+## Suelo cercano
+
+`engine/ground-near.js` y `world/ground-clean.js` mejoran la ortofoto de cerca sin tocar las
+teselas publicadas. Todo va en TSL dentro del color de las teselas de suelo
+(`applyGroundDetail(material, { ortho: true })`) y se apaga con el mismo alcance que el grano
+cercano: `fade` = 1 a menos de `near` m de la cámara y 0 a más de `far` (`setGroundDetail`).
+Desde lejos y en vista aérea la ortofoto queda como estaba.
+
+- **Copas**: al cargar (`prepareGroundClean`, tras `buildTrees`) se dibuja una máscara con los
+  círculos de `vegetation.json` (árboles y arbustos, borde suave) y un «entorno limpio»: la
+  vista general sin esas copas, rellenada con el promedio ponderado de los píxeles vecinos
+  (desenfoque por cajas normalizado, 3 m/píxel). Bajo cada copa el color pasa de la foto a ese
+  entorno. Cuesta unos 70 ms al arrancar y unos 6 MB de texturas; no se construye en ligero.
+- **Sombras horneadas**: los oscuros de la ortofoto suben hacia una luminancia mínima
+  (`shadowFloor`) con transición suave; el asfalto y otros oscuros normales quedan por encima.
+- Ajuste en vivo: `setGroundNear({ crownClean, shadowStrength, shadowFloor, shadowSoftness })`
+  y `GROUND_CLEAN` (resolución y radios de la máscara, solo al construir).
+
 ## Aceras
 
 `world/sidewalks.js` (llamado desde `buildStreetSurfaces`) añade, solo como geometría visual,
@@ -358,7 +376,9 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Apaga la gradación de color y la viñeta (`RenderPipeline`), porque añaden un pase a
   pantalla completa; el cielo, el entorno horneado y la niebla del cielo se mantienen.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
-- Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste.
+- Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste, y con
+  él el suelo cercano de la ortofoto (copas limpias y sombras suavizadas; ver «Suelo cercano»).
+  Si se arranca en ligero no se construyen sus texturas hasta pasar a normal.
 - Oculta las celdas más allá del final de la niebla.
 - Descarta el detalle de fachadas a 200 m y la vegetación a 300 m de la cámara;
   en vista aérea, el alcance es 380 m para ambos. Se suma el radio de la esfera
