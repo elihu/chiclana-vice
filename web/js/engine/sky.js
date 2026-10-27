@@ -63,7 +63,32 @@ export const skyUniforms = {
   fogNear: uniform(175),
   fogFar: uniform(620),
   fogBrighten: uniform(SKY.fogBrighten),
+  // Dirección del sol para el halo (la fija `setSkySun`) y noche de 0 a 1 (ventanas y faros).
+  sunDir: uniform(new THREE.Vector3(0, 1, 0)),
+  night: uniform(0),
 };
+
+// Mueve el halo del cielo con el sol. Es un uniforme: no recompila nada.
+export function setSkySun(direction) {
+  skyUniforms.sunDir.value.set(...direction).normalize();
+}
+
+// Luces que se encienden con la noche: materiales con emisivo propio (faros, pilotos). Solo
+// cambia `emissiveIntensity`, que es un valor.
+const nightLamps = [];
+export function registerNightLamp(material, day, night) {
+  if (!nightLamps.some((lamp) => lamp.material === material))
+    nightLamps.push({ material, day, night });
+  material.emissiveIntensity = day + (night - day) * skyUniforms.night.value;
+}
+
+// Pone la noche (0 día, 1 anochecer con luces) en el uniforme y en los materiales registrados.
+export function setNight(value) {
+  skyUniforms.night.value = value;
+  for (const { material, day, night } of nightLamps)
+    material.emissiveIntensity = day + (night - day) * value;
+  gfx.needsRender = true;
+}
 
 const colorKeys = ['horizon', 'zenith', 'ground', 'haloColor'],
   numberKeys = {
@@ -99,7 +124,8 @@ let sky = null,
 // Cúpula unida a la cámara. Sin profundidad ni niebla: se dibuja primero y lo demás la tapa.
 export function createSky(sunDirection, hemi) {
   hemiLight = hemi;
-  const sunDir = vec3(...sunDirection.clone().normalize().toArray()),
+  setSkySun(sunDirection.toArray());
+  const sunDir = skyUniforms.sunDir,
     material = new THREE.MeshBasicNodeMaterial({
       side: THREE.BackSide,
       depthWrite: false,

@@ -4,7 +4,15 @@ import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
 import { updateContactShadows } from './contact-shadows.js';
 import { createPost } from './post.js';
-import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
+import {
+  applySkyLight,
+  bakeSkyEnvironment,
+  createSky,
+  SKY,
+  setSkySun,
+  syncSkyFog,
+  updateSky,
+} from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 import { applyFoliageQuality } from './foliage.js';
 
@@ -29,8 +37,8 @@ const SUN_OFFSET = new THREE.Vector3(...SUN.direction),
   sunBasisInverse = sunBasis.clone().invert(),
   snapped = new THREE.Vector3();
 
-// Cambia el sol en vivo desde la consola: color, intensidad y dirección (el cielo horneado
-// conserva la dirección con la que se creó; recarga para que el halo la siga).
+// Cambia el sol en vivo desde la consola: color, intensidad y dirección (el halo del cielo la sigue; el
+// entorno horneado conserva la anterior hasta `bakeSkyEnvironment()`).
 export function setSun(patch = {}) {
   Object.assign(SUN, patch);
   SUN_OFFSET.set(...SUN.direction);
@@ -38,6 +46,7 @@ export function setSun(patch = {}) {
   sunBasisInverse.copy(sunBasis).invert();
   gfx.sun.color.set(SUN.color);
   gfx.sun.intensity = SUN.intensity;
+  setSkySun(SUN.direction);
   gfx.needsRender = true;
 }
 
@@ -55,7 +64,8 @@ export function placeSun(x, y, z) {
 
 // WebGPURenderer usa WebGPU cuando el navegador lo ofrece y si no WebGL 2; `?motor=webgl`
 // fuerza WebGL 2 para comparar los dos motores en el mismo equipo.
-export async function setupRenderer() {
+// `beforeBake` se llama antes de hornear el cielo: ahí se fija la hora del día inicial.
+export async function setupRenderer(beforeBake) {
   const forceWebGL = urlOptions().get('motor') === 'webgl';
   gfx.renderer = new gfx.platform.Renderer({
     canvas: $('world'),
@@ -93,6 +103,7 @@ export async function setupRenderer() {
   gfx.sun.shadow.bias = -0.0002;
   gfx.sun.shadow.normalBias = 0.09;
   gfx.scene.add(gfx.sun, gfx.sun.target);
+  beforeBake?.();
   // Con el renderizador simulado de las pruebas no hay entorno horneado ni gradación.
   if (gfx.renderer instanceof THREE.Renderer) {
     gfx.skyBakeMs = await bakeSkyEnvironment();

@@ -1,3 +1,5 @@
+export const TIME_IDS = ['manana', 'mediodia', 'tarde', 'anochecer'];
+
 // localStorage puede contener JSON válido de otra versión o una estructura alterada.
 export function normalizeProgress(value, limits) {
   const stored = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -13,6 +15,7 @@ export function normalizeProgress(value, limits) {
         ]
       : [],
     quality: stored.quality === 'low' ? 'low' : 'auto',
+    time: TIME_IDS.includes(stored.time) ? stored.time : 'tarde',
   };
 }
 
