@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { shareInstanceShader } from '../engine/materials.js';
 
 // Todos los coches de un tipo se dibujan con una InstancedMesh por ranura de material (carrocería,
 // cristal, aros…) en vez de un grupo de mallas por coche: las llamadas de dibujo dejan de crecer
@@ -33,6 +34,7 @@ function buildMeshes(pool, capacity) {
     mesh.visible = false;
     mesh.userData.slot = { tinted, cabin };
     if (tinted) mesh.setColorAt(0, white);
+    shareInstanceShader(mesh);
     gfx.scene.add(mesh);
     return mesh;
   });
