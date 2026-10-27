@@ -77,6 +77,38 @@ extremos. Esta tanda sí toca cotas y transitabilidad, con cuidado:
 
 Se planifica en detalle tras revisar la tanda 1.
 
+## Tanda T. Vías y paradas del tranvía (`feat/tranvia`, después de la tanda 2)
+
+Contexto (27/10/2026): el tranvía pasa por la Avenida de los Reyes Católicos y por el puente
+de Nuestra Señora de los Remedios; su franja es la zona ancha que hoy queda sin resolver junto
+al acceso norte del puente (franjas de acera sueltas). La mayor parte de la línea queda fuera
+del mapa actual: el usuario quiere **solo vías y paradas** dentro del mapa; el tranvía en
+marcha se verá si se amplía el mapa.
+
+Datos en el OSM ya descargado (`~/.cache/chiclana-vice/sources/osm-ampliado.xml`): 9 vías
+`railway=tram` (una con `bridge=yes`, `layer=1`, sobre el puente), 7 `railway=tram_stop`, 7
+`railway=platform`, `public_transport=platform` y 35 `railway=tram_level_crossing`.
+
+1. **Capa de datos** `web/tram.json` con su conversor en `tools/` (vías recortadas al mundo,
+   paradas, andenes y cruces en coordenadas locales), registro en `data-sources.json` y
+   provenance, verificador en `tests/` y documentación en `DATOS.md` y `MAP_SOURCES.md`. Su
+   licencia es ODbL como `osm-world.json`: si hay que redactar algo nuevo en
+   `THIRD_PARTY_NOTICES.md`, se pregunta al usuario. Commit
+   `feat(datos): vías y paradas del tranvía desde OSM`.
+2. **Plataforma y vías**: franja del tranvía (ancho de autor en `city-design.json`) con dos
+   raíles, empotrada en la calzada o sobre césped según el tramo, siguiendo la cota de la
+   calzada o del tablero; postes de catenaria espaciados; sobre el puente, dentro del tablero
+   de `tablero-remedios`. Agrupado por material, sin llamadas por tramo. Commit
+   `feat(calles): vías del tranvía`.
+3. **Paradas**: andén elevado con bordillo, marquesina sencilla y poste con el nombre de la
+   parada. Commit `feat(calles): paradas del tranvía`.
+4. **Convivencia**: aceras, bordillos y faldones (`sidewalks.js`) no invaden la franja del
+   tranvía; los cruces a nivel quedan limpios (sin acera ni bordillo encima). Desaparecen las
+   franjas sueltas del acceso norte del puente. Commit
+   `fix(calles): aceras que respetan el tranvía`.
+
+Sin tranvía en movimiento ni colisiones nuevas en esta tanda.
+
 ## Tanda 3. Suelo de cerca y ortofoto (`feat/suelo-cerca`)
 
 1. **Pasos de cebra** desde los 144 nodos `highway=crossing` del OSM ya descargado
