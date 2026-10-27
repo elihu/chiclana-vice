@@ -263,9 +263,12 @@ try {
       // La gradación (RenderPipeline) solo vuelve a dibujar la escena una vez por tick del renderizador:
       // hay que esperar entre una medida y la siguiente.
       const tick=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
-      const cast=gfx.sun.castShadow;
+      const cast=gfx.sunShadows,frames=r._nodes.nodeFrame;
       try {
-        await tick();r.info.autoReset=false;r.info.reset();renderFrame();
+        // El pase de sombras se omite si ya se actualizó en este mismo frame de nodos (el bucle
+        // del juego pudo renderizar en el último rAF): se avanza el contador para forzarlo.
+        await tick();r.info.autoReset=false;frames.frameId++;gfx.sun.shadow.needsUpdate=gfx.sunShadows;
+        r.info.reset();renderFrame();
         const total={calls:i.drawCalls??i.calls,triangles:i.triangles};
         setSunShadows(false);await tick();r.info.reset();renderFrame();
         return {total,main:{calls:i.drawCalls??i.calls,triangles:i.triangles},backend:gfx.backend};
@@ -284,8 +287,16 @@ try {
         });
         return {instances,triangles,batches};
       })()`);
-        views.push({ point: point.name, camera: cameras[mode], ...measured, vegetation });
+        const breakdown = await evaluate(mainBreakdownScript());
+        views.push({
+          point: point.name,
+          camera: cameras[mode],
+          ...measured,
+          vegetation,
+          breakdown,
+        });
         console.log(point.name, cameras[mode], JSON.stringify(measured));
+        printBreakdown(breakdown);
         if (options.shots) {
           const shot = await send('Page.captureScreenshot', { format: 'png' });
           const slug = point.name
@@ -302,11 +313,23 @@ try {
     const inventory = await evaluate(`(async()=>{
     const {gfx,facadeWork,chunks,streetEnvironment}=await import('./js/core/state.js');
     let meshes=0,triangles=0,shadowTriangles=0;
+    // Categoría por nombre de la malla o de un ancestro; lo no reconocido va a «otros».
+    const categories=[['arboles',/^vegetation-/],['fachadas',/^facade-cell-|^reference-led-facades$/],
+      ['muros',/^building-(plain-)?walls$/],['tejados',/^building-roofs$/],
+      ['mobiliario',/^urban-furniture$|^street-sign/],['puentes',/^bridge-/],
+      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicles?(-|$)/],['sustitutos',/^shadow-proxies$/]];
+    const shadowByCategory={};
     gfx.scene.traverse(o=>{if(!o.isMesh)return;meshes++;
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);
-      triangles+=t;if(o.castShadow)shadowTriangles+=t;
+      triangles+=t;
+      if(!o.castShadow)return;
+      shadowTriangles+=t;
+      let category=o.isSkinnedMesh?'actores':null;
+      for(let p=o;p&&!category;p=p.parent)category=categories.find(([,re])=>re.test(p.name))?.[0]??null;
+      const row=shadowByCategory[category??'otros']??={meshes:0,triangles:0};
+      row.meshes++;row.triangles+=t;
     });
-    return {meshes,triangles,shadowTriangles,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.memory.programs,backend:gfx.backend,
+    return {meshes,triangles,shadowTriangles,shadowByCategory,memory:{...gfx.renderer.info.memory},programs:gfx.renderer.info.memory.programs,backend:gfx.backend,
       facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
       treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);
@@ -349,4 +372,76 @@ try {
     await stopped;
   }
   fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+}
+
+// Desglose del pase principal (sin sombras): objetos que el renderizador dibujaría, es decir
+// visibles con todos sus ascendientes, en las capas de la cámara y dentro del frustum.
+// Categoría = nombre del ascendiente más cercano que lo tenga; sin nombre, tipo de objeto.
+// Una malla con varios grupos y materiales cuenta una llamada por grupo.
+function printBreakdown(breakdown) {
+  const rows = Object.entries(breakdown.categories).sort((a, b) => b[1].calls - a[1].calls);
+  for (const [name, c] of rows.slice(0, 8))
+    console.log(
+      `    ${name.padEnd(28)} ${String(c.calls).padStart(4)} llamadas ${String(Math.round(c.triangles / 1000)).padStart(5)} kt ${c.materials} materiales`,
+    );
+  console.log(
+    `    suma ${breakdown.calls} llamadas, ${breakdown.materials} materiales, ${breakdown.programs} variantes de programa`,
+  );
+}
+
+function mainBreakdownScript() {
+  return `(async()=>{
+  const {gfx}=await import('./js/core/state.js');
+  const THREE=await import('./vendor/three.webgpu.min.js');
+  const camera=gfx.camera;camera.updateMatrixWorld();
+  const frustum=new THREE.Frustum().setFromProjectionMatrix(
+    new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
+  const {vehicles,people,chunks}=await import('./js/core/state.js');
+  const owner=new Map();
+  const claim=(root,label)=>root?.traverse?.(o=>owner.set(o,label));
+  for(const v of vehicles)claim(v.mesh,'vehiculos');
+  for(const p of people)claim(p.mesh??p.group,'personas');
+  for(const c of chunks)c.traverse(o=>owner.set(o,'edificios:'+(c.name||'manzana')));
+  const categoryOf=o=>{
+    if(owner.has(o)){
+      const label=owner.get(o);
+      if(!label.startsWith('edificios'))return label;
+      const m=o.material;
+      return label.startsWith('edificios:aerial')?'tejados-generales':m.vertexColors?(m.map?'edificios:muros-ventana':'edificios:muros-lisos'):'edificios:tejados';
+    }
+    for(let p=o;p;p=p.parent){
+      if(p.name){const n=p.name.replace(/^(vegetation-[a-z]+)-.*$/,'$1').replace(/^facade-cell-.*$/,'facade-cell');return n;}
+    }
+    if(o.parent===gfx.scene)return '(escena: '+(o.material.map?'suelo-calles con textura':o.material.transparent?'agua/transparente':'suelo-calles lisas')+')';
+    return '('+(o.isInstancedMesh?'instanced':o.isSkinnedMesh?'skinned':o.type)+' sin nombre)';
+  };
+  // Aproxima la clave de programa con lo que cambia el código del shader.
+  const programKey=m=>[m.type,!!m.map,!!m.normalMap,!!m.alphaMap,m.side,m.transparent,m.flatShading,
+    m.vertexColors,m.fog,m.onBeforeCompile?.toString().length??0,m.userData?.programKey??''].join('|');
+  const categories={},materialKeys=new Set(),programKeys=new Set(),perMaterial={};
+  let calls=0,triangles=0;
+  gfx.scene.traverseVisible(o=>{
+    if(!(o.isMesh||o.isLine||o.isPoints||o.isSprite))return;
+    if(!camera.layers.test(o.layers))return;
+    if(o.frustumCulled&&!frustum.intersectsObject(o))return;
+    const materials=Array.isArray(o.material)?o.material:[o.material],
+      groups=Array.isArray(o.material)&&o.geometry.groups.length?o.geometry.groups:[null],
+      cat=categoryOf(o),c=categories[cat]??={calls:0,triangles:0,materialSet:new Set()};
+    const total=(o.geometry.index?.count??o.geometry.getAttribute('position')?.count??0)/3*(o.isInstancedMesh?o.count:1);
+    for(const g of groups){
+      const m=g?materials[g.materialIndex]:materials[0];
+      if(!m)continue;
+      const t=g?g.count/3*(o.isInstancedMesh?o.count:1):total,
+        id=m.name||m.type+':'+(m.color?.getHexString?.()??'-')+(m.map?':map':'');
+      calls++;triangles+=t;c.calls++;c.triangles+=t;c.materialSet.add(m.uuid);
+      materialKeys.add(m.uuid);programKeys.add(programKey(m)+(o.isInstancedMesh?'|inst':'')+(o.isSkinnedMesh?'|skin':''));
+      const pm=perMaterial[id]??={calls:0,triangles:0,instances:new Set()};
+      pm.calls++;pm.triangles+=t;pm.instances.add(m.uuid);
+    }
+  });
+  for(const c of Object.values(categories)){c.materials=c.materialSet.size;delete c.materialSet;}
+  const byMaterial=Object.entries(perMaterial).map(([id,v])=>({id,calls:v.calls,triangles:v.triangles,distinct:v.instances.size}))
+    .sort((a,b)=>b.calls-a.calls).slice(0,25);
+  return {calls,triangles,materials:materialKeys.size,programs:programKeys.size,categories,byMaterial};
+})()`;
 }

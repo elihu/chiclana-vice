@@ -255,6 +255,17 @@ La elección se guarda en el navegador (`chiclana-real-v2`) y nunca se activa so
 Funciona en un móvil Android (comprobado a mano); su efecto en el rendimiento no se ha
 medido en un móvil físico.
 
+## Sustitutos de sombra
+
+`web/js/world/shadow-proxies.js` (`buildShadowProxies`, tras `addSigns`) copia los proyectores
+estáticos grandes (muros, tejados, fachadas, mobiliario, puentes) a geometría solo de
+posición, un material por cara (`side`) y una malla por celda de 160 m, y sustituye las copas
+de los árboles por un icosaedro de 20 triángulos que comparte las matrices de instancia. Los
+sustitutos viven en la capa 1, que solo ve la cámara de sombra (`sun.shadow.camera.layers`);
+las originales pasan a `castShadow = false`. Las facetas de fachada de menos de 0,02 m² (por
+debajo del texel del mapa) no se copian. Quien añada un proyector estático nuevo debe incluir
+su nombre en `STATIC` de ese módulo; si no, sigue proyectando él mismo.
+
 ## Medir en el navegador
 
 Para medir el presupuesto de render, sirve `web/` y ejecuta:
@@ -287,7 +298,8 @@ de cada medida: la gradación solo vuelve a dibujar la escena una vez por tick d
 renderizador, y dos dibujos seguidos medirían solo la pasada de salida. El JSON anota el motor
 (`backend`: WebGPU o WebGL 2); comparar solo medidas del mismo motor. También registra una vez el inventario de
 mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
-sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.
+sombras (con el desglose por categoría en `shadowByCategory`: árboles, fachadas, muros,
+tejados, mobiliario, puentes, actores), memoria del renderizador, programas, mallas de fachada, celdas y árboles.
 `--compare` muestra las cifras anteriores y actuales y su diferencia porcentual;
 no impone un umbral de presupuesto. Los errores de página hacen fallar la ejecución.
 La espera de arranque tolera fallos de `Runtime.evaluate` durante la navegación
@@ -376,3 +388,9 @@ capa, OSM, plaza y relleno de parques (cero con la capa); `treeBuildMs` mide la 
 árboles y arbustos con `performance.now()`. El presupuesto por vista incluye también
 instancias, triángulos y lotes de vegetación visibles en el frustum principal.
 Son medidas de CPU y recuentos, no FPS ni tiempo de GPU.
+
+`scene-budget` imprime también, por vista, el desglose del pase principal por categoría y
+por material (`breakdown` en el JSON: llamadas, triángulos y materiales por categoría, y los
+25 materiales con más llamadas). Los coches se dibujan como instancias por ranura de material
+(`js/game/car-batch.js`): cada coche conserva su `mesh` como ancla y `syncCarBatches` copia su
+matriz a las instancias de los coches a la vista justo antes de dibujar.

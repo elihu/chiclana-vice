@@ -1,6 +1,7 @@
 import { placeVehicleIfChanged } from '../engine/terrain-sampling.js';
 import { blocked } from '../world/spatial.js';
 import { clamp, d } from '../core/math.js';
+import { releaseCar } from './car-batch.js';
 import { createCar } from './vehicles.js';
 import { findRoute, nearestNode } from './graph.js';
 import { gfx, graph, player, police, session, state } from '../core/state.js';
@@ -18,6 +19,7 @@ export function setHeat(n) {
 export function dropPolice() {
   for (const p of police) {
     gfx.scene.remove(p.mesh);
+    releaseCar(p);
   }
   police.length = 0;
   state.wanted = 0;
@@ -71,6 +73,7 @@ export function updatePolice(dt) {
       if (Math.abs(player.speed) < 3) state.arrest += dt;
     } else if (d(p, player) > 400) {
       gfx.scene.remove(p.mesh);
+      releaseCar(p);
       police.splice(police.indexOf(p), 1);
       break;
     }

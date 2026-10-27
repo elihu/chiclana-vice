@@ -241,7 +241,8 @@ export function buildTrees() {
     dummy.updateMatrix();
     leaves.setMatrixAt(shrubs.length + i, dummy.matrix);
   });
-  leaves.castShadow = true;
+  // Arbustos de menos de 1,2 m: su sombra sobre el césped no se distingue.
+  leaves.castShadow = false;
   addVegetationCells(vegetation, leaves, 'shrubs');
   streetEnvironment.treeSources = counts;
   streetEnvironment.treeBuildMs = performance.now() - started;

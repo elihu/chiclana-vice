@@ -360,20 +360,55 @@ const carMeshes = (c) => {
   });
   return result;
 };
-const am = carMeshes(a),
-  bm = carMeshes(b);
-assert.equal(am.length, bm.length);
-am.forEach((m, i) => {
-  assert.equal(m.geometry, bm[i].geometry, 'car geometries shared');
-  assert.equal(m.material, bm[i].material, 'same-color materials shared');
-  assert.notEqual(m.position, bm[i].position, 'transforms independent');
-});
-// Static parts are merged per material; cabin/roof, siren and animated limbs stay separate.
-assert.equal(am.length, 9, 'car merged per material and shadow role');
+// Los coches no tienen mallas propias: cada tipo se dibuja con una InstancedMesh por ranura de
+// material (car-batch.js) y el color de la carrocería es el color de la instancia.
+assert.equal(carMeshes(a).length, 0, 'un coche es solo un ancla de posición');
+const batchMeshes = (kind) => {
+  const result = [];
+  g.scene.traverse((o) => o.name.startsWith('vehicles-' + kind + '-') && result.push(o));
+  return result;
+};
+const carBatch = batchMeshes('car');
+assert.equal(carBatch.length, 9, 'coche: una malla instanciada por material y rol de sombra');
+const sync = () => g.scene.onBeforeRender(null, g.scene, gfx.camera);
+const place = (car, x, z) => {
+  car.mesh.position.set(x, 0, z);
+  car.mesh.updateMatrixWorld(true);
+};
+gfx.camera.updateMatrixWorld();
+const ahead = gfx.camera
+  .getWorldDirection(new Real.Vector3())
+  .multiplyScalar(25)
+  .add(gfx.camera.position);
+for (const car of [a, b]) place(car, ahead.x, ahead.z);
+sync();
+const paint = carBatch.find((m) => m.name === 'vehicles-car-paint');
+assert(carBatch.every((m) => m.isInstancedMesh && m.frustumCulled === false));
+// Las piezas pequeñas (aros, matrícula, faros, pilotos, librea) no proyectan sombra.
+assert(paint.castShadow && !carBatch.find((m) => m.name === 'vehicles-car-plate')?.castShadow);
+assert(paint.count >= 2, 'los coches a la vista entran en el lote');
+assert(
+  Array.from({ length: paint.count }, (_, i) => paint.instanceColor.getX(i)).includes(
+    Math.fround(a.paintColor.r),
+  ),
+  'la instancia lleva el color del coche',
+);
+assert.equal(a.paintColor.getHexString(), '123456', 'color de carrocería por instancia');
+const glass = carBatch.find((m) => m.name === 'vehicles-car-glass'),
+  glassCount = glass.count;
+a.cabinHidden = true;
+sync();
+assert.equal(glass.count, glassCount - 1, 'primera persona omite el cristal propio');
+assert.equal(paint.count, carBatch.find((m) => m.name === 'vehicles-car-alloy').count);
+a.cabinHidden = false;
+place(b, 5000, 5000);
+sync();
+assert.equal(paint.count, glassCount - 1, 'un coche lejano fuera del campo no se dibuja');
 const cop = g.createCar('#123456', true);
-assert.equal(carMeshes(cop).length, 12, 'patrol keeps separate siren');
+assert.equal(carMeshes(cop).length, 2, 'patrulla: solo las dos luces de la sirena');
 assert(cop.siren.isGroup && cop.siren.children.length === 2);
-assert(a.firstPersonOccluders.every((m) => m.parent === a.mesh && am.includes(m)));
+assert.equal(batchMeshes('cop').length, 10, 'patrulla: lote propio con la ranura de rotulación');
+assert(a.firstPersonOccluders.length === 1 && a.firstPersonOccluders[0].visible);
 // A person is one skinned mesh (one draw call); hips/shoulders and knees/elbows are bones.
 const personMeshes = carMeshes({ mesh: person.mesh });
 assert.equal(personMeshes.length, 1, 'person is a single mesh');
