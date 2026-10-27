@@ -1,5 +1,10 @@
 # Plan: mejora gráfica y presupuesto de render
 
+> **Terminado** (G0–G5 publicadas en `v1.4.0`) y superado por
+> [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md): el motor ya no es Three.js r169 ni
+> usa `onBeforeCompile`. Se conserva como registro; lo que sigue vigente de «Más adelante»
+> pasa al plan siguiente.
+
 Fecha: 9/10/2026. Desarrolla la propuesta de mejora visual revisada el 9/10/2026 contra
 el código. Las cifras de referencia son de `main` en `b007ac5`; las referencias de línea,
 de `main` en `083cc29`. Ambas son orientativas: contrástalas con el árbol al empezar cada

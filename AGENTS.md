@@ -1,7 +1,8 @@
 # Chiclana Vice — instrucciones para agentes
 
 Juego web 3D estático sobre coordenadas reales del centro de Chiclana. JavaScript de
-navegador sin frameworks ni compilación; Three.js r169 local en `web/vendor/`. GitHub
+navegador sin frameworks ni compilación; Three.js 0.186.1 local en `web/vendor/`
+(WebGPURenderer, con WebGL 2 de respaldo). GitHub
 Pages publica `web/` tal cual. La documentación y los commits se escriben en español.
 
 Antes de cambiar el juego, lee `docs/DESARROLLO.md` y `docs/ESTADO.md`. Si tocas datos o
