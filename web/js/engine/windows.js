@@ -10,6 +10,7 @@ const {
   floor,
   fract,
   mix,
+  round,
   select,
   sin,
   step,
@@ -67,8 +68,10 @@ export const windowHash = Fn(([cell, seed, salt]) =>
   ),
 );
 
-// Semilla del edificio: sale del color de vértice (constante por muro).
-export const buildingSeed = () => dot(attribute('color', 'vec3'), vec3(12.9898, 78.233, 37.719));
+// Semilla del edificio: sale del color de vértice, redondeado a 8 bits para que la interpolación
+// no meta ruido por píxel (el hash amplifica cualquier diferencia mínima).
+export const buildingSeed = () =>
+  fract(dot(round(attribute('color', 'vec3').mul(255)), vec3(0.1031, 0.1137, 0.0973))).mul(37);
 
 // Rectángulo de cristal en la celda de UV. El eje V va volteado respecto al lienzo.
 const GLASS = { u0: 32 / 128, u1: 90 / 128, v0: 1 - 93 / 128, v1: 1 - 24 / 128 };
