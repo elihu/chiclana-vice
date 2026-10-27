@@ -118,6 +118,7 @@ export async function loadLayers() {
     designs,
     cityDesign,
     vegetation,
+    groundFloors,
   ] = await Promise.all([
     loadWorld(),
     orthophoto,
@@ -143,6 +144,10 @@ export async function loadLayers() {
     fetch(asset('vegetation.json'))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
+    // Optional layer: ground-floor uses (Catastro) and OSM shops; nothing draws it yet.
+    fetch(asset('ground-floors.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const { terrain, warning } = await loadTerrain(
     (file) => fetch(asset(file)),
@@ -165,6 +170,7 @@ export async function loadLayers() {
     designs,
     cityDesign,
     vegetation,
+    groundFloors,
     terrain,
     warning: terrain.manifest?.preview
       ? 'Relieve provisional: superficies y accesos pendientes de revisión'

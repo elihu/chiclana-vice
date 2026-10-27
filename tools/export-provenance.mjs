@@ -89,6 +89,19 @@ if (fs.existsSync(directory + '/vegetation.json')) {
       'Copas aceptadas por zonas y exclusiones; centros y radios redondeados a 0,01 m',
   });
 }
+if (fs.existsSync(directory + '/ground-floors.json')) {
+  const floors = JSON.parse(fs.readFileSync(directory + '/ground-floors.json', 'utf8'));
+  records.push({
+    files: ['ground-floors.json'],
+    source: floors.source,
+    conditions:
+      'ODbL-1.0 as a whole (OSM shops); Catastro INSPIRE transformed-product terms; indicative, no cadastral validity',
+    attribution: floors.attribution,
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
+    transformation:
+      'Use, building units and dwellings of the cadastral building containing each game part; OSM commerce points in local metres',
+  });
+}
 if (fs.existsSync(directory + '/aerial/index.json')) {
   const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
   records.push({
