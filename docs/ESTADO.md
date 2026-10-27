@@ -133,29 +133,13 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
   pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
-- Mejora gráfica y presupuesto de render: plan en
-  [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md). G0 integrada el 9/10/2026
-  (`tools/scene-budget.mjs` y `tools/compare-shots.py`, capturas deterministas) y G1 el
-  mismo día (fachadas agrupadas por material y troncos con ramas: 21–38 % menos llamadas
-  en seguimiento, hasta un 9,6 % más de triángulos dibujados; G1.3 descartada). G2 integrada el
-  13/10/2026 tras la revisión del usuario: luz B (exposición 1,05, cielo 1,7, sol 3,2 y
-  ortofoto 0,78), ventanas continuas en los muros genéricos, anisotropía del suelo y
-  sombra del sol encajada en su rejilla. G3 integrada el 13/10/2026: en ligero se ocultan
-  fachadas y vegetación lejanas (Plaza Mayor: 283 llamadas frente a 471 en normal);
-  revisada por el usuario en el portátil, sin prueba en móvil ni FPS medidos. G4 integrada el
-  13/10/2026: grano cercano en ortofoto y pavimento (escala 8 m, intensidad 1, se apaga
-  entre 8 y 60 m y en ligero), elegido por el usuario en vivo. G5 integrada el 13/10/2026: 2.347 árboles y 766 arbustos
-  sobre copas detectadas en la ortofoto PNOA y filtradas con la altura MDSnV del IGN
-  (`web/vegetation.json`), sin relleno aleatorio de parques; aceptados todos los
-  candidatos (`source-data/tree-review.json` admite exclusiones). Más triángulos (hasta
-  ~2× en algún punto, medido antes de los últimos ajustes); sin prueba en GPU real, móvil
-  ni FPS. Plan terminado. Todo ello es el contenido de
-  la próxima versión, junto con el arreglo del relieve junto a las calzadas. Referencia del 9/10/2026 en la Plaza Mayor: 753 llamadas por frame (653 sin
-  sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
-
-- Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): de VL, documentar en `DESARROLLO.md` `SUN`, `WALL_AO`,
-  `CONTACT_SHADOW` y `envZenithBlend`; comprobar que la cámara de sombras cubre las sombras
-  más largas del sol bajo; medir FPS en el móvil.
+- Gráficos: el plan anterior ([PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md)) está
+  terminado y publicado en `v1.4.0`; de él quedan las fachadas genéricas más variadas, aceras
+  y patios, cornisas y pretiles, y reflejos en cristales. De
+  [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md) quedan V3–V5 (árboles, cristales, horas
+  del día). Todo ello, más el agua del río, pasará a un plan nuevo.
+- Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
+  el móvil con la luz y el ahorro de render juntos.
 
 - Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
 - Verificación en iOS y revisión visual de las fachadas en FrontSide.

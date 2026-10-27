@@ -13,6 +13,11 @@ Abrir http://localhost:8080; Ctrl+C detiene el servidor. Para probar desde otro 
 una red de confianza, usar `--bind 0.0.0.0` y la IP local. El progreso se guarda en el
 navegador (`localStorage`), por origen.
 
+El motor usa WebGPU solo en un contexto seguro (HTTPS o `localhost`); desde la IP local
+cae a WebGL 2. Para probar WebGPU en un Android por USB, `adb reverse tcp:8080 tcp:8080` y
+abrir http://localhost:8080 en el móvil. `#fps` muestra el motor en uso y los FPS, y
+`#motor=webgl` fuerza WebGL 2.
+
 Para reproducir las rutas de GitHub Pages, servir una carpeta que contenga `web/` con el
 nombre `chiclana-vice/` y abrir http://localhost:8080/chiclana-vice/.
 
@@ -160,7 +165,9 @@ desde la cámara entre las que se desvanece el grano, también en metros. `stren
 va de 0 a 1. Se admiten cambios parciales; en ligero la intensidad efectiva siempre
 es cero y al volver a normal se recupera la elegida. Los valores de referencia
 dejan la vista aérea fuera del alcance del detalle. El ajuste no recompila el shader
-y solo afecta al suelo, sin modificar las cubiertas.
+y solo afecta al suelo, sin modificar las cubiertas. `__luz` también admite `exposure`,
+`hemi`, `sun` y `aerial` para pruebas rápidas; los valores de referencia del cielo, el sol
+y el color viven en `SKY`, `SUN` y `GRADE` ([Cielo, entorno y color](#cielo-entorno-y-color)).
 
 ## Mundo y límites
 
@@ -223,6 +230,21 @@ aproximaciones de autor revisadas visualmente, no mediciones. El inventario ante
   `(await import('./js/engine/sky.js')).setSky({ zenith: '#5588bb' })` y
   `(await import('./js/engine/post.js')).setGrade({ contrast: 1.2 })`. Para rehornear el
   entorno tras cambiar colores, `await bakeSkyEnvironment()`.
+- Luz directa: `SUN` en `js/engine/renderer.js` (dirección hacia el sol, color e
+  intensidad: sol de tarde, bajo y cálido); se cambia en vivo con `setSun({ intensity: 3 })`.
+- `SKY.envZenithBlend` (`sky.js`) acerca el cenit al horizonte solo dentro del entorno
+  horneado, para que las caras en sombra queden neutras y no azules sin cambiar la cúpula.
+- `js/engine/wall-ao.js`: oclusión falsa de la luz ambiente en la base de muros y fachadas
+  (`WALL_AO`: luz que queda al pie, altura a la que se recupera y diferencia entre plantas
+  bajas y altas), con el atributo `hag` (altura sobre la base) de la geometría; en vivo con
+  `setWallAO`. No afecta a la luz directa.
+- `js/engine/contact-shadows.js`: sombras de contacto difuminadas bajo coches y personas, un
+  material e instancias compartidos (`CONTACT_SHADOW`: opacidad, suavidad y tamaños); en vivo
+  con `setContactShadows`. Se mantienen en modo ligero, que no tiene sombras del sol.
+- Los shaders se compilan en la pantalla de carga (`js/engine/precompile.js`, «Compilando los
+  shaders…»); las mallas instanciadas comparten shader con `shareInstanceShader`
+  (`materials.js`). Una malla o material nuevo visible desde el inicio queda cubierto solo
+  con estar en la escena antes de esa fase.
 - Se dibuja siempre con `renderFrame()` (`renderer.js`), no con `renderer.render`.
 - Con el renderizador simulado de las pruebas no hay entorno horneado ni gradación.
 
