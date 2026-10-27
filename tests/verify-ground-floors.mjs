@@ -14,24 +14,16 @@ assert.equal(
   createHash('sha256').update(fs.readFileSync('web/buildings.json')).digest('hex'),
   'ground-floors.json se regenera con buildings.json',
 );
-assert(Array.isArray(layer.parts) && layer.parts.length > 0);
-const seen = new Set();
-for (const part of layer.parts) {
-  assert(
-    Number.isInteger(part.i) && part.i >= 0 && part.i < city.buildings.length,
-    `índice ${part.i}`,
-  );
-  assert(!seen.has(part.i), `índice repetido ${part.i}`);
-  seen.add(part.i);
-  assert.equal(
-    part.sha256,
-    createHash('sha256').update(JSON.stringify(city.buildings[part.i].p)).digest('hex'),
-    `huella del contorno de la parte ${part.i}`,
-  );
-  assert.equal(typeof part.use, 'string');
-  assert(Number.isInteger(part.units) && part.units >= 0);
-  assert(Number.isInteger(part.dwellings) && part.dwellings >= 0);
+assert(Array.isArray(layer.uses) && layer.uses.every((u) => typeof u === 'string'));
+assert.equal(layer.parts.length, city.buildings.length, 'una entrada por parte, en su orden');
+for (const [k, part] of layer.parts.entries()) {
+  if (part === null) continue;
+  assert(Array.isArray(part) && part.length === 3, `parte ${k}`);
+  const [use, units, dwellings] = part;
+  assert(Number.isInteger(use) && use >= 0 && use < layer.uses.length, `uso de la parte ${k}`);
+  assert(Number.isInteger(units) && units >= 0 && Number.isInteger(dwellings) && dwellings >= 0);
 }
+assert(layer.parts.some(Boolean));
 const inside = (x, z) =>
   world.bounds.some(([x0, x1, z0, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1);
 assert(layer.shops.length > 0);
@@ -42,5 +34,5 @@ for (const [x, z, kind] of layer.shops) {
   assert(inside(x, z), `comercio fuera del mundo ${x},${z}`);
 }
 console.log(
-  `Bajos: ${layer.parts.length} partes con huella válida y ${layer.shops.length} comercios dentro del mundo`,
+  `Bajos: ${layer.parts.filter(Boolean).length} partes con datos y ${layer.shops.length} comercios dentro del mundo`,
 );

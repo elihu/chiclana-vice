@@ -50,16 +50,6 @@ def local(xs, ys, z=None):
         return proj(lon, lat)
 
 
-def js_number(v):
-    """Como JSON.stringify de JavaScript: 2.0 se escribe 2."""
-    return int(v) if float(v).is_integer() else v
-
-
-def footprint_sha(points):
-    text = json.dumps([[js_number(a), js_number(b)] for a, b in points], separators=(',', ':'))
-    return hashlib.sha256(text.encode()).hexdigest()
-
-
 # 1. Edificios catastrales (A.ES.SDGC.BU.11015.building.gml), en streaming.
 ns = {'g': 'http://www.opengis.net/gml/3.2', 'b': 'http://inspire.jrc.ec.europa.eu/schemas/bu-ext2d/2.0'}
 
@@ -101,7 +91,7 @@ tree = STRtree([c['geom'] for c in catastro])
 
 # 2. Partes de buildings.json -> edificio catastral que contiene su centroide.
 buildings = json.loads((ROOT / 'web/buildings.json').read_text())['buildings']
-parts, unmatched = [], 0
+parts, unmatched = [], 0  # parts[k] corresponde a buildings[k]; None si no encaja
 for index, b in enumerate(buildings):
     poly = Polygon(b['p'], b.get('holes') or [])
     if not poly.is_valid:
@@ -119,10 +109,13 @@ for index, b in enumerate(buildings):
                 best, area = i, a
         if best is None or area < 0.5 * poly.area:
             unmatched += 1
+            parts.append(None)
             continue
         hits = [best]
     c = catastro[hits[0]]
-    parts.append({'i': index, 'sha256': footprint_sha(b['p']), 'use': c['use'], 'units': c['units'], 'dwellings': c['dwellings']})
+    parts.append([c['use'], c['units'], c['dwellings']])
+uses = sorted({p[0] for p in parts if p})
+parts = [None if p is None else [uses.index(p[0]), p[1], p[2]] for p in parts]
 
 # 3. Comercios de OSM dentro del mundo: nodos y centroides de vías cerradas.
 AMENITY = {'bar', 'restaurant', 'cafe', 'pub', 'fast_food', 'bank', 'pharmacy', 'ice_cream', 'biergarten', 'food_court', 'marketplace', 'bureau_de_change', 'clinic', 'dentist', 'doctors', 'veterinary', 'cinema', 'theatre', 'nightclub', 'post_office'}
@@ -165,19 +158,22 @@ layer = {
     'attribution': 'D.G. del Catastro; © OpenStreetMap contributors',
     'limits': 'Indicios, no certeza: más inmuebles que viviendas sugiere local, garaje o trastero; 4 o más viviendas, bloque de pisos. Cada parte toma los datos del edificio catastral que contiene su centroide; los comercios de OSM son puntos aproximados y no están vinculados a una parte.',
     'format': {
-        'parts': 'Una entrada por parte de buildings.json que encaja con un edificio catastral: i = índice en buildings.json, sha256 = huella SHA-256 de JSON.stringify(p) de esa parte, use = currentUse de Catastro, units = numberOfBuildingUnits, dwellings = numberOfDwellings.',
+        'uses': 'Valores de currentUse de Catastro que aparecen, ordenados.',
+        'parts': '[índice en uses, numberOfBuildingUnits, numberOfDwellings] por cada parte de buildings.json, en su mismo orden (parts[k] es buildings[k]); null si la parte no encaja con ningún edificio catastral.',
         'shops': '[x, z, tipo] en metros locales (como buildings.json); tipo = clave:valor de OSM (shop:*, office:*, craft:*, amenity:*).',
     },
+    'uses': uses,
     'parts': parts,
     'shops': shops,
 }
 Path(args.out).write_text(json.dumps(layer, ensure_ascii=False, separators=(',', ':')) + '\n')
 by_use = {}
-for p in parts:
-    by_use[p['use']] = by_use.get(p['use'], 0) + 1
+matched = [p for p in parts if p]
+for p in matched:
+    by_use[uses[p[0]]] = by_use.get(uses[p[0]], 0) + 1
 print(json.dumps({
-    'buildings': len(buildings), 'parts': len(parts), 'unmatched': unmatched, 'byUse': by_use,
-    'blocks': sum(1 for p in parts if p['dwellings'] >= 4),
-    'residentialMoreUnits': sum(1 for p in parts if p['use'] == '1_residential' and p['units'] > p['dwellings']),
+    'buildings': len(buildings), 'parts': len(matched), 'unmatched': unmatched, 'byUse': by_use,
+    'blocks': sum(1 for p in matched if p[2] >= 4),
+    'residentialMoreUnits': sum(1 for p in matched if uses[p[0]] == '1_residential' and p[1] > p[2]),
     'shops': len(shops),
 }, ensure_ascii=False))

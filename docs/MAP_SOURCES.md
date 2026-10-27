@@ -302,7 +302,7 @@ piezas; las mayores y los árboles anteriores conservan una subdivisión.
 contiene su centroide (o su punto representativo, o el de mayor solape si la simplificación lo
 deja en el borde). De OSM (`osm-ampliado.xml`) toma nodos y vías cerradas con `shop`,
 `office`, `craft` o `amenity` de comercio, hostelería, banca y sanidad, como puntos
-(centroide en las vías) dentro de los límites del mundo. Usa el origen de `web/world.json` y
+(centroide en las vías) dentro de los límites del mundo. Las partes se guardan en el orden de `buildings.json` como tuplas compactas (el archivo ocupa unos 75 KB). Usa el origen de `web/world.json` y
 la misma proyección que `tools/rebuild-map.py`.
 
 Límites: son indicios, no certeza. Más inmuebles que viviendas puede ser local, garaje o

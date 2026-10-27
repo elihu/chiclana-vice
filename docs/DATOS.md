@@ -479,10 +479,11 @@ npm test
 Publica `web/ground-floors.json` sin tocar `buildings.json`. Se regenera cada vez que cambia
 `buildings.json` (guarda su SHA-256 y `tests/verify-ground-floors.mjs` lo comprueba). Formato:
 
-- `parts`: una entrada por parte de `buildings.json` que encaja con un edificio catastral:
-  `i` (índice), `sha256` (huella de `JSON.stringify(p)` de la parte, como `frontages.json`),
-  `use` (`currentUse`), `units` (`numberOfBuildingUnits`) y `dwellings`
-  (`numberOfDwellings`).
+- `uses`: valores de `currentUse` que aparecen, ordenados.
+- `parts`: una tupla `[índice en uses, units, dwellings]` por parte de `buildings.json`, en
+  su mismo orden (`parts[k]` es `buildings[k]`, sin índice ni huella por parte: basta
+  `buildingsSha256`); `units` es `numberOfBuildingUnits` y `dwellings`
+  `numberOfDwellings`. `null` si la parte no encaja con ningún edificio catastral.
 - `shops`: puntos `[x, z, tipo]` de OSM en metros locales, dentro de `bounds`; `tipo` es
   `shop:*`, `office:*`, `craft:*` o `amenity:*` (hostelería, banca, farmacia, sanidad…).
 - Más `version`, `origin`, `buildingsSha256`, `source`, `license`, `attribution` y `limits`.
