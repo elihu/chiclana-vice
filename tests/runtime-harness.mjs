@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { SAVE_KEY } from '../web/game-data.js';
-import * as Real from '../web/vendor/three.module.min.js';
+import * as Real from '../web/vendor/three.webgpu.min.js';
 
 // Un mismo entorno CPU para verificadores y exportadores; no ejecuta GPU. Los módulos ES
 // se evalúan una vez por proceso, así que el juego solo puede arrancarse una vez.
@@ -110,6 +110,10 @@ export async function createRuntime({ progress = null, terrain = null, failedAss
       this.shadowMap = {};
       this.info = { render: { calls: 0, triangles: 0 } };
       this.renders = 0;
+      this.backend = { isWebGPUBackend: false };
+    }
+    async init() {
+      this.initialized = true;
     }
     setPixelRatio(v) {
       this.pixelRatio = v;
@@ -136,7 +140,7 @@ export async function createRuntime({ progress = null, terrain = null, failedAss
   const { startGame } = await import('../web/js/app.js');
   const g = await startGame({
     version: assetVersion,
-    platform: { WebGLRenderer: Renderer, TextureLoader: Loader },
+    platform: { Renderer, TextureLoader: Loader },
   });
   assert(g, 'init completed');
   return { g, els, storage, requested, mediaQueries, windowListeners, assetVersion };

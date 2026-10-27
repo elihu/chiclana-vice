@@ -1,4 +1,4 @@
-import * as THREE from '../vendor/three.module.min.js';
+import * as THREE from '../vendor/three.webgpu.min.js';
 import {
   actors,
   camPos,
@@ -25,7 +25,7 @@ import { blocked, inBuilding, nearestRoad, safePoint } from './world/spatial.js'
 import { cameraSweep, cycleCamera, updateCamera } from './engine/camera.js';
 import { carCollision, createCar } from './game/vehicles.js';
 import { closeModal, help, pauseMenu } from './ui/dialogs.js';
-import { createPerson } from './game/people.js';
+import { animateWalk, createPerson } from './game/people.js';
 import { findRoute, nearestNode } from './game/graph.js';
 import { interact } from './game/player.js';
 import { JOBS as jobs } from '../game-data.js';
@@ -54,6 +54,7 @@ export function createPublicApi() {
     },
     createCar,
     createPerson,
+    animateWalk,
     state,
     player,
     get city() {

@@ -1,6 +1,6 @@
 import { boundsBox } from './bounds.js';
 import { gridX, gridZ } from '../core/math.js';
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { world } from '../core/state.js';
 

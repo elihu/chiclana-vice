@@ -2,7 +2,7 @@
 // (edificio, frente, vía OSM, objeto de calle, monumento) y copia fragmentos JSON listos para
 // facade-designs.json o map-corrections.json. Solo lo carga app.js con `?debug`; no cambia nada
 // del juego ni del arrastre de cámara (oyentes con addEventListener).
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { buildingGrid, chunks, facadeWork, gfx, player, world } from '../core/state.js';
 import { pInside, pointSeg } from '../core/math.js';
 import { sha256Hex } from '../world/corrections.js';

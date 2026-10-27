@@ -46,7 +46,8 @@
       { "name": "Iglesia Mayor", "center": [233.29, 174.98], "radius": 24, "height": 12 },
       { "name": "Ayuntamiento", "detailType": "townhall", "minimumFloors": 3, "height": 15.1 }
     ],
-    "wallUvWidth": 4.8
+    "wallUvWidth": 4.8,
+    "partyWall": { "color": "#d9d3c6", "blend": 0.6 }
   },
   "pavements": {
     "pedestrianTypes": ["pedestrian", "footway", "path"],

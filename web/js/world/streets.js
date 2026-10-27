@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/materials.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
@@ -314,7 +314,7 @@ export function buildStreetSurfaces() {
     let mesh = new THREE.Mesh(
       geo,
       applyGroundDetail(
-        new THREE.MeshStandardMaterial({
+        new THREE.MeshStandardNodeMaterial({
           map: g.tex,
           roughness: g.roughness ?? 0.96,
           side: THREE.DoubleSide,

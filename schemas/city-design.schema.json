@@ -511,7 +511,14 @@
     "buildings": {
       "description": "Edificios genéricos: paleta, colores por tipo, alturas mínimas y escala UV.",
       "type": "object",
-      "required": ["palette", "detailColors", "minimumHeights", "wallUvWidth", "variation"],
+      "required": [
+        "palette",
+        "detailColors",
+        "minimumHeights",
+        "wallUvWidth",
+        "variation",
+        "partyWall"
+      ],
       "additionalProperties": false,
       "properties": {
         "palette": {
@@ -602,6 +609,22 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 4294967295
+            }
+          }
+        },
+        "partyWall": {
+          "description": "Medianeras expuestas (muro compartido por encima del vecino más bajo): sin huecos, con el color del edificio mezclado hacia `color` en la proporción `blend`.",
+          "type": "object",
+          "required": ["color", "blend"],
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "blend": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
             }
           }
         }

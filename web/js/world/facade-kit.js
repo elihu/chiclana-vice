@@ -1,4 +1,4 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { TAU } from '../core/math.js';
 import { inBuilding } from './spatial.js';
 

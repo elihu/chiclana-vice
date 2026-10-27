@@ -37,7 +37,7 @@ const files = walk('web/js');
 const key = (file) => './' + path.relative('web', file).split(path.sep).join('/');
 const expected = [
   ...files.map(key),
-  './vendor/three.module.min.js',
+  './vendor/three.webgpu.min.js',
   './game-data.js',
   './progress.js',
 ].sort();

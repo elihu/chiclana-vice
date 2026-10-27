@@ -1,7 +1,7 @@
 // Estado compartido entre módulos. Hoja del grafo: no importa módulos del juego ni toca
 // el DOM al evaluarse. Contenedores: se mutan, no se reasignan. Escalares: propiedades
 // de los objetos de grupo, con el nombre de la antigua variable de nivel superior.
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { INITIAL_POSITION } from '../../game-data.js';
 
 // --- Contenedores (paso 1.3) ---
@@ -91,6 +91,8 @@ export const gfx = {
   quality: 'auto',
   needsRender: true,
   contextLost: false,
+  backend: null,
+  sunShadows: null,
   W: 0,
   H: 0,
   coarse: false,

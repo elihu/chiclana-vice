@@ -1,7 +1,7 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
-import { applyGroundDetail } from '../engine/textures.js';
+import { applyGroundDetail, maxAnisotropy } from '../engine/textures.js';
 
 // Gris sRGB elegido en G2.2 (combinación B).
 const AERIAL_TINT = 0.78,
@@ -39,7 +39,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
   const { detail, ...materialOptions } = options;
   const key = tileKey(i, j);
   if (!materials.has(key)) materials.set(key, new Set());
-  const m = new THREE.MeshStandardMaterial({
+  const m = new (detail ? THREE.MeshStandardNodeMaterial : THREE.MeshStandardMaterial)({
     map: loaded.get(key)?.texture ?? world.groundTexture,
     ...materialOptions,
   });
@@ -97,10 +97,7 @@ function pump() {
         const [x0, x1, z0, z1] = world.aerialBox;
         const extent = size + 2 * margin;
         texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy =
-          requestLevel === 'hi'
-            ? Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4)
-            : 4;
+        texture.anisotropy = requestLevel === 'hi' ? Math.min(8, maxAnisotropy()) : 4;
         texture.repeat.set((x1 - x0) / extent, (z1 - z0) / extent);
         texture.offset.set(
           (x0 - tile.i * size + margin) / extent,

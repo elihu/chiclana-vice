@@ -1,7 +1,7 @@
 // Compositor: ejecuta las recetas de web/facade-designs.json con las piezas del kit.
 // No crea materiales ni mallas propios: todo pasa por `kit` (cube, geo, wall, material…).
 // Formato y semántica: docs/plan-modular/KIT-FACHADAS.md (K3 y K4).
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { evaluate } from '../engine/expr.js';
 import { flatPolygon } from '../engine/materials.js';
 import { outwardOf } from './facade-kit.js';

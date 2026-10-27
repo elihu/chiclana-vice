@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import * as THREE from '../web/vendor/three.module.min.js';
+import * as THREE from '../web/vendor/three.webgpu.min.js';
 import { gfx, world } from '../web/js/core/state.js';
 import {
   aerialMaterial,
@@ -10,7 +10,12 @@ import {
 } from '../web/js/world/aerial-tiles.js';
 import { terrainGeometry, terrainTiles } from '../web/js/world/terrain-mesh.js';
 import { boundsBox } from '../web/js/world/bounds.js';
-import { detailUniforms } from '../web/js/engine/textures.js';
+import {
+  applyGroundDetail,
+  detailUniforms,
+  groundDetailNode,
+  maxAnisotropy,
+} from '../web/js/engine/textures.js';
 import { applyQuality } from '../web/js/engine/renderer.js';
 import { adjustLight } from '../web/js/debug/inspector.js';
 
@@ -21,19 +26,12 @@ export async function verifyAerialTiles({
   initialDesiredTiles,
   assetVersion,
 }) {
-  // Las cuatro anclas del parche deben existir en el vendor que realmente se publica.
-  for (const [stage, anchors] of [
-    ['vertexShader', ['#include <common>', '#include <project_vertex>']],
-    ['fragmentShader', ['#include <common>', '#include <map_fragment>']],
-  ])
-    for (const anchor of anchors) assert(THREE.ShaderLib.standard[stage].includes(anchor));
+  // Un único nodo de color TSL, compartido por la ortofoto, el pavimento y las bandas.
+  const detailNode = groundDetailNode();
   const groundMaterials = g.scene.getObjectByName('terrain-ground').children.map((o) => o.material);
   const tileMaterialCount = groundMaterials.length;
   g.scene.traverse((o) => {
-    if (
-      o.material?.map?.isCanvasTexture &&
-      o.material.customProgramCacheKey() === 'ground-detail-v1'
-    )
+    if (o.material?.map?.isCanvasTexture && o.material.userData.groundDetail)
       groundMaterials.push(o.material);
   });
   const bandKinds = new Set(
@@ -45,19 +43,17 @@ export async function verifyAerialTiles({
     'todos los lotes de pavimento y bandas tienen detalle',
   );
   for (const material of groundMaterials) {
-    assert.equal(material.customProgramCacheKey(), 'ground-detail-v1');
-    const shader = { uniforms: {}, ...THREE.ShaderLib.standard };
-    material.onBeforeCompile(shader);
-    for (const [name, uniform] of Object.entries(detailUniforms))
-      assert.equal(shader.uniforms[name], uniform, 'uniformes compartidos entre teselas');
-    assert(shader.vertexShader.includes('vDetailXZ = detailWorld.xz'));
-    assert(shader.vertexShader.includes('distance(detailWorld.xyz, cameraPosition)'));
-    assert(shader.fragmentShader.includes('smoothstep(uDetailNear, uDetailFar, vDetailDist)'));
-    assert(shader.fragmentShader.includes('texture2D(uDetailMap, vDetailXZ / uDetailScale)'));
+    assert(material.isMeshStandardNodeMaterial, 'suelo con material de nodos');
+    assert.equal(material.colorNode, detailNode, 'nodo y uniformes compartidos entre teselas');
+    assert.equal(material.userData.groundDetail, true);
   }
+  assert.throws(
+    () => applyGroundDetail(new THREE.MeshStandardMaterial()),
+    /MeshStandardNodeMaterial/,
+  );
   g.scene.traverse((o) => {
     if (o.material && !groundMaterials.includes(o.material))
-      assert.notEqual(o.material.customProgramCacheKey(), 'ground-detail-v1', 'solo el suelo');
+      assert.notEqual(o.material.colorNode, detailNode, 'solo el suelo');
   });
   const grain = detailUniforms.uDetailMap.value;
   assert.equal(grain.image.width, 256);
@@ -65,7 +61,7 @@ export async function verifyAerialTiles({
   assert.equal(grain.wrapS, THREE.RepeatWrapping);
   assert.equal(grain.wrapT, THREE.RepeatWrapping);
   assert.equal(grain.colorSpace, THREE.NoColorSpace);
-  assert.equal(grain.anisotropy, Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4));
+  assert.equal(grain.anisotropy, Math.min(8, maxAnisotropy()));
   const savedQuality = gfx.quality,
     versions = groundMaterials.map((m) => m.version);
   gfx.quality = 'auto';
@@ -94,7 +90,7 @@ export async function verifyAerialTiles({
   adjustLight({ detail: { scale: 8, near: 8, far: 60, strength: 1 } });
   gfx.quality = savedQuality;
   applyQuality();
-  console.log('Detalle del suelo: anclas del vendor, uniformes compartidos, debug y calidad OK');
+  console.log('Detalle del suelo: nodo TSL compartido, uniformes, debug y calidad OK');
 
   const initial = initialAerialRequests.filter((u) => /aerial\/(hi|lo)\//.test(u));
   assert(initial.length <= 9, 'solo las teselas del radio al arrancar');

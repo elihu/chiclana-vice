@@ -1,49 +1,47 @@
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
 
-// Un único juego de uniformes para todo el suelo; los tejados no los usan.
+const { texture, uniform, positionWorld, cameraPosition, smoothstep, mix, vec3, vec4, float } =
+  THREE.TSL;
+
+// Anisotropía máxima del equipo; WebGPURenderer la expone en el propio renderizador.
+export const maxAnisotropy = () =>
+  gfx.renderer?.getMaxAnisotropy?.() ?? gfx.renderer?.capabilities?.getMaxAnisotropy?.() ?? 4;
+
+// Un único juego de uniformes (nodos TSL con `.value`) para todo el suelo; los tejados no los
+// usan. El color de detalle se construye una vez y lo comparten todos los materiales.
 export const detailUniforms = {
-  uDetailMap: { value: null },
-  uDetailScale: { value: 8 },
-  uDetailNear: { value: 8 },
-  uDetailFar: { value: 60 },
-  uDetailStrength: { value: 1 },
+  uDetailMap: texture(new THREE.Texture()),
+  uDetailScale: uniform(8),
+  uDetailNear: uniform(8),
+  uDetailFar: uniform(60),
+  uDetailStrength: uniform(1),
 };
-let detailStrength = 1;
+let detailStrength = 1,
+  detailColor = null;
+
+// Grano cercano sobre ortofoto y pavimento: color del material (color × mapa) por el gris del
+// grano en coordenadas de mundo, que se apaga entre `near` y `far` metros de la cámara.
+export function groundDetailNode() {
+  if (detailColor) return detailColor;
+  detailUniforms.uDetailMap.value = groundDetailTexture();
+  const u = detailUniforms,
+    fade = float(1).sub(
+      smoothstep(u.uDetailNear, u.uDetailFar, positionWorld.distance(cameraPosition)),
+    ),
+    grain = u.uDetailMap.sample(positionWorld.xz.div(u.uDetailScale)).rgb.mul(2);
+  detailColor = vec4(
+    THREE.TSL.materialColor.rgb.mul(mix(vec3(1), grain, fade.mul(u.uDetailStrength))),
+    1,
+  );
+  return detailColor;
+}
 
 export function applyGroundDetail(material) {
-  detailUniforms.uDetailMap.value ??= groundDetailTexture();
-  material.customProgramCacheKey = () => 'ground-detail-v1';
-  material.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, detailUniforms);
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        '#include <common>\nvarying vec2 vDetailXZ;\nvarying float vDetailDist;',
-      )
-      .replace(
-        '#include <project_vertex>',
-        `#include <project_vertex>
-        vec4 detailWorld = modelMatrix * vec4(transformed, 1.0);
-        vDetailXZ = detailWorld.xz;
-        vDetailDist = distance(detailWorld.xyz, cameraPosition);`,
-      );
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        uniform sampler2D uDetailMap;
-        uniform float uDetailScale, uDetailNear, uDetailFar, uDetailStrength;
-        varying vec2 vDetailXZ; varying float vDetailDist;`,
-      )
-      .replace(
-        '#include <map_fragment>',
-        `#include <map_fragment>
-        float detailFade = 1.0 - smoothstep(uDetailNear, uDetailFar, vDetailDist);
-        vec3 detail = texture2D(uDetailMap, vDetailXZ / uDetailScale).rgb * 2.0;
-        diffuseColor.rgb *= mix(vec3(1.0), detail, detailFade * uDetailStrength);`,
-      );
-  };
+  if (!material.isMeshStandardNodeMaterial)
+    throw Error('El detalle del suelo necesita MeshStandardNodeMaterial');
+  material.colorNode = groundDetailNode();
+  material.userData.groundDetail = true;
   return material;
 }
 
@@ -93,7 +91,7 @@ export function groundDetailTexture() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.NoColorSpace;
-  texture.anisotropy = Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+  texture.anisotropy = Math.min(8, maxAnisotropy());
   return texture;
 }
 
@@ -174,6 +172,6 @@ export function surfaceTexture(kind) {
   let tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = Math.min(8, gfx.renderer.capabilities?.getMaxAnisotropy?.() ?? 4);
+  tex.anisotropy = Math.min(8, maxAnisotropy());
   return tex;
 }

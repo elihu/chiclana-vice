@@ -1,8 +1,8 @@
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
-import * as THREE from '../../vendor/three.module.min.js';
+import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
-import { mat } from '../engine/materials.js';
+import { mat, shareInstanceShader } from '../engine/materials.js';
 
 // Street signs: one canvas atlas, one material and one merged mesh; posts are instanced.
 export function addSigns() {
@@ -98,6 +98,7 @@ export function addSigns() {
   posts.name = 'street-sign-posts';
   posts.castShadow = posts.receiveShadow = true;
   posts.computeBoundingSphere();
+  shareInstanceShader(posts);
   gfx.scene.add(plates, posts);
   streetEnvironment.signs = signs.length;
 }

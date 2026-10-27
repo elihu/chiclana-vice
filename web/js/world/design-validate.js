@@ -696,6 +696,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       detailColors: Object.fromEntries(DETAIL_TYPES.map((t) => [t, 'color'])),
       minimumHeights: 'heightRules',
       wallUvWidth: 'pos',
+      partyWall: { color: 'color', blend: 'opacity' },
     },
     'buildings',
   );

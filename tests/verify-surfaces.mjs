@@ -3,7 +3,7 @@ import { createSurfaceModel, validateSurfaceDesign } from '../web/js/world/surfa
 import { placeVehicle, placeVehicleIfChanged } from '../web/js/engine/terrain-sampling.js';
 import { world, waterAreas, streetEnvironment } from '../web/js/core/state.js';
 import { blocked } from '../web/js/world/spatial.js';
-import * as THREE from '../web/vendor/three.module.min.js';
+import * as THREE from '../web/vendor/three.webgpu.min.js';
 
 // Escenario independiente de Chiclana: rampa, calzada ondulada y dos niveles cruzados.
 const city = {

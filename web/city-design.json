@@ -306,7 +306,8 @@
         "height": 15.1
       }
     ],
-    "wallUvWidth": 4.8
+    "wallUvWidth": 4.8,
+    "partyWall": { "color": "#d9d3c6", "blend": 0.6 }
   },
   "terrainSurfaces": {
     "version": 1,
