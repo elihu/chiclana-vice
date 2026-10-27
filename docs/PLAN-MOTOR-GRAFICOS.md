@@ -203,6 +203,48 @@ Verificación: `npm run check`, capturas antes y después de los puntos fijos (n
 ligero) y cifras de `scene-budget` (la pasada de salida ya cuenta 1). Declara el coste
 del horneado al arrancar.
 
+### VL. Cielo, luz y sombras que se noten (`feat/luz-visible`, revisión del usuario)
+
+Contexto (27/10/2026): WebGPU y E0 ya están en `main`. El usuario vio V1 y dice que el
+cielo, la luz y las sombras «apenas se notan». VL parte de **`main`**, recupera V1 y la
+lleva a un cambio claramente visible, junto con lo más visible de V2. El usuario no quiere
+esperas largas: **medidas mínimas** (ver «Verificación»).
+
+1. **Recuperar V1.** `git cherry-pick` de los commits de `feat/cielo-entorno`
+   (`git log --oneline main..feat/cielo-entorno`); resuelve conflictos con E0
+   (`app.js`, `index.html`, `scene-budget.mjs`) conservando la precompilación de E0, que
+   debe cubrir también los pipelines nuevos (cielo y `RenderPipeline`). Commit: los del
+   cherry-pick.
+2. **Subir la intensidad**, con los valores agrupados en `SKY` y `GRADE`:
+   - Cielo: cenit azul intenso, horizonte claro y algo cálido, halo del sol visible.
+   - Luz ambiente desde el cielo: las caras en sombra deben tomar un tono azulado claro,
+     y las soleadas, cálido. Baja la hemisférica lo necesario.
+   - Sol algo más cálido y bajo (tarde andaluza) para sombras más largas; la dirección,
+     en una constante.
+   - Gradación: más contraste y saturación, y viñeta perceptible pero suave.
+   - Commit `feat(luz): cielo, sol y color con más carácter`.
+3. **Oclusión ambiental falsa** en muros: la luz ambiente (no la directa) se oscurece en
+   los primeros 1,5–2 m sobre la base de cada edificio y algo en las plantas bajas
+   respecto a las altas. En TSL, en el material de muros y fachadas, sin geometría nueva.
+   Commit `feat(luz): oscurecer la base de los muros`.
+4. **Sombras de contacto** bajo coches, personas y jugador: un quad difuminado (opacidad
+   por distancia al centro), un material compartido, instanciado o agrupado. También en
+   modo ligero, que no tiene sombras del sol. Commit
+   `feat(sombras): sombras de contacto bajo coches y personas`.
+
+Todo en TSL (`THREE.TSL`), sin addons ni dependencias nuevas, y sin copiar código literal
+de slop-newyork.
+
+Verificación (mínima):
+
+- Capturas antes (`main`) y después en **tres** vistas: Alameda «sigue», Plaza Mayor
+  «sigue» y Santa Ana «aérea», más Alameda «sigue» en ligero. Entrega cada pareja como una
+  imagen lado a lado.
+- **Una sola** ejecución de `scene-budget` al final (normal), comparada con `main`.
+- `npm run check` una vez al final de cada paso.
+- Nada más: ni repetir medidas ni comparar estabilidad. Si algo tarda más de 15 minutos,
+  para y explica.
+
 ### Segunda tanda (se detalla tras revisar V1)
 
 - **V2. Oclusión y contacto**: oscurecer la luz ambiente en la base de los muros y en
