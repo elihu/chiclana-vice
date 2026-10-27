@@ -293,3 +293,19 @@ parques: lo retiró el usuario tras ver la densidad de copas detectadas. Sin cap
 conserva exactamente la vegetación anterior, relleno incluido.
 Las copas detectadas de radio ≤ 2 m usan icosaedros sin subdivisión en sus cinco
 piezas; las mayores y los árboles anteriores conservan una subdivisión.
+
+## Usos de los bajos (F2b)
+
+`tools/export-ground-floors.py` publica `web/ground-floors.json`. De Catastro
+(`A.ES.SDGC.BU.11015.building.gml`) toma por edificio `currentUse`, `numberOfBuildingUnits` y
+`numberOfDwellings`; cada parte de `buildings.json` hereda los del edificio catastral que
+contiene su centroide (o su punto representativo, o el de mayor solape si la simplificación lo
+deja en el borde). De OSM (`osm-ampliado.xml`) toma nodos y vías cerradas con `shop`,
+`office`, `craft` o `amenity` de comercio, hostelería, banca y sanidad, como puntos
+(centroide en las vías) dentro de los límites del mundo. Usa el origen de `web/world.json` y
+la misma proyección que `tools/rebuild-map.py`.
+
+Límites: son indicios, no certeza. Más inmuebles que viviendas puede ser local, garaje o
+trastero; 4 o más viviendas sugiere un bloque de pisos, pero el recuento es del edificio
+catastral entero, no de la planta baja. Los puntos de OSM están incompletos y no se vinculan
+a una parte. No es un dato catastral certificado.
