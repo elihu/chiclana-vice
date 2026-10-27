@@ -2,6 +2,7 @@ import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
+import { windowWallMaterial } from '../engine/windows.js';
 import { wallMaterial } from '../engine/wall-ao.js';
 import { loadProgress } from '../ui/feedback.js';
 import { sleepFrame } from '../core/dom.js';
@@ -19,7 +20,7 @@ export async function buildBuildings() {
   const { tile: tileSize, margin } = world.aerialIndex ?? { tile: 255, margin: 20.5 };
   let groups = new Map(),
     facade = facadeTexture(),
-    wallMat = wallMaterial({
+    wallMat = windowWallMaterial({
       map: facade,
       vertexColors: true,
       roughness: 0.94,

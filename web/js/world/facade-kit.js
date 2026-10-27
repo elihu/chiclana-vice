@@ -45,8 +45,8 @@ export function createFacadeKit({ staging, palette }) {
         color,
         new THREE.MeshStandardMaterial({
           color,
-          roughness: color === palette.glass ? 0.32 : 0.83,
-          metalness: color === palette.iron ? 0.3 : 0,
+          roughness: color === palette.glass ? 0.12 : 0.83,
+          metalness: color === palette.iron ? 0.3 : color === palette.glass ? 0.3 : 0,
           side: THREE.DoubleSide,
         }),
       );
