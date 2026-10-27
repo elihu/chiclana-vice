@@ -119,6 +119,10 @@ export async function createRuntime({ progress = null, terrain = null, failedAss
       this.pixelRatio = v;
     }
     setSize() {}
+    async compileAsync(scene, camera, target, onProgress) {
+      this.compiles = (this.compiles || 0) + 1;
+      onProgress?.({ loaded: 1, total: 1 });
+    }
     render() {
       this.renders++;
     }
