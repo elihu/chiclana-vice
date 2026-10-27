@@ -3,13 +3,16 @@ import { gfx } from '../core/state.js';
 
 const {
   Fn,
+  cameraPosition,
   cameraViewMatrix,
   float,
   normalLocal,
   normalWorld,
   normalize,
+  pow,
   positionLocal,
   positionWorld,
+  saturate,
   sin,
   smoothstep,
   time,
@@ -18,7 +21,7 @@ const {
   vec4,
 } = THREE.TSL;
 
-// Follaje de las copas: viento y manchas de hojas. Una brisa, no un temporal. Cambia en vivo desde la consola con
+// Follaje de las copas: viento, manchas de hojas y luz a contraluz. Una brisa, no un temporal. Cambia en vivo desde la consola con
 // `(await import('./js/engine/foliage.js')).setFoliage({ sway: 0.3 })`.
 export const FOLIAGE = {
   direction: [0.86, 0.5], // hacia dónde sopla el viento en el plano (x, z); se normaliza
@@ -33,6 +36,10 @@ export const FOLIAGE = {
   leafSize: 1, // m de las manchas de hojas más claras y más oscuras (entre 0,3 y 1)
   leafContrast: 0.22, // cuánto se aclaran u oscurecen las manchas (0 = color liso)
   leafNormal: 0.3, // cuánto se agita la normal para que no se lean las caras del icosaedro
+  backlight: 0.3, // luz translúcida en los bordes de la copa al mirar hacia el sol (0 = apagada)
+  backlightColor: '#ffc46b', // color cálido de esa luz
+  backlightFocus: 3, // cuánto hay que mirar de frente al sol para que aparezca (mayor = más estrecho)
+  backlightRim: 2, // cuánto se concentra en el borde de la copa (mayor = borde más fino)
 };
 
 const u = {
@@ -48,7 +55,21 @@ const u = {
   leafRate: uniform(0),
   leafContrast: uniform(FOLIAGE.leafContrast),
   leafNormal: uniform(FOLIAGE.leafNormal),
+  backlight: uniform(FOLIAGE.backlight),
+  backlightColor: uniform(new THREE.Color(FOLIAGE.backlightColor)),
+  backlightFocus: uniform(FOLIAGE.backlightFocus),
+  backlightRim: uniform(FOLIAGE.backlightRim),
+  // Dirección al sol y su intensidad respecto a la de la tarde (se leen de la luz del sol en cada dibujo).
+  sunDirection: uniform(new THREE.Vector3()),
+  sunScale: uniform(1),
 };
+
+u.sunDirection.onRenderUpdate(() => {
+  const sun = gfx.sun;
+  if (!sun) return;
+  u.sunDirection.value.subVectors(sun.position, sun.target.position).normalize();
+  u.sunScale.value = sun.intensity / 3.5;
+});
 
 function sync() {
   const [x, z] = FOLIAGE.direction,
@@ -67,6 +88,10 @@ function sync() {
   const low = gfx.quality === 'low';
   u.leafContrast.value = low ? 0 : FOLIAGE.leafContrast;
   u.leafNormal.value = low ? 0 : FOLIAGE.leafNormal;
+  u.backlight.value = low ? 0 : FOLIAGE.backlight;
+  u.backlightColor.value.set(FOLIAGE.backlightColor);
+  u.backlightFocus.value = FOLIAGE.backlightFocus;
+  u.backlightRim.value = FOLIAGE.backlightRim;
 }
 sync();
 
@@ -164,6 +189,17 @@ const leafNormal = Fn(() => {
   return normalize(cameraViewMatrix.mul(vec4(n, 0)).xyz);
 });
 
+// Contraluz: con la cámara mirando hacia el sol, las hojas de los bordes dejan pasar su luz.
+// Depende de dot(vista, sol) y del fresnel; la intensidad sigue a la del sol.
+const backlightEmissive = Fn(() => {
+  const look = normalize(positionWorld.sub(cameraPosition)),
+    facing = pow(saturate(look.dot(u.sunDirection)), u.backlightFocus),
+    rim = pow(float(1).sub(saturate(normalWorld.dot(look.negate()))), u.backlightRim),
+    // Más luz en las manchas claras: ahí las hojas son más finas.
+    thin = leafPatch().mul(0.25).add(0.75);
+  return u.backlightColor.mul(facing.mul(rim).mul(thin).mul(u.backlight).mul(u.sunScale));
+});
+
 let material = null;
 
 // Material único de las copas (grandes y pequeñas). El color de cada una llega por instancia.
@@ -173,5 +209,6 @@ export function foliageMaterial() {
   material.positionNode = windOffset();
   material.colorNode = leafColor();
   material.normalNode = leafNormal();
+  material.emissiveNode = backlightEmissive();
   return material;
 }
