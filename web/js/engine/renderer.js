@@ -2,14 +2,24 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
+import { updateContactShadows } from './contact-shadows.js';
+import { createPost } from './post.js';
+import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
-const EXPOSURE = 1.05,
-  HEMI_INTENSITY = 1.7,
-  SUN_INTENSITY = 3.2;
+// La hemisférica de apoyo y la luz del cielo horneado se reparten en `SKY` (sky.js).
+const EXPOSURE = 1.05;
 
-const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
+// Sol de la tarde andaluza: bajo (unos 30 grados sobre el horizonte) y cálido, para sombras largas.
+// `direction` es el vector del objetivo al sol; se cambia en vivo con `setSun({ direction: [x, y, z] })`.
+export const SUN = {
+  direction: [-110, 78, 70],
+  color: '#ffd29a',
+  intensity: 3.5,
+};
+
+const SUN_OFFSET = new THREE.Vector3(...SUN.direction),
   sunBasis = new THREE.Matrix4().lookAt(
     SUN_OFFSET,
     new THREE.Vector3(),
@@ -17,6 +27,18 @@ const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
   ),
   sunBasisInverse = sunBasis.clone().invert(),
   snapped = new THREE.Vector3();
+
+// Cambia el sol en vivo desde la consola: color, intensidad y dirección (el cielo horneado
+// conserva la dirección con la que se creó; recarga para que el halo la siga).
+export function setSun(patch = {}) {
+  Object.assign(SUN, patch);
+  SUN_OFFSET.set(...SUN.direction);
+  sunBasis.lookAt(SUN_OFFSET, new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+  sunBasisInverse.copy(sunBasis).invert();
+  gfx.sun.color.set(SUN.color);
+  gfx.sun.intensity = SUN.intensity;
+  gfx.needsRender = true;
+}
 
 export function placeSun(x, y, z) {
   const cam = gfx.sun.shadow.camera,
@@ -50,12 +72,12 @@ export async function setupRenderer() {
   gfx.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   gfx.renderer.toneMappingExposure = EXPOSURE;
   gfx.scene = new THREE.Scene();
-  gfx.scene.background = new THREE.Color('#a5bbc8');
   gfx.scene.fog = new THREE.Fog('#a5bbc8', 175, 620);
   gfx.camera = new THREE.PerspectiveCamera(62, gfx.W / gfx.H, 0.15, 1800);
-  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', HEMI_INTENSITY);
+  const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', SKY.hemiIntensity);
   gfx.scene.add(hemi);
-  gfx.sun = new THREE.DirectionalLight('#fff0d6', SUN_INTENSITY);
+  createSky(SUN_OFFSET, hemi);
+  gfx.sun = new THREE.DirectionalLight(SUN.color, SUN.intensity);
   gfx.sun.position.set(-100, 150, 60);
   gfx.sun.shadow.mapSize.set(1024, 1024);
   Object.assign(gfx.sun.shadow.camera, {
@@ -70,7 +92,24 @@ export async function setupRenderer() {
   gfx.sun.shadow.bias = -0.0002;
   gfx.sun.shadow.normalBias = 0.09;
   gfx.scene.add(gfx.sun, gfx.sun.target);
+  // Con el renderizador simulado de las pruebas no hay entorno horneado ni gradación.
+  if (gfx.renderer instanceof THREE.Renderer) {
+    gfx.skyBakeMs = await bakeSkyEnvironment();
+    post = createPost();
+  } else applySkyLight();
   applyQuality();
+}
+
+// Dibuja un fotograma: con gradación (RenderPipeline) o directo en el modo ligero.
+let post = null,
+  postOn = false;
+
+// `force` usa la gradación aunque el modo ligero la tenga apagada (la precompilación de los shaders).
+export function renderFrame(force = false) {
+  updateSky(gfx.camera);
+  updateContactShadows();
+  if (post && (postOn || force)) post.render();
+  else gfx.renderer.render(gfx.scene, gfx.camera);
 }
 
 export function addGroundPlanes(tiles, exterior) {
@@ -121,12 +160,14 @@ export function setSunShadows(on) {
   gfx.needsRender = true;
 }
 
-// Light mode: DPR 1, no shadow casting (forces shader recompilation) and shorter fog.
+// Light mode: DPR 1, no shadows, shorter fog and no colour grading (it adds a full-screen pass).
 export function applyQuality() {
   const low = gfx.quality === 'low';
   applyGroundDetailQuality();
   gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
   setSunShadows(!low);
   gfx.scene.fog.far = low ? 380 : 620;
+  syncSkyFog();
+  postOn = !low && post !== null;
   gfx.needsRender = true;
 }

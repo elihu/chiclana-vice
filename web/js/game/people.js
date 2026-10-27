@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { addContactShadow } from '../engine/contact-shadows.js';
 import { LoftGeometry } from './car-model.js';
 
 // Personas: un solo cuerpo continuo con esqueleto (SkinnedMesh) y colores por vértice, una
@@ -322,6 +323,7 @@ export function createPerson(color = '#78805a', { variant } = {}) {
   g.scale.setScalar(v.height);
   g.userData.heightMeters = 1.744 * v.height;
   gfx.scene.add(g);
+  addContactShadow(g, 'person');
   const person = {
     mesh: g,
     limbs: [bones[B.HIP_L], bones[B.HIP_R], bones[B.SHOULDER_L], bones[B.SHOULDER_R]],

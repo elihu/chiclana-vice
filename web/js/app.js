@@ -16,7 +16,7 @@ import {
   vehicles,
   world,
 } from './core/state.js';
-import { addGroundPlanes, placeSun, setupRenderer } from './engine/renderer.js';
+import { addGroundPlanes, placeSun, renderFrame, setupRenderer } from './engine/renderer.js';
 import { precompileShaders } from './engine/precompile.js';
 import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
@@ -178,7 +178,7 @@ function frame(now) {
   }
   // While paused (map, modal), the last frame stays on screen; redraw only on demand.
   if (!gfx.contextLost && (!session.started || !session.paused || gfx.needsRender)) {
-    gfx.renderer.render(gfx.scene, gfx.camera);
+    renderFrame();
     gfx.needsRender = false;
     if (session.started && session.paused) resetPerf();
     else tickPerf(now);

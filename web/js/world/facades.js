@@ -3,6 +3,8 @@ import { TAU, pInside } from '../core/math.js';
 import { detailCells, facadeWork, gfx, world } from '../core/state.js';
 import { composeBuilding, composeFront } from './facade-composer.js';
 import { createFacadeKit, outwardOf } from './facade-kit.js';
+import { groundHeightAt } from '../engine/terrain-sampling.js';
+import { wallMaterial } from '../engine/wall-ao.js';
 import { nearestRoad } from './spatial.js';
 
 // Reference-led facade upgrade: civic landmarks and the streets listed in city-design.json.
@@ -163,7 +165,7 @@ export function buildDetailedFacades() {
       if (!materials.has(materialKey))
         materials.set(
           materialKey,
-          new THREE.MeshStandardMaterial({
+          wallMaterial({
             color: '#ffffff',
             vertexColors: true,
             roughness: material.roughness,
@@ -171,13 +173,15 @@ export function buildDetailedFacades() {
             side,
           }),
         );
-      bucket = { p: [], n: [], c: [], closed, material: materials.get(materialKey) };
+      bucket = { p: [], n: [], c: [], h: [], closed, material: materials.get(materialKey) };
       batches.set(key, bucket);
     }
     for (let i = 0; i < p.array.length; i++) bucket.p.push(p.array[i]);
     for (let i = 0; i < n.array.length; i++) bucket.n.push(n.array[i]);
-    for (let i = 0; i < p.count; i++)
+    for (let i = 0; i < p.count; i++) {
       bucket.c.push(material.color.r, material.color.g, material.color.b);
+      bucket.h.push(Math.max(0, p.getY(i) - groundHeightAt(p.getX(i), p.getZ(i))));
+    }
     geom.dispose();
   });
   let root = new THREE.Group();
@@ -187,6 +191,7 @@ export function buildDetailedFacades() {
     g.setAttribute('position', new THREE.Float32BufferAttribute(b.p, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(b.n, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(b.c, 3));
+    g.setAttribute('hag', new THREE.Float32BufferAttribute(b.h, 1));
     g.computeBoundingSphere();
     let m = new THREE.Mesh(g, b.material);
     m.name = 'facade-cell-' + key;

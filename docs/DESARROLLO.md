@@ -210,6 +210,22 @@ La implementación, la validación y los límites del recorte están en
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
+## Cielo, entorno y color
+
+- `js/engine/sky.js`: cúpula con degradado y halo del sol (se dibuja primero, sin
+  profundidad ni niebla), entorno horneado una sola vez con `PMREMGenerator` al arrancar
+  (`gfx.skyBakeMs` guarda lo que tarda) y `scene.fogNode` con el color del entorno hacia el
+  horizonte. `scene.fog` sigue en la escena porque la cámara y el descarte del modo ligero
+  leen `scene.fog.far`; el nodo usa sus mismas distancias (`syncSkyFog()`).
+- `js/engine/post.js`: gradación (exposición, contraste, saturación, sombras frías, luces
+  cálidas) y viñeta, aplicadas en lineal antes del mapeo de tonos.
+- Los valores están en `SKY` y `GRADE` y se cambian en vivo desde la consola con
+  `(await import('./js/engine/sky.js')).setSky({ zenith: '#5588bb' })` y
+  `(await import('./js/engine/post.js')).setGrade({ contrast: 1.2 })`. Para rehornear el
+  entorno tras cambiar colores, `await bakeSkyEnvironment()`.
+- Se dibuja siempre con `renderFrame()` (`renderer.js`), no con `renderer.render`.
+- Con el renderizador simulado de las pruebas no hay entorno horneado ni gradación.
+
 ## Modo ligero
 
 Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
@@ -217,6 +233,8 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Fija la resolución de render a 1 píxel por píxel CSS (sin escalar por la densidad de
   pantalla).
 - Acerca el final de la niebla para dibujar menos a lo lejos.
+- Apaga la gradación de color y la viñeta (`RenderPipeline`), porque añaden un pase a
+  pantalla completa; el cielo, el entorno horneado y la niebla del cielo se mantienen.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
 - Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste.
 - Oculta las celdas más allá del final de la niebla.
@@ -264,7 +282,9 @@ El JSON incluye llamadas de dibujo y triángulos por vista: `total` suma el pase
 principal y el de sombras; `main` excluye sombras (`setSunShadows(false)`: sin pasada
 de sombras). Con WebGPURenderer las llamadas salen de `info.render.drawCalls`; la
 herramienta usa `info.autoReset = false` y `info.reset()` antes de cada medida, y
-restaura las sombras y el reinicio automático al terminar. El JSON anota el motor
+restaura las sombras y el reinicio automático al terminar. Espera dos fotogramas antes
+de cada medida: la gradación solo vuelve a dibujar la escena una vez por tick del
+renderizador, y dos dibujos seguidos medirían solo la pasada de salida. El JSON anota el motor
 (`backend`: WebGPU o WebGL 2); comparar solo medidas del mismo motor. También registra una vez el inventario de
 mallas, triángulos (multiplicados por las instancias), triángulos que proyectan
 sombras, memoria del renderizador, programas, mallas de fachada, celdas y árboles.

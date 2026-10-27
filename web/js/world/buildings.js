@@ -2,6 +2,7 @@ import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
+import { wallMaterial } from '../engine/wall-ao.js';
 import { loadProgress } from '../ui/feedback.js';
 import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
@@ -18,7 +19,7 @@ export async function buildBuildings() {
   const { tile: tileSize, margin } = world.aerialIndex ?? { tile: 255, margin: 20.5 };
   let groups = new Map(),
     facade = facadeTexture(),
-    wallMat = new THREE.MeshStandardMaterial({
+    wallMat = wallMaterial({
       map: facade,
       vertexColors: true,
       roughness: 0.94,
@@ -31,7 +32,7 @@ export async function buildBuildings() {
       roughness: 0.98,
       side: THREE.DoubleSide,
     }),
-    plainWallMat = new THREE.MeshStandardMaterial({
+    plainWallMat = wallMaterial({
       vertexColors: true,
       roughness: 0.9,
       side: THREE.DoubleSide,
@@ -48,9 +49,11 @@ export async function buildBuildings() {
         w: [],
         wu: [],
         wc: [],
+        wh: [],
         dw: [],
         dwu: [],
         dwc: [],
+        dwh: [],
         r: [],
         ru: [],
         i: Math.floor(Math.floor(cx / 85) / 3),
@@ -63,7 +66,7 @@ export async function buildBuildings() {
   // Muro con ventanas entre los puntos a y q de una arista; u0 es la coordenada U de a.
   function windowWall(g, b, col, h, a0, q0, u0, uScale) {
     const edge = terrainEdge(a0, q0),
-      out = b.detailType ? [g.dw, g.dwu, g.dwc] : [g.w, g.wu, g.wc];
+      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh];
     let u = u0;
     for (let k = 1; k < edge.length; k++) {
       const a = edge[k - 1],
@@ -71,9 +74,11 @@ export async function buildBuildings() {
         len = Math.hypot(q[0] - a[0], q[1] - a[1]),
         u1 = u + len * uScale;
       if (len >= 0.1) {
-        const vertices = [
-            [a[0], groundHeightAt(...a) + wallBase, a[1]],
-            [q[0], groundHeightAt(...q) + wallBase, q[1]],
+        const ground0 = groundHeightAt(...a),
+          ground1 = groundHeightAt(...q),
+          vertices = [
+            [a[0], ground0 + wallBase, a[1]],
+            [q[0], ground1 + wallBase, q[1]],
             [q[0], b.baseY + h, q[1]],
             [a[0], b.baseY + h, a[1]],
           ],
@@ -92,6 +97,8 @@ export async function buildBuildings() {
           out[0].push(...vertices[j]);
           out[1].push(...uvs[j]);
           out[2].push(col.r, col.g, col.b);
+          // Altura sobre el suelo del vértice (para la oclusión ambiental de la base).
+          out[3].push(vertices[j][1] - (j === 0 || j === 3 ? ground0 : ground1));
         }
       }
       u = u1;
@@ -109,11 +116,12 @@ export async function buildBuildings() {
         [q[0], top, q[1]],
         [a[0], top, a[1]],
       ],
-      out = b.detailType ? [g.dw, g.dwu, g.dwc] : [g.w, g.wu, g.wc];
+      out = b.detailType ? [g.dw, g.dwu, g.dwc, g.dwh] : [g.w, g.wu, g.wc, g.wh];
     for (const j of [0, 1, 2, 0, 2, 3]) {
       out[0].push(...vertices[j]);
       out[1].push(...PLASTER_UV);
       out[2].push(color.r, color.g, color.b);
+      out[3].push(vertices[j][1] - groundHeightAt(vertices[j][0], vertices[j][2]));
     }
   }
 
@@ -214,9 +222,9 @@ export async function buildBuildings() {
         aerialMaterial(g.i, g.j, { roughness: 0.98, side: THREE.DoubleSide }, '#b4a58f'),
       );
     let group = new THREE.Group();
-    for (const [pos, uv, colors, material] of [
-      [g.w, g.wu, g.wc, wallMat],
-      [g.dw, g.dwu, g.dwc, plainWallMat],
+    for (const [pos, uv, colors, material, hag] of [
+      [g.w, g.wu, g.wc, wallMat, g.wh],
+      [g.dw, g.dwu, g.dwc, plainWallMat, g.dwh],
       [g.r, g.ru, null, g === overflow ? roofMat : roofMaterials.get(key)],
     ]) {
       if (!pos?.length) continue;
@@ -224,6 +232,7 @@ export async function buildBuildings() {
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
       if (colors) geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      if (hag) geo.setAttribute('hag', new THREE.Float32BufferAttribute(hag, 1));
       geo.computeVertexNormals();
       geo.computeBoundingSphere();
       let mesh = new THREE.Mesh(geo, material);

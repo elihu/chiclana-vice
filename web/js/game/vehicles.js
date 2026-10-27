@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { modelBox, modelMaterial, modelParts } from '../engine/materials.js';
+import { addContactShadow } from '../engine/contact-shadows.js';
 import { carModel } from './car-model.js';
 import { blocked } from '../world/spatial.js';
 import { d } from '../core/math.js';
@@ -71,6 +72,7 @@ export function createCar(color = '#b9b8aa', cop = false) {
     group.add(siren);
   }
   gfx.scene.add(group);
+  addContactShadow(group, 'car');
   return {
     mesh: group,
     firstPersonOccluders: occluders,
