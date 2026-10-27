@@ -285,8 +285,11 @@ export function buildStreetSurfaces() {
       )
     )
       continue;
+    // Con relieve se pavimentan todas las plazas; `zones.pavedSquares` solo limita el modo
+    // sin modelo de superficies (escena anterior).
+    if (a.kind !== 'square') continue;
     if (
-      a.kind !== 'square' ||
+      !world.surfaces &&
       !a.p.some(
         (p) => p[0] > squareMinX && p[0] < squareMaxX && p[1] > squareMinZ && p[1] < squareMaxZ,
       )

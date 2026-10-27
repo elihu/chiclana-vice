@@ -63,7 +63,7 @@
         },
         "pavedSquares": {
           "$ref": "#/$defs/rect",
-          "description": "Se pavimentan las plazas con algún punto estrictamente dentro."
+          "description": "Solo sin modelo de superficies: se pavimentan las plazas con algún punto estrictamente dentro. Con relieve se pavimentan todas las plazas."
         }
       }
     },

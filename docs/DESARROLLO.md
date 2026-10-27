@@ -248,6 +248,11 @@ la baldosa.
 - Las vías peatonales y los puentes no reciben acera (los tableros ya tienen la suya en
   `platforms[].bands`). El ancho de acera debe caber en `terrainSurfaces.roads.shoulder` para
   que la cota de la calzada siga siendo la del modelo.
+- Plazas: con relieve (`world.surfaces`), `buildStreetSurfaces` pavimenta todas las áreas
+  `square` del mapa, no solo las de `zones.pavedSquares` (que queda para el modo sin modelo
+  de superficies). Sigue sin pavimentar la plaza que ya es un tablero (`platforms[].area`) o
+  que coincide con él en más del 80 % de su contorno (a menos de 3 m), para no duplicar.
+  Las baldosas de las plazas se proyectan al terreno con el muestreo general.
 - Con terreno de rejilla sin modelo de superficies no se dibujan; el modo ligero es igual que el
   normal (geometría estática y barata).
 
