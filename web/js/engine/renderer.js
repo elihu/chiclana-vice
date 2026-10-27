@@ -8,10 +8,17 @@ import { applyGroundDetailQuality } from './textures.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
 // La hemisférica de apoyo y la luz del cielo horneado se reparten en `SKY` (sky.js).
-const EXPOSURE = 1.05,
-  SUN_INTENSITY = 3.2;
+const EXPOSURE = 1.05;
 
-const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
+// Sol de la tarde andaluza: bajo (unos 30 grados sobre el horizonte) y cálido, para sombras largas.
+// `direction` es el vector del objetivo al sol; se cambia en vivo con `setSun({ direction: [x, y, z] })`.
+export const SUN = {
+  direction: [-110, 78, 70],
+  color: '#ffd29a',
+  intensity: 3.5,
+};
+
+const SUN_OFFSET = new THREE.Vector3(...SUN.direction),
   sunBasis = new THREE.Matrix4().lookAt(
     SUN_OFFSET,
     new THREE.Vector3(),
@@ -19,6 +26,18 @@ const SUN_OFFSET = new THREE.Vector3(-85, 125, 60),
   ),
   sunBasisInverse = sunBasis.clone().invert(),
   snapped = new THREE.Vector3();
+
+// Cambia el sol en vivo desde la consola: color, intensidad y dirección (el cielo horneado
+// conserva la dirección con la que se creó; recarga para que el halo la siga).
+export function setSun(patch = {}) {
+  Object.assign(SUN, patch);
+  SUN_OFFSET.set(...SUN.direction);
+  sunBasis.lookAt(SUN_OFFSET, new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+  sunBasisInverse.copy(sunBasis).invert();
+  gfx.sun.color.set(SUN.color);
+  gfx.sun.intensity = SUN.intensity;
+  gfx.needsRender = true;
+}
 
 export function placeSun(x, y, z) {
   const cam = gfx.sun.shadow.camera,
@@ -57,7 +76,7 @@ export async function setupRenderer() {
   const hemi = new THREE.HemisphereLight('#d9eaf4', '#9a8868', SKY.hemiIntensity);
   gfx.scene.add(hemi);
   createSky(SUN_OFFSET, hemi);
-  gfx.sun = new THREE.DirectionalLight('#fff0d6', SUN_INTENSITY);
+  gfx.sun = new THREE.DirectionalLight(SUN.color, SUN.intensity);
   gfx.sun.position.set(-100, 150, 60);
   gfx.sun.shadow.mapSize.set(1024, 1024);
   Object.assign(gfx.sun.shadow.camera, {

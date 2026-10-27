@@ -22,11 +22,11 @@ const {
 // `setGrade({ contrast: 1.2 })` desde la consola; con `1` / `0` donde corresponda no hacen nada.
 export const GRADE = {
   exposure: 1, // multiplica la luz antes del mapeo de tonos
-  contrast: 1.08, // pivota sobre gris medio (0,18); 1 = sin cambio
-  saturation: 1.06, // 1 = sin cambio
-  shadowTint: [0.97, 1.005, 1.04], // multiplica las sombras: algo frías
-  highlightTint: [1.035, 1.005, 0.965], // multiplica las luces: algo cálidas
-  vignette: 0.14, // oscurecimiento en las esquinas; 0 = sin viñeta
+  contrast: 1.25, // pivota sobre gris medio (0,18); 1 = sin cambio
+  saturation: 1.28, // 1 = sin cambio
+  shadowTint: [0.9, 1.0, 1.12], // multiplica las sombras: algo frías
+  highlightTint: [1.07, 1.0, 0.92], // multiplica las luces: algo cálidas
+  vignette: 0.34, // oscurecimiento en las esquinas; 0 = sin viñeta
 };
 
 const u = {

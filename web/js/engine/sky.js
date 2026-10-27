@@ -25,22 +25,22 @@ const {
 // pueden cambiar en vivo desde la consola con `setSky({ zenith: '#5588bb' })`.
 export const SKY = {
   // Degradado: el horizonte coincide con el color de la niebla de G2; el cenit es más azul.
-  horizon: '#a5bbc8',
-  zenith: '#7aa0c8',
+  horizon: '#d6d9d2',
+  zenith: '#2a68c0',
   // Suelo lejano neutro y algo cálido, por debajo del horizonte; también es el rebote del entorno.
   ground: '#a89a7c',
   // Exponente del degradado: menor sube antes al cenit.
-  gradientPower: 0.6,
+  gradientPower: 0.5,
   // Halo del sol: ancho (resplandor del horizonte) y estrecho (corona), color y fuerza.
-  haloColor: '#ffe3b5',
-  haloWide: 0.28,
-  haloTight: 0.9,
-  haloStrength: 1,
+  haloColor: '#ffd9a0',
+  haloWide: 0.45,
+  haloTight: 1.6,
+  haloStrength: 1.6,
   // Fuerza del halo dentro del entorno horneado (la luz directa ya la pone el sol).
   envHalo: 0.5,
   // Luz ambiente del cielo horneado y de la hemisférica de apoyo.
-  envIntensity: 0.35,
-  hemiIntensity: 1.1,
+  envIntensity: 0.95,
+  hemiIntensity: 0.4,
   // Niebla: altura mínima del rayo sobre el horizonte al muestrear el entorno, desenfoque
   // (0 nítido, 1 muy difuso) y cuánto aclara con la altura de la cámara entre 20 y 400 m.
   fogHorizonY: 0.02,
