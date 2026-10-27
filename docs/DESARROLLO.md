@@ -236,6 +236,15 @@ la baldosa.
   paralelas, que son una calle partida, no cuentan). Si el ancho completo no cabe se prueba
   con 66 % y 33 %; por debajo de `minimumWidth` no hay acera. En los cruces las aceras se
   cortan antes de la calzada que cruza, sin solapes; las esquinas quedan abiertas.
+- Faldones: en el borde exterior de cada acera (o de la calzada si no tiene acera, incluidas las
+  vías peatonales) se baja una cara vertical del color del bordillo hasta
+  `skirtTerrainMargin` por debajo del terreno muestreado (`groundHeightAt`), con un máximo de
+  `skirtMaxDepth`, y solo donde el borde queda más de `skirtMinGap` por encima del terreno.
+  Así tapan huecos y piezas flotantes en terraplenes y accesos de puentes, sin geometría
+  donde el terreno ya llega al borde. Los puentes no llevan faldón propio: su tablero ya
+  tiene canto (`platformGeometry`) y barandillas; sí lo llevan las vías de acceso, cuyo
+  perfil sube hacia el tablero (Puente VII Centenario, OSM 142805148, y Puente Nuestra
+  Señora de los Remedios, OSM 50664224).
 - Las vías peatonales y los puentes no reciben acera (los tableros ya tienen la suya en
   `platforms[].bands`). El ancho de acera debe caber en `terrainSurfaces.roads.shoulder` para
   que la cota de la calzada siga siendo la del modelo.

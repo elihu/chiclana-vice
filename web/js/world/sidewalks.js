@@ -1,11 +1,11 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { mat } from '../engine/materials.js';
 import { gfx, segments, waterAreas, world } from '../core/state.js';
-import { surfaceHeightAt } from '../engine/terrain-sampling.js';
+import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside } from '../core/math.js';
 import { inBuilding } from './spatial.js';
 
-// Aceras con bordillo de las calzadas. Todo es visual: no cambia las cotas que
+// Aceras con bordillo y faldones de las calzadas. Todo es visual: no cambia las cotas que
 // devuelve surfaceHeightAt ni la transitabilidad. Las reglas están en
 // web/city-design.json (`pavements.sidewalks`); ver docs/DESARROLLO.md («Aceras»).
 const CELL = 16;
@@ -34,7 +34,7 @@ export function buildSidewalks(slabs, paved, include) {
     grid = indexSegments(),
     platforms = world.surfaces?.platforms ?? [],
     curb = [],
-    stats = { sidewalkMeters: 0, sidewalkTriangles: 0, curbTriangles: 0 };
+    stats = { sidewalkMeters: 0, sidewalkTriangles: 0, curbTriangles: 0, skirtTriangles: 0 };
 
   const nearOther = (x, z, road, dx, dz) => {
     const cx = Math.floor(x / CELL),
@@ -112,6 +112,27 @@ export function buildSidewalks(slabs, paved, include) {
                 free((p[0] + q[0]) / 2, (p[1] + q[1]) / 2, road, dx, dz)
               );
             };
+          // Faldón: cara vertical bajo el borde (de la calzada o de la acera) hasta un poco
+          // por debajo del terreno, solo donde el terreno queda por debajo.
+          const skirt = (off, top0, top1) => {
+            const q = [at(k, off, side), at(k + 1, off, side)],
+              tops = [y0 + top0, y1 + top1],
+              bottoms = q.map((p, n) => {
+                const gap = tops[n] - groundHeightAt(p[0], p[1]);
+                return gap > cfg.skirtMinGap
+                  ? Math.max(tops[n] - cfg.skirtMaxDepth, tops[n] - gap - cfg.skirtTerrainMargin)
+                  : tops[n];
+              });
+            if (bottoms[0] === tops[0] && bottoms[1] === tops[1]) return;
+            quad(
+              curb,
+              [q[0][0], tops[0], q[0][1]],
+              [q[1][0], tops[1], q[1][1]],
+              [q[1][0], bottoms[1], q[1][1]],
+              [q[0][0], bottoms[0], q[0][1]],
+            );
+            stats.skirtTriangles += 2;
+          };
           let width = 0;
           if (walk && testEdge(half))
             for (const f of [1, 0.66, 0.33]) {
@@ -150,10 +171,11 @@ export function buildSidewalks(slabs, paved, include) {
             quad(slabs.p, ...s);
             for (const v of [s[0], s[1], s[2], s[0], s[2], s[3]])
               slabs.uv.push(v[0] / 4, -v[2] / 4);
+            skirt(outer, cfg.curbHeight, cfg.curbHeight);
             stats.curbTriangles += 4;
             stats.sidewalkTriangles += 2;
             stats.sidewalkMeters += len / count;
-          }
+          } else if (testEdge(half)) skirt(half, edgeTop, edgeTop);
         }
     }
   }

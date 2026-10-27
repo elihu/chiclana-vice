@@ -348,7 +348,10 @@
             "curbColor",
             "step",
             "junctionMargin",
-            "buildingMargin"
+            "buildingMargin",
+            "skirtMaxDepth",
+            "skirtTerrainMargin",
+            "skirtMinGap"
           ],
           "additionalProperties": false,
           "properties": {
@@ -383,6 +386,18 @@
             "buildingMargin": {
               "$ref": "#/$defs/nonNegative",
               "description": "Margen en metros respecto a los muros de edificios."
+            },
+            "skirtMaxDepth": {
+              "$ref": "#/$defs/positive",
+              "description": "Profundidad máxima en metros del faldón vertical bajo el borde exterior de calzadas y aceras."
+            },
+            "skirtTerrainMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Metros que el faldón baja por debajo del terreno para no dejar rendija."
+            },
+            "skirtMinGap": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Desnivel mínimo entre el borde y el terreno para dibujar faldón."
             }
           }
         },
