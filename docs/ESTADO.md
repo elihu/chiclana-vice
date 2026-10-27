@@ -141,7 +141,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [PLAN-VISUAL.md](PLAN-VISUAL.md). F1 (río) integrada sin publicar el 27/10/2026 y aprobada
   por el usuario («está muy bien»): agua con ondas, reflejo del cielo y orillas
   oscuras (`water.js`), 0 llamadas nuevas y unos 15.000 triángulos más (orillas); sin FPS
-  medidos. Siguen F2–F4.
+  medidos. F2 (ventanas) integrada sin publicar el 27/10/2026 y aprobada por el usuario («va
+  bien»): cristales que reflejan el cielo, persianas variadas por ventana (`windows.js`) y
+  cornisa en los muros genéricos (una por arista); 0 llamadas nuevas y +1,8–2,3 % de
+  triángulos en «sigue» (+1,2–1,3 % en el pase principal) con SwiftShader; sin FPS medidos.
+  Siguen F3 y F4.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
