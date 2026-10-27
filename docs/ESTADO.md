@@ -157,7 +157,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   revisión del usuario («lo integramos así»): las copas se mecen enteras con el viento y luz
   cálida a contraluz suave (`foliage.js`); se descartaron las manchas de hojas (patrón de
   tablero) y el temblor por vértice («burbujeaban»). Sin llamadas nuevas previstas; sin
-  medida final de scene-budget ni FPS. Sigue F4 (horas del día).
+  medida final de scene-budget ni FPS. F4 integrada el 27/10/2026 tras la revisión del
+  usuario («lo veo bastante bien»): mañana, mediodía, tarde y anochecer (`time-of-day.js`,
+  botón «Hora» y `#hora=`), ventanas y escaparates encendidos, cristales de farolas, manchas de
+  luz bajo las farolas y haz de faros y pilotos (`night-glow.js`), sin luces dinámicas ni
+  bloom. Sin capturas, scene-budget ni FPS (a petición del usuario).
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
