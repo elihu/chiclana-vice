@@ -115,6 +115,19 @@
     },
     {
       "files": [
+        "ground-floors.json"
+      ],
+      "source": "D.G. del Catastro INSPIRE BU (currentUse, numberOfBuildingUnits, numberOfDwellings) y OpenStreetMap (shop, amenity, office, craft), descarga local 2026",
+      "conditions": "ODbL-1.0 as a whole (OSM shops); Catastro INSPIRE transformed-product terms; indicative, no cadastral validity",
+      "attribution": "D.G. del Catastro; © OpenStreetMap contributors",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "transformation": "Use, building units and dwellings of the cadastral building containing each game part; OSM commerce points in local metres",
+      "sha256": {
+        "ground-floors.json": "273090a706a4a346a21098afa0220dd1010abef93a984de9636efe4914b9ac22"
+      }
+    },
+    {
+      "files": [
         "aerial/index.json",
         "aerial/hi/-4_-5.jpg",
         "aerial/lo/-4_-5.jpg",

@@ -70,6 +70,7 @@ export const streetEnvironment = {
 export const world = {
   city: null,
   vegetation: null,
+  groundFloors: null,
   facadeProfiles: null,
   facadeDesigns: null,
   cityDesign: null,
