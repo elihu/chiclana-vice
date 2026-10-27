@@ -12,13 +12,14 @@ const options = {};
 for (let n = 0; n < args.length; n++) {
   const key = args[n];
   if (key === '--low') options.low = true;
+  else if (key === '--giro') options.giro = true;
   else if (['--out', '--compare', '--shots'].includes(key) && args[n + 1])
     options[key.slice(2)] = args[++n];
   else throw Error('Argumento no válido: ' + key);
 }
 if (!url || (!options.out && !options.compare))
   throw Error(
-    'Uso: node tools/scene-budget.mjs URL --out JSON|--compare JSON [--low] [--shots DIR]',
+    'Uso: node tools/scene-budget.mjs URL --out JSON|--compare JSON [--low] [--giro] [--shots DIR]',
   );
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'chiclana-budget-'));
@@ -115,6 +116,7 @@ try {
     await send('Page.addScriptToEvaluateOnNewDocument', {
       source: `localStorage.setItem(${JSON.stringify(SAVE_KEY)},JSON.stringify({cash:250,job:0,found:[],quality:'low'}))`,
     });
+  const loadStart = Date.now();
   await send('Page.navigate', { url });
   const deadline = Date.now() + 90000;
   let ready = false,
@@ -132,8 +134,9 @@ try {
       throw Error(
         'Juego no listo: ' + (errors.join('\n') || readinessError?.message || 'plazo agotado'),
       );
-    if (!ready) await sleep(500);
+    if (!ready) await sleep(100);
   }
+  const loadMs = Date.now() - loadStart;
   await evaluate(`(async()=>{
     const {session}=await import('./js/core/state.js');
     const {start}=await import('./js/game/flow.js');
@@ -152,24 +155,84 @@ try {
       return {name,x:p.x,z:p.z};
     })].map(p=>({...p,a:g.player.a}));
   })()`);
-  const cameras = ['sigue', 'primera-persona', 'aerea'],
-    views = [];
-  if (options.shots) fs.mkdirSync(options.shots, { recursive: true });
-  for (const point of points)
-    for (let mode = 0; mode < 3; mode++) {
-      await evaluate(`(async()=>{
+  if (options.giro) {
+    // Dos giros de 360° seguidos en primera persona, sin avanzar la partida. Cada frame se
+    // dibuja a mano; se anota su duración (con `finish` si el motor es WebGL) y los
+    // pipelines y programas que se crearon en él.
+    const turns = [];
+    for (const point of points.filter((p) =>
+      ['Alameda', 'Plaza Mayor', 'San Telmo'].includes(p.name),
+    ))
+      for (const turn of [1, 2]) {
+        const frames = await evaluate(`(async()=>{
+          const {player,view,gfx}=await import('./js/core/state.js');
+          const {cycleCamera,snapCamera,updateCamera}=await import('./js/engine/camera.js');
+          const {x,z,a}=${JSON.stringify(point)};
+          const first=${turn === 1};
+          if(first){
+            Object.assign(player,{x,z,a,speed:0});if(player.car)Object.assign(player.car,{x,z,a,speed:0});
+            while(view.mode!==1)cycleCamera();
+          }
+          const r=gfx.renderer,out=[],gl=r.backend?.gl,steps=36;
+          r.info.autoReset=false;
+          const nextFrame=()=>new Promise(res=>requestAnimationFrame(()=>res()));
+          for(let k=0;k<steps;k++){
+            player.a=a+k*Math.PI*2/steps;if(player.car)player.car.a=player.a;
+            snapCamera(k===0&&first);updateCamera(100);
+            await nextFrame();
+            const p0=r._pipelines.caches.size,g0=r.info.memory.programs,t0=performance.now();
+            r.info.reset();r.render(gfx.scene,gfx.camera);gl?.finish();
+            out.push({ms:+(performance.now()-t0).toFixed(1),pipelines:r._pipelines.caches.size-p0,programs:r.info.memory.programs-g0});
+          }
+          r.info.autoReset=true;
+          return out;
+        })()`);
+        const ms = frames.map((f) => f.ms).sort((p, q) => p - q);
+        const summary = {
+          point: point.name,
+          turn,
+          frames,
+          maxMs: ms.at(-1),
+          p95Ms: ms[Math.floor(ms.length * 0.95)],
+          medianMs: ms[ms.length >> 1],
+          totalMs: +ms.reduce((q, w) => q + w, 0).toFixed(1),
+          over100: ms.filter((q) => q > 100).length,
+          pipelines: frames.reduce((q, f) => q + f.pipelines, 0),
+          programs: frames.reduce((q, f) => q + f.programs, 0),
+        };
+        turns.push(summary);
+        console.log(
+          `${point.name} giro ${turn}: máx ${summary.maxMs} ms, p95 ${summary.p95Ms}, mediana ${summary.medianMs}, >100 ms: ${summary.over100}, pipelines nuevos ${summary.pipelines}, programas nuevos ${summary.programs}`,
+        );
+      }
+    const totals = await evaluate(`(async()=>{
+      const {gfx}=await import('./js/core/state.js'),r=gfx.renderer;
+      return {pipelines:r._pipelines.caches.size,programs:r.info.memory.programs,programsSize:r.info.memory.programsSize,
+        geometries:r.info.memory.geometries,backend:gfx.backend,quality:gfx.quality};
+    })()`);
+    if (errors.length) throw Error('Errores de página:\n' + errors.join('\n'));
+    fs.mkdirSync(path.dirname(options.out), { recursive: true });
+    fs.writeFileSync(options.out, JSON.stringify({ url, loadMs, totals, turns }, null, 2) + '\n');
+    console.log('carga', loadMs, 'ms; totales', JSON.stringify(totals));
+  } else {
+    const cameras = ['sigue', 'primera-persona', 'aerea'],
+      views = [];
+    if (options.shots) fs.mkdirSync(options.shots, { recursive: true });
+    for (const point of points)
+      for (let mode = 0; mode < 3; mode++) {
+        await evaluate(`(async()=>{
       const {player,view}=await import('./js/core/state.js');
       const {cycleCamera,snapCamera,updateCamera}=await import('./js/engine/camera.js');
       const {x,z,a}=${JSON.stringify(point)};
       Object.assign(player,{x,z,a,speed:0});if(player.car)Object.assign(player.car,{x,z,a,speed:0});
       while(view.mode!==${mode})cycleCamera();snapCamera(true);updateCamera(100);
     })()`);
-      await sleep(2500);
-      await evaluate(
-        "(async()=>{await (await import('./js/world/aerial-tiles.js')).reloadAerialTiles()})()",
-      );
-      await sleep(1000);
-      const measured = await evaluate(`(async()=>{
+        await sleep(2500);
+        await evaluate(
+          "(async()=>{await (await import('./js/world/aerial-tiles.js')).reloadAerialTiles()})()",
+        );
+        await sleep(1000);
+        const measured = await evaluate(`(async()=>{
       const {gfx}=await import('./js/core/state.js'),{setSunShadows}=await import('./js/engine/renderer.js'),r=gfx.renderer,i=r.info.render;
       const cast=gfx.sun.castShadow;
       try {
@@ -179,7 +242,7 @@ try {
         return {total,main:{calls:i.drawCalls??i.calls,triangles:i.triangles},backend:gfx.backend};
       } finally {setSunShadows(cast);r.info.autoReset=true;r.render(gfx.scene,gfx.camera);}
     })()`);
-      const vegetation = await evaluate(`(async()=>{
+        const vegetation = await evaluate(`(async()=>{
         const {gfx}=await import('./js/core/state.js');
         const THREE=await import('./vendor/three.webgpu.min.js');
         const frustum=new THREE.Frustum().setFromProjectionMatrix(
@@ -192,22 +255,22 @@ try {
         });
         return {instances,triangles,batches};
       })()`);
-      views.push({ point: point.name, camera: cameras[mode], ...measured, vegetation });
-      console.log(point.name, cameras[mode], JSON.stringify(measured));
-      if (options.shots) {
-        const shot = await send('Page.captureScreenshot', { format: 'png' });
-        const slug = point.name
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase()
-          .replaceAll(' ', '-');
-        fs.writeFileSync(
-          path.join(options.shots, `${slug}-${cameras[mode]}${options.low ? '-low' : ''}.png`),
-          Buffer.from(shot.data, 'base64'),
-        );
+        views.push({ point: point.name, camera: cameras[mode], ...measured, vegetation });
+        console.log(point.name, cameras[mode], JSON.stringify(measured));
+        if (options.shots) {
+          const shot = await send('Page.captureScreenshot', { format: 'png' });
+          const slug = point.name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replaceAll(' ', '-');
+          fs.writeFileSync(
+            path.join(options.shots, `${slug}-${cameras[mode]}${options.low ? '-low' : ''}.png`),
+            Buffer.from(shot.data, 'base64'),
+          );
+        }
       }
-    }
-  const inventory = await evaluate(`(async()=>{
+    const inventory = await evaluate(`(async()=>{
     const {gfx,facadeWork,chunks,streetEnvironment}=await import('./js/core/state.js');
     let meshes=0,triangles=0,shadowTriangles=0;
     gfx.scene.traverse(o=>{if(!o.isMesh)return;meshes++;
@@ -218,34 +281,35 @@ try {
       facadeMeshes:facadeWork.meshes,chunks:chunks.length,trees:streetEnvironment.trees,
       treeSources:streetEnvironment.treeSources,treeBuildMs:streetEnvironment.treeBuildMs,quality:gfx.quality};
   })()`);
-  if (options.low && inventory.quality !== 'low') throw Error('Calidad ligera no aplicada');
-  if (errors.length) throw Error('Errores de página:\n' + errors.join('\n'));
-  const report = {
-    url,
-    viewport: { width: 1280, height: 720, deviceScaleFactor: 1 },
-    quality: inventory.quality,
-    points,
-    inventory,
-    views,
-  };
-  if (options.out) {
-    fs.mkdirSync(path.dirname(options.out), { recursive: true });
-    fs.writeFileSync(options.out, JSON.stringify(report, null, 2) + '\n');
-  }
-  if (options.compare) {
-    const before = JSON.parse(fs.readFileSync(options.compare, 'utf8'));
-    if (before.quality !== report.quality) throw Error('Calidades incompatibles');
-    for (const row of views) {
-      const old = before.views.find((v) => v.point === row.point && v.camera === row.camera);
-      if (!old) throw Error('Vista ausente en referencia: ' + row.point + ' ' + row.camera);
-      for (const pass of ['total', 'main'])
-        for (const metric of ['calls', 'triangles']) {
-          const a = old[pass][metric],
-            b = row[pass][metric];
-          console.log(
-            `${row.point} ${row.camera} ${pass}.${metric}: ${a} → ${b} (${a ? (((b - a) / a) * 100).toFixed(2) + '%' : b === 0 ? '0%' : 'sin base'})`,
-          );
-        }
+    if (options.low && inventory.quality !== 'low') throw Error('Calidad ligera no aplicada');
+    if (errors.length) throw Error('Errores de página:\n' + errors.join('\n'));
+    const report = {
+      url,
+      viewport: { width: 1280, height: 720, deviceScaleFactor: 1 },
+      quality: inventory.quality,
+      points,
+      inventory,
+      views,
+    };
+    if (options.out) {
+      fs.mkdirSync(path.dirname(options.out), { recursive: true });
+      fs.writeFileSync(options.out, JSON.stringify(report, null, 2) + '\n');
+    }
+    if (options.compare) {
+      const before = JSON.parse(fs.readFileSync(options.compare, 'utf8'));
+      if (before.quality !== report.quality) throw Error('Calidades incompatibles');
+      for (const row of views) {
+        const old = before.views.find((v) => v.point === row.point && v.camera === row.camera);
+        if (!old) throw Error('Vista ausente en referencia: ' + row.point + ' ' + row.camera);
+        for (const pass of ['total', 'main'])
+          for (const metric of ['calls', 'triangles']) {
+            const a = old[pass][metric],
+              b = row[pass][metric];
+            console.log(
+              `${row.point} ${row.camera} ${pass}.${metric}: ${a} → ${b} (${a ? (((b - a) / a) * 100).toFixed(2) + '%' : b === 0 ? '0%' : 'sin base'})`,
+            );
+          }
+      }
     }
   }
 } finally {
