@@ -8,6 +8,7 @@
     "version",
     "zones",
     "frontages",
+    "groundFloors",
     "furniture",
     "pavements",
     "crossings",
@@ -104,6 +105,62 @@
         },
         "recipe": {
           "type": "string"
+        }
+      }
+    },
+    "groundFloors": {
+      "description": "Reglas de la clase del bajo de cada frente (shop, block, house, garage), en este orden: comercio de OSM delante del frente; uso comercial u oficinas; bloque; inmuebles de más (calle principal: shop; calle menor: garage); resto (calle principal: shop; calle menor: house). Los datos de Catastro (web/ground-floors.json) son indicios por edificio entero. Las usa js/world/ground-floors.js.",
+      "type": "object",
+      "required": [
+        "shopDistance",
+        "shopBehind",
+        "shopMargin",
+        "commercialUses",
+        "blockMinimumDwellings",
+        "blockMinimumFloors",
+        "extraUnits",
+        "mainRoadTypes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "shopDistance": {
+          "description": "Metros hacia fuera del frente en los que un comercio de OSM cuenta como suyo.",
+          "$ref": "#/$defs/positive"
+        },
+        "shopBehind": {
+          "description": "Metros hacia dentro del edificio en los que un comercio de OSM cuenta (OSM suele marcar el local sobre el propio edificio).",
+          "$ref": "#/$defs/nonNegative"
+        },
+        "shopMargin": {
+          "description": "Holgura en metros más allá de los extremos del frente.",
+          "$ref": "#/$defs/nonNegative"
+        },
+        "commercialUses": {
+          "description": "Valores de currentUse del Catastro que dan siempre un bajo comercial.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "blockMinimumDwellings": {
+          "description": "Viviendas catastrales a partir de las cuales el edificio es un bloque de pisos.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "blockMinimumFloors": {
+          "description": "Plantas mínimas para considerarlo bloque (varias partes de casas bajas comparten un edificio catastral con muchas viviendas).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "extraUnits": {
+          "description": "Inmuebles de más sobre las viviendas (numberOfBuildingUnits - numberOfDwellings) que indican local o cochera.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "mainRoadTypes": {
+          "description": "Tipos de vía de OSM que son calles principales o peatonales del centro (locales y portales); el resto son calles menores (casas y cocheras).",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
         }
       }
     },

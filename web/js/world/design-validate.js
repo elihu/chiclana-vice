@@ -512,6 +512,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
   const sections = [
     'zones',
     'frontages',
+    'groundFloors',
     'furniture',
     'pavements',
     'crossings',
@@ -580,6 +581,21 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     if (typeof f.recipe !== 'string' || !recipes.includes(f.recipe))
       fail('frontages.recipe', `receta desconocida «${f.recipe}»`);
   }
+
+  check(
+    json.groundFloors,
+    {
+      shopDistance: 'pos',
+      shopBehind: 'nonneg',
+      shopMargin: 'nonneg',
+      commercialUses: 'strings',
+      blockMinimumDwellings: 'int',
+      blockMinimumFloors: 'int',
+      extraUnits: 'int',
+      mainRoadTypes: 'strings',
+    },
+    'groundFloors',
+  );
 
   check(
     json.furniture,
