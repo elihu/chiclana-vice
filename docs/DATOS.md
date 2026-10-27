@@ -512,3 +512,15 @@ Publica `web/tram.json` (ODbL, como `osm-world.json`) solo con lo que cae dentro
 - Más `version`, `origin`, `source`, `license`, `attribution` y `limits`.
 
 El juego la carga como `world.tram` (opcional; sin ella no hay tranvía).
+
+## 11. Pasos de peatones que faltan
+
+`street-objects.json` no tiene generador propio. `tools/complete-crossings.py` añade a esa
+capa, sin tocar el resto, los nodos `highway=crossing` de OSM dentro del mundo que aún no
+estén (a menos de 1 m de uno existente); es idempotente.
+
+```sh
+uv run --no-project --with shapely python tools/complete-crossings.py --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
+node tools/export-provenance.mjs
+npm test
+```

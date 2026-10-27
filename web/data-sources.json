@@ -28,7 +28,7 @@
       "transformation": "Local game extraction; all used roads/areas/landmarks/trees/objects made available",
       "sha256": {
         "osm-world.json": "673ccad38cab7cee2d786fd916dcecb50b692151ee6513d92aaf309b2a536c9d",
-        "street-objects.json": "f370556915fd38cba571294040d848fa77b71552c1226354a9a9e3ed9c5b8259"
+        "street-objects.json": "1df34a407a8a9ceb5d9dad6f0ad62ff9a5f259e3c49c3dc50d7976df7b73afce"
       }
     },
     {

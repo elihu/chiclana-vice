@@ -348,6 +348,7 @@ export function buildStreetSurfaces() {
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
   const mark = [],
     cross = design.crossings;
+  // Cada paso se asienta con la cota de su calzada (no la del MDT), como el resto de capas.
   for (const p of world.mappedStreetObjects) {
     if (p.tags.highway !== 'crossing') continue;
     let near = nearestRoad(p.x, p.z, true);
@@ -358,6 +359,7 @@ export function buildStreetSurfaces() {
       near.s.width < cross.minimumRoadWidth
     )
       continue;
+    const stripes = [];
     let s = near.s,
       dx = (s.b[0] - s.a[0]) / s.length,
       dz = (s.b[1] - s.a[1]) / s.length,
@@ -377,12 +379,15 @@ export function buildStreetSurfaces() {
         [x + (dz * ww) / 2 + dx * ll, heights.crossing, z - (dx * ww) / 2 + dz * ll],
         [x - (dz * ww) / 2 + dx * ll, heights.crossing, z + (dx * ww) / 2 + dz * ll],
       ];
-      for (let i of [0, 1, 2, 0, 2, 3]) mark.push(...pts[i]);
+      for (let i of [0, 1, 2, 0, 2, 3]) stripes.push(...pts[i]);
     }
+    mark.push(
+      ...drapeTriangles(stripes, null, (x, z) => surfaceHeightAt(x, z, null, s.roadId)).position,
+    );
     streetEnvironment.crossings++;
   }
   let mg = new THREE.BufferGeometry();
-  mg.setAttribute('position', new THREE.Float32BufferAttribute(drapeTriangles(mark).position, 3));
+  mg.setAttribute('position', new THREE.Float32BufferAttribute(mark, 3));
   mg.computeVertexNormals();
   gfx.scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }
