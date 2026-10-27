@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/materials.js';
+import { waterMaterial } from '../engine/water.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
 import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
@@ -164,7 +165,7 @@ export function buildRoadDetails() {
     }
   }
   for (const [parts, material, cast] of [
-    [water, modelMaterial('#658b80', { metalness: 0.2, roughness: 0.45 }), false],
+    [water, waterMaterial(), false],
     [decks, modelMaterial('#b9b5a5'), true],
     [rails, modelMaterial('#b7b9af'), false],
   ]) {
