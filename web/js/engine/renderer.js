@@ -84,9 +84,10 @@ export async function setupRenderer() {
 let post = null,
   postOn = false;
 
-export function renderFrame() {
+// `force` usa la gradación aunque el modo ligero la tenga apagada (la precompilación de los shaders).
+export function renderFrame(force = false) {
   updateSky(gfx.camera);
-  if (postOn) post.render();
+  if (post && (postOn || force)) post.render();
   else gfx.renderer.render(gfx.scene, gfx.camera);
 }
 

@@ -1,4 +1,5 @@
 import { gfx } from '../core/state.js';
+import { renderFrame } from './renderer.js';
 
 // WebGPURenderer crea cada pipeline la primera vez que se dibuja un objeto: al girar entran
 // objetos nuevos y el frame espera a que se compilen (tirones de más de 1 s en un móvil).
@@ -22,6 +23,9 @@ export async function precompileShaders(onProgress) {
     shadow.autoUpdate = true;
     shadow.needsUpdate = true;
     renderer.render(scene, camera);
+    // Pipelines de la cúpula del cielo (ya en la escena) y de la gradación (RenderPipeline), que
+    // el modo ligero no usa pero puede activarse al cambiar de calidad.
+    renderFrame(true);
   } finally {
     for (const [object, visible, culled] of saved) {
       object.visible = visible;
