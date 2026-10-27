@@ -35,6 +35,12 @@ fuentes, con sus atribuciones (así figura también en `data-sources.json`).
 escritas a mano) se ofrecen también en conjunto bajo ODbL 1.0 (decisión del 6/10/2026): sus
 anclajes usan vértices catastrales (atribuidos a Catastro) y nombres e identificadores de
 OSM. El código del motor y del compositor sigue bajo MIT.
+`ground-floors.json` (usos de los bajos) asocia a cada parte de `buildings.json` el uso,
+los inmuebles y las viviendas del edificio catastral que la contiene (Catastro INSPIRE BU,
+municipio 11015) y los comercios, oficinas y hostelería cartografiados en OSM como puntos en
+coordenadas locales. Se ofrece en conjunto bajo ODbL 1.0 (decisión del 27/10/2026); los datos
+de Catastro mantienen su atribución como aviso adicional. Son indicios para elegir el tipo
+de bajo en el juego, no un inventario de locales.
 `map-corrections.json` (correcciones manuales sobre las capas de OSM y Catastro, aplicadas al
 cargar) se ofrece bajo ODbL 1.0 porque corregir datos de OSM produce una base de datos
 derivada; lleva la atribución de OSM y de Catastro.
