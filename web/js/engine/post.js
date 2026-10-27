@@ -24,7 +24,7 @@ export const GRADE = {
   exposure: 1, // multiplica la luz antes del mapeo de tonos
   contrast: 1.25, // pivota sobre gris medio (0,18); 1 = sin cambio
   saturation: 1.28, // 1 = sin cambio
-  shadowTint: [0.9, 1.0, 1.12], // multiplica las sombras: algo frías
+  shadowTint: [0.97, 1.0, 1.04], // multiplica las sombras: algo frías
   highlightTint: [1.07, 1.0, 0.92], // multiplica las luces: algo cálidas
   vignette: 0.34, // oscurecimiento en las esquinas; 0 = sin viñeta
 };

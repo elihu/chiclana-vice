@@ -38,6 +38,9 @@ export const SKY = {
   haloStrength: 1.6,
   // Fuerza del halo dentro del entorno horneado (la luz directa ya la pone el sol).
   envHalo: 0.5,
+  // Cuánto se acerca el cenit al horizonte dentro del entorno horneado (0 = igual que la cúpula,
+  // 1 = sin azul): da sombras neutras, apenas frías, con la cúpula igual de azul.
+  envZenithBlend: 0.6,
   // Luz ambiente del cielo horneado y de la hemisférica de apoyo.
   envIntensity: 0.95,
   hemiIntensity: 0.4,
@@ -131,10 +134,13 @@ export async function bakeSkyEnvironment() {
   pmrem ??= new THREE.PMREMGenerator(gfx.renderer);
   const base = skyUniforms.halo.value;
   skyUniforms.halo.value = base * SKY.envHalo;
+  const zenith = skyUniforms.zenith.value.clone();
+  skyUniforms.zenith.value.lerp(skyUniforms.horizon.value, SKY.envZenithBlend);
   try {
     envTarget = await pmrem.fromSceneAsync(envScene, 0, 0.1, 100, { renderTarget: envTarget });
   } finally {
     skyUniforms.halo.value = base;
+    skyUniforms.zenith.value.copy(zenith);
   }
   gfx.scene.environment = envTarget.texture;
   applySkyLight();
