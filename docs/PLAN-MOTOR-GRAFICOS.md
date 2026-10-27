@@ -83,6 +83,49 @@ E1.1.
 ## Fases
 
 Primera tanda, en paralelo: E1, E2 y V1. Segunda tanda, tras la revisión de V1: V2–V5.
+E0 se añadió el 27/10/2026 tras la prueba del usuario en el móvil, y bloquea la condición de
+salida: sin ella, WebGPU no se acepta.
+
+### E0. Tirones al girar: compartir y precompilar shaders (`perf/precompilar-shaders`)
+
+Prueba del usuario en su Android (27/10/2026): `main` va a 90 FPS fijos. Con la base, en
+cualquier motor (WebGPU y `motor=webgl`), al girar 360° la primera vez hay frames de más de
+1 s; estabilizado o en línea recta, 90 FPS. Diagnóstico (lectura de three 0.186.1):
+
+- `WebGPURenderer` crea cada pipeline la primera vez que su objeto se dibuja. Al girar
+  entran objetos nuevos y el frame espera a compilarlos. `renderer.compileAsync` también
+  descarta lo que queda fuera del campo de visión (`_projectObject` con frustum).
+- `src/nodes/accessors/Instance.js`: si `instanceMatrix.count * 64` cabe en
+  `getUniformBufferLimit()` (unas 1.024 instancias), las matrices van en un `buffer()`
+  propio cuyo nombre entra en el código del shader, así que **cada `InstancedMesh` tiene su
+  propio shader**. E2 contó 177 de 196 programas de vértice así, casi todos celdas de
+  vegetación. Por encima del límite usa un atributo instanciado y el shader se comparte.
+
+Pasos:
+
+1. **Medir.** Una herramienta (en `tools/`, o una opción de `scene-budget`) que, en
+   SwiftShader, recorra un giro de 360° en dos o tres puntos fijos y registre la duración de
+   cada frame y el número de pipelines o programas creados (por ejemplo, el tamaño de las
+   cachés de `renderer._pipelines` o el contador que encuentres). Debe distinguir el
+   primer giro del segundo. Commit `feat(herramientas): medir los tirones al girar`.
+2. **Compartir shaders entre mallas instanciadas.** Sin parchear `web/vendor/`. Opciones,
+   de menor a mayor coste: un atributo instanciado propio para la matriz (si TSL lo permite
+   sin tocar el vendor, como `instancedBufferAttribute` en un `positionNode` o `vertexNode`
+   compartido), reservar 1.025 plazas por malla (E2 lo probó en coches: unos 64 KB por
+   malla), o menos celdas. Elige con cifras de memoria y de número de programas. Commit
+   `perf(motor): un shader para todas las mallas instanciadas`.
+3. **Precompilar detrás de la pantalla de carga** (idea de `precompileShaders()` en
+   `js/main.js` de slop-newyork): tras construir el mundo, `compileAsync` de cada pipeline
+   distinto con `frustumCulled = false` y un objeto por material o pipeline, y un primer
+   frame de calentamiento con el descarte apagado para que se compilen también los pases de
+   sombras. La barra de carga avanza durante la compilación. Cubre también el modo ligero y
+   el cambio entre normal y ligero en marcha (si cambiar recompila, precompila ambos o
+   decláralo). Commit `perf(motor): precompilar los shaders al cargar`.
+
+Verificación: el segundo y el primer giro dan los mismos tiempos de frame (salvo ruido), y
+no se crean pipelines nuevos durante el giro; tiempo de carga antes y después;
+`npm run check`. Sin cambio visual: capturas idénticas. No afirmes nada del móvil: el
+usuario repite su prueba.
 
 ### E1. Pase de sombras (`perf/pase-sombras`, sin cambio visual salvo lo declarado)
 
