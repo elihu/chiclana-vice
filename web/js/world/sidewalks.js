@@ -85,6 +85,8 @@ export function buildSidewalks(slabs, paved, include) {
       half = Math.max(paved.minimumHalfWidth, road.w / 2),
       pedestrian = paved.pedestrianTypes.includes(road.type),
       edgeTop = pedestrian ? heights.stone : heights.asphalt;
+    // Piezas de acera por lado, en orden de la vía, para descartar los tramos sueltos.
+    const roadRuns = { 1: [], '-1': [] };
     for (let i = 1; i < road.p.length; i++) {
       const a = road.p[i - 1],
         b = road.p[i],
@@ -158,41 +160,66 @@ export function buildSidewalks(slabs, paved, include) {
                 break;
               }
             }
-          if (width) {
-            const top0 = y0 + cfg.curbHeight,
-              top1 = y1 + cfg.curbHeight,
-              lip = half + cfg.curbWidth,
-              outer = half + width;
-            // Cara vertical del bordillo hacia la calzada, tapa del bordillo y baldosa.
-            quad(
-              curb,
-              pointAt(k, half, y0 + edgeTop),
-              pointAt(k + 1, half, y1 + edgeTop),
-              pointAt(k + 1, half, top1),
-              pointAt(k, half, top0),
-            );
-            quad(
-              curb,
-              pointAt(k, half, top0),
-              pointAt(k + 1, half, top1),
-              pointAt(k + 1, lip, top1),
-              pointAt(k, lip, top0),
-            );
-            const s = [
-              pointAt(k, lip, top0),
-              pointAt(k + 1, lip, top1),
-              pointAt(k + 1, outer, top1),
-              pointAt(k, outer, top0),
-            ];
-            quad(slabs.p, ...s);
-            for (const v of [s[0], s[1], s[2], s[0], s[2], s[3]])
-              slabs.uv.push(v[0] / 4, -v[2] / 4);
-            skirt(outer, cfg.curbHeight, cfg.curbHeight);
-            stats.curbTriangles += 4;
-            stats.sidewalkTriangles += 2;
-            stats.sidewalkMeters += len / count;
-          } else if (testEdge(half)) skirt(half, edgeTop, edgeTop);
+          const fallback = () => {
+            if (testEdge(half)) skirt(half, edgeTop, edgeTop);
+          };
+          if (!width) {
+            roadRuns[side].push(null);
+            fallback();
+          } else {
+            const emit = () => {
+              const top0 = y0 + cfg.curbHeight,
+                top1 = y1 + cfg.curbHeight,
+                lip = half + cfg.curbWidth,
+                outer = half + width;
+              // Cara vertical del bordillo hacia la calzada, tapa del bordillo y baldosa.
+              quad(
+                curb,
+                pointAt(k, half, y0 + edgeTop),
+                pointAt(k + 1, half, y1 + edgeTop),
+                pointAt(k + 1, half, top1),
+                pointAt(k, half, top0),
+              );
+              quad(
+                curb,
+                pointAt(k, half, top0),
+                pointAt(k + 1, half, top1),
+                pointAt(k + 1, lip, top1),
+                pointAt(k, lip, top0),
+              );
+              const s = [
+                pointAt(k, lip, top0),
+                pointAt(k + 1, lip, top1),
+                pointAt(k + 1, outer, top1),
+                pointAt(k, outer, top0),
+              ];
+              quad(slabs.p, ...s);
+              for (const v of [s[0], s[1], s[2], s[0], s[2], s[3]])
+                slabs.uv.push(v[0] / 4, -v[2] / 4);
+              skirt(outer, cfg.curbHeight, cfg.curbHeight);
+              stats.curbTriangles += 4;
+              stats.sidewalkTriangles += 2;
+              stats.sidewalkMeters += len / count;
+            };
+            roadRuns[side].push({ emit, fallback, length: len / count });
+          }
         }
+    }
+    // Un tramo suelto de acera (corto y aislado entre huecos) no se dibuja: queda solo el faldón.
+    for (const list of Object.values(roadRuns)) {
+      for (let n = 0; n < list.length;) {
+        if (!list[n]) {
+          n++;
+          continue;
+        }
+        let end = n,
+          total = 0;
+        while (end < list.length && list[end]) total += list[end++].length;
+        for (const piece of list.slice(n, end))
+          if (total >= cfg.minimumRun) piece.emit();
+          else piece.fallback();
+        n = end;
+      }
     }
   }
   if (!curb.length) return stats;

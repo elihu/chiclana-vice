@@ -242,6 +242,9 @@ la baldosa.
   paralelas, que son una calle partida, no cuentan). Si el ancho completo no cabe se prueba
   con 66 % y 33 %; por debajo de `minimumWidth` no hay acera. En los cruces las aceras se
   cortan antes de la calzada que cruza, sin solapes; las esquinas quedan abiertas.
+- Tramos sueltos: una sucesión continua de piezas por un mismo lado de una vía más corta que
+  `minimumRun` (10 m) no se dibuja (queda el faldón de la calzada). Evita franjas aisladas
+  entre recortes junto a cruces anchos, peatonales y plazas.
 - Faldones: en el borde exterior de cada acera (o de la calzada si no tiene acera, incluidas las
   vías peatonales) se baja una cara vertical del color del bordillo hasta
   `skirtTerrainMargin` por debajo del terreno muestreado (`groundHeightAt`), con un máximo de
