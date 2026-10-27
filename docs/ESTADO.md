@@ -148,7 +148,13 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   Persianas con tono y estado habitual por edificio (revisión del usuario). F2b integrada el
   27/10/2026: capa `ground-floors.json` (75 KB) con uso, inmuebles y viviendas del Catastro por
   parte y 231 comercios de OSM, aún sin uso visible; aviso ODbL añadido con el visto bueno del
-  usuario. Siguen F2c (bajos dibujados y relieve en todas las calles del centro), F3 y F4.
+  usuario. F2c integrada el 27/10/2026 y aprobada por el usuario («está bien»):
+  reglas `groundFloors` en `city-design.json` (local, bloque, casa o cochera según Catastro,
+  OSM y tipo de calle), bajos según su uso en la receta `street-generic`, relieve en las 45
+  calles con nombre de `frontagePilot` (de 277 a 796 frentes) y bajos pintados en los muros
+  genéricos. Con SwiftShader en «sigue»: +1–4 % de llamadas y +12–31 % de triángulos (por
+  encima del 25 % en Alameda, Mercado y San Telmo); sin FPS medidos en el móvil. Siguen F3 y
+  F4.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
