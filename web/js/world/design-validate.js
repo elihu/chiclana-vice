@@ -31,7 +31,20 @@ export const GEOMETRY_ARITY = {
 };
 // Variables predefinidas en cada frente según el tipo de anclaje.
 export const PREDEFINED = ['len'];
-export const FRONT_PREDEFINED = ['h', 'floors', 'seed', 'hash', 'street', 'commercialStreet'];
+export const FRONT_PREDEFINED = [
+  'h',
+  'floors',
+  'seed',
+  'hash',
+  'street',
+  'commercialStreet',
+  // Clase del bajo (city-design.json → groundFloors) y si la calle es principal o peatonal.
+  'isShop',
+  'isBlock',
+  'isHouse',
+  'isGarage',
+  'mainStreet',
+];
 
 const NODE_TYPES = ['let', 'box', 'piece', 'geo', 'group', 'for', 'if', 'use'];
 const NODE_EXTRA = {
@@ -512,6 +525,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
   const sections = [
     'zones',
     'frontages',
+    'groundFloors',
     'furniture',
     'pavements',
     'crossings',
@@ -580,6 +594,21 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     if (typeof f.recipe !== 'string' || !recipes.includes(f.recipe))
       fail('frontages.recipe', `receta desconocida «${f.recipe}»`);
   }
+
+  check(
+    json.groundFloors,
+    {
+      shopDistance: 'pos',
+      shopBehind: 'nonneg',
+      shopMargin: 'nonneg',
+      commercialUses: 'strings',
+      blockMinimumDwellings: 'int',
+      blockMinimumFloors: 'int',
+      extraUnits: 'int',
+      mainRoadTypes: 'strings',
+    },
+    'groundFloors',
+  );
 
   check(
     json.furniture,

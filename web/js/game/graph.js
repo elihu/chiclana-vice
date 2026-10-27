@@ -28,6 +28,7 @@ export function buildRoadGraph() {
         bi,
         length,
         name: r.name,
+        type: r.type,
         width: r.w,
         bridge: r.bridge,
         drive,

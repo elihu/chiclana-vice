@@ -574,6 +574,16 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
         minimumSetback: 1,
         recipe: 'g',
       },
+      groundFloors: {
+        shopDistance: 12,
+        shopBehind: 6,
+        shopMargin: 4,
+        commercialUses: ['4_2_retail'],
+        blockMinimumDwellings: 4,
+        blockMinimumFloors: 3,
+        extraUnits: 1,
+        mainRoadTypes: ['pedestrian'],
+      },
       furniture: {
         protectedPoints: [[1, 2]],
         protectedRadius: 5,
@@ -697,6 +707,13 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check((c) => (c.frontages.streets = ['A', 'A']), /nombres repetidos/);
     check((c) => (c.frontages.minimumEdge = 0), /número positivo/);
     check((c) => (c.frontages.recipe = 'nada'), /receta desconocida/);
+    check((c) => (c.groundFloors.shopDistance = 0), /groundFloors\.shopDistance: .*positivo/);
+    check((c) => delete c.groundFloors.extraUnits, /groundFloors\.extraUnits: falta/);
+    check(
+      (c) => (c.groundFloors.mainRoadTypes = ['a', 'a']),
+      /groundFloors\.mainRoadTypes: .*sin repetir/,
+    );
+    check((c) => (c.groundFloors.blockMinimumFloors = 0), /blockMinimumFloors: .*entero/);
     check((c) => delete c.zones.streetLamps, /zones\.streetLamps: falta/);
     check((c) => delete c.furniture, /furniture: se esperaba un objeto/);
     check((c) => (c.furniture.extra = 1), /furniture\.extra: clave desconocida/);
@@ -1103,4 +1120,53 @@ console.log('Facade kit, validator, composer and map corrections passed');
   for (const c of data.candidates)
     assert([c.x, c.z, c.r, c.score].every(Number.isFinite) && c.r > 0);
   console.log('Revisión de copas: instantánea, rectángulos, exclusiones y precedencia verificados');
+}
+
+// Clase del bajo (F2c): orden de las reglas y efecto del tipo de calle.
+{
+  const { classifyGroundFloor, groundCode, createGroundFloors } =
+    await import('../web/js/world/ground-floors.js');
+  const rules = {
+    shopDistance: 12,
+    shopBehind: 6,
+    shopMargin: 4,
+    commercialUses: ['4_1_office', '4_2_retail'],
+    blockMinimumDwellings: 4,
+    blockMinimumFloors: 3,
+    extraUnits: 1,
+    mainRoadTypes: ['secondary', 'pedestrian'],
+  };
+  const uses = ['', '1_residential', '4_2_retail'];
+  const kind = (part, floors, roadType, shopNear = false) =>
+    classifyGroundFloor(rules, { part, uses, floors, roadType, shopNear }).kind;
+  assert.equal(kind([1, 1, 1], 2, 'residential', true), 'shop', 'comercio de OSM delante');
+  assert.equal(kind([2, 1, 0], 1, 'residential'), 'shop', 'uso comercial');
+  assert.equal(kind([1, 9, 8], 5, 'pedestrian'), 'block', 'bloque en calle principal');
+  assert.equal(kind([1, 9, 8], 2, 'residential'), 'garage', 'pocas plantas: no es bloque');
+  assert.equal(kind([1, 2, 1], 2, 'pedestrian'), 'shop', 'inmuebles de más, calle principal');
+  assert.equal(kind([1, 2, 1], 2, 'residential'), 'garage', 'inmuebles de más, calle menor');
+  assert.equal(kind([1, 1, 1], 2, 'secondary'), 'shop', 'resto, calle principal');
+  assert.equal(kind([1, 1, 1], 2, 'residential'), 'house', 'resto, calle menor');
+  assert.equal(kind(null, 2, 'residential'), 'house', 'sin datos de Catastro');
+  assert.notEqual(
+    groundCode(
+      classifyGroundFloor(rules, { part: [1, 9, 8], uses, floors: 5, roadType: 'pedestrian' }),
+    ),
+    groundCode(
+      classifyGroundFloor(rules, { part: [1, 9, 8], uses, floors: 5, roadType: 'residential' }),
+    ),
+    'un bloque lleva locales solo en calle principal',
+  );
+  // Comercio de OSM: delante (hasta shopDistance), sobre el edificio (hasta shopBehind) y no detrás.
+  const layer = { uses, parts: [[1, 1, 1]], shops: [[5, 8, 'shop:clothes']] };
+  const groundFloors = createGroundFloors(layer, rules);
+  const classify = (a, q, nx, nz) => groundFloors.classify(0, 2, a, q, nx, nz, 'residential').kind;
+  assert.equal(classify([0, 0], [10, 0], 0, 1), 'shop', 'a 8 m delante');
+  assert.equal(classify([0, 0], [10, 0], 0, -1), 'house', 'el frente da la espalda al comercio');
+  assert.equal(classify([0, 16], [10, 16], 0, 1), 'house', 'a 8 m dentro del edificio no cuenta');
+  assert.equal(classify([30, 0], [40, 0], 0, 1), 'house', 'lejos a lo largo del frente');
+  assert.equal(
+    createGroundFloors(null, rules).classify(0, 2, [0, 0], [10, 0], 0, 1, 'x').kind,
+    'house',
+  );
 }

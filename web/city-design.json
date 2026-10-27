@@ -38,16 +38,7 @@
     ]
   },
   "frontages": {
-    "streets": [
-      "Calle Constitución",
-      "Calle de la Vega",
-      "Calle de la Plaza",
-      "Calle Caraza",
-      "Calle Jesús Nazareno",
-      "Calle Álamo",
-      "Calle Garcia Gutierrez",
-      "Calle Corredera Baja"
-    ],
+    "streets": ["Calle Constitución", "Calle de la Vega", "Calle de la Plaza", "Calle Caraza", "Calle Jesús Nazareno", "Calle Álamo", "Calle Garcia Gutierrez", "Calle Corredera Baja", "Alameda del Río", "Calle Alcalá", "Calle Antonio Biondi", "Calle Arroyuelo", "Calle Artesano Pepe Marín", "Calle Ayala", "Calle Buey", "Calle Churruca", "Calle Concepción", "Calle Corredera Alta", "Calle Cádiz", "Calle Doctor Pedro Vélez", "Calle Dr. Flemming", "Calle Fraile", "Calle Francisco Liñán Barberá", "Calle Hormaza", "Calle Ibiza", "Calle Iro", "Calle Joaquín Santos", "Calle Larga", "Calle Lugo", "Calle Mendaro", "Calle Nuestra Señora de los Dolores", "Calle Nuestra Señora de los Remedios", "Calle Nueva", "Calle Padre Caro", "Calle Paloma", "Calle San Félix", "Calle San Gabriel", "Calle San Martín", "Calle San Miguel", "Calle Santa Monica", "Calle Segismundo Moret", "Calle de Cristo de la Humildad y Paciencia", "Calle de la Fuente", "Calle de las Albinas", "Plaza Retortille"],
     "originalStreets": [
       "Calle Constitución",
       "Calle de la Vega",
@@ -63,6 +54,16 @@
     "maximumRoadDistance": 17,
     "minimumSetback": 1,
     "recipe": "street-generic"
+  },
+  "groundFloors": {
+    "shopDistance": 12,
+    "shopBehind": 6,
+    "shopMargin": 4,
+    "commercialUses": ["4_1_office", "4_2_retail"],
+    "blockMinimumDwellings": 4,
+    "blockMinimumFloors": 3,
+    "extraUnits": 1,
+    "mainRoadTypes": ["secondary", "tertiary", "pedestrian"]
   },
   "furniture": {
     "protectedPoints": [
