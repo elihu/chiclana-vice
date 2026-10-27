@@ -5,6 +5,7 @@ import { TAU, clamp, lerp, pInside } from '../core/math.js';
 import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts, shareInstanceShader } from '../engine/materials.js';
+import { foliageMaterial } from '../engine/foliage.js';
 import { rnd } from '../core/random.js';
 
 // Partition static vegetation without changing any instance transform or color.
@@ -138,7 +139,7 @@ export function buildTrees() {
   let wood = new THREE.InstancedMesh(woodGeometry, mat('#786d57'), points.length),
     crowns = new THREE.InstancedMesh(
       new THREE.IcosahedronGeometry(1, 1),
-      mat('#ffffff', { roughness: 1 }),
+      foliageMaterial(),
       points.length * 5,
     ),
     smallCrowns = new THREE.InstancedMesh(

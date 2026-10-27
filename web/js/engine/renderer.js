@@ -6,6 +6,7 @@ import { updateContactShadows } from './contact-shadows.js';
 import { createPost } from './post.js';
 import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
+import { applyFoliageQuality } from './foliage.js';
 
 // Equilibrio de luz elegido en G2.2 (combinación B).
 // La hemisférica de apoyo y la luz del cielo horneado se reparten en `SKY` (sky.js).
@@ -164,6 +165,7 @@ export function setSunShadows(on) {
 export function applyQuality() {
   const low = gfx.quality === 'low';
   applyGroundDetailQuality();
+  applyFoliageQuality();
   gfx.renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio || 1, gfx.coarse ? 1.35 : 1.75));
   setSunShadows(!low);
   gfx.scene.fog.far = low ? 380 : 620;
