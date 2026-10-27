@@ -137,7 +137,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   terminado y publicado en `v1.4.0`; de él quedan las fachadas genéricas más variadas, aceras
   y patios, cornisas y pretiles, y reflejos en cristales. De
   [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md) quedan V3–V5 (árboles, cristales, horas
-  del día). Todo ello, más el agua del río, pasará a un plan nuevo.
+  del día). Todo ello, más el agua del río, está en
+  [PLAN-VISUAL.md](PLAN-VISUAL.md), sin empezar.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 

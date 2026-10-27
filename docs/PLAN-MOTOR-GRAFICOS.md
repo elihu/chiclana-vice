@@ -2,7 +2,7 @@
 
 > **Estado (27/10/2026)**: base WebGPU, E0, E1, E2 y VL (que incluye V1 y lo visible de
 > V2) integradas en `main` y probadas por el usuario en su Android. V3–V5 sin empezar; pasan
-> al plan siguiente.
+> a [PLAN-VISUAL.md](PLAN-VISUAL.md).
 
 Fecha: 26/10/2026. Continúa [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md) (G0–G5,
 publicadas en `v1.4.0`) con lo aprendido de
