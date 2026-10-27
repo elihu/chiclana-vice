@@ -435,10 +435,11 @@
         "evidence": [
           "https://www.openstreetmap.org/way/1109772445",
           "https://www.openstreetmap.org/way/50664224",
-          "Aproximación de autor: tablero plano y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas.",
+          "Aproximación de autor: tablero en plano inclinado entre las cotas de sus accesos y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas.",
           "https://www.openstreetmap.org/way/759565059",
           "Desplazamiento y grosor de autor aproximados; reserva de tranvía diferenciada sin simular la línea."
         ],
+        "profile": "linear",
         "thickness": 0.8,
         "bands": [
           {

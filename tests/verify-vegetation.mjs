@@ -30,7 +30,7 @@ const child = spawnSync(
 assert.ifError(child.error);
 assert.equal(child.status, 0, child.stderr);
 assert.deepEqual(JSON.parse(child.stdout), {
-  vegetation: '56a76b5c577c203b8403b92ac1d95f56936284541bdbad096262019efc01707c',
+  vegetation: '5df5ba6b1216aa5106573e4a27253e38378c193c01437e3db80fa8a397960228',
   trace: 'e63172d1d226305486b3e7d81696b551274f377f7c1b7316f30300170badecca',
 });
 console.log('Copas revisadas publicadas y entorno anterior idéntico sin capa opcional');

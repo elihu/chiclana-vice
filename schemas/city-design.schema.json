@@ -1019,6 +1019,10 @@
                 "exclusiveMinimum": 0,
                 "maximum": 3
               },
+              "profile": {
+                "enum": ["flat", "linear"],
+                "description": "flat (por defecto): tablero horizontal a la cota media de los accesos. linear: plano inclinado entre las cotas del primer y el último acceso; solo con roadAnchor."
+              },
               "bands": {
                 "type": "array",
                 "items": {

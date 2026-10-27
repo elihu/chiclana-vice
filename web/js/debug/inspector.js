@@ -115,7 +115,7 @@ export function inspectPoint(x, z, y = 0) {
         .filter((p) => pInside(x, z, p.polygon))
         .map((p) => ({
           id: p.id,
-          height: round2(p.y),
+          height: round2(p.heightAt(x, z)),
           clearance: p.clearance,
           lowerRoads: p.lowerRoads,
           evidence: p.evidence,
