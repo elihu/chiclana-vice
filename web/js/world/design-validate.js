@@ -661,6 +661,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
         step: 'pos',
         junctionMargin: 'nonneg',
         buildingMargin: 'nonneg',
+        minimumRoadLength: 'nonneg',
         skirtMaxDepth: 'pos',
         skirtTerrainMargin: 'nonneg',
         skirtMinGap: 'nonneg',

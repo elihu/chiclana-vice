@@ -230,6 +230,12 @@ la baldosa.
   no la del MDT, y sigue la cuesta. La baldosa va en la malla `slabs` de las bandas
   (preajustada, sin proyectar al terreno); el bordillo (cara vertical hacia la calzada y tapa
   de `curbWidth`) va en una malla nueva, `street-curbs`, con un material propio.
+- Sin acera en vías de menos de `minimumRoadLength` (enlaces, ramales) ni por el lado donde
+  otra calzada (incluida la propia vía en tramos paralelos, glorietas y dobles calzadas) queda
+  a menos de medio ancho + ancho de acera del eje en la mitad o más del tramo. Cada pieza se
+  descarta si una esquina, un borde o su centro cae a menos de medio ancho + margen del eje de
+  cualquier otro tramo dibujado (puentes, peatonales y servicio incluidos); solo se ignoran
+  los tramos vecinos casi colineales que continúan la misma calle.
 - Recorte por pieza: se prueban el borde interior y el exterior (extremos y centro) contra
   edificios (`inBuilding`, `buildingMargin`), agua, tableros de plataforma y otras calzadas
   (medio ancho de la que cruza más `junctionMargin`; las vías del mismo nombre casi

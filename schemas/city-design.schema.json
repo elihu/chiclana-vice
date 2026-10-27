@@ -349,6 +349,7 @@
             "step",
             "junctionMargin",
             "buildingMargin",
+            "minimumRoadLength",
             "skirtMaxDepth",
             "skirtTerrainMargin",
             "skirtMinGap"
@@ -386,6 +387,10 @@
             "buildingMargin": {
               "$ref": "#/$defs/nonNegative",
               "description": "Margen en metros respecto a los muros de edificios."
+            },
+            "minimumRoadLength": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Longitud mínima de la vía (suma de sus tramos) para llevar acera; enlaces y ramales cortos no la llevan."
             },
             "skirtMaxDepth": {
               "$ref": "#/$defs/positive",

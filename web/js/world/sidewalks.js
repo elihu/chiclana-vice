@@ -36,35 +36,41 @@ export function buildSidewalks(slabs, paved, include) {
     curb = [],
     stats = { sidewalkMeters: 0, sidewalkTriangles: 0, curbTriangles: 0, skirtTriangles: 0 };
 
-  const nearOther = (x, z, road, dx, dz) => {
+  const close = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05;
+  // Tramos vecinos que continúan la misma calle (comparten extremo y casi colineales): no
+  // cuentan como calzada ajena. Todo lo demás, incluida la propia vía en tramos paralelos,
+  // puentes, peatonales y servicio, sí.
+  const continues = (s, a, b, len) =>
+    (close(s.a, a) || close(s.a, b) || close(s.b, a) || close(s.b, b)) &&
+    Math.abs((s.b[0] - s.a[0]) * (b[0] - a[0]) + (s.b[1] - s.a[1]) * (b[1] - a[1])) >
+      0.9 * s.length * len;
+  const halfOf = (s) => Math.max(paved.minimumHalfWidth, s.width / 2);
+  // Calzadas ajenas cuyo eje queda a menos de medio ancho + margen del punto.
+  const nearOther = (x, z, a, b, len, reach = 0) => {
     const cx = Math.floor(x / CELL),
       cz = Math.floor(z / CELL);
     for (let i = cx - 1; i <= cx + 1; i++)
       for (let j = cz - 1; j <= cz + 1; j++)
         for (const s of grid.get(i + ',' + j) ?? []) {
-          if (s.roadId === road.id) continue;
-          // Dos vías con el mismo nombre casi paralelas son la misma calle partida.
-          if (
-            s.name === road.name &&
-            Math.abs((s.b[0] - s.a[0]) * dx + (s.b[1] - s.a[1]) * dz) > 0.9 * s.length
-          )
-            continue;
+          if (continues(s, a, b, len)) continue;
           const ex = s.b[0] - s.a[0],
             ez = s.b[1] - s.a[1],
             u = Math.max(
               0,
               Math.min(1, ((x - s.a[0]) * ex + (z - s.a[1]) * ez) / (s.length * s.length)),
             ),
-            d = Math.hypot(x - s.a[0] - ex * u, z - s.a[1] - ez * u);
-          if (d < Math.max(paved.minimumHalfWidth, s.width / 2) + cfg.junctionMargin) return true;
+            qx = s.a[0] + ex * u,
+            qz = s.a[1] + ez * u;
+          if (Math.hypot(x - qx, z - qz) < halfOf(s) + cfg.junctionMargin + reach)
+            return { x: qx, z: qz };
         }
-    return false;
+    return null;
   };
-  const free = (x, z, road, dx, dz) =>
+  const free = (x, z, a, b, len) =>
     !inBuilding(x, z, cfg.buildingMargin) &&
-    !nearOther(x, z, road, dx, dz) &&
+    !nearOther(x, z, a, b, len) &&
     !platforms.some((p) => pInside(x, z, p.polygon)) &&
-    !waterAreas.some((a) => pInside(x, z, a.p));
+    !waterAreas.some((w) => pInside(x, z, w.p));
 
   const quad = (out, a, b, c, d) => {
     for (const v of [a, b, c, a, c, d]) out.push(...v);
@@ -72,7 +78,10 @@ export function buildSidewalks(slabs, paved, include) {
 
   for (const road of world.city.roads) {
     if (road.bridge || !include(road)) continue;
-    const walk = cfg.roadTypes.includes(road.type),
+    let roadLength = 0;
+    for (let i = 1; i < road.p.length; i++)
+      roadLength += Math.hypot(road.p[i][0] - road.p[i - 1][0], road.p[i][1] - road.p[i - 1][1]);
+    const walk = cfg.roadTypes.includes(road.type) && roadLength >= cfg.minimumRoadLength,
       half = Math.max(paved.minimumHalfWidth, road.w / 2),
       pedestrian = paved.pedestrianTypes.includes(road.type),
       edgeTop = pedestrian ? heights.stone : heights.asphalt;
@@ -90,7 +99,16 @@ export function buildSidewalks(slabs, paved, include) {
           a[0] + (dx0 * k) / count - dz * off * side,
           a[1] + (dz0 * k) / count + dx * off * side,
         ],
-        centerY = [];
+        centerY = [],
+        // Lado con otra calzada pegada a lo largo de buena parte del tramo (dobles calzadas,
+        // glorietas): sin acera por ese lado.
+        crowded = { 1: 0, '-1': 0 };
+      for (let n = 0; n < 6; n++) {
+        const px = a[0] + (dx0 * (n + 0.5)) / 6,
+          pz = a[1] + (dz0 * (n + 0.5)) / 6,
+          hit = nearOther(px, pz, a, b, len, half + cfg.width - cfg.junctionMargin);
+        if (hit) crowded[(hit.x - px) * -dz + (hit.z - pz) * dx >= 0 ? 1 : -1]++;
+      }
       for (let k = 0; k <= count; k++) {
         const c = at(k, 0, 1);
         centerY.push(surfaceHeightAt(c[0], c[1], null, road.id));
@@ -103,14 +121,12 @@ export function buildSidewalks(slabs, paved, include) {
               const p = at(kk, off, side);
               return [p[0], y, p[1]];
             },
+            // Esquinas, bordes y centro de la pieza entre la calzada y `off`.
             testEdge = (off) => {
-              const p = at(k, off, side),
-                q = at(k + 1, off, side);
-              return (
-                free(p[0], p[1], road, dx, dz) &&
-                free(q[0], q[1], road, dx, dz) &&
-                free((p[0] + q[0]) / 2, (p[1] + q[1]) / 2, road, dx, dz)
-              );
+              const pts = [];
+              for (const o of [half, (half + off) / 2, off])
+                for (const kk of [k, k + 0.5, k + 1]) pts.push(at(kk, o, side));
+              return pts.every((p) => free(p[0], p[1], a, b, len));
             };
           // Faldón: cara vertical bajo el borde (de la calzada o de la acera) hasta un poco
           // por debajo del terreno, solo donde el terreno queda por debajo.
@@ -134,7 +150,7 @@ export function buildSidewalks(slabs, paved, include) {
             stats.skirtTriangles += 2;
           };
           let width = 0;
-          if (walk && testEdge(half))
+          if (walk && crowded[side] < 3 && testEdge(half))
             for (const f of [1, 0.66, 0.33]) {
               const w = cfg.width * f;
               if (w >= cfg.minimumWidth && testEdge(half + w)) {

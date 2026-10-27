@@ -629,6 +629,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           step: 3,
           junctionMargin: 0.5,
           buildingMargin: 0.05,
+          minimumRoadLength: 15,
           skirtMaxDepth: 4,
           skirtTerrainMargin: 0.15,
           skirtMinGap: 0.02,
