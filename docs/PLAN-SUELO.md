@@ -65,6 +65,8 @@ Documenta en `docs/DESARROLLO.md` y, si cambian aproximaciones, en `docs/MAP_SOU
 
 ## Tanda 2. Puentes y accesos (`feat/puentes-rampas`)
 
+> **Integrada el 27/10/2026** (sin publicar).
+
 Los tableros de plataforma son hoy horizontales con la cota media de sus anclajes
 ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)), y la calle compensa el desnivel en los
 extremos. Esta tanda sí toca cotas y transitabilidad, con cuidado:

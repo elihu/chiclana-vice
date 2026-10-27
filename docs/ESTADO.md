@@ -163,8 +163,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
 - Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 publicada en `v1.7.0`. Quedan unas franjas de
   acera sueltas junto al acceso norte del puente de Reyes Católicos (lado oeste) y, a pie, los
-  pies quedan 10 cm bajo la baldosa (la acera es solo visual). Siguen la tanda 2 (tableros de
-  puente inclinados y rampas; Puente VII Centenario y Reyes Católicos), la T (vías y paradas
+  pies quedan 10 cm bajo la baldosa (la acera es solo visual). Tanda 2 integrada sin publicar el
+  27/10/2026: tablero de `tablero-remedios` con pendiente entre sus accesos (`profile:
+"linear"`), arcos del VII Centenario apoyados en la calzada, sin tramos de acera cortos
+  (`minimumRun`) y `tests/verify-bridges.mjs` (escalón máximo en 1 m en Reyes Católicos de 0,134
+  a 0,095 m); sin revisión visual a pie de puente. Siguen la T (vías y paradas
   del tranvía, que explican las franjas del acceso norte del puente) y la 3 (pasos de cebra,
   ortofoto limpia y fundido por distancia).
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
