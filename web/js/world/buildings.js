@@ -2,6 +2,7 @@ import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, world } from '../core/state.js';
 import { facadeTexture } from '../engine/textures.js';
+import { WINDOWS, windowWallMaterial } from '../engine/windows.js';
 import { wallMaterial } from '../engine/wall-ao.js';
 import { loadProgress } from '../ui/feedback.js';
 import { sleepFrame } from '../core/dom.js';
@@ -19,7 +20,7 @@ export async function buildBuildings() {
   const { tile: tileSize, margin } = world.aerialIndex ?? { tile: 255, margin: 20.5 };
   let groups = new Map(),
     facade = facadeTexture(),
-    wallMat = wallMaterial({
+    wallMat = windowWallMaterial({
       map: facade,
       vertexColors: true,
       roughness: 0.94,
@@ -63,6 +64,33 @@ export async function buildBuildings() {
   }
   const floorHeight = world.facadeProfiles.heightPolicy.floorHeight,
     wallBase = world.terrain.kind === 'flat' ? 0.02 : -0.08;
+  // Cornisa: banda de remate en lo alto del muro (cara frontal y cara inferior) que sobresale
+  // `WINDOWS.corniceOut` m hacia fuera. Va en la misma malla que el muro (0 llamadas nuevas) y
+  // toma el texel liso del enlucido, oscurecido con `corniceTint`.
+  let outward = 1;
+  const corniceColor = new THREE.Color();
+  function cornice(out, a, q, ground0, ground1, top, col) {
+    const dx = q[0] - a[0],
+      dz = q[1] - a[1],
+      len = Math.hypot(dx, dz),
+      nx = (dz / len) * outward * WINDOWS.corniceOut,
+      nz = (-dx / len) * outward * WINDOWS.corniceOut,
+      y0 = top - WINDOWS.cornice;
+    corniceColor.copy(col).multiplyScalar(WINDOWS.corniceTint);
+    const at = (p, y) => [p[0], y, p[1]],
+      off = (p, y) => [p[0] + nx, y, p[1] + nz],
+      quads = [
+        [at(a, y0), at(q, y0), off(q, y0), off(a, y0)], // cara inferior
+        [off(a, y0), off(q, y0), off(q, top), off(a, top)], // cara frontal
+      ];
+    for (const vertices of quads)
+      for (const j of [0, 1, 2, 0, 2, 3]) {
+        out[0].push(...vertices[j]);
+        out[1].push(...PLASTER_UV);
+        out[2].push(corniceColor.r, corniceColor.g, corniceColor.b);
+        out[3].push(vertices[j][1] - (j === 0 || j === 3 ? ground0 : ground1));
+      }
+  }
   // Muro con ventanas entre los puntos a y q de una arista; u0 es la coordenada U de a.
   function windowWall(g, b, col, h, a0, q0, u0, uScale) {
     const edge = terrainEdge(a0, q0),
@@ -103,6 +131,19 @@ export async function buildBuildings() {
       }
       u = u1;
     }
+    // Una sola cornisa por arista: lo alto del muro es horizontal aunque el pie siga el terreno.
+    const first = edge[0],
+      last = edge[edge.length - 1];
+    if (Math.hypot(last[0] - first[0], last[1] - first[1]) >= 0.1)
+      cornice(
+        out,
+        first,
+        last,
+        groundHeightAt(...first),
+        groundHeightAt(...last),
+        b.baseY + h,
+        col,
+      );
   }
   // Medianera: un cuadrilátero liso desde el tejado vecino (5 cm por debajo, sin rendija)
   // hasta el propio. Va en la misma malla que su muro para no añadir llamadas de dibujo: en
@@ -161,6 +202,13 @@ export async function buildBuildings() {
       ),
       partyCol = col.clone().lerp(partyTint, rules.partyWall.blend);
     [b.p, ...b.holes].forEach((ring, ringIndex) => {
+      let area = 0;
+      for (let i = 0; i < ring.length; i++) {
+        const [x0, z0] = ring[i],
+          [x1, z1] = ring[(i + 1) % ring.length];
+        area += x0 * z1 - x1 * z0;
+      }
+      outward = (area > 0 ? 1 : -1) * (ringIndex === 0 ? 1 : -1);
       for (let i = 0; i < ring.length; i++) {
         const start = ring[i],
           end = ring[(i + 1) % ring.length],
