@@ -232,8 +232,17 @@ Desde lejos y en vista aérea la ortofoto queda como estaba.
   entorno. Cuesta unos 70 ms al arrancar y unos 6 MB de texturas; no se construye en ligero.
 - **Sombras horneadas**: los oscuros de la ortofoto suben hacia una luminancia mínima
   (`shadowFloor`) con transición suave; el asfalto y otros oscuros normales quedan por encima.
-- Ajuste en vivo: `setGroundNear({ crownClean, shadowStrength, shadowFloor, shadowSoftness })`
-  y `GROUND_CLEAN` (resolución y radios de la máscara, solo al construir).
+- **Materiales propios**: la clase del suelo se deduce del color de la foto (sin tinte): verde
+  predominante = césped, saturado ocre o marrón = tierra, gris claro poco saturado = pavimento;
+  el asfalto y las sombras oscuras no encajan y quedan como están. Cada clase multiplica la foto
+  por una textura procedural de media 1 (`groundMaterialTexture`: un RGBA de datos de 256 px, sin
+  imágenes: césped, tierra y baldosas con juntas), muestreada dos veces en coordenadas de mundo
+  (cada 3 m y cada 1,1 m) para romper la repetición. Así se conserva el color medio de la foto.
+  Coste: 2 lecturas de textura y unas decenas de operaciones por fragmento de suelo a menos de
+  `far` m; a más, ninguno efectivo (el factor es 0). Se apaga con un uniforme en ligero.
+- Ajuste en vivo: `setGroundNear({ crownClean, shadowStrength, shadowFloor, shadowSoftness,
+materialStrength, materialScale, green, earth, pavement, minLight })` y `GROUND_CLEAN`
+  (resolución y radios de la máscara, solo al construir).
 
 ## Aceras
 
@@ -377,7 +386,7 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
   pantalla completa; el cielo, el entorno horneado y la niebla del cielo se mantienen.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
 - Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste, y con
-  él el suelo cercano de la ortofoto (copas limpias y sombras suavizadas; ver «Suelo cercano»).
+  él el suelo cercano de la ortofoto (copas limpias, sombras suavizadas y materiales propios; ver «Suelo cercano»).
   Si se arranca en ligero no se construyen sus texturas hasta pasar a normal.
 - Oculta las celdas más allá del final de la niebla.
 - Descarta el detalle de fachadas a 200 m y la vegetación a 300 m de la cámara;
