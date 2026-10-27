@@ -6,7 +6,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.6.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.7.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
@@ -34,6 +34,17 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Novedades de `v1.7.0`
+
+Plan: [PLAN-SUELO.md](PLAN-SUELO.md), tanda 1, revisada por el usuario con capturas.
+
+- **Aceras con bordillo** a ambos lados de las vías rodadas, con la cota de la calzada,
+  recortadas contra edificios, agua, tableros y otras calzadas (`sidewalks.js`, parámetros en
+  `pavements.sidewalks` de `city-design.json`).
+- **Faldones** en los bordes de calzadas y aceras donde el terreno queda por debajo.
+- **Plazas peatonales pavimentadas** en toda la ciudad.
+- Unos 33 km de acera; una llamada de dibujo más (`street-curbs`). Sin FPS medidos.
 
 ## Novedades de `v1.6.0`
 
@@ -150,9 +161,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
   pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
-- Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): la ortofoto se ve mal a pie y las juntas entre
-  calzadas, puentes y cuestas se notan (Puente VII Centenario y Reyes Católicos); tanda 1
-  (aceras, bordillos y faldones) en curso.
+- Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 publicada en `v1.7.0`. Quedan unas franjas de
+  acera sueltas junto al acceso norte del puente de Reyes Católicos (lado oeste) y, a pie, los
+  pies quedan 10 cm bajo la baldosa (la acera es solo visual). Siguen la tanda 2 (tableros de
+  puente inclinados y rampas; Puente VII Centenario y Reyes Católicos) y la 3 (pasos de cebra,
+  ortofoto limpia y fundido por distancia).
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
   (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
   cercanas, farolas en todas las calles y bloom), aceras y patios, y pretiles. Los bajos con

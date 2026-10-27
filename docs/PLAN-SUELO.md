@@ -38,6 +38,8 @@ Lee antes `AGENTS.md`, `docs/DESARROLLO.md` («Terreno», «Modo ligero»),
 
 ## Tanda 1. Aceras, bordillos y faldones (`feat/aceras`)
 
+> **Publicada en `v1.7.0`** (27/10/2026).
+
 Estado de partida: con relieve (`world.surfaces`), `buildStreetSurfaces` ya dibuja todas las
 vías (asfalto o adoquín); las plazas peatonales solo dentro de `zones.pavedSquares`; entre la
 calzada y las fachadas solo hay terreno con ortofoto.
