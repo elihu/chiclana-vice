@@ -6,20 +6,35 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.4.0` (13/10/2026). La CI (`ci.yml`), el despliegue y
+  Actions. Última release: `v1.5.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
   Dependabot se ejecutan en GitHub sin errores.
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
   la `v1.1.0` el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android, y el
   relieve de la `v1.2.0` el 8/10/2026 en el navegador de escritorio; la ampliación y los
   modelos de la `v1.3.0`, el 8 y el 9/10/2026 en el navegador de escritorio, y la mejora
-  gráfica de la `v1.4.0`, el 13/10/2026 en el portátil.
-- No verificado: iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
+  gráfica de la `v1.4.0`, el 13/10/2026 en el portátil. El motor WebGPU, la luz y el ahorro
+  de render de la `v1.5.0`, el 27/10/2026 en un móvil Android, con WebGPU (por `localhost`)
+  y con WebGL 2.
+- No verificado: la `v1.5.0` en el portátil, iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
   teselas en móvil.
 
-## En `main` sin publicar
+## Decisiones vigentes
 
-Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
+- **P1, riesgo asumido**: las figuras de la portada de Jesús Nazareno y la escala vertical
+  del Ayuntamiento se mantienen. Se actuará si un titular lo reclama, según
+  [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md#reclamaciones-y-retirada).
+- **P3**: `web/frontages.json` es ODbL 1.0 en conjunto y `osm-world.json` es la única
+  descarga ODbL de las vías.
+- **Mercado**: la fachada se mantiene como aproximación de cuatro esquinas
+  ([MAP_SOURCES.md](MAP_SOURCES.md#fachadas-y-monumentos)); el reanclaje a las aristas
+  catastrales queda descartado por ahora.
+- **Muros en DoubleSide**: la orientación de los contornos es correcta, pero con
+  FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
+  pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
+  cámara.
+
+## Novedades de `v1.5.0`
 
 - **Motor**: three.js 0.186.1 con WebGPURenderer, que usa WebGPU donde el navegador lo
   ofrece (solo en HTTPS o `localhost`) y WebGL 2 si no. `#fps` muestra el motor y los FPS;
@@ -47,21 +62,6 @@ Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
   (Mercado), de 558 a 351 (Plaza Mayor), de 438 a 249 (Santa Ana) y de 432 a 239 (San
   Telmo); capturas iguales salvo bordes de sombras de copas (hasta 2 % de píxeles en
   Santa Ana). El usuario lo probó en el móvil el 27/10/2026: «va bien».
-
-## Decisiones vigentes
-
-- **P1, riesgo asumido**: las figuras de la portada de Jesús Nazareno y la escala vertical
-  del Ayuntamiento se mantienen. Se actuará si un titular lo reclama, según
-  [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md#reclamaciones-y-retirada).
-- **P3**: `web/frontages.json` es ODbL 1.0 en conjunto y `osm-world.json` es la única
-  descarga ODbL de las vías.
-- **Mercado**: la fachada se mantiene como aproximación de cuatro esquinas
-  ([MAP_SOURCES.md](MAP_SOURCES.md#fachadas-y-monumentos)); el reanclaje a las aristas
-  catastrales queda descartado por ahora.
-- **Muros en DoubleSide**: la orientación de los contornos es correcta, pero con
-  FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
-  pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
-  cámara.
 
 ## Novedades de `v1.4.0`
 
