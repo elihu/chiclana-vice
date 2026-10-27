@@ -40,8 +40,8 @@ documento; los demás enlazan a él.
   con WebGPU, shaders sin tirones, pase de sombras, llamadas, cielo, luz y color; E0, E1,
   E2, V1 y VL publicadas en `v1.5.0`; lo pendiente pasa al plan siguiente.
 - [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): agua del Iro,
-  cristales y persianas, cornisas, viento y contraluz en los árboles, horas del día; sin
-  empezar.
+  cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
+  día; publicado en `v1.6.0` salvo F5.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
