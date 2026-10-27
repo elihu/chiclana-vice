@@ -743,6 +743,12 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       pavedColor: 'color',
       grassColor: 'color',
       pavedDistance: 'nonneg',
+      laneColor: 'color',
+      laneLineColor: 'color',
+      laneLineWidth: 'pos',
+      laneMargin: 'nonneg',
+      crossingClearance: 'nonneg',
+      minimumGrassRun: 'nonneg',
       rails: { width: 'pos', height: 'pos', color: 'color' },
       catenary: {
         poleSpacing: 'pos',

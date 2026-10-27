@@ -10,33 +10,98 @@ import { inBuilding, nearestRoad } from './spatial.js';
 const CELL = 16;
 const cellKey = (x, z) => Math.floor(x / CELL) + ',' + Math.floor(z / CELL);
 
-// Índice espacial de los ejes de vía (la capa es estática y pequeña).
+// Disposición de cada vía dibujada (se calcula una vez; la capa es estática y pequeña):
+// puntos remuestreados y, por punto, su tipo de franja:
+//   lane: eje dentro de una calzada (carril exclusivo del tranvía, empotrado en ella);
+//   paved: puentes, cruces a nivel y mediana pegada a las calzadas (empotrada);
+//   grass: franja de césped separada de la calzada.
+// Los puntos de `lane` se desplazan hacia el eje de la calle lo justo para que el carril
+// quepa en la calzada y no pise la acera de ese lado.
 let memo = null;
-function index() {
+function layout() {
   const layer = world.tram;
   if (!layer) return null;
   if (memo?.layer === layer) return memo;
-  const grid = new Map();
-  for (const track of layer.tracks)
-    for (let i = 1; i < track.p.length; i++) {
-      const a = track.p[i - 1],
-        b = track.p[i],
-        length = Math.hypot(b[0] - a[0], b[1] - a[1]),
-        segment = { a, b, length, bridge: track.bridge },
-        n = Math.max(1, Math.ceil(length / (CELL / 2)));
+  const cfg = world.cityDesign.tram,
+    half = cfg.stripWidth / 2,
+    level = layer.crossings.filter((c) => c.kind === 'level'),
+    tracks = [],
+    grid = new Map();
+  for (const track of layer.tracks) {
+    const original = resample(track.p, cfg.sampleStep),
+      kinds = [],
+      shifts = [];
+    for (const [x, z] of original) {
+      let kind = 'grass',
+        shift = 0,
+        direction = [0, 0];
+      const near = track.bridge ? null : nearestRoad(x, z, true);
+      if (
+        track.bridge ||
+        level.some((c) => Math.hypot(c.x - x, c.z - z) < half + cfg.pavedDistance + 2)
+      )
+        kind = 'paved';
+      else if (near && near.d <= near.s.width / 2) {
+        kind = 'lane';
+        const room = near.s.width / 2 - cfg.laneMargin;
+        shift = Math.min(near.d, Math.max(0, near.d + half - room));
+        direction = near.d > 1e-6 ? [(near.x - x) / near.d, (near.z - z) / near.d] : [0, 0];
+      } else if (near && near.d - near.s.width / 2 <= half + cfg.pavedDistance) kind = 'paved';
+      kinds.push(kind);
+      shifts.push([direction[0] * shift, direction[1] * shift]);
+    }
+    // Un tramo de césped corto entre dos tramos empotrados (rotondas, cruces) no se dibuja:
+    // se pavimenta para no dejar parches.
+    for (let i = 0; i < kinds.length;) {
+      if (kinds[i] !== 'grass') {
+        i++;
+        continue;
+      }
+      let end = i;
+      while (end < kinds.length && kinds[end] === 'grass') end++;
+      if (i > 0 && end < kinds.length && (end - i) * cfg.sampleStep < cfg.minimumGrassRun)
+        kinds.fill('paved', i, end);
+      i = end;
+    }
+    // Suaviza el desplazamiento entre muestras vecinas para no quebrar la vía.
+    const points = original.map((p, i) => {
+      let dx = 0,
+        dz = 0,
+        n = 0;
+      for (let k = Math.max(0, i - 1); k <= Math.min(original.length - 1, i + 1); k++) {
+        dx += shifts[k][0];
+        dz += shifts[k][1];
+        n++;
+      }
+      return kinds[i] === 'lane' ? [p[0] + dx / n, p[1] + dz / n] : p;
+    });
+    tracks.push({ track, points, kinds });
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1],
+        b = points[i],
+        segment = {
+          a,
+          b,
+          length: Math.hypot(b[0] - a[0], b[1] - a[1]),
+          lane: kinds[i - 1] === 'lane' && kinds[i] === 'lane',
+        },
+        n = Math.max(1, Math.ceil(segment.length / (CELL / 2)));
       for (let k = 0; k <= n; k++) {
         const key = cellKey(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
         if (!grid.has(key)) grid.set(key, new Set());
         grid.get(key).add(segment);
       }
     }
-  memo = { layer, grid };
+  }
+  memo = { layer, tracks, grid };
   return memo;
 }
 
-// Distancia del punto al eje de vía más cercano (Infinity sin tranvía).
-export function tramDistance(x, z) {
-  const m = index();
+// Distancia del punto al eje de vía dibujado más cercano (Infinity sin tranvía). Con
+// `skipLane` se ignoran los tramos empotrados en una calzada (el tranvía ocupa su carril y la
+// acera de ese lado se mantiene).
+export function tramDistance(x, z, skipLane = false) {
+  const m = layout();
   if (!m) return Infinity;
   let best = Infinity;
   const cx = Math.floor(x / CELL),
@@ -44,6 +109,7 @@ export function tramDistance(x, z) {
   for (let i = cx - 1; i <= cx + 1; i++)
     for (let j = cz - 1; j <= cz + 1; j++)
       for (const s of m.grid.get(i + ',' + j) ?? []) {
+        if (skipLane && s.lane) continue;
         const ex = s.b[0] - s.a[0],
           ez = s.b[1] - s.a[1],
           u = Math.max(
@@ -53,6 +119,18 @@ export function tramDistance(x, z) {
         best = Math.min(best, Math.hypot(x - s.a[0] - ex * u, z - s.a[1] - ez * u));
       }
   return best;
+}
+
+// ¿Queda el punto sobre la franja del tranvía (más `margin`) o en un cruce a nivel? Los tramos
+// empotrados en una calzada no cuentan: la acera de ese lado se mantiene.
+export function tramBlocks(x, z, margin = 0) {
+  const m = layout();
+  if (!m) return false;
+  const cfg = world.cityDesign.tram;
+  if (tramDistance(x, z, true) < cfg.stripWidth / 2 + margin) return true;
+  return m.layer.crossings.some(
+    (c) => Math.hypot(c.x - x, c.z - z) < cfg.crossingClearance + margin,
+  );
 }
 
 // Puntos de la polilínea con una separación máxima `step`, conservando los vértices.
@@ -65,6 +143,15 @@ function resample(points, step) {
     for (let k = 1; k <= n; k++)
       out.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n]);
   }
+  return out;
+}
+
+// Conserva el primer y el último punto y los que distan al menos `step` del anterior.
+function thin(points, step) {
+  const out = [points[0]];
+  for (const p of points.slice(1, -1))
+    if (Math.hypot(p[0] - out.at(-1)[0], p[1] - out.at(-1)[1]) >= step) out.push(p);
+  out.push(points.at(-1));
   return out;
 }
 
@@ -404,42 +491,64 @@ export function buildTram() {
     cat = cfg.catenary,
     paved = [],
     grass = [],
+    lane = solid(),
     rails = [],
     wires = [],
     stats = { meters: 0, tracks: layer.tracks.length, poles: 0, triangles: 0 };
-  const level = layer.crossings.filter((c) => c.kind === 'level');
 
-  for (const track of layer.tracks) {
-    const points = resample(track.p, cfg.sampleStep),
-      normal = normals(points),
+  for (const { track, points, kinds } of layout().tracks) {
+    const normal = normals(points),
       side = (i, offset) => [
         points[i][0] + normal[i][0] * offset,
         points[i][1] + normal[i][1] * offset,
       ],
-      // Empotrada (pavimentada) en puentes, junto a calzadas y en cruces a nivel; si no, césped.
-      isPaved = points.map(([x, z]) => {
-        if (track.bridge) return true;
-        if (level.some((c) => Math.hypot(c.x - x, c.z - z) < half + cfg.pavedDistance + 2))
-          return true;
-        const near = nearestRoad(x, z, true);
-        return !!near && near.d - near.s.width / 2 <= half + cfg.pavedDistance;
-      }),
       floor = (p) => surfaceHeightAt(p[0], p[1]) + cfg.bedHeight;
 
-    // Franja: un cuadrilátero por muestra. Pavimentada: cota del eje en ambos lados (sigue a la
-    // calzada, que es plana en sentido transversal); de césped: cota de cada esquina.
+    // Franja: un cuadrilátero por muestra. Empotrada (lane, paved): cota del eje en ambos lados
+    // (sigue a la calzada, plana en sentido transversal); de césped: cota de cada esquina.
     for (let i = 1; i < points.length; i++) {
       const centre = [i - 1, i].map((k) => surfaceHeightAt(points[k][0], points[k][1])),
-        flat = isPaved[i - 1],
-        corner = (k, s) => {
-          const p = side(k, half * s);
+        kind = kinds[i - 1],
+        flat = kind !== 'grass',
+        corner = (k, s, w = half, lift = 0) => {
+          const p = side(k, w * s);
           return [
             p[0],
-            flat ? centre[k - (i - 1)] + cfg.bedHeight : Math.max(floor(p), centre[k - (i - 1)]),
+            flat
+              ? centre[k - (i - 1)] + cfg.bedHeight + lift
+              : Math.max(floor(p), centre[k - (i - 1)]),
             p[1],
           ];
         };
-      quad(flat ? paved : grass, corner(i - 1, -1), corner(i, -1), corner(i, 1), corner(i - 1, 1));
+      if (kind === 'lane') {
+        // Carril exclusivo: hormigón claro con una línea blanca continua en cada borde.
+        paint(
+          lane,
+          cfg.laneColor,
+          faceOf(corner(i - 1, -1), corner(i, -1), corner(i, 1), corner(i - 1, 1)),
+        );
+        for (const s of [-1, 1]) {
+          const outer = half - cfg.laneMargin / 2,
+            inner = outer - cfg.laneLineWidth;
+          paint(
+            lane,
+            cfg.laneLineColor,
+            faceOf(
+              corner(i - 1, s, outer, 0.004),
+              corner(i, s, outer, 0.004),
+              corner(i, s, inner, 0.004),
+              corner(i - 1, s, inner, 0.004),
+            ),
+          );
+        }
+      } else
+        quad(
+          flat ? paved : grass,
+          corner(i - 1, -1),
+          corner(i, -1),
+          corner(i, 1),
+          corner(i - 1, 1),
+        );
       stats.meters += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
     }
 
@@ -458,7 +567,7 @@ export function buildTram() {
     }
 
     // Hilo de contacto: tramos rectos de `wireStep` sobre el eje.
-    const wire = resample(track.p, cat.wireStep),
+    const wire = thin(points, cat.wireStep),
       wireNormal = normals(wire),
       wireY = wire.map((p) => floor(p) + cat.wireHeight);
     beam(
@@ -562,6 +671,20 @@ export function buildTram() {
       mat(cat.color, { side: THREE.DoubleSide, roughness: 0.7 }),
       false,
     );
+  if (lane.position.length) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(lane.position, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(lane.color, 3));
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(
+      geo,
+      mat('#ffffff', { vertexColors: true, side: THREE.DoubleSide, roughness: 0.95 }),
+    );
+    mesh.name = 'tram-lane';
+    mesh.receiveShadow = true;
+    gfx.scene.add(mesh);
+    stats.triangles += lane.position.length / 9;
+  }
   buildStops(layer, cfg, stats);
   world.tramStats = stats;
   return stats;

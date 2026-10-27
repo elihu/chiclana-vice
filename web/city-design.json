@@ -333,6 +333,12 @@
     "pavedColor": "#6f6c66",
     "grassColor": "#78905a",
     "pavedDistance": 0.3,
+    "laneColor": "#a9a79f",
+    "laneLineColor": "#f2efe6",
+    "laneLineWidth": 0.12,
+    "laneMargin": 0.1,
+    "crossingClearance": 4,
+    "minimumGrassRun": 12,
     "rails": {
       "width": 0.08,
       "height": 0.09,

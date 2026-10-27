@@ -572,6 +572,12 @@
         "pavedColor",
         "grassColor",
         "pavedDistance",
+        "laneColor",
+        "laneLineColor",
+        "laneLineWidth",
+        "laneMargin",
+        "crossingClearance",
+        "minimumGrassRun",
         "rails",
         "catenary",
         "stop"
@@ -601,6 +607,31 @@
         "pavedDistance": {
           "$ref": "#/$defs/nonNegative",
           "description": "Margen en metros: la franja se pavimenta (empotrada) si la vía queda a menos de medio ancho de calzada más medio ancho de franja más este margen; si no, es de césped."
+        },
+        "laneColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$",
+          "description": "Superficie del carril exclusivo del tranvía (eje dentro de una calzada), distinta del asfalto."
+        },
+        "laneLineColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "laneLineWidth": {
+          "$ref": "#/$defs/positive",
+          "description": "Ancho de la línea blanca continua en cada borde del carril."
+        },
+        "laneMargin": {
+          "$ref": "#/$defs/nonNegative",
+          "description": "Margen entre el borde del carril y el borde de la calzada; el carril se desplaza hacia el eje de la calle lo justo para caber."
+        },
+        "crossingClearance": {
+          "$ref": "#/$defs/nonNegative",
+          "description": "Radio en metros alrededor de un cruce a nivel o paso peatonal del tranvía donde no se dibujan aceras ni bordillos."
+        },
+        "minimumGrassRun": {
+          "$ref": "#/$defs/nonNegative",
+          "description": "Longitud mínima en metros de un tramo de césped entre tramos empotrados; los más cortos se pavimentan."
         },
         "rails": {
           "description": "Raíles (separación = ancho de vía de OSM).",
