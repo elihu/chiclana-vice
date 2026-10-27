@@ -9,24 +9,33 @@ import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside, boundaryDistance } from '../core/math.js';
 
-function platformGeometry(polygon, thickness = 0.12) {
+// `heightAt(x, z)`: cota absoluta de la cara superior en cada vértice (plano inclinado en las
+// plataformas de perfil lineal). La cara inferior y los laterales bajan `thickness`.
+function platformGeometry(polygon, thickness, heightAt) {
   const top = flatGeometry(polygon),
     flat = top.toNonIndexed(),
     a = flat.getAttribute('position').array,
     positions = [];
   for (let i = 0; i < a.length; i += 9) {
-    positions.push(...a.slice(i, i + 9));
-    for (const k of [2, 1, 0])
-      positions.push(a[i + k * 3], a[i + k * 3 + 1] - thickness, a[i + k * 3 + 2]);
+    for (let k = 0; k < 3; k++) {
+      const x = a[i + k * 3],
+        z = a[i + k * 3 + 2];
+      positions.push(x, heightAt(x, z), z);
+    }
+    for (const k of [2, 1, 0]) {
+      const x = a[i + k * 3],
+        z = a[i + k * 3 + 2];
+      positions.push(x, heightAt(x, z) - thickness, z);
+    }
   }
   for (let i = 0; i < polygon.length; i++) {
     const p = polygon[i],
       q = polygon[(i + 1) % polygon.length],
       v = [
-        [p[0], 0, p[1]],
-        [q[0], 0, q[1]],
-        [q[0], -thickness, q[1]],
-        [p[0], -thickness, p[1]],
+        [p[0], heightAt(...p), p[1]],
+        [q[0], heightAt(...q), q[1]],
+        [q[0], heightAt(...q) - thickness, q[1]],
+        [p[0], heightAt(...p) - thickness, p[1]],
       ];
     for (const k of [0, 1, 2, 0, 2, 3]) positions.push(...v[k]);
   }
@@ -112,8 +121,8 @@ export function buildRoadDetails() {
   }
   for (const p of world.surfaces?.platforms || []) {
     decks.push({
-      geometry: platformGeometry(p.polygon, p.thickness),
-      matrix: at(0, p.y + heights.deck, 0),
+      geometry: platformGeometry(p.polygon, p.thickness, p.heightAt),
+      matrix: at(0, heights.deck, 0),
     });
   }
   for (const r of world.city.roads) {
@@ -205,7 +214,11 @@ export function buildStreetSurfaces() {
       original.dispose();
       const a = geo.getAttribute('position');
       for (let i = 0; i < a.count; i++) {
-        output.p.push(a.getX(i), platform.y + heights.slabs, a.getZ(i));
+        output.p.push(
+          a.getX(i),
+          platform.heightAt(a.getX(i), a.getZ(i)) + heights.slabs,
+          a.getZ(i),
+        );
         output.uv.push(a.getX(i) / 4, -a.getZ(i) / 4);
       }
       geo.dispose();

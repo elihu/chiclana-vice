@@ -230,7 +230,14 @@ export function composeBuilding(kit, designs, id, context = {}) {
           world.city.landmarks.find((l) => l.name.includes(a.landmarkRing))?.baseY ?? 0,
         );
       else if (a.ring) baseY = Math.max(baseY, ...a.ring.map((p) => groundHeightAt(...p)));
-      else if (a.a) baseY = Math.max(baseY, groundHeightAt(...a.a), groundHeightAt(...a.b));
+      else if (a.a) {
+        baseY = Math.max(baseY, groundHeightAt(...a.a), groundHeightAt(...a.b));
+        // Un frente cuyos dos extremos están sobre el tablero de un puente se apoya en él: el
+        // suelo bajo el puente queda varios decímetros por debajo de la calzada.
+        const deck = [a.a, a.b].map((p) => world.surfaces?.roadAt(...p, null, true, true));
+        if (deck.every((h) => h && h.d <= h.s.width / 2 + 0.01))
+          baseY = Math.max(baseY, Math.min(...deck.map((h) => h.y)));
+      }
     }
   }
   if (!Number.isFinite(baseY)) baseY = 0;

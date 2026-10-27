@@ -30,7 +30,11 @@ referencia normativa y comprueba también los anclajes contra las capas cargadas
   Un `areaAnchor` usa tipo, vértice y número de vértices de un área existente; un
   `roadAnchor` usa una vía y anchura estructural. Los accesos referencian vía,
   índice de vértice y desplazamiento vertical de autor. Sus cotas estabilizadas
-  determinan una plataforma horizontal. Se rechazan anclajes inexistentes o ambiguos.
+  determinan el tablero. `profile` (opcional) elige la forma: `flat` (por defecto) es
+  horizontal a la cota media de los accesos; `linear` (solo con `roadAnchor`) es un plano
+  inclinado que pasa por la cota del primer y del último acceso, medido sobre la recta que
+  los une y sin recortar. Las plataformas de área (plazas) son siempre horizontales. Se
+  rechazan anclajes inexistentes o ambiguos.
 
 El panel `?debug` expone MDT original, suelo construido, altura superior, identificador
 de plataforma, altura libre y evidencia. Los parámetros se editan en JSON; no hace
@@ -170,8 +174,9 @@ vía sea más corta: el extremo de un acceso corto queda junto al tablero y la r
 de uniones continúa la rampa por las vías vecinas, sin comprimirla en un escalón. En los huecos entre tableros se combinan
 las dos transiciones. Los corredores de `roadAnchor` y sus bandas siguen todos los
 vértices, con juntas en inglete; segmentos nulos y giros de retorno que alargan la
-junta más de cuatro veces se rechazan. Los tableros de plataforma siguen siendo
-horizontales, con cota media de sus anclajes: no se implementan tableros inclinados.
+junta más de cuatro veces se rechazan. Los tableros de plataforma eran
+horizontales, con cota media de sus anclajes; desde la tanda 2 del plan del suelo pueden ser
+planos inclinados (`profile: "linear"`, véase más abajo).
 
 Cada polígono de agua calcula sus propios percentiles y limita su propia pendiente.
 Las cubetas están excluidas. `water.axis` continúa siendo un eje cartesiano común:
@@ -196,3 +201,16 @@ inferiores, corredor en L, retorno inválido, aguas independientes, cubeta,
 subdivisiones distintas y cachés de vehículos, intro y marcador. El verificador real
 impone ≤5 cm para las uniones, sin excepciones locales ni aumento de umbral. La rampa del arnés usa ahora el paso
 fuente del piloto para que la subdivisión tenga un presupuesto representativo.
+
+## Tableros con pendiente (tanda 2 del suelo)
+
+Cada plataforma expone `heightAt(x, z)`; `y` sigue siendo la cota media. Las consultas de
+altura de ambos niveles (tablero, techo de la cámara, soporte de actores, suelo rebajado bajo
+la estructura, perfil de las `deckRoads` y altura libre sobre `lowerRoads`) usan `heightAt`.
+El dibujo del tablero (cara superior, inferior y laterales) y de sus `bands` toma la cota por
+vértice; al ser un plano, la triangulación original es exacta. `tablero-remedios` usa
+`profile: "linear"`: sus extremos coinciden con las cotas del MDT de los accesos (antes el
+plano medio dejaba escalones de hasta 0,37 m en un extremo). La altura libre sobre
+`lowerRoads` se mide contra la cota local del tablero, así que sigue cumpliéndose
+(margen mínimo 0). `tests/verify-bridges.mjs` comprueba saltos de unión, escalones, altura
+libre y coincidencia entre perfil y tablero.

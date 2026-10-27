@@ -111,6 +111,7 @@ const report = {
   authoredPlatforms: world.surfaces.platforms.map((p) => ({
     id: p.id,
     height: p.y,
+    profile: p.profile ?? 'flat',
     clearance: p.clearance,
     lowerRoads: p.lowerRoads,
     evidence: p.evidence,

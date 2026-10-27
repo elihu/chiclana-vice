@@ -633,6 +633,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           skirtMaxDepth: 4,
           skirtTerrainMargin: 0.15,
           skirtMinGap: 0.02,
+          minimumRun: 10,
         },
         layerHeights: {
           asphalt: 0.028,

@@ -100,6 +100,7 @@ export function validateSurfaceDesign(design, city = null) {
         'evidence',
         'thickness',
         'bands',
+        'profile',
       ],
       `platforms.${i}`,
     );
@@ -120,6 +121,10 @@ export function validateSurfaceDesign(design, city = null) {
       fail(`platforms.${i}.thickness`, 'grosor positivo hasta 3 m');
     if (p.roadAnchor?.lateralOffset !== undefined && !Number.isFinite(p.roadAnchor.lateralOffset))
       fail(`platforms.${i}.roadAnchor.lateralOffset`, 'se esperaba un número');
+    if (p.profile !== undefined && !['flat', 'linear'].includes(p.profile))
+      fail(`platforms.${i}.profile`, 'se esperaba "flat" o "linear"');
+    if (p.profile === 'linear' && !p.roadAnchor)
+      fail(`platforms.${i}.profile`, 'el perfil lineal requiere roadAnchor');
     if (p.bands !== undefined && !Array.isArray(p.bands))
       fail(`platforms.${i}.bands`, 'se esperaba una lista');
     for (const band of Array.isArray(p.bands) ? p.bands : []) {
@@ -349,6 +354,23 @@ export function createSurfaceModel(city, terrain, design) {
       });
     let polygon = area?.p;
     if (p.roadAnchor) polygon = roadPolygon(p.roadAnchor);
+    const level = heights.reduce((a, b) => a + b, 0) / heights.length;
+    // Perfil lineal: plano inclinado por las cotas del primer y el último acceso, medido
+    // sobre la recta que los une (sin recortar, para que el tablero siga siendo un plano).
+    // Las plataformas de área y las de perfil "flat" son horizontales.
+    let heightAt = () => level;
+    if (p.profile === 'linear') {
+      const first = roadMap.get(p.heightAnchors[0].roadId).p[p.heightAnchors[0].vertex],
+        last = roadMap.get(p.heightAnchors.at(-1).roadId).p[p.heightAnchors.at(-1).vertex],
+        dx = last[0] - first[0],
+        dz = last[1] - first[1],
+        length2 = dx * dx + dz * dz,
+        h0 = heights[0],
+        h1 = heights.at(-1);
+      if (length2 > 1e-6)
+        heightAt = (x, z) =>
+          h0 + ((h1 - h0) * ((x - first[0]) * dx + (z - first[1]) * dz)) / length2;
+    }
     platforms.push({
       ...p,
       polygon,
@@ -356,7 +378,8 @@ export function createSurfaceModel(city, terrain, design) {
       thickness: p.thickness ?? 0.12,
       bands: (p.bands ?? []).map((b) => ({ ...b, polygon: roadPolygon(b.roadAnchor) })),
       supportId: `platform:${p.id}`,
-      y: heights.reduce((a, b) => a + b, 0) / heights.length,
+      y: level,
+      heightAt,
       minX: Math.min(...polygon.map((v) => v[0])),
       maxX: Math.max(...polygon.map((v) => v[0])),
       minZ: Math.min(...polygon.map((v) => v[1])),
@@ -564,14 +587,14 @@ export function createSurfaceModel(city, terrain, design) {
         const inside = deckIntervals.find(
           (s) => distance >= s.start - 1e-8 && distance <= s.end + 1e-8,
         );
-        if (inside) y = inside.platform.y;
+        if (inside) y = inside.platform.heightAt(...p);
         else {
           const left = deckIntervals.findLast((s) => s.end < distance),
             right = deckIntervals.find((s) => s.start > distance);
           if (left && right && right.start - left.end < 2 * cfg.smoothingRadius)
             y = mix(
-              left.platform.y,
-              right.platform.y,
+              left.platform.heightAt(...sample(left.end)),
+              right.platform.heightAt(...sample(right.start)),
               smooth((distance - left.end) / (right.start - left.end)),
             );
           else {
@@ -581,13 +604,13 @@ export function createSurfaceModel(city, terrain, design) {
             if (left)
               y = mix(
                 y,
-                left.platform.y,
+                left.platform.heightAt(...sample(left.end)),
                 1 - smooth(Math.min(1, (distance - left.end) / cfg.smoothingRadius)),
               );
             if (right)
               y = mix(
                 y,
-                right.platform.y,
+                right.platform.heightAt(...sample(right.start)),
                 1 - smooth(Math.min(1, (right.start - distance) / cfg.smoothingRadius)),
               );
           }
@@ -597,7 +620,7 @@ export function createSurfaceModel(city, terrain, design) {
       for (const lower of lowers) {
         const distance = pInside(...p, lower.polygon) ? 0 : boundaryDistance(...p, lower.polygon),
           blend = 1 - smooth(Math.min(1, distance / cfg.smoothingRadius));
-        y = mix(y, Math.min(y, lower.y - lower.thickness - lower.clearance), blend);
+        y = mix(y, Math.min(y, lower.heightAt(...p) - lower.thickness - lower.clearance), blend);
       }
       points.push({ p, y, distance });
     }
@@ -767,7 +790,7 @@ export function createSurfaceModel(city, terrain, design) {
     const cell = key(x, z);
     if (!grid.has(cell) && !platformGrid.has(cell) && !waterGrid.has(cell)) return y;
     const p = atPlatform(x, z);
-    if (p) y = Math.min(y, p.y - p.thickness - p.clearance);
+    if (p) y = Math.min(y, p.heightAt(x, z) - p.thickness - p.clearance);
     else
       for (const platform of platformGrid.get(cell) ?? empty) {
         if (
@@ -781,7 +804,7 @@ export function createSurfaceModel(city, terrain, design) {
         if (distance < cfg.shoulder)
           y = mix(
             y,
-            Math.min(y, platform.y - platform.thickness - platform.clearance),
+            Math.min(y, platform.heightAt(x, z) - platform.thickness - platform.clearance),
             1 - smooth(distance / cfg.shoulder),
           );
       }
@@ -798,7 +821,7 @@ export function createSurfaceModel(city, terrain, design) {
       y = mix(y, r.y, blend);
     }
     // La malla del MDT representa el nivel inferior; el tablero se dibuja aparte.
-    if (p) y = Math.min(y, p.y - p.thickness - p.clearance);
+    if (p) y = Math.min(y, p.heightAt(x, z) - p.thickness - p.clearance);
     const deck = roadAt(x, z, null, true, false, constructedDeck);
     if (deck?.s.bridge) {
       const blend =
@@ -860,7 +883,7 @@ export function createSurfaceModel(city, terrain, design) {
     const p = atPlatform(x, z),
       lower = r?.s.bridge ? roadAt(x, z, null, false, false, surfaceLower) : r,
       ground = lower && lower.d <= lower.s.width / 2 ? lower.y : groundHeightAt(x, z);
-    let upper = p ? p.y : null;
+    let upper = p ? p.heightAt(x, z) : null;
     if (r?.s.bridge && r.d <= r.s.width / 2) upper = r.y;
     if (upper === null) return r && r.d <= r.s.width / 2 ? r.y : ground;
     return reference === null || Math.abs(upper - reference) <= Math.abs(ground - reference)
@@ -878,7 +901,7 @@ export function createSurfaceModel(city, terrain, design) {
       return road.y;
     }
     if (retained && road && road.d <= road.s.width / 2 + 0.3) return road.y;
-    if (platform && actor.surfaceSupport === platform.supportId) return platform.y;
+    if (platform && actor.surfaceSupport === platform.supportId) return platform.heightAt(x, z);
     actor.surfaceSupport = null;
     const bridge = roadAt(x, z, null, true, true, actorBridge);
     if (bridge?.s.bridge && bridge.d <= bridge.s.width / 2 + 0.3) {
@@ -897,7 +920,8 @@ export function createSurfaceModel(city, terrain, design) {
       }
     }
     const y = surfaceHeightAt(x, z, previous);
-    if (platform && Math.abs(y - platform.y) < 0.1) actor.surfaceSupport = platform.supportId;
+    if (platform && Math.abs(y - platform.heightAt(x, z)) < 0.1)
+      actor.surfaceSupport = platform.supportId;
     return y;
   };
   const affectedAt = (x, z) =>
@@ -908,7 +932,7 @@ export function createSurfaceModel(city, terrain, design) {
     if (reference === null) return Infinity;
     const p = atPlatform(x, z),
       r = roadAt(x, z, null, true, false, ceilingRoad);
-    const upper = p?.y ?? (r?.s.bridge && r.d <= r.s.width / 2 ? r.y : Infinity);
+    const upper = p?.heightAt(x, z) ?? (r?.s.bridge && r.d <= r.s.width / 2 ? r.y : Infinity);
     return Number.isFinite(upper) && reference < upper - 0.5
       ? upper - (p?.thickness ?? 0.12)
       : Infinity;
@@ -917,7 +941,7 @@ export function createSurfaceModel(city, terrain, design) {
     const p = atPlatform(x, z),
       r = roadAt(x, z, null, true, false, dryRoad),
       y = surfaceHeightAt(x, z, reference);
-    if (p && Math.abs(y - p.y) < 0.1) return true;
+    if (p && Math.abs(y - p.heightAt(x, z)) < 0.1) return true;
     if (r && r.d <= r.s.width / 2 + 0.3)
       return (
         ((r.s.bridge || r.s.lower) && Math.abs(y - r.y) < 0.1) || y > waterHeightAt(x, z) + 0.15

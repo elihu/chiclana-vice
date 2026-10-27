@@ -352,7 +352,8 @@
             "minimumRoadLength",
             "skirtMaxDepth",
             "skirtTerrainMargin",
-            "skirtMinGap"
+            "skirtMinGap",
+            "minimumRun"
           ],
           "additionalProperties": false,
           "properties": {
@@ -403,6 +404,10 @@
             "skirtMinGap": {
               "$ref": "#/$defs/nonNegative",
               "description": "Desnivel mínimo entre el borde y el terreno para dibujar faldón."
+            },
+            "minimumRun": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Longitud mínima en metros de un tramo continuo de acera por un lado de una vía; los tramos sueltos más cortos no se dibujan."
             }
           }
         },
@@ -1013,6 +1018,10 @@
                 "type": "number",
                 "exclusiveMinimum": 0,
                 "maximum": 3
+              },
+              "profile": {
+                "enum": ["flat", "linear"],
+                "description": "flat (por defecto): tablero horizontal a la cota media de los accesos. linear: plano inclinado entre las cotas del primer y el último acceso; solo con roadAnchor."
               },
               "bands": {
                 "type": "array",
