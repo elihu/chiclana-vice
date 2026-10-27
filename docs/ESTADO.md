@@ -171,10 +171,14 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   27/10/2026: `web/tram.json` (7 tramos, 1.037 m, 1 parada) y vías con césped o carril exclusivo,
   catenaria, parada de Remedios y aceras que respetan la franja; sin línea propia en
   `THIRD_PARTY_NOTICES.md` (registrada como ODbL en `data-sources.json`), el tráfico puede pisar
-  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Sigue la 3 (pasos de cebra,
-  ortofoto limpia y fundido por distancia).
-- Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
-  (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
+  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Tanda 3 hecha en la rama `feat/suelo-cerca` (sin integrar, pendiente
+  de revisión del usuario): 50 pasos de cebra (antes 44), cruces sin picos de asfalto, limpieza
+  de copas y sombras de la ortofoto de cerca (`ground-clean.js`, `ground-near.js`) y materiales
+  de cerca por color (césped, tierra, baldosa). En capturas las manchas de copas siguen
+  viéndose de cerca y la baldosa puede quedar fría; se ajusta con `setGroundNear`. Después: la interfaz
+  ([PROPUESTA-UI.md](PROPUESTA-UI.md)) y la noche cerrada.
+- Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Su F5 pasó a
+  [PLAN-SUELO.md](PLAN-SUELO.md); queda la noche cerrada (luces reales
   cercanas, farolas en todas las calles y bloom), aceras y patios, y pretiles. Los bajos con
   relieve suben los triángulos un 12–31 % en «sigue» con SwiftShader (más del 25 % en
   Alameda, Mercado y San Telmo): medir FPS en el móvil y, si hace falta, simplificar balcones
