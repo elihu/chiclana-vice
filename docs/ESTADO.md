@@ -27,8 +27,11 @@ Integrado el 27/10/2026 (`feat/base-webgpu`), sin push:
 - **Sin tirones al girar**: las mallas instanciadas comparten shader (de 194 a 25
   pipelines con SwiftShader). El usuario lo probó el 27/10/2026 en su Android con WebGPU
   real (por `localhost` con `adb reverse`) y con WebGL 2 de respaldo: sin tirones y, en
-  sus palabras, «va bien»; `main` anterior iba a 90 FPS fijos. No probado en iOS ni en el
-  portátil tras el arreglo.
+  sus palabras, «va bien»; `main` anterior iba a 90 FPS fijos. Además, los shaders se
+  compilan en la pantalla de carga («Compilando los shaders…», del 80 al 99 %): con
+  SwiftShader el peor frame del primer giro baja de 94 a 28 ms y en ligero desaparecen los
+  atascos de varios segundos; la carga en ligero sube de 10,6 a 12,4 s. El usuario lo
+  probó en el móvil el 27/10/2026: «va bien». No probado en iOS ni en el portátil.
 - Medianeras ciegas y muros compartidos ocultos, coche por secciones (adaptado de
   slop-newyork) y personas con esqueleto en una sola malla.
 
@@ -138,8 +141,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   sombras), el 40 % en fachadas detalladas; el modo ligero solo las reduce un 7 %.
 
 - Motor y gráficos ([PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md)): ramas sin
-  integrar `perf/precompilar-shaders` (E0.3, compilar al cargar; quizá innecesario tras la
-  prueba), `perf/pase-sombras` (E1), `perf/llamadas-materiales` (E2) y
+  integrar `perf/pase-sombras` (E1), `perf/llamadas-materiales` (E2) y
   `feat/cielo-entorno` (V1). V1 queda demasiado suave según el usuario: hay que hacerla
   claramente visible antes de enseñarla. Hay que rehacer E1, E2 y V1 sobre el `main` actual.
 
