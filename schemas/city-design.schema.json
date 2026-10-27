@@ -306,7 +306,13 @@
     "pavements": {
       "description": "Pavimentos de calles y plazas.",
       "type": "object",
-      "required": ["pedestrianTypes", "nonDrivableTypes", "minimumHalfWidth", "layerHeights"],
+      "required": [
+        "pedestrianTypes",
+        "nonDrivableTypes",
+        "minimumHalfWidth",
+        "sidewalks",
+        "layerHeights"
+      ],
       "additionalProperties": false,
       "properties": {
         "pedestrianTypes": {
@@ -329,6 +335,56 @@
         },
         "minimumHalfWidth": {
           "$ref": "#/$defs/positive"
+        },
+        "sidewalks": {
+          "description": "Aceras con bordillo a ambos lados de las vías rodadas (solo visual; no cambia cotas ni transitabilidad). Se recortan contra edificios, agua, tableros y otras calzadas.",
+          "type": "object",
+          "required": [
+            "roadTypes",
+            "width",
+            "minimumWidth",
+            "curbWidth",
+            "curbHeight",
+            "curbColor",
+            "step",
+            "junctionMargin",
+            "buildingMargin"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "roadTypes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true,
+              "description": "Tipos de vía OSM con acera."
+            },
+            "width": {
+              "$ref": "#/$defs/positive",
+              "description": "Ancho de acera en metros, contado desde el borde de la calzada. Debe caber en terrainSurfaces.roads.shoulder para seguir la cota de la calzada."
+            },
+            "minimumWidth": {
+              "$ref": "#/$defs/positive",
+              "description": "Ancho mínimo al recortar contra edificios; por debajo no se dibuja acera."
+            },
+            "curbWidth": { "$ref": "#/$defs/positive" },
+            "curbHeight": {
+              "$ref": "#/$defs/positive",
+              "description": "Altura de la acera sobre la cota de la calzada."
+            },
+            "curbColor": { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+            "step": {
+              "$ref": "#/$defs/positive",
+              "description": "Longitud máxima de cada pieza de acera, en metros."
+            },
+            "junctionMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Margen en metros antes del borde de otra calzada que cruza."
+            },
+            "buildingMargin": {
+              "$ref": "#/$defs/nonNegative",
+              "description": "Margen en metros respecto a los muros de edificios."
+            }
+          }
         },
         "layerHeights": {
           "description": "Altura en metros de cada capa sobre el suelo; ver docs/plan-modular/TERRENO.md.",

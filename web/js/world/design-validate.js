@@ -651,6 +651,17 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       pedestrianTypes: 'strings',
       nonDrivableTypes: 'strings',
       minimumHalfWidth: 'pos',
+      sidewalks: {
+        roadTypes: 'strings',
+        width: 'pos',
+        minimumWidth: 'pos',
+        curbWidth: 'pos',
+        curbHeight: 'pos',
+        curbColor: 'color',
+        step: 'pos',
+        junctionMargin: 'nonneg',
+        buildingMargin: 'nonneg',
+      },
       layerHeights: {
         asphalt: 'nonneg',
         stone: 'nonneg',

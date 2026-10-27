@@ -217,6 +217,31 @@ La implementación, la validación y los límites del recorte están en
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
+## Aceras
+
+`world/sidewalks.js` (llamado desde `buildStreetSurfaces`) añade, solo como geometría visual,
+una acera con bordillo a cada lado de las vías cuyo tipo está en
+`pavements.sidewalks.roadTypes` (`city-design.json`; esquema en `schemas/` y validación en
+`design-validate.js`). No cambia las cotas de `surfaceHeightAt` ni la transitabilidad: el
+jugador pisa la cota de la calzada, así que sus pies quedan `curbHeight` (10 cm) por debajo de
+la baldosa.
+
+- Cada pieza (`step`, 3 m) toma la cota de la calzada (`surfaceHeightAt(x, z, null, road.id)`),
+  no la del MDT, y sigue la cuesta. La baldosa va en la malla `slabs` de las bandas
+  (preajustada, sin proyectar al terreno); el bordillo (cara vertical hacia la calzada y tapa
+  de `curbWidth`) va en una malla nueva, `street-curbs`, con un material propio.
+- Recorte por pieza: se prueban el borde interior y el exterior (extremos y centro) contra
+  edificios (`inBuilding`, `buildingMargin`), agua, tableros de plataforma y otras calzadas
+  (medio ancho de la que cruza más `junctionMargin`; las vías del mismo nombre casi
+  paralelas, que son una calle partida, no cuentan). Si el ancho completo no cabe se prueba
+  con 66 % y 33 %; por debajo de `minimumWidth` no hay acera. En los cruces las aceras se
+  cortan antes de la calzada que cruza, sin solapes; las esquinas quedan abiertas.
+- Las vías peatonales y los puentes no reciben acera (los tableros ya tienen la suya en
+  `platforms[].bands`). El ancho de acera debe caber en `terrainSurfaces.roads.shoulder` para
+  que la cota de la calzada siga siendo la del modelo.
+- Con terreno de rejilla sin modelo de superficies no se dibujan; el modo ligero es igual que el
+  normal (geometría estática y barata).
+
 ## Cielo, entorno y color
 
 - `js/engine/sky.js`: cúpula con degradado y halo del sol (se dibuja primero, sin
