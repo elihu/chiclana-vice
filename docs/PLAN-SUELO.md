@@ -81,6 +81,8 @@ Se planifica en detalle tras revisar la tanda 1.
 
 ## Tanda T. Vías y paradas del tranvía (`feat/tranvia`, después de la tanda 2)
 
+> **Integrada el 27/10/2026** (sin publicar).
+
 Contexto (27/10/2026): el tranvía pasa por la Avenida de los Reyes Católicos y por el puente
 de Nuestra Señora de los Remedios; su franja es la zona ancha que hoy queda sin resolver junto
 al acceso norte del puente (franjas de acera sueltas). La mayor parte de la línea queda fuera
@@ -119,5 +121,8 @@ Sin tranvía en movimiento ni colisiones nuevas en esta tanda.
 2. **Ortofoto limpia** al generar las teselas (`tools/aerial-tiles.py`): borrar las copas
    de árboles ya detectadas (`web/vegetation.json`) rellenando con el entorno, y suavizar las
    sombras horneadas. Sin coste al jugar.
-3. **Fundido por distancia**: de cerca, materiales propios (tierra, césped, pavimento)
+3. **Cruces sin picos**: en cruces anchos (p. ej. al norte del puente de Reyes Católicos,
+   Plaza de España) las calzadas dejan triángulos y picos de asfalto sueltos; unir bien las
+   superficies de calzada en los cruces.
+4. **Fundido por distancia**: de cerca, materiales propios (tierra, césped, pavimento)
    según la clase del suelo; desde lejos y en vista aérea, la ortofoto tal cual.

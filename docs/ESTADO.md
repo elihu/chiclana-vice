@@ -167,8 +167,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   27/10/2026: tablero de `tablero-remedios` con pendiente entre sus accesos (`profile:
 "linear"`), arcos del VII Centenario apoyados en la calzada, sin tramos de acera cortos
   (`minimumRun`) y `tests/verify-bridges.mjs` (escalón máximo en 1 m en Reyes Católicos de 0,134
-  a 0,095 m); sin revisión visual a pie de puente. Siguen la T (vías y paradas
-  del tranvía, que explican las franjas del acceso norte del puente) y la 3 (pasos de cebra,
+  a 0,095 m); sin revisión visual a pie de puente. Tanda T integrada sin publicar el
+  27/10/2026: `web/tram.json` (7 tramos, 1.037 m, 1 parada) y vías con césped o carril exclusivo,
+  catenaria, parada de Remedios y aceras que respetan la franja; sin línea propia en
+  `THIRD_PARTY_NOTICES.md` (registrada como ODbL en `data-sources.json`), el tráfico puede pisar
+  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Sigue la 3 (pasos de cebra,
   ortofoto limpia y fundido por distancia).
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
   (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
