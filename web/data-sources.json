@@ -71,7 +71,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Cadastral edge identifiers, frontage normals/dimensions, approximate profile selection; references not photo-mapped",
       "sha256": {
-        "frontages.json": "8e0e38a476fe7ff41f2a164e3f4a787255fe6813daedae83a157c96a6c476616"
+        "frontages.json": "cbd795ad891d002a1b0cd13596ee35342092a3c3596bd48fd8ce1b5416b216b4"
       }
     },
     {
@@ -85,7 +85,7 @@
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
         "facade-designs.json": "5bd4f1edc6993622c3da6490f3d61a75b163685f20992bd38d1aa6fedd5f3f1c",
-        "city-design.json": "a7c343bd3a67f7f3896bf0cd2928442d48912be2f9c487d0dbde14dcaea81274"
+        "city-design.json": "c71ed9489dd2bc742585dd01ab11d70b0875e3f9e9041f3ed5f8818000af722b"
       }
     },
     {
