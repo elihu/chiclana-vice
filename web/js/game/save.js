@@ -1,6 +1,7 @@
 import { PROGRESS_LIMITS, SAVE_KEY } from '../../game-data.js';
 import { gfx, state } from '../core/state.js';
 import { readProgress } from '../../progress.js';
+import { currentTime } from '../engine/time-of-day.js';
 
 export function loadSavedProgress() {
   const stored = readProgress(() => localStorage, PROGRESS_LIMITS);
@@ -19,6 +20,7 @@ export function save() {
         job: state.job,
         found: [...state.found],
         quality: gfx.quality,
+        time: currentTime(),
       }),
     );
   } catch {}

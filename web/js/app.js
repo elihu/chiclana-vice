@@ -38,7 +38,7 @@ import { createPublicApi, createTestApi } from './test-api.js';
 import { drawLabels, updateHUD } from './ui/hud.js';
 import { drawMap, prepareMap } from './ui/map.js';
 import { indexBuildings, safePoint } from './world/spatial.js';
-import { installControls, installTouchDetection } from './ui/controls.js';
+import { describeTime, installControls, installTouchDetection } from './ui/controls.js';
 import { loadProgress, toast } from './ui/feedback.js';
 import { initialTime, setTimeOfDay } from './engine/time-of-day.js';
 import { loadSavedProgress } from './game/save.js';
@@ -100,6 +100,7 @@ async function init() {
   loadProgress('Preparando el mundo 3D…', 25);
   await setupRenderer(() => {
     setTimeOfDay(initialTime(), { bake: false });
+    describeTime();
   });
   buildRoadGraph();
   indexBuildings();

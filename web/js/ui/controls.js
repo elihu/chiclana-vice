@@ -5,6 +5,8 @@ import { clearInput } from './input.js';
 import { closeMap, drawMap, listStreets, openMap } from './map.js';
 import { closeModal, help, modal, pauseMenu, trapFocus } from './dialogs.js';
 import { cycleCamera } from '../engine/camera.js';
+import { currentTime, nextTime, setTimeOfDay, timeName } from '../engine/time-of-day.js';
+import { toast } from './feedback.js';
 import { gfx, holdPointers, input, keys, pointer, session, view } from '../core/state.js';
 import { interact } from '../game/player.js';
 import { save } from '../game/save.js';
@@ -33,6 +35,13 @@ export function installTouchDetection() {
   );
 }
 
+// Pone la hora actual en el título y la etiqueta accesible del botón de la hora.
+export function describeTime() {
+  const button = $('timeBtn');
+  button.title = 'Hora del día: ' + timeName(currentTime());
+  button.setAttribute('aria-label', 'Hora del día: ' + timeName(currentTime()) + '. Cambiar');
+}
+
 export function installControls() {
   $('start').onclick = start;
   $('introHelp').onclick = help;
@@ -43,6 +52,13 @@ export function installControls() {
   $('miniButton').onclick = openMap;
   $('closeMap').onclick = closeMap;
   $('cameraBtn').onclick = cycleCamera;
+  describeTime();
+  $('timeBtn').onclick = async () => {
+    await setTimeOfDay(nextTime());
+    describeTime();
+    save();
+    toast('Hora del día: ' + timeName(), 2);
+  };
   $('interact').onclick = interact;
   $('streetSearch').oninput = listStreets;
   $('mapStyle').onclick = () => {
