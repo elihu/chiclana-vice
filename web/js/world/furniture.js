@@ -6,7 +6,11 @@ import { inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
 import { addLampGlow } from '../engine/night-glow.js';
-import { registerNightLamp } from '../engine/sky.js';
+import { skyUniforms } from '../engine/sky.js';
+
+const { attribute, vec3 } = THREE.TSL;
+// Cristales de las farolas al anochecer: color e intensidad del emisivo.
+const LAMP_GLASS = { color: new THREE.Color('#ffb860'), intensity: 2.6 };
 
 export function buildUrbanFurniture() {
   const unitBox = new THREE.BoxGeometry(1, 1, 1),
@@ -16,25 +20,19 @@ export function buildUrbanFurniture() {
     if (!materials.has(col)) materials.set(col, mat(col));
     return materials.get(col);
   }
-  // Cristales de las farolas: emisivo cálido que se enciende con la noche (material compartido).
-  const lit = new Map();
-  function litMa(col) {
-    if (!lit.has(col)) {
-      const m = mat(col, { emissive: '#ffb860' });
-      registerNightLamp(m, 0, 2.6);
-      lit.set(col, m);
-    }
-    return lit.get(col);
-  }
+  // Los cristales de las farolas se marcan (`userData.glass`) para encenderlos de noche en la
+  // malla fusionada (atributo `glow`).
   function cube(g, x, y, z, w, h, d, c, glass = false) {
-    let m = new THREE.Mesh(unitBox, glass ? litMa(c) : ma(c));
+    let m = new THREE.Mesh(unitBox, ma(c));
+    m.userData.glass = glass;
     m.position.set(x, y, z);
     m.scale.set(w, h, d);
     g.add(m);
     return m;
   }
   function cyl(g, x, y, z, rt, rb, h, c, glass = false) {
-    let m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 7), glass ? litMa(c) : ma(c));
+    let m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 7), ma(c));
+    m.userData.glass = glass;
     m.position.set(x, y, z);
     g.add(m);
     return m;
@@ -183,6 +181,7 @@ export function buildUrbanFurniture() {
   const position = [],
     normal = [],
     color = [],
+    glow = [],
     tint = new THREE.Color();
   staging.traverse((o) => {
     if (!o.isMesh) return;
@@ -191,7 +190,10 @@ export function buildUrbanFurniture() {
     tint.copy(o.material.color);
     for (const v of geo.getAttribute('position').array) position.push(v);
     for (const v of geo.getAttribute('normal').array) normal.push(v);
-    for (let i = 0; i < geo.getAttribute('position').count; i++) color.push(tint.r, tint.g, tint.b);
+    for (let i = 0; i < geo.getAttribute('position').count; i++) {
+      color.push(tint.r, tint.g, tint.b);
+      glow.push(o.userData.glass ? 1 : 0);
+    }
     geo.dispose();
   });
   let root = new THREE.Group();
@@ -201,8 +203,15 @@ export function buildUrbanFurniture() {
     g.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
+    g.setAttribute('glow', new THREE.Float32BufferAttribute(glow, 1));
     g.computeBoundingSphere();
-    let m = new THREE.Mesh(g, mat('#ffffff', { vertexColors: true }));
+    const material = new THREE.MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.78 });
+    // Cristales de las farolas encendidos al anochecer: emisivo cálido por `night` del cielo.
+    material.emissiveNode = vec3(LAMP_GLASS.color)
+      .mul(attribute('glow', 'float'))
+      .mul(skyUniforms.night)
+      .mul(LAMP_GLASS.intensity);
+    let m = new THREE.Mesh(g, material);
     m.castShadow = m.receiveShadow = true;
     root.add(m);
   }
