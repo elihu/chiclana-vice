@@ -383,7 +383,9 @@ const ahead = gfx.camera
 for (const car of [a, b]) place(car, ahead.x, ahead.z);
 sync();
 const paint = carBatch.find((m) => m.name === 'vehicles-car-paint');
-assert(carBatch.every((m) => m.isInstancedMesh && m.castShadow && m.frustumCulled === false));
+assert(carBatch.every((m) => m.isInstancedMesh && m.frustumCulled === false));
+// Las piezas pequeñas (aros, matrícula, faros, pilotos, librea) no proyectan sombra.
+assert(paint.castShadow && !carBatch.find((m) => m.name === 'vehicles-car-plate')?.castShadow);
 assert(paint.count >= 2, 'los coches a la vista entran en el lote');
 assert(
   Array.from({ length: paint.count }, (_, i) => paint.instanceColor.getX(i)).includes(

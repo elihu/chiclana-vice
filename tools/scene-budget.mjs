@@ -288,7 +288,13 @@ try {
         return {instances,triangles,batches};
       })()`);
         const breakdown = await evaluate(mainBreakdownScript());
-        views.push({ point: point.name, camera: cameras[mode], ...measured, vegetation, breakdown });
+        views.push({
+          point: point.name,
+          camera: cameras[mode],
+          ...measured,
+          vegetation,
+          breakdown,
+        });
         console.log(point.name, cameras[mode], JSON.stringify(measured));
         printBreakdown(breakdown);
         if (options.shots) {
@@ -311,7 +317,7 @@ try {
     const categories=[['arboles',/^vegetation-/],['fachadas',/^facade-cell-|^reference-led-facades$/],
       ['muros',/^building-(plain-)?walls$/],['tejados',/^building-roofs$/],
       ['mobiliario',/^urban-furniture$|^street-sign/],['puentes',/^bridge-/],
-      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicle$/],['sustitutos',/^shadow-proxies$/]];
+      ['terreno',/^terrain-ground$|^river-water$/],['actores',/^vehicles?(-|$)/],['sustitutos',/^shadow-proxies$/]];
     const shadowByCategory={};
     gfx.scene.traverse(o=>{if(!o.isMesh)return;meshes++;
       const t=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3*(o.isInstancedMesh?o.count:1);
