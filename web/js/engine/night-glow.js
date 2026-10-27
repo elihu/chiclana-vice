@@ -20,6 +20,7 @@ export const NIGHT_GLOW = {
   tailSize: 3.2, // m
   tailStrength: 0.45,
   lift: 0.06, // m sobre el suelo, contra el parpadeo
+  beamLift: 0.25, // m del haz de los faros sobre el coche: que no lo tape el pavimento
 };
 
 const LAMP_CAPACITY = 1024,
@@ -141,10 +142,10 @@ export function updateNightGlow() {
   lamps.visible = beams.visible = tails.visible = on;
   if (!on) return;
   let n = 0;
-  const { beamLength, beamWidth, tailSize, lift } = NIGHT_GLOW;
+  const { beamLength, beamWidth, tailSize } = NIGHT_GLOW;
   for (const object of cars) {
     if (n >= CAR_CAPACITY || !object.parent || !shown(object)) continue;
-    const y = object.position.y + lift,
+    const y = object.position.y + NIGHT_GLOW.beamLift,
       sin = Math.sin(object.rotation.y),
       cos = Math.cos(object.rotation.y),
       front = 2.1 + beamLength / 2,
