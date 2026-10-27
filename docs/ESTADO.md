@@ -164,7 +164,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 - Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 publicada en `v1.7.0`. Quedan unas franjas de
   acera sueltas junto al acceso norte del puente de Reyes Católicos (lado oeste) y, a pie, los
   pies quedan 10 cm bajo la baldosa (la acera es solo visual). Siguen la tanda 2 (tableros de
-  puente inclinados y rampas; Puente VII Centenario y Reyes Católicos) y la 3 (pasos de cebra,
+  puente inclinados y rampas; Puente VII Centenario y Reyes Católicos), la T (vías y paradas
+  del tranvía, que explican las franjas del acceso norte del puente) y la 3 (pasos de cebra,
   ortofoto limpia y fundido por distancia).
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
   (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
