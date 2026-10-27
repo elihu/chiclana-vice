@@ -2,6 +2,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { $, urlOptions } from '../core/dom.js';
 import { gfx } from '../core/state.js';
 import { mat } from './materials.js';
+import { updateContactShadows } from './contact-shadows.js';
 import { createPost } from './post.js';
 import { applySkyLight, bakeSkyEnvironment, createSky, SKY, syncSkyFog, updateSky } from './sky.js';
 import { applyGroundDetailQuality } from './textures.js';
@@ -106,6 +107,7 @@ let post = null,
 // `force` usa la gradación aunque el modo ligero la tenga apagada (la precompilación de los shaders).
 export function renderFrame(force = false) {
   updateSky(gfx.camera);
+  updateContactShadows();
   if (post && (postOn || force)) post.render();
   else gfx.renderer.render(gfx.scene, gfx.camera);
 }
