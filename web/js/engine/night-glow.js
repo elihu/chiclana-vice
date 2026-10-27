@@ -2,7 +2,7 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
 import { skyUniforms } from './sky.js';
 
-const { abs, float, length, mix, positionLocal, pow, smoothstep, uniform, uv, vec3 } = THREE.TSL;
+const { abs, float, length, mix, pow, smoothstep, uniform, uv, vec3 } = THREE.TSL;
 
 // Luz falsa de noche, sin luces dinámicas: manchas aditivas sobre el suelo bajo las farolas y
 // delante y detrás de los coches. Tres `InstancedMesh` (tres llamadas de dibujo) con materiales
@@ -15,7 +15,7 @@ export const NIGHT_GLOW = {
   beamColor: '#fff0cf', // haz de los faros
   beamLength: 11, // m por delante del coche
   beamWidth: 6, // m al final del haz
-  beamStrength: 0.6,
+  beamStrength: 0.9,
   tailColor: '#ff3a2a', // brillo de los pilotos
   tailSize: 3.2, // m
   tailStrength: 0.45,
@@ -87,9 +87,11 @@ const radial = () => {
 function create() {
   lamps = instanced('lamp-glow', additive(lampColor, radial().mul(lampStrength)), LAMP_CAPACITY);
   tails = instanced('tail-glow', additive(tailColor, radial().mul(tailStrength)), CAR_CAPACITY);
-  // Haz: z local de 0 (coche) a 1 (extremo); se ensancha y se apaga con la distancia.
-  const t = positionLocal.z.add(0.5),
-    x = abs(positionLocal.x).mul(2),
+  // Haz: t de 0 (coche) a 1 (extremo); se ensancha y se apaga con la distancia. Se usan las UV:
+  // en una malla instanciada `positionLocal` ya está en el mundo. Tras `rotateX(-π/2)`, la V
+  // vale 1 en el lado del coche (z local -0,5) y 0 en el extremo.
+  const t = float(1).sub(uv().y),
+    x = abs(uv().x.sub(0.5)).mul(2),
     cone = float(1).sub(smoothstep(0.55, 1, x.div(mix(float(0.3), float(1), t)))),
     fade = pow(float(1).sub(t), 1.4).mul(smoothstep(0, 0.06, t));
   beams = instanced(
