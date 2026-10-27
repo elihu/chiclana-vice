@@ -50,7 +50,7 @@ ligero», «Sustitutos de sombra» y «Medir en el navegador»), `docs/ESTADO.md
 
 ## Fases
 
-Orden por impacto y coste. F1–F3 son independientes entre sí; F4 va después de F2 (las
+Orden por impacto y coste. F1–F3 son independientes entre sí; F2b y F2c van después de F2; F4 va después de F2 (las
 ventanas encendidas de noche dependen de ella); F5 necesita datos y su propio plan.
 
 ### F1. El río Iro (`feat/agua-rio`)
@@ -101,6 +101,80 @@ rugosidad en el paso 1 si basta con cambiar el valor; si no, se dejan.
 
 Ligero: igual. Vistas: Alameda «sigue», Plaza Mayor «sigue» y una calle estrecha del
 centro a pie. Esperado: 0 llamadas nuevas.
+
+### F2b. Datos de los bajos (`feat/datos-bajos`)
+
+Contexto (27/10/2026): el usuario quiere que los bajos se parezcan a los reales: en las
+calles principales y peatonales del centro, locales comerciales y portales; viviendas en
+planta baja sobre todo en bloques de pisos y en casas de calles secundarias. Se deciden con
+datos, no al azar. Esta fase solo prepara los datos; F2c los dibuja.
+
+Fuentes, ya descargadas en `~/.cache/chiclana-vice/sources/` (no van a Git):
+
+- Catastro `catastro-chiclana.zip`, `A.ES.SDGC.BU.11015.building.gml`: por edificio,
+  `currentUse` (`1_residential`, `4_2_retail`, `4_1_office`, `4_3_publicServices`…),
+  `numberOfBuildingUnits` y `numberOfDwellings`. Más inmuebles que viviendas indica local,
+  garaje o trastero (indicio, no certeza); 4 o más viviendas, bloque de pisos.
+- OSM `osm-ampliado.xml`: nodos y vías con `shop`, `amenity` de comercio y hostelería
+  (`bar`, `restaurant`, `cafe`, `bank`, `pharmacy`, `fast_food`…), `office` y `craft`.
+
+1. **Herramienta** `tools/export-ground-floors.py` (Python con `uv`, 4 espacios). Lee las
+   dos fuentes, proyecta con la misma transformación que `tools/rebuild-map.py` (reutiliza
+   su código o sus constantes, sin duplicar números a mano) y escribe una capa nueva
+   `web/ground-floors.json`, **sin tocar `buildings.json`**:
+   - Por parte de `buildings.json` (índice y `footprintSha256`, como en `frontages.json`):
+     `use`, `units` y `dwellings` del edificio catastral que la contiene (centroide de la
+     parte dentro del contorno del edificio). Solo las partes que encajan.
+   - Comercios de OSM como puntos `[x, z, tipo]` en coordenadas locales, dentro de los
+     límites del mundo.
+   - Campos `version`, `sources`, `license` y `attribution` como las demás capas.
+     Commit `feat(datos): capa de usos de los bajos desde Catastro y OSM`.
+2. **Integración en la cadena de datos**: registrar la capa en `web/world.json` y en
+   `tools/export-provenance.mjs` (checksums), cargarla en el juego sin usarla todavía
+   (`world.groundFloors`) y un verificador en `tests/` (formato, índices válidos, hashes
+   de contorno que coinciden). Commit `feat(datos): cargar la capa de bajos`.
+3. **Documentación**: `docs/DATOS.md` (comando y orden), `docs/MAP_SOURCES.md` (qué se
+   toma de cada fuente y sus límites: indicio, no certeza) y, si la lista de archivos de
+   `THIRD_PARTY_NOTICES.md` enumera capas, añadir esta con las mismas fuentes y licencias
+   que ya figuran (Catastro y OSM ODbL). **No cambies textos de licencia**: si hiciera falta
+   algo más que añadir el archivo a una lista existente, para y pregunta. Regenera las
+   copias con `node tools/export-provenance.mjs`. Commit
+   `docs(datos): documentar la capa de bajos`.
+
+Verificación: `npm run check`; recuento en el informe (partes con datos, bloques,
+residenciales con inmuebles de más, comercios de OSM dentro del mundo) y tamaño del archivo.
+Sin capturas: no cambia nada visible.
+
+### F2c. Bajos en las fachadas (`feat/bajos`, después de F2b)
+
+1. **Reglas** en `city-design.json`, bloque `groundFloors` (con su esquema en `schemas/` y
+   su validación en `design-validate.js`): clase de bajo por frente, por orden de confianza:
+   1. comercio de OSM a menos de N m delante del frente → `shop`;
+   2. edificio con uso comercial u oficinas → `shop`;
+   3. bloque (≥ 4 viviendas) → `block` (portal y, según el tipo de calle, viviendas o
+      locales);
+   4. inmuebles de más en calle principal (`secondary`, `tertiary`) o peatonal → `shop`;
+      en calle secundaria → `garage`;
+   5. resto: `house` en calles secundarias, `shop` en principales y peatonales.
+      Commit `feat(diseño): reglas de los bajos`.
+2. **Fachadas con relieve**: `facades.js` pasa la clase a la receta `street-generic`
+   (`facade-designs.json`), que elige escaparate, portal, puerta de casa con ventanas con
+   reja o cochera según la clase, en vez de `commercialStreet && hash`. Commit
+   `feat(fachadas): bajos según su uso`.
+3. **Más calles con relieve**: `frontages.streets` pasa a incluir todas las calles con
+   nombre dentro de `zones.frontagePilot` (de 277 a unos 800 frentes, estimado el
+   27/10/2026). Regenera `web/frontages.json` (`node tools/export-facades.mjs`) y
+   `export-provenance`. Mide con `scene-budget`; si las llamadas suben más de un 15 % o los
+   triángulos más de un 25 % en alguna vista «sigue», para y entrega las cifras. Commit
+   `feat(fachadas): relieve en todas las calles del centro`.
+4. **Muros genéricos** del resto de la ciudad: atributo por vértice con la clase del bajo
+   (en `buildings.js`) y, en `windows.js`, la planta baja pintada según la clase:
+   escaparate con persiana metálica o rótulo, portal, puerta de casa con reja o cochera, y
+   zócalo de color por edificio. Sin geometría nueva. Commit
+   `feat(fachadas): bajos pintados en los muros genéricos`.
+
+Ligero: igual; las fachadas con relieve ya se ocultan a 200 m. Vistas: Alameda, Plaza Mayor
+y Mercado «sigue», y una calle de bloques y una de casas bajas a pie.
 
 ### F3. Árboles con viento y contraluz (`feat/arboles-viento`)
 

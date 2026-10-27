@@ -145,7 +145,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   bien»): cristales que reflejan el cielo, persianas variadas por ventana (`windows.js`) y
   cornisa en los muros genéricos (una por arista); 0 llamadas nuevas y +1,8–2,3 % de
   triángulos en «sigue» (+1,2–1,3 % en el pase principal) con SwiftShader; sin FPS medidos.
-  Siguen F3 y F4.
+  Persianas con tono y estado habitual por edificio (revisión del usuario). Siguen F2b y F2c
+  (bajos según datos de Catastro y OSM, y relieve en todas las calles del centro), F3 y F4.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
