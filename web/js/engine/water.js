@@ -1,7 +1,9 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { boundaryDistance } from '../core/math.js';
 
 const {
+  attribute,
   uniform,
   vec2,
   vec3,
@@ -44,7 +46,16 @@ export const WATER = {
   waveSpeed: 1, // multiplica las velocidades (0 = agua quieta)
   // Mancha de viento: una onda muy larga (~90 m) que sube o baja la intensidad por zonas.
   windCalm: 0.35, // intensidad de las ondas en la zona más tranquila (1 = máxima)
+  // Orilla: en los primeros `shoreWidth` metros desde el borde el agua se oscurece y refleja
+  // menos, para que no parezca un espejo pegado al terreno. La malla se afina en esa franja al
+  // construir (`shoreGeometry`): cambiar el ancho en vivo solo vale hasta ese ancho de partida.
+  shoreWidth: 8,
+  shoreDark: 0.4, // color propio que queda en el mismo borde (1 = sin oscurecer)
+  shoreRoughness: 0.6, // rugosidad en el mismo borde (se funde con `roughness` hacia dentro)
+  shoreReflection: 0.3, // reflejo en el mismo borde respecto a `reflection`
 };
+
+const SHORE_MAX = 24; // m: distancia al borde que se guarda en la geometría
 
 // Capas de onda: [longitud (m), rumbo (rad), velocidad (m/s), distancia a la que se desvanece (m)].
 // Las ondas pequeñas se apagan con la distancia para no dar muaré (parpadeo) lejos de la cámara.
@@ -65,6 +76,10 @@ const u = {
     fresnelDim: uniform(WATER.fresnelDim),
     waveSpeed: uniform(WATER.waveSpeed),
     windCalm: uniform(WATER.windCalm),
+    shoreWidth: uniform(WATER.shoreWidth),
+    shoreDark: uniform(WATER.shoreDark),
+    shoreRoughness: uniform(WATER.shoreRoughness),
+    shoreReflection: uniform(WATER.shoreReflection),
   },
   slopes = WATER.slopes.map((value) => uniform(value));
 
@@ -121,6 +136,61 @@ function waveNormal(distance) {
   return normalize(vec3(slope.x.negate(), 1, slope.y.negate()));
 }
 
+// Divide los triángulos de una lámina de agua hasta tener vértices dentro de la franja de orilla y
+// guarda en cada vértice `shore`: distancia en metros al contorno `polygon` (con tope). La franja
+// se afina a la mitad de `shoreWidth`; el interior se queda con los triángulos originales. Los
+// vértices nuevos se interpolan sobre la lámina existente (también sobre la lámina ajustada al
+// terreno), sin mallas ni llamadas de dibujo nuevas.
+export function shoreGeometry(geometry, polygon) {
+  const source = geometry.index ? geometry.toNonIndexed() : geometry,
+    input = source.getAttribute('position').array,
+    width = WATER.shoreWidth,
+    step = width / 2,
+    distances = new Map(),
+    distance = (x, z) => {
+      const key = x + ',' + z;
+      if (!distances.has(key))
+        distances.set(key, Math.min(boundaryDistance(x, z, polygon), SHORE_MAX));
+      return distances.get(key);
+    },
+    out = [],
+    stack = [];
+  for (let i = input.length - 9; i >= 0; i -= 9) stack.push(Array.from(input.subarray(i, i + 9)));
+  while (stack.length) {
+    const t = stack.pop(),
+      vertex = (n) => t.slice(n * 3, n * 3 + 3);
+    let longest = 0,
+      edge = 0,
+      near = false;
+    for (let n = 0; n < 3; n++) {
+      const a = vertex(n),
+        b = vertex((n + 1) % 3),
+        d = Math.hypot(a[0] - b[0], a[2] - b[2]);
+      if (d > longest) [longest, edge] = [d, n];
+      near ||= distance(a[0], a[2]) < width;
+    }
+    if (!near || longest <= step) {
+      out.push(...t);
+      continue;
+    }
+    const a = vertex(edge),
+      b = vertex((edge + 1) % 3),
+      c = vertex((edge + 2) % 3),
+      m = a.map((v, i) => (v + b[i]) / 2);
+    stack.push([...a, ...m, ...c], [...m, ...b, ...c]);
+  }
+  const position = new Float32Array(out),
+    shore = new Float32Array(position.length / 3);
+  for (let i = 0; i < shore.length; i++) shore[i] = distance(position[i * 3], position[i * 3 + 2]);
+  const result = new THREE.BufferGeometry();
+  result.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  result.setAttribute('shore', new THREE.BufferAttribute(shore, 1));
+  result.computeVertexNormals();
+  geometry.dispose();
+  if (source !== geometry) source.dispose();
+  return result;
+}
+
 let material = null;
 
 // Material único de todas las láminas de agua (compartido, sin transparencia).
@@ -136,8 +206,12 @@ export function waterMaterial() {
     body = mix(u.deep, u.far, smoothstep(u.farNear, u.farFar, distance));
   // `normalNode` va en el espacio de la cámara.
   material.normalNode = normalize(cameraViewMatrix.mul(vec4(normalWorld, 0)).xyz);
-  material.colorNode = body.mul(float(1).sub(fresnel.mul(u.fresnelDim)));
-  material.roughnessNode = u.roughness;
-  material.specularIntensityNode = u.reflection;
+  // Orilla (atributo `shore`: metros al borde): 0 en el borde, 1 desde `shoreWidth` hacia dentro.
+  const inland = smoothstep(0, u.shoreWidth, attribute('shore', 'float'));
+  material.colorNode = body
+    .mul(float(1).sub(fresnel.mul(u.fresnelDim)))
+    .mul(mix(u.shoreDark, float(1), inland));
+  material.roughnessNode = mix(u.shoreRoughness, u.roughness, inland);
+  material.specularIntensityNode = u.reflection.mul(mix(u.shoreReflection, float(1), inland));
   return material;
 }

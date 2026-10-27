@@ -94,7 +94,8 @@ export function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
 }
 
 // Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
-export function mergeParts(parts) {
+// `extras` lists scalar attributes (one float per vertex) that every part must carry and are copied as is.
+export function mergeParts(parts, extras = []) {
   let vertices = 0,
     indices = 0;
   for (const { geometry } of parts) {
@@ -103,6 +104,7 @@ export function mergeParts(parts) {
   }
   const position = new Float32Array(vertices * 3),
     normal = new Float32Array(vertices * 3),
+    scalars = extras.map(() => new Float32Array(vertices)),
     index = vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices),
     v = new THREE.Vector3(),
     normalMatrix = new THREE.Matrix3();
@@ -122,6 +124,7 @@ export function mergeParts(parts) {
       v.fromBufferAttribute(nor, i).applyMatrix3(normalMatrix).normalize();
       v.toArray(normal, (base + i) * 3);
     }
+    extras.forEach((name, n) => scalars[n].set(geometry.attributes[name].array, base));
     for (let i = 0; i < count; i += 3)
       for (let j = 0; j < 3; j++) {
         let k = i + order[j];
@@ -133,6 +136,7 @@ export function mergeParts(parts) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(position, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  extras.forEach((name, n) => g.setAttribute(name, new THREE.BufferAttribute(scalars[n], 1)));
   g.setIndex(new THREE.BufferAttribute(index, 1));
   g.computeBoundingBox();
   g.computeBoundingSphere();

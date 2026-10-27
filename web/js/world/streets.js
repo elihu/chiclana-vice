@@ -1,6 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { flatGeometry, mat, mergeParts, modelMaterial } from '../engine/materials.js';
-import { waterMaterial } from '../engine/water.js';
+import { shoreGeometry, waterMaterial } from '../engine/water.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
 import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
@@ -101,7 +101,7 @@ export function buildRoadDetails() {
       geometry.computeVertexNormals();
     }
     water.push({
-      geometry,
+      geometry: shoreGeometry(geometry, a.p),
       matrix: at(
         0,
         basin ? basin.y + heights.water : world.surfaces ? heights.water : y + heights.water,
@@ -170,7 +170,7 @@ export function buildRoadDetails() {
     [rails, modelMaterial('#b7b9af'), false],
   ]) {
     if (!parts.length) continue;
-    let mesh = new THREE.Mesh(mergeParts(parts), material);
+    let mesh = new THREE.Mesh(mergeParts(parts, parts === water ? ['shore'] : []), material);
     mesh.name = parts === decks ? 'bridge-decks' : parts === water ? 'river-water' : 'bridge-rails';
     mesh.castShadow = cast;
     mesh.receiveShadow = true;
