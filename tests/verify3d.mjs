@@ -498,7 +498,7 @@ console.log('Expanded pilot frontage IDs match cadastral edges');
 // Camera sweep must prevent cuts through walls while orbiting at tight viewpoints.
 {
   const { x, z } = g.player,
-    offset = new Real.Vector3(-85, 125, 60),
+    offset = new Real.Vector3(...(await import('../web/js/engine/renderer.js')).SUN.direction),
     basisInverse = new Real.Matrix4()
       .lookAt(offset, new Real.Vector3(), new Real.Vector3(0, 1, 0))
       .invert();
