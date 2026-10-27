@@ -43,7 +43,8 @@ documento; los demás enlazan a él.
   cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
   día; publicado en `v1.6.0` salvo F5.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
-  faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; sin empezar.
+  faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
+  `v1.7.0`.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
