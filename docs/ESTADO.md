@@ -150,6 +150,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
   pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
+- Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): la ortofoto se ve mal a pie y las juntas entre
+  calzadas, puentes y cuestas se notan (Puente VII Centenario y Reyes Católicos); tanda 1
+  (aceras, bordillos y faldones) en curso.
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Quedan F5
   (pasos de cebra, bordillos y aceras, con datos nuevos), la noche cerrada (luces reales
   cercanas, farolas en todas las calles y bloom), aceras y patios, y pretiles. Los bajos con

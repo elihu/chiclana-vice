@@ -42,6 +42,8 @@ documento; los demás enlazan a él.
 - [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): agua del Iro,
   cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
   día; publicado en `v1.6.0` salvo F5.
+- [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
+  faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; sin empezar.
 - [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
