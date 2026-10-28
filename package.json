@@ -1,7 +1,7 @@
 {
   "name": "chiclana-vice",
-  "version": "1.7.0",
-  "description": "Juego web est\u00e1tico 3D ambientado en el centro de Chiclana: conducci\u00f3n, paseo, cinco encargos, mapa de calles, c\u00e1mara libre y modo ligero.",
+  "version": "2.0.0",
+  "description": "Juego web estático 3D ambientado en el centro de Chiclana: conducción, paseo, cinco encargos, mapa de calles, cámara libre y modo ligero.",
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
