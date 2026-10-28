@@ -148,7 +148,7 @@ export function listStreets() {
     if (q && !fold(view.name).includes(q)) continue;
     let b = document.createElement('button');
     b.textContent = view.name;
-    b.style.color = '#e7fa8a';
+    b.classList.add('mapViewpoint');
     b.onclick = () => {
       let position = { x: view.x, z: view.z, a: Math.atan2(view.tx - view.x, view.tz - view.z) };
       if (player.car) {
@@ -186,9 +186,11 @@ export function listStreets() {
     };
     list.appendChild(b);
   }
-  if (!list.children.length) {
+  const count = list.children.length;
+  $('streetResults').textContent = count + (count === 1 ? ' destino' : ' destinos');
+  if (!count) {
     let p = document.createElement('p');
-    p.textContent = 'No aparece en este sector del centro.';
+    p.textContent = 'No hay coincidencias. Prueba otro nombre o parte de la calle.';
     p.style.fontSize = '13px';
     list.appendChild(p);
   }

@@ -49,7 +49,7 @@ export function describeTime() {
 export function installControls() {
   $('start').onclick = start;
   $('introHelp').onclick = help;
-  $('credits').onclick = help;
+  $('credits').onclick = () => help('sources');
   $('closeModal').onclick = closeModal;
   $('pauseBtn').onclick = pauseMenu;
   $('mapBtn').onclick = openMap;
@@ -65,11 +65,14 @@ export function installControls() {
   };
   $('interact').onclick = interact;
   $('streetSearch').oninput = listStreets;
-  $('mapStyle').onclick = () => {
-    session.mapAerial = !session.mapAerial;
-    $('mapStyle').textContent = session.mapAerial ? 'Ver callejero' : 'Ver ortofoto';
+  function selectMapStyle(aerial) {
+    session.mapAerial = aerial;
+    $('mapStyle').setAttribute('aria-pressed', String(aerial));
+    $('mapStreet').setAttribute('aria-pressed', String(!aerial));
     drawMap($('map'));
-  };
+  }
+  $('mapStyle').onclick = () => selectMapStyle(true);
+  $('mapStreet').onclick = () => selectMapStyle(false);
   function bindHold(id, key) {
     let e = $(id),
       pointers = new Set();

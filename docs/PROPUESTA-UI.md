@@ -61,7 +61,7 @@ mantienen las mismas prioridades de información.
 
 ## Tandas revisables
 
-### Tanda 1: primera composición (en curso)
+### Tanda 1: primera composición (implementada)
 
 Rama: `feat/ui-chiclana`.
 
@@ -75,13 +75,21 @@ Rama: `feat/ui-chiclana`.
 Revisión del usuario: bienvenida, conducción, a pie, encargo, aviso y pausa, primero en
 horizontal y después en vertical. Ajustar esta composición antes de abrir nuevos frentes.
 
-### Tanda 2: menús y reducción de ruido
+### Tanda 2: menús y reducción de ruido (implementación iniciada)
 
-Después de revisar la tanda 1, en una rama corta desde `main` limpio tras integrar la anterior:
+El usuario pidió continuar tras revisar la primera tanda. Se mantiene `feat/ui-chiclana`
+para revisar el conjunto antes de integrar, sin cambiar de rama ni tocar `main`:
 
-- Ayuda dividida en «Controles», «Sobre el mapa» y «Fuentes», conservando contenidos.
-- Mapa y búsqueda con mejor uso del espacio disponible y cierre siempre accesible.
-- Valorar qué herramientas pueden agruparse y qué ayuda inicial puede ocultarse al aprenderla.
+- Ayuda dividida en «Controles», «Sobre el mapa» y «Fuentes», con navegación de teclado,
+  cabecera y botón de volver fijos. Textos de manejo reorganizados en tarjetas; fuentes y
+  aproximaciones conservadas. Desde pausa, volver regresa a pausa; Fuentes abre su pestaña.
+- Bienvenida con presentación breve y chips; dos columnas en móvil horizontal. Pausa con
+  resumen de progreso y acciones más claras.
+- Mapa y búsqueda con mejor uso del espacio disponible y cierre siempre accesible: mapa
+  arriba y búsqueda debajo en vertical, columnas en horizontal. Callejero y Ortofoto con
+  selección explícita, contador de destinos y aviso de traslado antes de elegir una calle.
+- Pendiente de la revisión: valorar qué herramientas pueden agruparse y qué ayuda inicial
+  puede ocultarse al aprenderla.
 - Revisar tamaños de texto y prioridades con los nombres y mensajes más largos.
 
 ### Tanda 3: alternativas de control
@@ -108,7 +116,8 @@ Mando y vibración quedan para después, sin bloquear estas tandas.
   para esta tanda de interfaz. Si cambia el comportamiento de entrada, comprobarlo de forma
   dirigida y ampliar las pruebas solo cuando haya una razón concreta.
 - Servir localmente una sola versión candidata para que el usuario la pruebe. No publicar,
-  integrar ni hacer push sin petición. Cerrar al terminar el servidor iniciado por el agente;
-  para revisiones posteriores se puede arrancar con el comando de `DESARROLLO.md`.
+  integrar ni hacer push sin petición. El usuario ha pedido poder revisar en localhost:
+  mantener disponible ese servidor durante la revisión; cerrar los servidores temporales
+  de verificación al terminar. Comando de arranque en `DESARROLLO.md`.
 - Informar de lo verificado y lo pendiente: los verificadores con DOM/WebGL simulados y
   Chrome con SwiftShader no prueban tacto, GPU real, FPS ni iOS.
