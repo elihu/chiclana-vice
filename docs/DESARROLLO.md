@@ -229,19 +229,25 @@ Desde lejos y en vista aérea la ortofoto queda como estaba.
   círculos de `vegetation.json` (árboles y arbustos, borde suave) y un «entorno limpio»: la
   vista general sin esas copas, rellenada con el promedio ponderado de los píxeles vecinos
   (desenfoque por cajas normalizado, 3 m/píxel). Bajo cada copa el color pasa de la foto a ese
-  entorno. Cuesta unos 70 ms al arrancar y unos 6 MB de texturas; no se construye en ligero.
+  entorno. En la ortofoto el oscuro de cada árbol (copa y sombra) llega a unas dos veces el
+  radio detectado y se alarga hacia el norte y el noroeste, así que la máscara lleva un segundo
+  canal con una zona más amplia y desplazada hacia la sombra (`zoneGrow`, `zoneMargin`,
+  `zoneShift`); dentro de ella solo se sustituye lo que en la tesela fina sea más oscuro que el
+  entorno limpio (`crownDark`), de modo que el césped claro alrededor se conserva. Cuesta unos
+  70 ms al arrancar y unos 6 MB de texturas; no se construye en ligero.
 - **Sombras horneadas**: los oscuros de la ortofoto suben hacia una luminancia mínima
   (`shadowFloor`) con transición suave; el asfalto y otros oscuros normales quedan por encima.
 - **Materiales propios**: la clase del suelo se deduce del color de la foto (sin tinte): verde
   predominante = césped, saturado ocre o marrón = tierra, gris claro poco saturado = pavimento;
   el asfalto y las sombras oscuras no encajan y quedan como están. Cada clase multiplica la foto
-  por una textura procedural de media 1 (`groundMaterialTexture`: un RGBA de datos de 256 px, sin
+  por una textura procedural de media 1 (la baldosa, además, con un toque cálido: `pavementWarm`) (`groundMaterialTexture`: un RGBA de datos de 256 px, sin
   imágenes: césped, tierra y baldosas con juntas), muestreada dos veces en coordenadas de mundo
   (cada 3 m y cada 1,1 m) para romper la repetición. Así se conserva el color medio de la foto.
   Coste: 2 lecturas de textura y unas decenas de operaciones por fragmento de suelo a menos de
   `far` m; a más, ninguno efectivo (el factor es 0). Se apaga con un uniforme en ligero.
-- Ajuste en vivo: `setGroundNear({ crownClean, shadowStrength, shadowFloor, shadowSoftness,
-materialStrength, materialScale, green, earth, pavement, minLight })` y `GROUND_CLEAN`
+- Ajuste en vivo: `setGroundNear({ crownClean, crownDark, shadowStrength, shadowFloor,
+shadowSoftness, materialStrength, materialScale, green, earth, pavement, minLight,
+pavementWarm })` y `GROUND_CLEAN`
   (resolución y radios de la máscara, solo al construir).
 
 ## Aceras

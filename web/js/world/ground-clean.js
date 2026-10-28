@@ -8,7 +8,9 @@ import {
 
 // Datos para el suelo cercano (ver engine/ground-near.js), generados al cargar sin tocar las
 // teselas de ortofoto publicadas. A partir de la vista general (world.groundTexture):
-//  - máscara de copas: círculos de vegetation.json con borde suave;
+//  - máscara de copas (R): círculos de vegetation.json con borde suave;
+//  - zona de sombra (G): círculo más amplio y desplazado hacia donde cae la sombra en la foto;
+//    dentro, ground-near.js solo sustituye lo que sea claramente más oscuro que el entorno;
 //  - entorno sin copas: la misma foto con las copas descartadas y rellenada con el promedio
 //    ponderado de los píxeles vecinos (desenfoque por cajas normalizado).
 // Ambos van en coordenadas de la caja de la ortofoto general (world.aerialBox).
@@ -19,6 +21,11 @@ export const GROUND_CLEAN = {
   crownGrow: 1.12, // la máscara cubre la copa por este factor...
   crownMargin: 0.9, // ...más estos metros, para tapar la sombra y el borde de la copa
   edge: 0.45, // fracción del radio de la máscara en que baja de 1 a 0
+  // Zona de sombra: en la ortofoto (PNOA 2022-07) el oscuro de cada árbol llega a unas dos veces
+  // el radio detectado y se alarga hacia el norte y el noroeste (medido sobre todas las copas).
+  zoneGrow: 2.2,
+  zoneMargin: 1.5,
+  zoneShift: [-0.25, -0.5], // desplazamiento del centro en radios de copa (x, z; z negativa = norte)
 };
 
 function boxBlur(plane, width, height, radius, tmp) {
@@ -79,15 +86,26 @@ function buildMaps() {
   mask.fillStyle = '#000';
   mask.fillRect(0, 0, mw, mh);
   mask.globalCompositeOperation = 'lighten';
-  for (const [x, z, radius] of crowns) {
-    const r = (radius * c.crownGrow + c.crownMargin) / c.maskPixel,
-      px = (x - x0) / c.maskPixel,
-      pz = (z - z0) / c.maskPixel,
-      gradient = mask.createRadialGradient(px, pz, r * (1 - c.edge), px, pz, r);
-    gradient.addColorStop(0, '#fff');
+  const disc = (px, pz, r, color) => {
+    const gradient = mask.createRadialGradient(px, pz, r * (1 - c.edge), px, pz, r);
+    gradient.addColorStop(0, color);
     gradient.addColorStop(1, '#000');
     mask.fillStyle = gradient;
     mask.fillRect(px - r, pz - r, 2 * r, 2 * r);
+  };
+  for (const [x, z, radius] of crowns) {
+    disc(
+      (x - x0) / c.maskPixel,
+      (z - z0) / c.maskPixel,
+      (radius * c.crownGrow + c.crownMargin) / c.maskPixel,
+      '#f00',
+    );
+    disc(
+      (x + c.zoneShift[0] * radius - x0) / c.maskPixel,
+      (z + c.zoneShift[1] * radius - z0) / c.maskPixel,
+      (radius * c.zoneGrow + c.zoneMargin) / c.maskPixel,
+      '#0f0',
+    );
   }
   // Entorno sin copas: foto y máscara a menor resolución, peso 0 donde hay copa.
   const fw = Math.ceil((x1 - x0) / c.fillPixel),
