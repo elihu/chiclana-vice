@@ -109,6 +109,12 @@ const OPERATIONS = {
       throw Error(`«name» vale ${show(road.name)}, se esperaba ${show(c.expect.name)}`);
     layers.roads.splice(layers.roads.indexOf(road), 1);
   },
+  'area.remove'(layers, c) {
+    const area = layers.areas[c.area.index];
+    if (!area || !same(area.p[0], c.area.expectFirst) || area.kind !== c.expectKind)
+      throw Error('el área o su contorno no coinciden con la guarda');
+    layers.areas.splice(c.area.index, 1);
+  },
   'area.movePoint'(layers, c) {
     const area = layers.areas[c.area.index];
     if (!area) throw Error(`no existe el área ${c.area.index}`);

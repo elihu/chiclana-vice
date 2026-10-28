@@ -27,7 +27,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Local game extraction; all used roads/areas/landmarks/trees/objects made available",
       "sha256": {
-        "osm-world.json": "673ccad38cab7cee2d786fd916dcecb50b692151ee6513d92aaf309b2a536c9d",
+        "osm-world.json": "b6690dd2e13738dbf03ea03149ca4348ce58b14ff9893f196f9544f86aa6a332",
         "street-objects.json": "1df34a407a8a9ceb5d9dad6f0ad62ff9a5f259e3c49c3dc50d7976df7b73afce"
       }
     },
@@ -85,7 +85,7 @@
       "transformation": "Building features interpreted as parametric primitives from references listed in THIRD_PARTY_NOTICES.md; anchors are cadastral vertices or frontage identifiers; street rules reference OSM street names",
       "sha256": {
         "facade-designs.json": "6a71822fad37c449ab9cbb91e7181b619efbedcb93b003a92a029294251ad78d",
-        "city-design.json": "cca10b43786705b4a0ac8e5ec759a8919f62da87f46b6893ade454bd19089340"
+        "city-design.json": "4703dd0c735d31136948cd4484769a17091fe33a74f1af1ea4202de30925229f"
       }
     },
     {
@@ -97,7 +97,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Guarded edits of road attributes and vertices; base layers unchanged",
       "sha256": {
-        "map-corrections.json": "b91cda86cb7dca54c3e613cf7cd2a16ae27dfc3aa20798c46b6946b48beee5ca"
+        "map-corrections.json": "dee581035f361df12e089534db8b3b57429163855f3f4bfcb6c9a856159bdb9a"
       }
     },
     {

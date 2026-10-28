@@ -38,7 +38,53 @@
     ]
   },
   "frontages": {
-    "streets": ["Calle Constitución", "Calle de la Vega", "Calle de la Plaza", "Calle Caraza", "Calle Jesús Nazareno", "Calle Álamo", "Calle Garcia Gutierrez", "Calle Corredera Baja", "Alameda del Río", "Calle Alcalá", "Calle Antonio Biondi", "Calle Arroyuelo", "Calle Artesano Pepe Marín", "Calle Ayala", "Calle Buey", "Calle Churruca", "Calle Concepción", "Calle Corredera Alta", "Calle Cádiz", "Calle Doctor Pedro Vélez", "Calle Dr. Flemming", "Calle Fraile", "Calle Francisco Liñán Barberá", "Calle Hormaza", "Calle Ibiza", "Calle Iro", "Calle Joaquín Santos", "Calle Larga", "Calle Lugo", "Calle Mendaro", "Calle Nuestra Señora de los Dolores", "Calle Nuestra Señora de los Remedios", "Calle Nueva", "Calle Padre Caro", "Calle Paloma", "Calle San Félix", "Calle San Gabriel", "Calle San Martín", "Calle San Miguel", "Calle Santa Monica", "Calle Segismundo Moret", "Calle de Cristo de la Humildad y Paciencia", "Calle de la Fuente", "Calle de las Albinas", "Plaza Retortille"],
+    "streets": [
+      "Calle Constitución",
+      "Calle de la Vega",
+      "Calle de la Plaza",
+      "Calle Caraza",
+      "Calle Jesús Nazareno",
+      "Calle Álamo",
+      "Calle Garcia Gutierrez",
+      "Calle Corredera Baja",
+      "Alameda del Río",
+      "Calle Alcalá",
+      "Calle Antonio Biondi",
+      "Calle Arroyuelo",
+      "Calle Artesano Pepe Marín",
+      "Calle Ayala",
+      "Calle Buey",
+      "Calle Churruca",
+      "Calle Concepción",
+      "Calle Corredera Alta",
+      "Calle Cádiz",
+      "Calle Doctor Pedro Vélez",
+      "Calle Dr. Flemming",
+      "Calle Fraile",
+      "Calle Francisco Liñán Barberá",
+      "Calle Hormaza",
+      "Calle Ibiza",
+      "Calle Iro",
+      "Calle Joaquín Santos",
+      "Calle Larga",
+      "Calle Lugo",
+      "Calle Mendaro",
+      "Calle Nuestra Señora de los Dolores",
+      "Calle Nuestra Señora de los Remedios",
+      "Calle Nueva",
+      "Calle Padre Caro",
+      "Calle Paloma",
+      "Calle San Félix",
+      "Calle San Gabriel",
+      "Calle San Martín",
+      "Calle San Miguel",
+      "Calle Santa Monica",
+      "Calle Segismundo Moret",
+      "Calle de Cristo de la Humildad y Paciencia",
+      "Calle de la Fuente",
+      "Calle de las Albinas",
+      "Plaza Retortille"
+    ],
     "originalStreets": [
       "Calle Constitución",
       "Calle de la Vega",
@@ -59,11 +105,18 @@
     "shopDistance": 12,
     "shopBehind": 6,
     "shopMargin": 4,
-    "commercialUses": ["4_1_office", "4_2_retail"],
+    "commercialUses": [
+      "4_1_office",
+      "4_2_retail"
+    ],
     "blockMinimumDwellings": 4,
     "blockMinimumFloors": 3,
     "extraUnits": 1,
-    "mainRoadTypes": ["secondary", "tertiary", "pedestrian"]
+    "mainRoadTypes": [
+      "secondary",
+      "tertiary",
+      "pedestrian"
+    ]
   },
   "furniture": {
     "protectedPoints": [
@@ -200,7 +253,13 @@
     ],
     "minimumHalfWidth": 0.65,
     "sidewalks": {
-      "roadTypes": ["residential", "tertiary", "secondary", "unclassified", "living_street"],
+      "roadTypes": [
+        "residential",
+        "tertiary",
+        "secondary",
+        "unclassified",
+        "living_street"
+      ],
       "width": 1.8,
       "minimumWidth": 0.6,
       "curbWidth": 0.15,
@@ -281,7 +340,9 @@
     "shrubBuildingClearance": 0.7
   },
   "buildings": {
-    "variation": { "seed": 7631 },
+    "variation": {
+      "seed": 7631
+    },
     "palette": [
       "#eee7d7",
       "#f4ece1",
@@ -324,7 +385,10 @@
       }
     ],
     "wallUvWidth": 4.8,
-    "partyWall": { "color": "#d9d3c6", "blend": 0.6 }
+    "partyWall": {
+      "color": "#d9d3c6",
+      "blend": 0.6
+    }
   },
   "tram": {
     "stripWidth": 2.6,
@@ -407,25 +471,7 @@
       "axis": "z",
       "sliceLength": 50,
       "maximumSlope": 0.003,
-      "features": [
-        {
-          "id": "cubeta-alameda",
-          "kind": "basin",
-          "areaAnchor": {
-            "areaId": "184499839",
-            "kind": "water",
-            "vertex": [
-              136.05,
-              -194.64
-            ],
-            "vertexCount": 5
-          },
-          "evidence": [
-            "https://www.openstreetmap.org/way/184499839",
-            "OSM water=pond; cubeta horizontal de autor, no nivel medido ni cauce."
-          ]
-        }
-      ]
+      "features": []
     },
     "platforms": [
       {
@@ -513,6 +559,55 @@
               "lateralOffset": -13
             }
           }
+        ]
+      },
+      {
+        "id": "tablero-vii-centenario",
+        "roadAnchor": {
+          "roadId": "142805148",
+          "width": 22,
+          "endExtension": 6
+        },
+        "heightAnchors": [
+          {
+            "roadId": "142805148",
+            "vertex": 0,
+            "offset": 0
+          },
+          {
+            "roadId": "142805148",
+            "vertex": 1,
+            "offset": 0
+          }
+        ],
+        "deckRoads": [
+          "142805148",
+          "760833292",
+          "760833297"
+        ],
+        "lowerRoads": [
+          "148083444",
+          "184499299"
+        ],
+        "clearance": 2.5,
+        "thickness": 0.6,
+        "profile": "linear",
+        "bands": [
+          {
+            "id": "calzada-vii-centenario",
+            "material": "asphalt",
+            "roadAnchor": {
+              "roadId": "142805148",
+              "width": 14,
+              "lateralOffset": 0,
+              "endExtension": 6
+            }
+          }
+        ],
+        "evidence": [
+          "OSM 142805148: calzada elevada; 760833292 y 760833297: aceras del puente en layer=1.",
+          "OSM 148083444 y 184499299: pasos peatonales tunnel=yes junto a ambos extremos.",
+          "Anchura agregada 22 m, prolongación 6 m, grosor 0,6 m y gálibo 2,5 m son aproximaciones de autor para separar las superficies; no cotas medidas."
         ]
       }
     ]

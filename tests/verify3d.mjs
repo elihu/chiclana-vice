@@ -1,5 +1,6 @@
-import { chunks, detailCells, gfx, pointer } from '../web/js/core/state.js';
+import { chunks, detailCells, gfx, pointer, world as runtimeWorld } from '../web/js/core/state.js';
 import { updatePlayer } from '../web/js/game/player.js';
+import { createRoadSpace } from '../web/js/world/road-space.js';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -509,7 +510,7 @@ assert.equal(count('crowns'), g.streetEnvironment.trees * 5);
   const counts = g.streetEnvironment.treeSources;
   assert.equal(counts.layer, layer.trees.length);
   assert.equal(
-    Object.values(counts).reduce((a, b) => a + b, 0),
+    counts.layer + counts.osm + counts.market + counts.park - counts.removedOnRoad,
     g.streetEnvironment.trees,
   );
   const wood = vegetation.children.filter((m) => m.name.startsWith('vegetation-wood-'));
@@ -523,9 +524,14 @@ assert.equal(count('crowns'), g.streetEnvironment.trees * 5);
       matrix.decompose(position, new Real.Quaternion(), scale);
       instances.push({ x: position.x, z: position.z, size: scale.x, y: position.y });
     }
+  const carriageway = createRoadSpace(g.city.roads, []);
   for (const [x, z, r] of layer.trees) {
     const matches = instances.filter((p) => Math.hypot(p.x - x, p.z - z) < 0.001);
-    assert.equal(matches.length, 1, 'cada copa tiene un único tronco');
+    if (carriageway.covers(x, z, 0.25)) {
+      assert.equal(matches.length, 0, 'no hay troncos en las calzadas');
+      continue;
+    }
+    assert.equal(matches.length, 1, 'cada copa fuera de calzada tiene un único tronco');
     const p = matches[0],
       size = Math.max(0.6, Math.min(1.8, r / 1.6));
     assert(Math.abs(p.size - size) < 1e-5, 'tamaño según radio');
@@ -926,6 +932,22 @@ function referenceRoute(graph, from, to, driveOnly) {
 
 assert.equal(g.people.length, POPULATION.pedestrians, 'all planned pedestrians spawned');
 assert(g.people.every((p) => p.s.length >= 8));
+{
+  const space = createRoadSpace(
+    g.city.roads,
+    runtimeWorld.cityDesign.pavements.nonDrivableTypes,
+    (x, z, id) => g.surfaceHeightAt(x, z, null, id),
+  );
+  for (const person of g.people)
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20,
+        x = person.walk.a[0] + (person.walk.b[0] - person.walk.a[0]) * t,
+        z = person.walk.a[1] + (person.walk.b[1] - person.walk.a[1]) * t,
+        y = g.surfaceHeightAt(x, z, null, person.s.roadId);
+      assert(!space.covers(x, z, 0.3, y), 'el recorrido peatonal no invade calzadas');
+      assert(!g.inBuilding(x, z, 0.2), 'el recorrido peatonal no atraviesa fachadas');
+    }
+}
 console.log('Pedestrians', g.people.length);
 
 // Street search: accent-insensitive also for viewpoints; teleport by car lands on a drive road.

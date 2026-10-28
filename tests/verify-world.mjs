@@ -1,4 +1,5 @@
 import './verify-bounds.mjs';
+import './verify-road-space.mjs';
 import './verify-vegetation.mjs';
 import './verify-ground-floors.mjs';
 import './verify-tram.mjs';

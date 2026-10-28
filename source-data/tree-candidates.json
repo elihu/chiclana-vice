@@ -19,8 +19,8 @@
     "inputs": {
       "web/aerial/index.json": "91169c887e90f1ea24b2474a57ed95d5fca816fee7e47d5c700d49c91a7488ab",
       "web/buildings.json": "1721d40762146c6c6f12bdfd78cf1bf4798d23bace3d505992cd6cf2fb46e68a",
-      "web/osm-world.json": "673ccad38cab7cee2d786fd916dcecb50b692151ee6513d92aaf309b2a536c9d",
-      "web/world.json": "4054a45088e53ccccd98f9a1ffb8d81fa6f91befcd62c623106cb20ce0e50edc",
+      "web/osm-world.json": "b6690dd2e13738dbf03ea03149ca4348ce58b14ff9893f196f9544f86aa6a332",
+      "web/world.json": "acd35f6604d1df9b5fd31197fce5558f30728245d6f02d71635b0424285191c7",
       "web/aerial/hi/-4_-5.jpg": "314b14c7860104c51300873a3afc74ec4311df4560d216c933eb525fb12f6864",
       "web/aerial/hi/-4_-4.jpg": "97e74e3e74df54af74c0ac4440725d9a49c582bbda270a2414bece7f0c9a1472",
       "web/aerial/hi/-4_-3.jpg": "ebcdca84f7375a660c78b6405bb476cd84142ef99cafe5066ba076f0da1087c2",

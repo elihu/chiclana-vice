@@ -4,6 +4,7 @@ import { shoreGeometry, waterMaterial } from '../engine/water.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
 import { buildSidewalks } from './sidewalks.js';
+import { createRoadSpace, carvePavement, roundaboutIslands } from './road-space.js';
 import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
@@ -195,6 +196,9 @@ export function buildStreetSurfaces() {
     heights = paved.layerHeights,
     [roadMinX, roadMaxX, roadMinZ, roadMaxZ] = design.zones.pavedRoads,
     [squareMinX, squareMaxX, squareMinZ, squareMaxZ] = design.zones.pavedSquares;
+  const space = createRoadSpace(world.city.roads, paved.nonDrivableTypes, (x, z, id) =>
+    surfaceHeightAt(x, z, null, id),
+  );
   let asphalt = surfaceTexture('asphalt'),
     stone = surfaceTexture('stone'),
     slabs = surfaceTexture('slabs');
@@ -300,6 +304,11 @@ export function buildStreetSurfaces() {
       along += len;
       streetEnvironment.surfaces++;
     }
+    if (pedestrian) {
+      const cut = carvePavement(g.p, g.uv, space, (x, z) => surfaceHeightAt(x, z, null, road.id));
+      g.p = cut.position;
+      g.uv = cut.uv;
+    }
     if (world.surfaces) {
       const mesh = drapeTriangles(g.p, g.uv, (x, z) => surfaceHeightAt(x, z, null, road.id));
       output.p.push(...mesh.position);
@@ -308,8 +317,28 @@ export function buildStreetSurfaces() {
   }
   // Aceras con bordillo (visual; ver sidewalks.js). Con terreno de rejilla sin modelo de
   // superficies no hay cota de calzada que seguir, y no se dibujan.
-  if (world.surfaces || world.terrain?.kind !== 'grid')
-    buildSidewalks(bands.slabs, paved, (road) => world.surfaces || localRoad(road));
+  if (world.surfaces || world.terrain?.kind !== 'grid') {
+    const sidewalk = { p: [], uv: [] };
+    buildSidewalks(sidewalk, paved, (road) => world.surfaces || localRoad(road));
+    const cut = carvePavement(sidewalk.p, sidewalk.uv, space, (x, z) => surfaceHeightAt(x, z));
+    bands.slabs.p = bands.slabs.p.concat(cut.position);
+    bands.slabs.uv = bands.slabs.uv.concat(cut.uv);
+  }
+  const islands = roundaboutIslands(world.city.roads),
+    islandParts = [];
+  for (const island of islands) {
+    islandParts.push({
+      geometry: platformGeometry(island.polygon, 0.12, (x, z) => surfaceHeightAt(x, z) + 0.12),
+      matrix: new THREE.Matrix4(),
+    });
+  }
+  if (islandParts.length) {
+    const mesh = new THREE.Mesh(mergeParts(islandParts), mat('#b7b2a0', { roughness: 0.95 }));
+    mesh.name = 'roundabout-islands';
+    mesh.receiveShadow = true;
+    gfx.scene.add(mesh);
+  }
+  streetEnvironment.roundabouts = islands.length;
   // Mapped pedestrian squares retain their real polygon outlines.
   // Evita pavimento duplicado cuando >80% del contorno coincide con un tablero;
   // 3 m tolera el margen de acera entre dos huellas de una misma plaza. Son criterios
@@ -351,6 +380,11 @@ export function buildStreetSurfaces() {
     geo.dispose();
     streetEnvironment.surfaces++;
   }
+  const squares = carvePavement(groups.slabs.p, groups.slabs.uv, space, (x, z) =>
+    surfaceHeightAt(x, z),
+  );
+  groups.slabs.p = squares.position;
+  groups.slabs.uv = squares.uv;
   for (const g of [...Object.values(groups), ...Object.values(bands)]) {
     if (!g.p.length) continue;
     let geo = new THREE.BufferGeometry();

@@ -214,3 +214,15 @@ plano medio dejaba escalones de hasta 0,37 m en un extremo). La altura libre sob
 `lowerRoads` se mide contra la cota local del tablero, así que sigue cumpliéndose
 (margen mínimo 0). `tests/verify-bridges.mjs` comprueba saltos de unión, escalones, altura
 libre y coincidencia entre perfil y tablero.
+
+### Prolongación de tableros y pasos inferiores (revisión posterior a v2.0.0)
+
+`roadAnchor.endExtension` es una prolongación opcional no negativa, en metros, de ambos
+extremos del corredor del tablero o de su banda. No cambia el eje OSM ni los puntos usados
+para calcular su plano inclinado. Permite que el tablero cubra un paso inferior situado
+inmediatamente después del extremo cartografiado de la calzada elevada.
+
+VII Centenario usa una plataforma común para calzada y dos aceras elevadas y declara los
+dos túneles peatonales como `lowerRoads`, manteniendo sus cotas separadas. Las proporciones
+de autor y las fuentes están en `MAP_SOURCES.md`; la continuidad y el gálibo se comprueban
+con `tests/verify-bridges.mjs`.

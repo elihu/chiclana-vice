@@ -323,3 +323,28 @@ a una parte. No es un dato catastral certificado.
 a nivel y 2 pasos peatonales; el resto de la línea, fuera del mapa. Licencia ODbL como
 `osm-world.json`. Límites: OSM traza un solo eje por vía (sin separar los dos sentidos) y la
 geometría del juego es una aproximación visual; no hay tranvía en marcha.
+
+## Revisión de agua y transitabilidad tras v2.0.0
+
+Tanda local del 28/10/2026, pendiente de revisión visual del usuario:
+
+- El OSM local del 8/10/2026 aporta `junction=roundabout`, `tunnel=yes` y `layer` a las
+  mismas vías ya publicadas (`tools/export-road-semantics.py`). No cambian ejes, anchuras,
+  sentidos, contornos catastrales ni límites. Las isletas son un desplazamiento interior
+  del anillo cartografiado, con medio ancho de calzada y 12 cm de borde; acabado neutro,
+  sin inventar jardines, monumentos ni glorietas en cadenas que no cierran.
+- La cubeta de Alameda del Río (área OSM 184499839) se retira del juego por petición
+  expresa del usuario. `map-corrections.json` conserva la decisión y su guarda; la capa
+  OSM de base conserva el contorno y la procedencia. No se declara un error de OSM.
+- En VII Centenario, OSM identifica dos pasos inferiores `tunnel=yes`: 148083444 y 184499299. Se separan del tablero y de sus dos aceras elevadas (760833292/760833297).
+  El ancho agregado de 22 m, prolongación de 6 m, grosor de 0,6 m y gálibo de 2,5 m son
+  parámetros de autor, sin cotas medidas; el plano conserva los anclajes de acceso.
+- El material del río usa reflejo aproximado del cielo y ondulación fina; los colores y
+  ondas son una interpretación visual, sin medir turbidez, corriente ni profundidad.
+- Se omiten 145 troncos sobre calzadas, calles peatonales y caminos renderizados, con
+  margen de 25 cm. Las copas
+  publicadas se conservan como dato de origen; no se eliminan árboles reales del catálogo
+  ni se impide que una copa de acera dé sombra sobre el asfalto.
+- El pavimento peatonal se recorta contra calzadas de la misma cota; el caso señalado por
+  el usuario es La Vega con Alameda del Río. Los peatones usan tramos continuos de acera
+  o vía peatonal, sin inventar cruces entre fachadas ni itinerarios de pasos de cebra.

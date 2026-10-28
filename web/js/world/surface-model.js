@@ -119,6 +119,14 @@ export function validateSurfaceDesign(design, city = null) {
       fail(`platforms.${i}.clearance`, 'se esperaba altura libre positiva');
     if (p.thickness !== undefined && (!positive(p.thickness) || p.thickness > 3))
       fail(`platforms.${i}.thickness`, 'grosor positivo hasta 3 m');
+    if (
+      p.roadAnchor?.endExtension !== undefined &&
+      (!Number.isFinite(p.roadAnchor.endExtension) || p.roadAnchor.endExtension < 0)
+    )
+      fail(
+        'platforms.' + i + '.roadAnchor.endExtension',
+        'se esperaba una prolongación no negativa',
+      );
     if (p.roadAnchor?.lateralOffset !== undefined && !Number.isFinite(p.roadAnchor.lateralOffset))
       fail(`platforms.${i}.roadAnchor.lateralOffset`, 'se esperaba un número');
     if (p.profile !== undefined && !['flat', 'linear'].includes(p.profile))
@@ -133,6 +141,8 @@ export function validateSurfaceDesign(design, city = null) {
         typeof band.id !== 'string' ||
         !['asphalt', 'stone', 'slabs'].includes(band.material) ||
         !positive(band.roadAnchor?.width) ||
+        (band.roadAnchor?.endExtension !== undefined &&
+          (!Number.isFinite(band.roadAnchor.endExtension) || band.roadAnchor.endExtension < 0)) ||
         !Number.isFinite(band.roadAnchor?.lateralOffset) ||
         typeof band.roadAnchor?.roadId !== 'string' ||
         (city && city.roads.filter((r) => r.id === band.roadAnchor.roadId).length !== 1)
@@ -324,8 +334,21 @@ export function createSurfaceModel(city, terrain, design) {
     return sum / 9;
   };
   const roadPolygon = (anchor) => {
-    const points = roadMap.get(anchor.roadId).p,
+    const points = roadMap.get(anchor.roadId).p.map((p) => [...p]),
       normals = [];
+    const extension = anchor.endExtension ?? 0;
+    if (extension) {
+      for (const [i, j] of [
+        [0, 1],
+        [points.length - 1, points.length - 2],
+      ]) {
+        const dx = points[i][0] - points[j][0],
+          dz = points[i][1] - points[j][1],
+          len = Math.hypot(dx, dz);
+        points[i][0] += (dx / len) * extension;
+        points[i][1] += (dz / len) * extension;
+      }
+    }
     for (let i = 1; i < points.length; i++) {
       const dx = points[i][0] - points[i - 1][0],
         dz = points[i][1] - points[i - 1][1],

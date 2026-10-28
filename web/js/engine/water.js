@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
+import { skyUniforms } from './sky.js';
 import { boundaryDistance } from '../core/math.js';
 
 const {
@@ -15,6 +16,7 @@ const {
   pow,
   dot,
   normalize,
+  reflect,
   length,
   sin,
   cos,
@@ -24,33 +26,33 @@ const {
   cameraViewMatrix,
 } = THREE.TSL;
 
-// Agua del río Iro: marisma tranquila, verde oliva oscura, con ondas pequeñas que apenas se mueven y
+// Agua del río Iro: agua verde azulada, con ondulación fina y
 // reflejo del cielo horneado (rugosidad baja). Sin transparencia ni pases extra. Cambia en vivo
 // desde la consola con `(await import('./js/engine/water.js')).setWater({ roughness: 0.2 })`.
 export const WATER = {
   // Color propio del agua: oscuro mirando hacia abajo y a poca distancia; más claro y verdoso
   // lejos (hacia el borde de la vista), donde mezcla con el cielo.
-  deep: '#35402a',
-  far: '#6c8468',
+  deep: '#4b7169',
+  far: '#829b91',
   farNear: 30, // m a los que empieza a aclararse
   farFar: 420, // m a los que alcanza el color lejano
   // Rugosidad del reflejo: baja para que se vea el cielo; las orillas la suben (ver `shore*`).
-  roughness: 0.12,
+  roughness: 0.32,
   // Fuerza del reflejo especular (1 = el de un dielétrico normal): menos, y el color propio manda más.
-  reflection: 0.4,
+  reflection: 0.85,
   // Cuánto se apaga el color propio a ángulo rasante, donde manda el reflejo (0 = nada).
-  fresnelDim: 0.55,
+  fresnelDim: 0.25,
   // Ondas: inclinación máxima de la normal de cada una de las cuatro capas (longitudes de onda
   // de 0,6 a 19 m, no conmensurables, con direcciones y velocidades lentas).
-  slopes: [0.03, 0.055, 0.05, 0.04],
+  slopes: [0.01, 0.014, 0.008, 0.004],
   waveSpeed: 1, // multiplica las velocidades (0 = agua quieta)
   // Mancha de viento: una onda muy larga (~90 m) que sube o baja la intensidad por zonas.
-  windCalm: 0.35, // intensidad de las ondas en la zona más tranquila (1 = máxima)
+  windCalm: 0.65, // intensidad de las ondas en la zona más tranquila (1 = máxima)
   // Orilla: en los primeros `shoreWidth` metros desde el borde el agua se oscurece y refleja
   // menos, para que no parezca un espejo pegado al terreno. La malla se afina en esa franja al
   // construir (`shoreGeometry`): cambiar el ancho en vivo solo vale hasta ese ancho de partida.
-  shoreWidth: 8,
-  shoreDark: 0.4, // color propio que queda en el mismo borde (1 = sin oscurecer)
+  shoreWidth: 3,
+  shoreDark: 0.75, // color propio que queda en el mismo borde (1 = sin oscurecer)
   shoreRoughness: 0.6, // rugosidad en el mismo borde (se funde con `roughness` hacia dentro)
   shoreReflection: 0.3, // reflejo en el mismo borde respecto a `reflection`
 };
@@ -105,11 +107,15 @@ export function setWater(patch = {}) {
 // de viento de baja frecuencia.
 function waveNormal(distance) {
   const t = time.mul(u.waveSpeed),
-    // Las ondas se calculan sobre una posición deformada con senos lentos: rompe las rayas rectas.
+    // Perturbación corta y pequeña: rompe las rayas sin ondular toda la superficie como gelatina.
     warp = vec2(
-      sin(positionWorld.z.mul(0.23).add(t.mul(0.1))),
-      sin(positionWorld.x.mul(0.19).sub(t.mul(0.08))),
-    ).mul(3),
+      sin(positionWorld.z.mul(2.3).add(t.mul(0.25))).add(
+        sin(positionWorld.x.mul(1.7).sub(t.mul(0.2))),
+      ),
+      sin(positionWorld.x.mul(2.6).sub(t.mul(0.2))).add(
+        sin(positionWorld.z.mul(1.9).add(t.mul(0.18))),
+      ),
+    ).mul(0.12),
     xz = vec2(positionWorld.x, positionWorld.z).add(warp),
     // Dos senos de periodos largos no conmensurables: zonas de viento y de calma.
     gust = sin(dot(xz, vec2(0.0113, 0.0071)).add(t.mul(0.05)))
@@ -212,6 +218,14 @@ export function waterMaterial() {
     .mul(float(1).sub(fresnel.mul(u.fresnelDim)))
     .mul(mix(u.shoreDark, float(1), inland));
   material.roughnessNode = mix(u.shoreRoughness, u.roughness, inland);
+  // Reflejo aproximado de la cúpula, conectado a los uniformes de cada hora. Mantiene
+  // claridad a ras del agua incluso en sombra, sin reflejos de pantalla ni pases extra.
+  const reflected = reflect(view.negate(), normalWorld),
+    sky = mix(skyUniforms.horizon, skyUniforms.zenith, pow(saturate(reflected.y), 0.5));
+  material.emissiveNode = sky
+    .mul(fresnel)
+    .mul(0.45)
+    .mul(mix(0.65, 1, inland));
   material.specularIntensityNode = u.reflection.mul(mix(u.shoreReflection, float(1), inland));
   return material;
 }
