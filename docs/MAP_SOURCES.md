@@ -166,6 +166,9 @@ actores se declara por separado en `city-design.json.randomSeed`.
 - [Terreno plano](DESARROLLO.md#terreno). Monumentos simplificados; cubiertas e interiores incompletos.
 - Árboles: copas aproximadas de ortofoto y puntos OSM; sin la capa, relleno determinista de parques.
 - Mobiliario y pavimentos recreados; los pasos de peatones toman posiciones de OSM.
+- Pasos de peatones: los 144 nodos `highway=crossing` de `osm-ampliado.xml` incluyen 50 dentro
+  del mundo; la capa `street-objects.json` tenía 44 y `tools/complete-crossings.py` añadió los
+  6 que faltaban. Cada paso se orienta perpendicular a la calzada más cercana y toma su cota.
 - Tráfico, peatones, policía y encargos son mecánicas de juego, no simulación real.
   El tráfico y la policía respetan `oneway` de OSM salvo en tramos del borde del sector
   que dejarían zonas sin salida; a pie no hay restricción.

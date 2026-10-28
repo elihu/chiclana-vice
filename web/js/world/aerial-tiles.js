@@ -45,7 +45,7 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
   });
   m.userData.plainColor = plainColor;
   m.color.set(m.map ? aerialTint() : plainColor);
-  if (detail) applyGroundDetail(m);
+  if (detail) applyGroundDetail(m, { ortho: true });
   materials.get(key).add(m);
   return m;
 }

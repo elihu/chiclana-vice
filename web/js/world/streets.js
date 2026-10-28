@@ -268,6 +268,35 @@ export function buildStreetSurfaces() {
           [0, (along + (len * (k + 1)) / count) / 4],
         ]);
       }
+      // Cuña exterior en cada quiebro de la polilínea: sin ella, cada tramo termina en un corte
+      // recto y queda un triángulo sin asfalto (se ve la ortofoto) en el lado de fuera.
+      if (i > 1) {
+        const px = a[0] - road.p[i - 2][0],
+          pz = a[1] - road.p[i - 2][1],
+          plen = Math.hypot(px, pz);
+        if (plen >= 0.1) {
+          const pnx = -pz / plen,
+            pnz = px / plen;
+          for (const side of [1, -1]) {
+            const c1 = [a[0] + pnx * half * side, a[1] + pnz * half * side],
+              c2 = [a[0] + nx * half * side, a[1] + nz * half * side];
+            // Hueco solo si la esquina del tramo nuevo queda por delante del corte del anterior.
+            if (((c2[0] - c1[0]) * px + (c2[1] - c1[1]) * pz) / plen < 0.01) continue;
+            const corners = [
+              [a, half / 4],
+              [c1, side > 0 ? 0 : half / 2],
+              [c2, side > 0 ? 0 : half / 2],
+            ];
+            // Mismo sentido de giro que los rectángulos (normal hacia abajo, como ellos).
+            if ((c1[1] - a[1]) * (c2[0] - a[0]) - (c1[0] - a[0]) * (c2[1] - a[1]) > 0)
+              corners.push(corners.splice(1, 1)[0]);
+            for (const [point, u] of corners) {
+              g.p.push(point[0], y, point[1]);
+              g.uv.push(u, along / 4);
+            }
+          }
+        }
+      }
       along += len;
       streetEnvironment.surfaces++;
     }
@@ -348,6 +377,7 @@ export function buildStreetSurfaces() {
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
   const mark = [],
     cross = design.crossings;
+  // Cada paso se asienta con la cota de su calzada (no la del MDT), como el resto de capas.
   for (const p of world.mappedStreetObjects) {
     if (p.tags.highway !== 'crossing') continue;
     let near = nearestRoad(p.x, p.z, true);
@@ -358,6 +388,7 @@ export function buildStreetSurfaces() {
       near.s.width < cross.minimumRoadWidth
     )
       continue;
+    const stripes = [];
     let s = near.s,
       dx = (s.b[0] - s.a[0]) / s.length,
       dz = (s.b[1] - s.a[1]) / s.length,
@@ -377,12 +408,15 @@ export function buildStreetSurfaces() {
         [x + (dz * ww) / 2 + dx * ll, heights.crossing, z - (dx * ww) / 2 + dz * ll],
         [x - (dz * ww) / 2 + dx * ll, heights.crossing, z + (dx * ww) / 2 + dz * ll],
       ];
-      for (let i of [0, 1, 2, 0, 2, 3]) mark.push(...pts[i]);
+      for (let i of [0, 1, 2, 0, 2, 3]) stripes.push(...pts[i]);
     }
+    mark.push(
+      ...drapeTriangles(stripes, null, (x, z) => surfaceHeightAt(x, z, null, s.roadId)).position,
+    );
     streetEnvironment.crossings++;
   }
   let mg = new THREE.BufferGeometry();
-  mg.setAttribute('position', new THREE.Float32BufferAttribute(drapeTriangles(mark).position, 3));
+  mg.setAttribute('position', new THREE.Float32BufferAttribute(mark, 3));
   mg.computeVertexNormals();
   gfx.scene.add(new THREE.Mesh(mg, mat('#eeeade', { side: THREE.DoubleSide, roughness: 1 })));
 }

@@ -217,6 +217,39 @@ La implementación, la validación y los límites del recorte están en
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md).
 
+## Suelo cercano
+
+`engine/ground-near.js` y `world/ground-clean.js` mejoran la ortofoto de cerca sin tocar las
+teselas publicadas. Todo va en TSL dentro del color de las teselas de suelo
+(`applyGroundDetail(material, { ortho: true })`) y se apaga con el mismo alcance que el grano
+cercano: `fade` = 1 a menos de `near` m de la cámara y 0 a más de `far` (`setGroundDetail`).
+Desde lejos y en vista aérea la ortofoto queda como estaba.
+
+- **Copas**: al cargar (`prepareGroundClean`, tras `buildTrees`) se dibuja una máscara con los
+  círculos de `vegetation.json` (árboles y arbustos, borde suave) y un «entorno limpio»: la
+  vista general sin esas copas, rellenada con el promedio ponderado de los píxeles vecinos
+  (desenfoque por cajas normalizado, 3 m/píxel). Bajo cada copa el color pasa de la foto a ese
+  entorno. En la ortofoto el oscuro de cada árbol (copa y sombra) llega a unas dos veces el
+  radio detectado y se alarga hacia el norte y el noroeste, así que la máscara lleva un segundo
+  canal con una zona más amplia y desplazada hacia la sombra (`zoneGrow`, `zoneMargin`,
+  `zoneShift`); dentro de ella solo se sustituye lo que en la tesela fina sea más oscuro que el
+  entorno limpio (`crownDark`), de modo que el césped claro alrededor se conserva. Cuesta unos
+  70 ms al arrancar y unos 6 MB de texturas; no se construye en ligero.
+- **Sombras horneadas**: los oscuros de la ortofoto suben hacia una luminancia mínima
+  (`shadowFloor`) con transición suave; el asfalto y otros oscuros normales quedan por encima.
+- **Materiales propios**: la clase del suelo se deduce del color de la foto (sin tinte): verde
+  predominante = césped, saturado ocre o marrón = tierra, gris claro poco saturado = pavimento;
+  el asfalto y las sombras oscuras no encajan y quedan como están. Cada clase multiplica la foto
+  por una textura procedural de media 1 (la baldosa, además, con un toque cálido: `pavementWarm`) (`groundMaterialTexture`: un RGBA de datos de 256 px, sin
+  imágenes: césped, tierra y baldosas con juntas), muestreada dos veces en coordenadas de mundo
+  (cada 3 m y cada 1,1 m) para romper la repetición. Así se conserva el color medio de la foto.
+  Coste: 2 lecturas de textura y unas decenas de operaciones por fragmento de suelo a menos de
+  `far` m; a más, ninguno efectivo (el factor es 0). Se apaga con un uniforme en ligero.
+- Ajuste en vivo: `setGroundNear({ crownClean, crownDark, shadowStrength, shadowFloor,
+shadowSoftness, materialStrength, materialScale, green, earth, pavement, minLight,
+pavementWarm })` y `GROUND_CLEAN`
+  (resolución y radios de la máscara, solo al construir).
+
 ## Aceras
 
 `world/sidewalks.js` (llamado desde `buildStreetSurfaces`) añade, solo como geometría visual,
@@ -358,7 +391,9 @@ Se activa desde Pausa → «MODO MÓVIL LIGERO». Hoy hace lo siguiente:
 - Apaga la gradación de color y la viñeta (`RenderPipeline`), porque añaden un pase a
   pantalla completa; el cielo, el entorno horneado y la niebla del cielo se mantienen.
 - Desactiva las sombras (mapa de sombras y proyección del sol, con recompilación).
-- Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste.
+- Anula el grano cercano del suelo mediante un uniforme, sin recompilar por este ajuste, y con
+  él el suelo cercano de la ortofoto (copas limpias, sombras suavizadas y materiales propios; ver «Suelo cercano»).
+  Si se arranca en ligero no se construyen sus texturas hasta pasar a normal.
 - Oculta las celdas más allá del final de la niebla.
 - Descarta el detalle de fachadas a 200 m y la vegetación a 300 m de la cámara;
   en vista aérea, el alcance es 380 m para ambos. Se suma el radio de la esfera
