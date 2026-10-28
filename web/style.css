@@ -1177,9 +1177,9 @@ textarea {
   }
   .touch-enabled.drive-stick {
     #interact {
-      right: calc(var(--safe-right) + 152px);
-      bottom: calc(var(--safe-bottom) + 44px);
-      height: 72px;
+      right: calc(var(--safe-right) + 76px);
+      bottom: calc(var(--safe-bottom) + 96px);
+      height: 60px;
     }
     #telemetry {
       top: calc(var(--safe-top) + 32px);
@@ -1229,7 +1229,8 @@ textarea {
       height: 56px;
     }
     #interact {
-      bottom: calc(var(--safe-bottom) + 32px);
+      bottom: calc(var(--safe-bottom) + 76px);
+      height: 48px;
     }
   }
 }

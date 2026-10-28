@@ -1,149 +1,140 @@
-# Interfaz de Chiclana Vice: diseño y desarrollo por tandas
+# Interfaz de Chiclana Vice: diseño, revisión y pendientes
 
-Actualizado: 28/10/2026. Implementación iniciada en `feat/ui-chiclana`, pendiente de
-revisión visual del usuario. Sustituye la propuesta de investigación del 27/10/2026.
+Actualizado: 28/10/2026. Implementado en `feat/ui-chiclana`, con revisiones del usuario
+en su móvil por red local y aceptado para preparar la v2.0.0. Pendiente de integrar y
+publicar. Este documento sustituye
+la propuesta de investigación del 27/10/2026 y describe el resultado actual.
 
-## Objetivo
+## Objetivo y alcance
 
-Dar cohesión a la interfaz, resolver solapes y dejar visible la calle, especialmente
-al jugar en móvil horizontal. Desarrollo ágil: una tanda visible, revisión del usuario
-en navegador y ajustes antes de seguir. No hace falta completar todo el plan para revisar.
+Dar cohesión a la interfaz, resolver solapes y dejar visible la calle. La prioridad es
+jugar cómodamente en móvil, también con las barras del navegador visibles. El trabajo
+se hace por tandas visibles: el usuario prueba y dirige el siguiente ajuste.
 
-Las capturas de la investigación inicial eran temporales y no se conservan. El diagnóstico
-se contrastó con el CSS y los módulos de interfaz; no acredita tacto ni rendimiento en móvil.
+El alcance principal —sistema visual, HUD adaptable, menús y conducción con joystick—
+está implementado. Las ampliaciones opcionales del final no son requisitos para cerrar
+esta rama.
 
-## Dirección de diseño
+## Decisiones vigentes
 
-- Identidad moderada: paneles azul noche, texto cal y amarillo albero para las acciones y
-  el objetivo. Azul mar como apoyo si resulta necesario, sin llenar cada panel de colores.
-- Fuente del sistema por ahora: `Avenir Next`, `Segoe UI`, `system-ui`. Barlow queda como
-  comparación futura, preferiblemente local; añadirla requiere acordar su licencia y atribución.
-- SVG propios para los botones, con el mismo tamaño y trazo. Sin librerías ni peticiones externas.
-- Radios, bordes, espaciado y zonas seguras compartidos. Superficies sin desenfoque, también
-  en calidad normal, para mantener sencilla la composición en móviles modestos.
-- Controles táctiles con objetivos de al menos 48 px, etiquetas legibles y sin partir
-  «FRENO / R». Conservar teclado, flechas, pedales y joystick fijo a pie en esta primera tanda.
+- Paneles azul noche, texto cal y albero como acento. El azul mar identifica lugares en
+  el mapa. Bordes, radios, espaciados y zonas seguras compartidos.
+- Fuente del sistema: `Avenir Next`, `Segoe UI`, `system-ui`. No se ha incorporado Barlow
+  ni Google Fonts. No hay una decisión de tipografía pendiente que bloquee el trabajo.
+- SVG propios para las herramientas y los controles principales, sin librerías externas.
+- Superficies sin desenfoque, también en calidad normal. Conservar el modo ligero.
+- Objetivos táctiles de al menos 48 px y etiquetas que no partan «FRENO / R».
+- Conservar teclado, funciones del juego y la alternativa de flechas y pedales.
+- Mantener íntegros los contenidos de fuentes, atribuciones y aproximaciones. Esta rama
+  reorganiza su acceso, sin cambiar licencias ni atribuciones.
 
-| Variable    | Valor                         | Uso                                      |
-| ----------- | ----------------------------- | ---------------------------------------- |
-| `--cal`     | `#f5f2e8`                     | Texto principal                          |
-| `--noche`   | `#12232b`                     | Paneles y texto sobre albero             |
-| `--albero`  | `#f0c24b`                     | Acción principal, foco y objetivo        |
-| `--surface` | Noche con opacidad alta       | Fondo común del HUD                      |
-| `--border`  | Cal con opacidad baja         | Bordes discretos                         |
-| `--edge`    | 24 px escritorio, 16 px móvil | Margen combinado con `safe-area-inset-*` |
-| `--radius`  | 14 px                         | Paneles y botones                        |
-| `--tap`     | 48 px                         | Herramientas y cierre                    |
+| Variable                              | Uso                                       |
+| ------------------------------------- | ----------------------------------------- |
+| `--cal` / `--noche` / `--albero`      | Texto, superficies y acento               |
+| `--surface` / `--border` / `--radius` | Componentes comunes                       |
+| `--edge` / `--safe-*`                 | Márgenes combinados con las zonas seguras |
+| `--tap` / `--joy-size`                | Tamaño de herramientas y joystick         |
+| `--map-*`                             | Paleta del mapa y del minimapa            |
 
-La legibilidad se revisa sobre la escena diurna y al anochecer. Los colores propuestos
-no sustituyen una comprobación de contraste, especialmente sobre superficies transparentes.
+Los valores vigentes están en `web/style.css`. Canvas resuelve la paleta al preparar el
+mapa; no consulta estilos en cada frame. La coherencia de colores está implementada;
+no se ha hecho una auditoría completa de contraste.
 
-## Composición
+## Implementado
 
-Se toma el móvil horizontal como caso más restrictivo de altura; vertical y escritorio
-mantienen las mismas prioridades de información.
+### HUD y herramientas
 
-- **Encargo:** bloque superior compacto; objetivo y distancia visibles. Permitir varias
-  líneas cuando haga falta, sin recortar información para cumplir un límite de caracteres.
-- **Herramientas:** conservar las cuatro acciones accesibles en esta tanda para no cambiar
-  a la vez distribución y navegación. En horizontal, grupo de dos por dos; en vertical,
-  columna derecha. Valorar después agrupar las menos frecuentes si siguen ocupando demasiado.
-- **Minimapa:** izquierda, fuera de las zonas de pulgar. Calle actual con truncado visual.
-- **Velocidad:** lectura independiente de GAS para que el pulgar no la tape.
-- **Avisos:** bajo el encargo, con el centro de la carretera libre. Aspecto compartido,
-  funciones distintas: la indicación contextual vuelve al desaparecer el mensaje temporal.
-- **Controles:** dos zonas inferiores para conducir; joystick izquierdo a pie. Mantener
-  las capacidades y revisar el espacio con varios dedos en el móvil del usuario.
-- **Pausa:** resumen y acciones en dos columnas en horizontal; cierre accesible y contenido
-  desplazable en pantallas pequeñas. Mantener todas las opciones.
-- **Fuentes:** conservar el acceso y el texto de atribución existente. No cambiar licencias
-  ni atribuciones como parte de la reorganización visual.
+- **Vertical:** objetivo compacto y velocímetro en la parte superior; minimapa a la
+  izquierda y menú hamburguesa en el borde derecho. El menú abre hacia abajo con las
+  opciones de pantalla completa, cámara, mapa, hora y pausa.
+- **Horizontal:** menú que abre de derecha a izquierda y minimapa de 144 × 104 px.
+  Con hasta 320 px de altura disponible, el minimapa pasa a 128 × 72 px y los controles
+  se compactan para convivir con las barras del navegador.
+- **Escritorio:** herramientas visibles, ayuda de teclado, minimapa y telemetría.
+- **Avisos:** presentación común bajo la zona superior. Los mensajes temporales tienen
+  prioridad sobre las indicaciones contextuales; estas vuelven cuando termina el aviso.
+  Mientras se despliega el menú se ocultan los avisos para evitar superposiciones.
+- **Búsqueda policial:** en táctil, las estrellas aparecen solo cuando hay búsqueda activa.
+- **Menú:** se cierra al elegir una opción, tocar fuera, pulsar Escape o cambiar de tamaño.
+  Desde un diálogo, el foco puede volver al botón del menú.
+- **Minimapa y mapa:** comparten la nueva paleta; ruta albero, jugador cal y lugares azul mar.
 
-## Tandas revisables
+### Bienvenida, pausa, ayuda y mapa
 
-### Tanda 1: primera composición (implementada)
+- Bienvenida breve con chips, botón «Empezar a jugar» y acceso a «Cómo se juega».
+  En horizontal con poca altura, se organiza en dos columnas.
+- Pausa con resumen de encargos, lugares y dinero; acciones en dos columnas en horizontal.
+  Conserva sonido, calidad, pantalla completa, reparación y nueva partida.
+- Guía con pestañas «Controles», «Sobre el mapa» y «Fuentes», navegación de teclado y
+  cabecera y botón de volver fijos. Solo se desplaza el contenido largo.
+- Controles explicados en tarjetas. Los textos de fuentes y aproximaciones se mantienen
+  íntegros. Desde pausa, «Volver» regresa a pausa; el acceso de créditos abre «Fuentes».
+- Mapa y búsqueda en columnas en horizontal y apilados en vertical. El cierre queda
+  accesible, Callejero/Ortofoto tienen selección explícita y la búsqueda cuenta destinos.
+  Se avisa de que elegir uno traslada al jugador.
 
-Rama: `feat/ui-chiclana`.
+### Conducción y pantalla completa
 
-- Paleta albero/cal/noche, tipografía de sistema y superficies comunes.
-- Iconos SVG de herramientas y controles, conservando los identificadores del DOM.
-- Reorganización de HUD en escritorio, vertical y horizontal; avisos fuera del centro.
-- Un único estado `body.touch-enabled`, conectado a la detección táctil existente.
-- Flechas, pedales y joystick actual con estilos coherentes; velocímetro separado.
-- Pausa en dos columnas en horizontal y zonas seguras en los diálogos.
+- Joystick izquierdo fijo por defecto: arriba acelera, abajo frena y retrocede, y los
+  lados giran. Turbo, freno y subir/bajar quedan para el otro pulgar.
+- Tras la revisión de sensibilidad: zona muerta del 22 %, curva progresiva, giro máximo
+  un 25 % menor y suavizado de la dirección (constante de tiempo: 125 ms). A pie se conserva
+  la respuesta anterior.
+- El freno tiene prioridad aunque el joystick siga hacia delante. Soltar o cancelar un
+  contacto no debe cancelar el otro; el giro vuelve al centro al soltar el joystick.
+- Pausa permite volver a flechas y pedales. Esa elección dura la sesión; no se guarda.
+- Último ajuste: en horizontal, BAJAR se alinea encima de TURBO, en vez de quedar separado
+  a su izquierda. En pantallas de poca altura conserva un objetivo mínimo de 48 px.
+- Las entradas se limpian al perder foco, ocultar la página, cambiar de tamaño o cambiar
+  de pantalla completa.
+- Al pulsar «Empezar a jugar» en horizontal con entrada táctil, se intenta activar pantalla
+  completa. También está en las opciones del HUD y en Pausa; no se bloquea la orientación.
+  Girar el dispositivo por sí solo no garantiza entrar:
+  [la API requiere una pulsación del usuario](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen#security_considerations).
 
-Revisión del usuario: bienvenida, conducción, a pie, encargo, aviso y pausa, primero en
-horizontal y después en vertical. Ajustar esta composición antes de abrir nuevos frentes.
+## Revisión y evidencia
 
-### Tanda 2: menús y reducción de ruido (implementación iniciada)
+| Revisión                               | Qué se ha comprobado                                                                                                                    | Límite                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Usuario en móvil por red local         | Distribución vertical y horizontal, barras del navegador, pantalla completa, manejo y sensibilidad; sus comentarios guiaron los ajustes | No se han registrado modelo, navegador ni medidas de FPS de esta sesión       |
+| `npm run check`                        | Lint, formato y verificadores; incluye joystick con turbo, prioridad del freno, curva de respuesta, cancelación y Escape del menú       | DOM y WebGL simulados; no prueba GPU ni tacto real                            |
+| Chrome sin interfaz                    | Menús, búsqueda, pestañas con teclado, dos contactos táctiles simulados y ausencia de errores JS                                        | SwiftShader; no acredita rendimiento ni comodidad en un móvil físico          |
+| Capturas y cajas del HUD               | 1280×720, 390×844, 360×640, 844×390, 844×280 y 640×240 a lo largo de las tandas; menú abierto/cerrado en los tamaños afectados          | Las capturas son temporales en `/tmp`; no todas corresponden al último ajuste |
+| Última alineación de BAJAR sobre TURBO | Formato y diff comprobados                                                                                                              | Posterior a las últimas capturas y al último `npm run check` completo         |
 
-El usuario pidió continuar tras revisar la primera tanda. Se mantiene `feat/ui-chiclana`
-para revisar el conjunto antes de integrar, sin cambiar de rama ni tocar `main`:
+No se ha verificado iOS ni medido FPS o GPU real de esta rama. Tampoco se ha completado
+la revisión de legibilidad al anochecer. Estos límites se informan, sin convertir todas
+las plataformas y mejoras opcionales en requisitos de esta tanda.
 
-- Ayuda dividida en «Controles», «Sobre el mapa» y «Fuentes», con navegación de teclado,
-  cabecera y botón de volver fijos. Textos de manejo reorganizados en tarjetas; fuentes y
-  aproximaciones conservadas. Desde pausa, volver regresa a pausa; Fuentes abre su pestaña.
-- Bienvenida con presentación breve y chips; dos columnas en móvil horizontal. Pausa con
-  resumen de progreso y acciones más claras.
-- Mapa y búsqueda con mejor uso del espacio disponible y cierre siempre accesible: mapa
-  arriba y búsqueda debajo en vertical, columnas en horizontal. Callejero y Ortofoto con
-  selección explícita, contador de destinos y aviso de traslado antes de elegir una calle.
-- Las herramientas se agrupan en el menú desplegable tras la revisión en móvil. Queda
-  valorar qué ayuda inicial puede ocultarse al aprenderla.
-- Revisar tamaños de texto y prioridades con los nombres y mensajes más largos.
+## Cierre de la revisión
 
-### Tanda 3: revisión en móvil y alternativas de control (en curso)
+El usuario considera lista la interfaz para sacar versión el 28/10/2026 y elige v2.0.0
+para marcar la renovación de interfaz y manejo. Las partidas guardadas siguen siendo
+compatibles. El último ajuste de BAJAR sobre TURBO queda incluido en el cierre de la rama.
 
-El usuario probó las tandas anteriores en su móvil por red local: en vertical, demasiada
-interfaz sobre el coche; en horizontal, solapes cuando el navegador deja menos altura.
-Conducir con giro, GAS y TURBO obliga a usar tres contactos. Se continúa en la misma rama
-para revisar estas correcciones juntas:
+La revisión de anochecer, textos largos y dispositivos adicionales sigue como mejora de
+validación; los límites constan en la tabla anterior. No bloquean el alcance aceptado.
+Las ampliaciones opcionales siguientes tampoco son requisitos de esta versión.
 
-- HUD vertical compacto: objetivo sin el rótulo de encargo, velocímetro arriba, mapa y
-  herramientas agrupados bajo esa franja. Las estrellas aparecen solo con búsqueda activa.
-- Joystick fijo para conducir por defecto: arriba acelera, abajo frena y retrocede, izquierda
-  y derecha giran. Tras probarlo, zona muerta del 22 %, curva progresiva, giro máximo un
-  25 % menor y transición de unos 125 ms; a pie se mantiene la respuesta anterior.
-  Freno, turbo y bajar
-  quedan al otro pulgar. El freno tiene prioridad sobre el acelerador del joystick.
-- Pausa permite volver a flechas y pedales; la selección dura la sesión actual. A pie se
-  conserva el joystick fijo. Cancelar un contacto no debe soltar los demás.
-- Limpiar entradas al cambiar de tamaño o pantalla completa, además de al perder foco.
-- Altura dinámica del HUD y disposición específica para horizontal de hasta 320 px de
-  altura, sin exigir pantalla completa para alcanzar las herramientas.
-- Pantalla completa en las opciones del HUD. Al empezar en horizontal con una pulsación
-  táctil se intenta entrar; no se bloquea la orientación. Girar por sí solo no basta:
-  [la API requiere activación del usuario](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen#security_considerations).
-- Canvas de mapa y minimapa con la misma paleta CSS: resolver colores al preparar la capa,
-  sin consultar estilos en cada frame. Ruta albero, jugador cal y lugares azul mar.
-- Segunda revisión: menú de opciones hacia abajo en el borde derecho en vertical y hacia
-  la izquierda en horizontal. Se cierra al elegir, tocar fuera, pulsar Escape o girar.
-  Minimapa horizontal de 144 × 104 px (128 × 72 px con barras que reducen la altura), y
-  BAJAR un poco por encima de freno y turbo.
+## Mejoras opcionales, sin compromiso de ejecución
 
-Después de probar esta tanda quedan:
+- **Ajustes táctiles:** tamaños de controles y modo zurdo. Si se amplían las preferencias,
+  valorar guardar también el modo de conducción.
+- **Joystick flotante a pie:** probarlo como alternativa al fijo, por separado.
+- **Gestos de cámara:** pellizco en aérea y doble toque para centrar, si aportan una mejora
+  y no interfieren con los controles.
+- **Ayuda inicial:** valorar ocultar la ayuda de teclado tras aprender los controles.
+- **Tipografía:** comparar Barlow local con la fuente actual únicamente si se desea más
+  carácter; requiere acordar la incorporación y su atribución.
+- **Mando y vibración:** para más adelante, con dispositivos reales para probarlos.
 
-- Probar joystick flotante a pie por separado.
-- Tamaño de controles y modo zurdo, comprobando también minimapa y velocímetro.
-- Pellizco y doble toque solo si aportan una mejora y no chocan con los controles.
-- Aprovechar la limpieza de entradas existente en `blur` y `visibilitychange`; completar
-  la cancelación que necesiten los nuevos gestos, incluida la rotación de pantalla.
+## Forma de trabajar
 
-Mando y vibración quedan para después, sin bloquear estas tandas.
+Una tanda visible y revisable por turno. Formatear los archivos modificados y pasar
+`npm run check` al cerrar la tanda y antes del commit, sin repetir la batería completa
+tras cada cambio pequeño de estilo. Repetir solo las vistas afectadas si aparece un
+problema. Las pruebas de comportamiento se amplían cuando cambia la entrada.
 
-## Forma de trabajar y comprobar
-
-- Una tanda visible y revisable por turno; el usuario dirige los siguientes ajustes.
-- Formatear los archivos modificados. Ejecutar `npm run check` al cerrar la tanda y antes
-  del commit, sin repetir baterías completas tras cada cambio de estilo.
-- Una revisión breve en Chrome con los tamaños 1280×720, 390×844 y 844×390, corrigiendo
-  solapes evidentes. Repetir solo las vistas afectadas si aparece un problema.
-- Sin nuevas dependencias, cambios de datos, huellas de escena ni pruebas de rendimiento
-  para esta tanda de interfaz. Si cambia el comportamiento de entrada, comprobarlo de forma
-  dirigida y ampliar las pruebas solo cuando haya una razón concreta.
-- Servir localmente una sola versión candidata para que el usuario la pruebe. No publicar,
-  integrar ni hacer push sin petición. El usuario ha pedido poder revisar en localhost:
-  mantener disponible ese servidor durante la revisión; cerrar los servidores temporales
-  de verificación al terminar. Comando de arranque en `DESARROLLO.md`.
-- Informar de lo verificado y lo pendiente: los verificadores con DOM/WebGL simulados y
-  Chrome con SwiftShader no prueban tacto, GPU real, FPS ni iOS.
+Se conserva una sola versión candidata en la red local para las revisiones del usuario;
+los servidores temporales de verificación se cierran al terminar. Comando de arranque
+en `DESARROLLO.md`. No integrar, publicar ni hacer push sin petición.
