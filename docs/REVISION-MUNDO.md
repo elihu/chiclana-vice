@@ -20,6 +20,22 @@ actual; no se ha autorizado publicar esta tanda.
 - Tablero y pasos inferiores del VII Centenario separados, incluida la banda de asfalto.
 - Peatones sobre recorridos continuos de acera o vía peatonal. Se conserva la población;
   todavía no simulan cruzar por pasos de cebra ni caminan de un extremo de la ciudad a otro.
+- Separadores entre ramales: relleno de asfalto y franjas cebreadas, sin baldosa, bordillo
+  ni faldón. La misma superficie sostiene el coche y excluye recorridos de peatones.
+  La detección usa caras pequeñas de la red vial en todo el mapa, también cuando dos
+  ramales quedan cortados por el borde del mapa. Excluye edificios, jardines, agua,
+  arbolado; conserva las isletas centrales de las glorietas. Los caminos que cruzan estos
+  separadores conservan su eje, pero su pavimento se sustituye por calzada.
+  Referencias de revisión: ambos extremos del VII Centenario, Descubrimientos y Calle Iro.
+  Es una aproximación por topología, no un inventario completo de marcas viales.
+- Seguimiento con capturas del usuario en Virgen del Carmen, Reyes Católicos y
+  Diputación: recorte de caras verticales de bordillo y de cuñas en curvas; rasante
+  de cada separador interpolada entre sus dos calzadas próximas, sin tomar el cierre
+  lejano. La revisión continúa jugando; no se repiten comprobaciones completas durante
+  estos ajustes. Las huellas de actores se renuevan al cerrar la tanda.
+- Junta del tranvía con Remedios: los ejes del tranvía participan como soportes internos
+  de rasante en el modelo de superficies, sin añadir calles ni conexiones de tráfico.
+  Franja y raíles usan ese perfil; el tablero se prolonga 2 m para incluir la junta oblicua.
 
 La referencia de vegetación/actores de los verificadores se renueva por los troncos
 retirados y los recorridos nuevos; se conservan los índices de edificios y la semilla.

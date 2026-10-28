@@ -57,7 +57,11 @@ export function spawnTraffic() {
       for (let k = 0; k <= n + 1; k++) {
         const point = at(Math.min(k, n)),
           y = surfaceHeightAt(...point, null, segment.roadId),
-          free = k <= n && !space.covers(...point, 0.35, y) && !blocked(...point, 0.3, y);
+          free =
+            k <= n &&
+            world.surfaces?.dividerHeightAt(...point) == null &&
+            !space.covers(...point, 0.35, y) &&
+            !blocked(...point, 0.3, y);
         if (free && start === null) start = k;
         if (!free && start !== null) {
           const length = ((k - 1 - start) * segment.length) / n;

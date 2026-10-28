@@ -348,3 +348,20 @@ Tanda local del 28/10/2026, pendiente de revisión visual del usuario:
 - El pavimento peatonal se recorta contra calzadas de la misma cota; el caso señalado por
   el usuario es La Vega con Alameda del Río. Los peatones usan tramos continuos de acera
   o vía peatonal, sin inventar cruces entre fachadas ni itinerarios de pasos de cebra.
+- Los separadores pintados se aproximan con caras de 12–1.200 m² entre al menos dos vías
+  de sentido único. Se descartan los interiores formados solo por vías de glorieta.
+  Dos extremos a menos de 24 m cortados por el mismo borde del mapa pueden cerrar una
+  huella; ese cierre no se añade al grafo de tráfico. Se rellenan los huecos entre las
+  bandas de calzada, con un alcance máximo de 8 m desde su borde y perfiles próximos
+  en altura (diferencia menor de 1,5 m), sin ocupar edificios, jardines, agua, arbolado
+  existentes. Los ejes peatonales se conservan, pero no generan baldosa donde cruzan
+  estos separadores. El relleno tiene asfalto y pintura blanca (rayas de 45 cm cada
+  1,5 m, 6 mm sobre el asfalto), sin volumen de acera ni bordillo. Colocación y orientación
+  de las rayas son de autor: no se han vectorizado las marcas individuales de la foto.
+  Es una regla global por topología, no una clasificación exhaustiva de isletas físicas
+  y pintadas. Referencias confirmadas por el usuario: accesos del VII Centenario y giro
+  hacia Calle Iro; la ortofoto PNOA publicada permite revisar sus huellas.
+- En Remedios, el eje OSM del tranvía se incluye como soporte interno de rasante para
+  unir tablero y accesos. No se añade al grafo de calles. La prolongación de 2 m del
+  tablero es de autor y evita que su junta oblicua deje fuera el extremo del tranvía;
+  franja y raíles siguen el perfil común en lugar del terreno rebajado bajo el puente.

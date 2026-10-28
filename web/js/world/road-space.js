@@ -7,6 +7,144 @@ const area = (p) =>
     const b = p[(i + 1) % p.length];
     return s + a[0] * b[2] - b[0] * a[2];
   }, 0);
+const hasSurface = (p) => {
+  const a = p[0];
+  for (let i = 1; i < p.length - 1; i++) {
+    const b = p[i].map((v, k) => v - a[k]),
+      c = p[i + 1].map((v, k) => v - a[k]);
+    if (
+      Math.hypot(b[1] * c[2] - b[2] * c[1], b[2] * c[0] - b[0] * c[2], b[0] * c[1] - b[1] * c[0]) >
+      1e-7
+    )
+      return true;
+  }
+  return false;
+};
+
+// Caras pequeñas entre ramales: recorrer semiaristas evita confundir un hueco de
+// pavimentación con el interior completo de una glorieta. El llamador descarta usos reales.
+export function dividerFaces(roads, bounds = []) {
+  const nodes = new Map(),
+    edges = [],
+    excluded = ['pedestrian', 'footway', 'path', 'cycleway'];
+  const node = (p) => {
+    const id = p.join(',');
+    if (!nodes.has(id)) nodes.set(id, { p, edges: [] });
+    return nodes.get(id);
+  };
+  for (const road of roads) {
+    if (excluded.includes(road.type) || road.bridge || road.tunnel) continue;
+    for (let i = 1; i < road.p.length; i++) {
+      const a = node(road.p[i - 1]),
+        b = node(road.p[i]);
+      if (a === b) continue;
+      const forward = { a, b, road },
+        reverse = { a: b, b: a, road };
+      forward.reverse = reverse;
+      reverse.reverse = forward;
+      a.edges.push(forward);
+      b.edges.push(reverse);
+      edges.push(forward, reverse);
+    }
+  }
+  // Cierre de dos ramales cortados por el mismo borde del mapa. Solo cierra la
+  // huella de pavimento: no añade una calle ni una conexión al grafo de tráfico.
+  const ends = [...nodes.values()].filter((n) => n.edges.length === 1 && n.edges[0].road.oneway),
+    capped = new Set(),
+    onEdge = (a, b) =>
+      bounds.some(
+        ([x0, x1, z0, z1]) =>
+          (((Math.abs(a[0] - x0) < 0.03 && Math.abs(b[0] - x0) < 0.03) ||
+            (Math.abs(a[0] - x1) < 0.03 && Math.abs(b[0] - x1) < 0.03)) &&
+            Math.min(a[1], b[1]) >= z0 - 0.03 &&
+            Math.max(a[1], b[1]) <= z1 + 0.03) ||
+          (((Math.abs(a[1] - z0) < 0.03 && Math.abs(b[1] - z0) < 0.03) ||
+            (Math.abs(a[1] - z1) < 0.03 && Math.abs(b[1] - z1) < 0.03)) &&
+            Math.min(a[0], b[0]) >= x0 - 0.03 &&
+            Math.max(a[0], b[0]) <= x1 + 0.03),
+      );
+  for (const a of ends) {
+    if (capped.has(a)) continue;
+    const b = ends.find(
+      (b) =>
+        b !== a &&
+        !capped.has(b) &&
+        a.edges[0].road.id !== b.edges[0].road.id &&
+        (a.p.join(',') === a.edges[0].road.p[0].join(',')) !==
+          (b.p.join(',') === b.edges[0].road.p[0].join(',')) &&
+        Math.hypot(a.p[0] - b.p[0], a.p[1] - b.p[1]) < 24 &&
+        onEdge(a.p, b.p),
+    );
+    if (!b) continue;
+    const road = { id: 'cap:' + a.p.join(',') + ':' + b.p.join(','), virtual: true },
+      forward = { a, b, road },
+      reverse = { a: b, b: a, road };
+    forward.reverse = reverse;
+    reverse.reverse = forward;
+    a.edges.push(forward);
+    b.edges.push(reverse);
+    edges.push(forward, reverse);
+    capped.add(a);
+    capped.add(b);
+  }
+  for (const n of nodes.values())
+    n.edges.sort(
+      (a, b) =>
+        Math.atan2(a.b.p[1] - n.p[1], a.b.p[0] - n.p[0]) -
+        Math.atan2(b.b.p[1] - n.p[1], b.b.p[0] - n.p[0]),
+    );
+  const seen = new Set(),
+    result = [];
+  for (const first of edges) {
+    if (seen.has(first)) continue;
+    const ring = [],
+      boundary = [];
+    let edge = first;
+    while (!seen.has(edge)) {
+      seen.add(edge);
+      ring.push(edge.a.p);
+      boundary.push(edge.road);
+      const next = edge.b.edges,
+        i = next.indexOf(edge.reverse);
+      edge = next[(i + next.length - 1) % next.length];
+    }
+    const signed = area(ring.map(([x, z]) => [x, 0, z])) / 2,
+      ids = new Set(boundary.map((r) => r.id));
+    if (
+      edge !== first ||
+      signed < 12 ||
+      signed > 1200 ||
+      ids.size < 3 ||
+      boundary.every((r) => r.virtual || r.junction === 'roundabout') ||
+      new Set(boundary.filter((r) => r.oneway).map((r) => r.id)).size < 2 ||
+      new Set(ring.map((p) => p.join(','))).size !== ring.length
+    )
+      continue;
+    result.push({ polygon: ring, roads: [...ids], area: signed });
+  }
+  return result;
+}
+
+// Rayas en coordenadas de mundo: continuas entre triángulos y sin textura de baldosa.
+export function hatchPavement(position, spacing = 1.5, width = 0.45) {
+  const result = [],
+    project = (p) => (p[0] + p[2]) / Math.SQRT2;
+  for (let i = 0; i < position.length; i += 9) {
+    const triangle = [0, 1, 2].map((k) => position.slice(i + k * 3, i + k * 3 + 3)),
+      values = triangle.map(project);
+    for (
+      let band = Math.floor(Math.min(...values) / spacing);
+      band <= Math.floor(Math.max(...values) / spacing);
+      band++
+    ) {
+      let polygon = split(triangle, (p) => project(p) - band * spacing).inside;
+      polygon = split(polygon, (p) => band * spacing + width - project(p)).inside;
+      for (let k = 1; k < polygon.length - 1; k++)
+        for (const p of [polygon[0], polygon[k], polygon[k + 1]]) result.push(...p);
+    }
+  }
+  return result;
+}
 
 function split(polygon, distance) {
   const inside = [],
@@ -27,7 +165,7 @@ function split(polygon, distance) {
   return { inside, outside };
 }
 
-export function createRoadSpace(roads, nonDrivableTypes, heightAt = null) {
+export function createRoadSpace(roads, nonDrivableTypes, heightAt = null, joins = false) {
   const grid = new Map();
   for (const road of roads) {
     if (nonDrivableTypes.includes(road.type)) continue;
@@ -54,11 +192,53 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null) {
           grid.get(k).push(s);
         }
     }
+    if (joins)
+      for (let i = 1; i < road.p.length - 1; i++) {
+        const a = road.p[i - 1],
+          b = road.p[i],
+          c = road.p[i + 1],
+          px = b[0] - a[0],
+          pz = b[1] - a[1],
+          nx = c[0] - b[0],
+          nz = c[1] - b[1],
+          pl = Math.hypot(px, pz),
+          nl = Math.hypot(nx, nz),
+          half = road.w / 2;
+        if (pl < 0.1 || nl < 0.1) continue;
+        for (const side of [1, -1]) {
+          const q = [b[0] - (pz / pl) * half * side, b[1] + (px / pl) * half * side],
+            r = [b[0] - (nz / nl) * half * side, b[1] + (nx / nl) * half * side];
+          if (((r[0] - q[0]) * px + (r[1] - q[1]) * pz) / pl < 0.01) continue;
+          const polygon = [b, q, r],
+            sign = Math.sign((q[0] - b[0]) * (r[1] - b[1]) - (q[1] - b[1]) * (r[0] - b[0])),
+            planes = polygon.map((p, k) => {
+              const next = polygon[(k + 1) % 3];
+              return (v) =>
+                sign * ((next[0] - p[0]) * (v[2] - p[1]) - (next[1] - p[1]) * (v[0] - p[0]));
+            }),
+            s = { planes, road };
+          for (let x = Math.floor((b[0] - half) / CELL); x <= Math.floor((b[0] + half) / CELL); x++)
+            for (
+              let z = Math.floor((b[1] - half) / CELL);
+              z <= Math.floor((b[1] + half) / CELL);
+              z++
+            ) {
+              const k = x + ',' + z;
+              if (!grid.has(k)) grid.set(k, []);
+              grid.get(k).push(s);
+            }
+        }
+      }
   }
   const sameLevel = (s, x, z, reference) =>
     reference === null || !heightAt || Math.abs(heightAt(x, z, s.road.id) - reference) < 1.5;
   function covers(x, z, margin = 0, reference = null) {
     for (const s of grid.get(key(x, z)) ?? []) {
+      if (s.planes) {
+        if (s.planes.every((p) => p([x, 0, z]) >= -margin) && sameLevel(s, x, z, reference))
+          return true;
+        continue;
+      }
       const along = (x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz,
         across = (z - s.a[1]) * s.dx - (x - s.a[0]) * s.dz;
       if (
@@ -83,7 +263,7 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null) {
           if (sameLevel(s, cx, cz, reference)) candidates.add(s);
     let pieces = [polygon];
     for (const s of candidates) {
-      const planes = [
+      const planes = s.planes ?? [
         (p) => (p[0] - s.a[0]) * s.dx + (p[2] - s.a[1]) * s.dz,
         (p) => s.length - (p[0] - s.a[0]) * s.dx - (p[2] - s.a[1]) * s.dz,
         (p) => s.half + (p[2] - s.a[1]) * s.dx - (p[0] - s.a[0]) * s.dz,
@@ -95,8 +275,7 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null) {
         for (const plane of planes) {
           if (remaining.length < 3) break;
           const result = split(remaining, plane);
-          if (result.outside.length >= 3 && Math.abs(area(result.outside)) > 1e-7)
-            next.push(result.outside);
+          if (result.outside.length >= 3 && hasSurface(result.outside)) next.push(result.outside);
           remaining = result.inside;
         }
       }

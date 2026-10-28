@@ -6,7 +6,13 @@ import { terrainEdge } from '../engine/terrain-drape.js';
 import { createSurfaceModel } from './surface-model.js';
 
 export function prepareTerrainPlacement() {
-  world.surfaces = createSurfaceModel(world.city, world.terrain, world.cityDesign?.terrainSurfaces);
+  world.surfaces = createSurfaceModel(
+    world.city,
+    world.terrain,
+    world.cityDesign?.terrainSurfaces,
+    world.vegetation?.trees,
+    { tracks: world.tram?.tracks ?? [], width: world.cityDesign.tram.stripWidth },
+  );
   for (const b of world.city.buildings) {
     let high = -Infinity,
       low = Infinity;

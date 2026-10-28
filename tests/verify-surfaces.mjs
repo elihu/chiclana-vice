@@ -1,3 +1,4 @@
+import './verify-tram-surface.mjs';
 import assert from 'node:assert/strict';
 import { createSurfaceModel, validateSurfaceDesign } from '../web/js/world/surface-model.js';
 import { placeVehicle, placeVehicleIfChanged } from '../web/js/engine/terrain-sampling.js';

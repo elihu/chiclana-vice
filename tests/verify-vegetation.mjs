@@ -31,6 +31,6 @@ assert.ifError(child.error);
 assert.equal(child.status, 0, child.stderr);
 assert.deepEqual(JSON.parse(child.stdout), {
   vegetation: '5df5ba6b1216aa5106573e4a27253e38378c193c01437e3db80fa8a397960228',
-  trace: '88bc550303fe6979e291fdafb2ab790b546f8bc50ccf275fc0224b54318df288',
+  trace: '848c1c778ef5c87bda89ce863c3ddcbbf88c83062f28bd97d0ceb2d70048e201',
 });
 console.log('Copas publicadas y arbolado de respaldo conservados; recorridos peatonales renovados');

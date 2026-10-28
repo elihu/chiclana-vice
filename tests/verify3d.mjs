@@ -310,6 +310,25 @@ assert(
 const signPlates = g.scene.getObjectByName('street-signs'),
   signPosts = g.scene.getObjectByName('street-sign-posts');
 assert(signPlates && signPosts.isInstancedMesh, 'sign atlas and instanced posts');
+{
+  const asphalt = g.scene.getObjectByName('street-asphalt'),
+    paint = g.scene.getObjectByName('road-divider-hatching');
+  assert(asphalt?.material.map && paint, 'los separadores tienen asfalto y pintura propios');
+  assert(g.streetEnvironment.paintedDividers > 5, 'la corrección alcanza varios lugares del mapa');
+  g.scene.updateMatrixWorld(true);
+  for (const [x, z] of [
+    [-485, -585],
+    [-505, -448],
+  ]) {
+    const ray = new Real.Raycaster(new Real.Vector3(x, 100, z), new Real.Vector3(0, -1, 0)),
+      hit = ray.intersectObject(asphalt)[0];
+    assert(hit, 'el cebreado del VII Centenario tiene pavimento, no un hueco');
+    assert(
+      Math.abs(hit.point.y - g.surfaceHeightAt(x, z) - 0.028) < 0.12,
+      'el coche y el asfalto del separador comparten la superficie',
+    );
+  }
+}
 assert.equal(signPosts.count, environmentCounts.signs);
 assert.equal(signPlates.geometry.index.count, environmentCounts.signs * 6, 'one quad per sign');
 const signUV = signPlates.geometry.getAttribute('uv');
@@ -945,6 +964,11 @@ assert(g.people.every((p) => p.s.length >= 8));
         z = person.walk.a[1] + (person.walk.b[1] - person.walk.a[1]) * t,
         y = g.surfaceHeightAt(x, z, null, person.s.roadId);
       assert(!space.covers(x, z, 0.3, y), 'el recorrido peatonal no invade calzadas');
+      assert.equal(
+        runtimeWorld.surfaces.dividerHeightAt(x, z),
+        null,
+        'los peatones no usan el cebreado como acera',
+      );
       assert(!g.inBuilding(x, z, 0.2), 'el recorrido peatonal no atraviesa fachadas');
     }
 }

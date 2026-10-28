@@ -2,6 +2,7 @@ import { gridX, gridZ } from '../core/math.js';
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
 import { pInside, boundaryDistance } from '../core/math.js';
 import { gridHeightAt } from './terrain.js';
+import { dividerFaces } from './road-space.js';
 
 const key = (x, z) => Math.floor(x / 25) * 65536 + Math.floor(z / 25);
 const mix = (a, b, t) => a + (b - a) * t;
@@ -257,14 +258,24 @@ export function validateSurfaceDesign(design, city = null) {
   return errors;
 }
 
-export function createSurfaceModel(city, terrain, design) {
+export function createSurfaceModel(city, terrain, design, vegetation = [], tram = null) {
   const errors = validateSurfaceDesign(design, city);
   if (errors.length) throw Error('Diseño vertical incompatible: ' + errors.join('; '));
   if (terrain.kind === 'flat') return null;
   if (!design)
     throw Error('Terreno real requiere terrainSurfaces: no hay perfil alternativo de puentes');
-  const raw = terrain.heightAt,
-    roadMap = new Map(city.roads.map((r) => [r.id, r])),
+  // Soportes de rasante internos: el tranvía participa en rampas y uniones, sin
+  // añadir calles al grafo ni modificar los ejes OSM publicados.
+  const tramRoads = (tram?.tracks ?? []).map((track) => ({
+      ...track,
+      id: 'tram:' + track.id,
+      type: 'tram',
+      w: tram.width,
+      oneway: false,
+    })),
+    surfaceRoads = [...city.roads, ...tramRoads],
+    raw = terrain.heightAt,
+    roadMap = new Map(surfaceRoads.map((r) => [r.id, r])),
     grid = new Map(),
     bridgeSegments = new Map(),
     ordinarySegments = new Map(),
@@ -396,6 +407,14 @@ export function createSurfaceModel(city, terrain, design) {
     }
     platforms.push({
       ...p,
+      deckRoads: [
+        ...p.deckRoads,
+        ...tramRoads
+          .filter((r) =>
+            r.p.some((q) => pInside(...q, polygon) || boundaryDistance(...q, polygon) < 1e-6),
+          )
+          .map((r) => r.id),
+      ],
       polygon,
       area,
       thickness: p.thickness ?? 0.12,
@@ -550,7 +569,7 @@ export function createSurfaceModel(city, terrain, design) {
         index.get(k).push(s);
       }
   };
-  for (const r of city.roads) {
+  for (const r of surfaceRoads) {
     const points = [],
       lengths = [0];
     for (let i = 1; i < r.p.length; i++)
@@ -808,6 +827,86 @@ export function createSurfaceModel(city, terrain, design) {
   };
   const constructedRoad = {},
     constructedDeck = {};
+  const dividers = dividerFaces(city.roads, city.bounds),
+    dividerGrid = new Map(),
+    blockerGrid = new Map();
+  for (const face of dividers) {
+    const xs = face.polygon.map((p) => p[0]),
+      zs = face.polygon.map((p) => p[1]);
+    indexBounds(
+      dividerGrid,
+      face,
+      Math.min(...xs),
+      Math.max(...xs),
+      Math.min(...zs),
+      Math.max(...zs),
+    );
+  }
+  for (const building of city.buildings ?? []) {
+    const xs = building.p.map((p) => p[0]),
+      zs = building.p.map((p) => p[1]);
+    indexBounds(
+      blockerGrid,
+      building,
+      Math.min(...xs),
+      Math.max(...xs),
+      Math.min(...zs),
+      Math.max(...zs),
+    );
+  }
+  const greenGrid = new Map(),
+    treeGrid = new Map();
+  for (const a of (city.areas ?? []).filter((a) => ['park', 'water'].includes(a.kind))) {
+    const xs = a.p.map((p) => p[0]),
+      zs = a.p.map((p) => p[1]);
+    indexBounds(greenGrid, a, Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs));
+  }
+  for (const p of [...(city.trees ?? []), ...vegetation]) {
+    const r = Math.max(1.5, p[2] ?? 0);
+    indexBounds(treeGrid, { p, r }, p[0] - r, p[0] + r, p[1] - r, p[1] + r);
+  }
+  const dividerHeightAt = (x, z) => {
+    const faces = dividerGrid.get(key(x, z));
+    if (!faces || atPlatform(x, z)) return null;
+    const face = faces.find((f) => pInside(x, z, f.polygon));
+    if (
+      !face ||
+      (blockerGrid.get(key(x, z)) ?? empty).some(
+        (b) => pInside(x, z, b.p) && !(b.holes ?? []).some((h) => pInside(x, z, h)),
+      ) ||
+      (greenGrid.get(key(x, z)) ?? empty).some((a) => pInside(x, z, a.p)) ||
+      (treeGrid.get(key(x, z)) ?? empty).some(({ p, r }) => Math.hypot(x - p[0], z - p[1]) < r)
+    )
+      return null;
+    let first = null,
+      second = null;
+    for (const id of face.roads) {
+      let distance = Infinity,
+        height = 0;
+      for (const s of profiles.get(id) ?? empty) {
+        const t = Math.max(
+            0,
+            Math.min(1, ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length)),
+          ),
+          d = Math.hypot(x - s.a[0] - t * s.dx, z - s.a[1] - t * s.dz);
+        if (d < distance) {
+          distance = d;
+          height = mix(s.y0, s.y1, t);
+        }
+      }
+      if (!Number.isFinite(distance)) continue;
+      const hit = { gap: Math.max(0.05, distance - roadMap.get(id).w / 2), height };
+      if (!first || hit.gap < first.gap) {
+        second = first;
+        first = hit;
+      } else if (!second || hit.gap < second.gap) second = hit;
+    }
+    // Solo las dos calzadas próximas delimitan la rasante local. Incluir el cierre
+    // lejano de un separador largo lo hundía o descartaba por una cota ajena.
+    if (!first || !second || first.gap > 8 || Math.abs(first.height - second.height) >= 1.5)
+      return null;
+    return (first.height * second.gap + second.height * first.gap) / (first.gap + second.gap);
+  };
   const constructedHeightAt = (x, z) => {
     let y = raw(x, z);
     const cell = key(x, z);
@@ -843,6 +942,7 @@ export function createSurfaceModel(city, terrain, design) {
       const blend = 1 - smooth(Math.max(0, Math.min(1, (r.d - r.s.width / 2) / cfg.shoulder)));
       y = mix(y, r.y, blend);
     }
+    if (!r || r.d > r.s.width / 2) y = dividerHeightAt(x, z) ?? y;
     // La malla del MDT representa el nivel inferior; el tablero se dibuja aparte.
     if (p) y = Math.min(y, p.heightAt(x, z) - p.thickness - p.clearance);
     const deck = roadAt(x, z, null, true, false, constructedDeck);
@@ -901,11 +1001,12 @@ export function createSurfaceModel(city, terrain, design) {
     ceilingRoad = {},
     dryRoad = {};
   const surfaceHeightAt = (x, z, reference = null, roadId = null) => {
-    const r = roadAt(x, z, roadId, true, false, surfaceRoad);
-    if (roadId && r) return r.y;
+    const r = roadAt(x, z, roadId, true, false, surfaceRoad),
+      divider = dividerHeightAt(x, z);
+    if (roadId && r && (r.d <= r.s.width / 2 || divider === null)) return r.y;
     const p = atPlatform(x, z),
       lower = r?.s.bridge ? roadAt(x, z, null, false, false, surfaceLower) : r,
-      ground = lower && lower.d <= lower.s.width / 2 ? lower.y : groundHeightAt(x, z);
+      ground = lower && lower.d <= lower.s.width / 2 ? lower.y : (divider ?? groundHeightAt(x, z));
     let upper = p ? p.heightAt(x, z) : null;
     if (r?.s.bridge && r.d <= r.s.width / 2) upper = r.y;
     if (upper === null) return r && r.d <= r.s.width / 2 ? r.y : ground;
@@ -919,6 +1020,10 @@ export function createSurfaceModel(city, terrain, design) {
     const requested = roadId ?? retained;
     const road = requested ? roadAt(x, z, requested, true, false, actorRoad) : null;
     const platform = atPlatform(x, z);
+    if (!platform && (!road || road.d > road.s.width / 2) && dividerHeightAt(x, z) !== null) {
+      actor.surfaceSupport = null;
+      return surfaceHeightAt(x, z);
+    }
     if (roadId && road) {
       actor.surfaceSupport = road.s.supportId;
       return road.y;
@@ -973,6 +1078,8 @@ export function createSurfaceModel(city, terrain, design) {
   };
   return {
     meshSubdivisions: cfg.meshSubdivisions,
+    dividers,
+    dividerHeightAt,
     meshTerrain,
     groundHeightAt,
     surfaceHeightAt,

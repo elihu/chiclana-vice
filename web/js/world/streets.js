@@ -4,7 +4,7 @@ import { shoreGeometry, waterMaterial } from '../engine/water.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
 import { nearestRoad } from './spatial.js';
 import { buildSidewalks } from './sidewalks.js';
-import { createRoadSpace, carvePavement, roundaboutIslands } from './road-space.js';
+import { createRoadSpace, carvePavement, roundaboutIslands, hatchPavement } from './road-space.js';
 import { applyGroundDetail, surfaceTexture } from '../engine/textures.js';
 import { drapeTriangles } from '../engine/terrain-drape.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
@@ -196,8 +196,11 @@ export function buildStreetSurfaces() {
     heights = paved.layerHeights,
     [roadMinX, roadMaxX, roadMinZ, roadMaxZ] = design.zones.pavedRoads,
     [squareMinX, squareMaxX, squareMinZ, squareMaxZ] = design.zones.pavedSquares;
-  const space = createRoadSpace(world.city.roads, paved.nonDrivableTypes, (x, z, id) =>
-    surfaceHeightAt(x, z, null, id),
+  const space = createRoadSpace(
+    world.city.roads,
+    paved.nonDrivableTypes,
+    (x, z, id) => surfaceHeightAt(x, z, null, id),
+    true,
   );
   let asphalt = surfaceTexture('asphalt'),
     stone = surfaceTexture('stone'),
@@ -210,6 +213,49 @@ export function buildStreetSurfaces() {
   const bands = Object.fromEntries(
     Object.entries(groups).map(([k, g]) => [k, { ...g, p: [], uv: [] }]),
   );
+  // Completar separadores como calzada con pintura, sin una caja elevada ni baldosa.
+  const dividerPositions = [],
+    dividerUV = [],
+    dividerSpace = createRoadSpace(world.city.roads, paved.nonDrivableTypes, null, true);
+  let paintedDividers = 0;
+  for (const face of world.surfaces?.dividers ?? []) {
+    const indexed = flatGeometry(face.polygon),
+      flat = indexed.toNonIndexed(),
+      position = [...flat.getAttribute('position').array],
+      uv = position.flatMap((_, i) => (i % 3 ? [] : [position[i] / 4, -position[i + 2] / 4]));
+    indexed.dispose();
+    flat.dispose();
+    const cut = carvePavement(position, uv, dividerSpace, (x, z) => surfaceHeightAt(x, z)),
+      draped = drapeTriangles(cut.position, cut.uv, (x, z) =>
+        Math.max(surfaceHeightAt(x, z), groundHeightAt(x, z)),
+      );
+    const before = dividerPositions.length;
+    for (let i = 0; i < draped.position.length; i += 9) {
+      const x = (draped.position[i] + draped.position[i + 3] + draped.position[i + 6]) / 3,
+        z = (draped.position[i + 2] + draped.position[i + 5] + draped.position[i + 8]) / 3;
+      if (world.surfaces.dividerHeightAt(x, z) === null) continue;
+      for (let k = 0; k < 9; k++)
+        dividerPositions.push(draped.position[i + k] + (k % 3 === 1 ? heights.asphalt : 0));
+      dividerUV.push(...draped.uv.slice((i / 3) * 2, (i / 3) * 2 + 6));
+    }
+    if (dividerPositions.length > before) paintedDividers++;
+  }
+  if (dividerPositions.length) {
+    groups.asphalt.p = groups.asphalt.p.concat(dividerPositions);
+    groups.asphalt.uv = groups.asphalt.uv.concat(dividerUV);
+    const paint = hatchPavement(dividerPositions).map((v, i) => v + (i % 3 === 1 ? 0.006 : 0)),
+      marks = new THREE.BufferGeometry();
+    marks.setAttribute('position', new THREE.Float32BufferAttribute(paint, 3));
+    marks.computeVertexNormals();
+    const stripes = new THREE.Mesh(
+      marks,
+      mat('#eee9dc', { roughness: 0.95, side: THREE.DoubleSide }),
+    );
+    stripes.name = 'road-divider-hatching';
+    stripes.receiveShadow = true;
+    gfx.scene.add(stripes);
+  }
+  streetEnvironment.paintedDividers = paintedDividers;
   for (const platform of world.surfaces?.platforms || [])
     for (const band of platform.bands) {
       const original = flatGeometry(band.polygon),
@@ -311,8 +357,13 @@ export function buildStreetSurfaces() {
     }
     if (world.surfaces) {
       const mesh = drapeTriangles(g.p, g.uv, (x, z) => surfaceHeightAt(x, z, null, road.id));
-      output.p.push(...mesh.position);
-      output.uv.push(...mesh.uv);
+      for (let i = 0; i < mesh.position.length; i += 9) {
+        const x = (mesh.position[i] + mesh.position[i + 3] + mesh.position[i + 6]) / 3,
+          z = (mesh.position[i + 2] + mesh.position[i + 5] + mesh.position[i + 8]) / 3;
+        if (pedestrian && world.surfaces.dividerHeightAt(x, z) !== null) continue;
+        output.p.push(...mesh.position.slice(i, i + 9));
+        output.uv.push(...mesh.uv.slice((i / 3) * 2, (i / 3) * 2 + 6));
+      }
     }
   }
   // Aceras con bordillo (visual; ver sidewalks.js). Con terreno de rejilla sin modelo de
@@ -405,6 +456,7 @@ export function buildStreetSurfaces() {
         }),
       ),
     );
+    if (g === groups.asphalt) mesh.name = 'street-asphalt';
     mesh.receiveShadow = true;
     gfx.scene.add(mesh);
   }
