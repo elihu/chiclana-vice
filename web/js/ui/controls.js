@@ -3,7 +3,7 @@ import { applyQuality, resizeRenderer } from '../engine/renderer.js';
 import { clamp } from '../core/math.js';
 import { clearInput } from './input.js';
 import { closeMap, drawMap, listStreets, openMap } from './map.js';
-import { closeModal, help, modal, pauseMenu, trapFocus } from './dialogs.js';
+import { closeModal, help, modal, pauseMenu, toggleFullscreen, trapFocus } from './dialogs.js';
 import { cycleCamera } from '../engine/camera.js';
 import { currentTime, nextTime, setTimeOfDay, timeName } from '../engine/time-of-day.js';
 import { toast } from './feedback.js';
@@ -47,7 +47,25 @@ export function describeTime() {
 }
 
 export function installControls() {
-  $('start').onclick = start;
+  function useInteract() {
+    interact();
+    clearInput();
+  }
+  $('start').onclick = () => {
+    start();
+    if (gfx.touchSeen && innerWidth > innerHeight && !document.fullscreenElement)
+      void toggleFullscreen();
+  };
+  $('fullscreenBtn').onclick = toggleFullscreen;
+  document.addEventListener('fullscreenchange', () => {
+    const active = !!document.fullscreenElement;
+    $('fullscreenBtn').setAttribute('aria-pressed', String(active));
+    $('fullscreenBtn').setAttribute(
+      'aria-label',
+      active ? 'Salir de pantalla completa' : 'Pantalla completa',
+    );
+    clearInput();
+  });
   $('introHelp').onclick = help;
   $('credits').onclick = () => help('sources');
   $('closeModal').onclick = closeModal;
@@ -63,7 +81,7 @@ export function installControls() {
     save();
     toast('Hora del día: ' + timeName(), 2);
   };
-  $('interact').onclick = interact;
+  $('interact').onclick = useInteract;
   $('streetSearch').oninput = listStreets;
   function selectMapStyle(aerial) {
     session.mapAerial = aerial;
@@ -110,13 +128,14 @@ export function installControls() {
       max = r.width * 0.32,
       len = Math.hypot(dx, dz),
       s = len > max ? max / len : 1;
-    input.jx = (dx * s) / max;
-    input.jy = (dz * s) / max;
+    const strength = Math.max(0, (Math.min(1, len / max) - 0.15) / 0.85);
+    input.jx = len ? (dx / len) * strength : 0;
+    input.jy = len ? (dz / len) * strength : 0;
     $('stick').style.transform = `translate(${dx * s}px,${dz * s}px)`;
   }
   joy.onpointerdown = (e) => {
     e.preventDefault();
-    if (pointer.joyId !== null) return;
+    if (!session.started || session.paused || pointer.joyId !== null) return;
     pointer.joyId = e.pointerId;
     joy.setPointerCapture(e.pointerId);
     joyMove(e);
@@ -173,7 +192,7 @@ export function installControls() {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
     if (e.repeat) return;
     keys[k] = true;
-    if (k === 'e') interact();
+    if (k === 'e') useInteract();
     if (k === 'c' && session.started && !session.paused) cycleCamera();
     if (k === 'm') {
       if (!$('mapOverlay').classList.contains('hidden')) closeMap();
@@ -203,6 +222,7 @@ export function installControls() {
   });
   window.addEventListener('pagehide', save);
   window.addEventListener('resize', () => {
+    clearInput();
     resizeRenderer();
     if (!$('mapOverlay').classList.contains('hidden')) openMap();
   });

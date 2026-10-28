@@ -104,6 +104,7 @@ export const gfx = {
   platform: null,
 };
 export const session = {
+  driveStick: true,
   started: false,
   paused: false,
   t: 0,

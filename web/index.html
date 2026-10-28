@@ -175,6 +175,9 @@
   <body>
     <svg class="iconSprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
+        <symbol id="icon-fullscreen" viewBox="0 0 24 24">
+          <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+        </symbol>
         <symbol id="icon-camera" viewBox="0 0 24 24">
           <path d="M3 7h4l2-3h6l2 3h4v13H3z" />
           <circle cx="12" cy="13" r="4" />
@@ -239,7 +242,8 @@
             <svg class="icon" aria-hidden="true"><use href="#icon-right"></use></svg>
           </button>
           <p class="note">
-            Móvil: flechas y pedales · Teclado: WASD.<br />Gira el móvil para tener más espacio.
+            Móvil: joystick para conducir · Teclado: WASD.<br />Gira el móvil para tener más
+            espacio.
           </p>
           <button class="textButton" id="introHelp">Cómo se juega</button>
         </div>
@@ -258,6 +262,14 @@
         <div><span id="jobDistance"></span><span id="jobTime"></span></div>
       </div>
       <div class="topButtons">
+        <button
+          id="fullscreenBtn"
+          title="Pantalla completa"
+          aria-label="Pantalla completa"
+          aria-pressed="false"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#icon-fullscreen"></use></svg>
+        </button>
         <button id="cameraBtn" title="Cambiar cámara" aria-label="Cambiar cámara">
           <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg
           ><span>Cámara</span></button
@@ -301,7 +313,9 @@
           </button>
         </div>
       </div>
-      <div id="joy" class="hidden"><div id="stick"></div></div>
+      <div id="joy" class="hidden" role="group" aria-label="Joystick de movimiento">
+        <div id="stick"></div>
+      </div>
       <button id="interact" aria-labelledby="interactText">
         <svg class="icon" aria-hidden="true"><use href="#icon-interact"></use></svg
         ><small id="interactText">BAJAR</small></button

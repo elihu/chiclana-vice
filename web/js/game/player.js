@@ -94,7 +94,12 @@ export function interact() {
     player.z = c.z;
     player.a = c.a;
     state.health = c.health;
-    toast('Al volante · GAS, FRENO y flechas para girar.', 3);
+    toast(
+      session.driveStick
+        ? 'Al volante · Joystick para acelerar y girar.'
+        : 'Al volante · GAS, FRENO y flechas para girar.',
+      3,
+    );
   }
   updateHUD();
   snapCamera();
@@ -104,15 +109,22 @@ export function updatePlayer(dt) {
   let steer =
       (input.right || keys.d || keys.ArrowRight ? 1 : 0) -
       (input.left || keys.a || keys.ArrowLeft ? 1 : 0),
-    gas = input.gas || keys.w || keys.ArrowUp,
-    brake = input.brake || keys.s || keys.ArrowDown,
+    gas = input.gas || keys.w || keys.ArrowUp ? 1 : 0,
+    brake = input.brake || keys.s || keys.ArrowDown ? 1 : 0,
     boost = input.boost || keys.Shift;
   const hand = keys[' '];
   if (player.car) {
+    if (session.driveStick && pointer.joyId !== null) {
+      steer = clamp(steer + input.jx, -1, 1);
+      gas = Math.max(gas, -input.jy);
+      brake = Math.max(brake, input.jy);
+    }
+    // El freno físico prevalece aunque el pulgar siga acelerando con el joystick.
+    if (input.brake || keys.s || keys.ArrowDown) gas = 0;
     let c = player.car,
       max = boost ? 40 : 28;
-    if (gas) c.speed += dt * (c.speed < 0 ? 16 : 9.5);
-    else if (brake) c.speed -= dt * (c.speed > 0 ? 17 : 5);
+    if (gas) c.speed += dt * (c.speed < 0 ? 16 : 9.5) * gas;
+    else if (brake) c.speed -= dt * (c.speed > 0 ? 17 : 5) * brake;
     else
       c.speed =
         Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - dt * (2.3 + Math.abs(c.speed) * 0.08));

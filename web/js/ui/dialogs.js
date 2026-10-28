@@ -8,6 +8,7 @@ import { reloadGroundTexture } from '../world/loader.js';
 import { rescue } from '../game/player.js';
 import { save } from '../game/save.js';
 import { toast } from './feedback.js';
+import { updateHUD } from './hud.js';
 
 // Dialog focus: the HUD becomes inert, focus moves inside, Tab cycles within the open
 // dialog and focus returns to the opener on close.
@@ -82,7 +83,7 @@ export function help(section = 'controls', onReturn = closeModal) {
         <section id="helpPanel-controls" role="tabpanel" aria-labelledby="helpTab-controls">
           <p class="helpLead">Conduce, baja del coche y descubre el centro a tu ritmo.</p>
           <div class="controlCards">
-            <article><h3>Al volante</h3><p>GAS para avanzar y flechas para girar. Mantén FRENO para detenerte y después dar marcha atrás. Usa TURBO en las rectas.</p><p class="keyboardHint">Teclado: <kbd>WASD</kbd> o flechas · <kbd>Espacio</kbd> freno de mano · <kbd>Mayús</kbd> turbo.</p></article>
+            <article><h3>Al volante</h3><p>Mueve el joystick hacia arriba para acelerar y hacia los lados para girar. Hacia abajo frena y da marcha atrás. Con el otro pulgar puedes mantener TURBO o FRENO. BAJAR te deja salir cuando te detienes. En Pausa puedes volver a flechas y pedales.</p><p class="keyboardHint">Teclado: <kbd>WASD</kbd> o flechas · <kbd>Espacio</kbd> freno de mano · <kbd>Mayús</kbd> turbo.</p></article>
             <article><h3>A pie</h3><p>Detente en una zona libre y pulsa BAJAR. Mueve el joystick para caminar y mantén CORRER para ir más rápido. Acércate a un coche detenido para SUBIR.</p><p class="keyboardHint">Teclado: <kbd>WASD</kbd> o flechas · <kbd>E</kbd> entrar y salir · <kbd>Mayús</kbd> correr.</p></article>
             <article><h3>Mira alrededor</h3><p>Arrastra la escena para mirar. Cámara alterna entre seguimiento, primera persona y vista aérea. En primera persona, la mirada se mantiene hasta que la cambies.</p><p class="keyboardHint">Teclado: <kbd>C</kbd> cambiar cámara.</p></article>
             <article><h3>Busca tu calle</h3><p>Abre el mapa y busca entre las ${world.streetNames.length} calles con nombre del sector. Al seleccionar una calle te trasladas a ella.</p><p class="keyboardHint">Teclado: <kbd>M</kbd> abrir mapa · <kbd>Esc</kbd> cerrar o pausar.</p></article>
@@ -124,13 +125,24 @@ export function help(section = 'controls', onReturn = closeModal) {
   $('understood').onclick = onReturn;
 }
 
+// Debe llamarse desde una pulsación; girar el dispositivo no concede activación.
+export async function toggleFullscreen() {
+  clearInput();
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+  } catch {
+    toast('No se pudo activar pantalla completa. Puedes seguir jugando en el navegador.', 4);
+  }
+}
+
 export function pauseMenu() {
   if (gfx.contextLost) return;
   modal(
     `<div class="pauseLayout">
       <div class="pauseSummary"><span class="eyebrow">CHICLANA VICE</span><h2>Partida en pausa</h2>
         <dl class="pauseStats"><div><dt>Encargos</dt><dd>${state.job} / ${jobs.length}</dd></div><div><dt>Lugares</dt><dd>${state.found.size} / ${pois.length}</dd></div><div><dt>Dinero</dt><dd>${Math.floor(state.cash)} €</dd></div></dl>
-        <p>Tu progreso se guarda en este navegador.</p>
+        <p>Tu progreso se guarda en este navegador.</p><button class="controlChoice" id="steerMode">Conducción: ${session.driveStick ? 'joystick' : 'flechas y pedales'}</button>
       </div>
       <div class="pauseActions">
         <button class="primary" id="resume">Seguir jugando</button>
@@ -144,6 +156,12 @@ export function pauseMenu() {
     </div>`,
   );
   $('resume').onclick = closeModal;
+  $('steerMode').onclick = () => {
+    clearInput();
+    session.driveStick = !session.driveStick;
+    updateHUD();
+    pauseMenu();
+  };
   $('help').onclick = () => help('controls', pauseMenu);
   $('audio').onclick = () => {
     toggleAudio();
@@ -161,16 +179,8 @@ export function pauseMenu() {
     rescue();
     closeModal();
   };
-  $('full').onclick = async () => {
-    try {
-      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-      else await document.exitFullscreen();
-      try {
-        await screen.orientation.lock('landscape');
-      } catch {}
-    } catch {
-      toast('En este navegador, gira el móvil para jugar en horizontal.', 4);
-    }
+  $('full').onclick = () => {
+    void toggleFullscreen();
     closeModal();
   };
   $('reset').onclick = () => {

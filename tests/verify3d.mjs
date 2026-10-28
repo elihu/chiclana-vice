@@ -1,4 +1,5 @@
-import { chunks, detailCells, gfx } from '../web/js/core/state.js';
+import { chunks, detailCells, gfx, pointer } from '../web/js/core/state.js';
+import { updatePlayer } from '../web/js/game/player.js';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -338,6 +339,49 @@ assert(!g.input.gas && g.input.right, 'cancel releases only affected control');
 for (const f of right.listeners.lostpointercapture) f(ev(3));
 assert(!g.input.right, 'capture loss releases control');
 console.log('Touch holds, cancellation and player scale passed');
+// Un pulgar conduce y el otro puede usar turbo o freno sin soltar el joystick.
+{
+  const joy = els.joy,
+    car = g.player.car,
+    savedCar = { x: car.x, z: car.z, a: car.a, speed: car.speed },
+    savedPlayer = { x: g.player.x, z: g.player.z, a: g.player.a, speed: g.player.speed },
+    touch = (id, x, y) => ({ ...ev(id), clientX: x, clientY: y });
+  joy.onpointerdown(touch(101, 198, 225));
+  assert.equal(g.input.jx, 0, 'zona muerta del joystick');
+  assert.equal(g.input.jy, 0);
+  joy.onpointerdown(touch(102, 100, 100));
+  assert.equal(pointer.joyId, 101, 'otro dedo no roba el joystick');
+  joy.onpointermove(touch(101, 250, 120));
+  els.boost.onpointerdown(ev(102));
+  assert(
+    g.input.jx > 0 && g.input.jy < 0 && g.input.boost,
+    'giro, aceleración y turbo simultáneos',
+  );
+  car.speed = 0;
+  const angle = car.a;
+  updatePlayer(0.05);
+  assert(car.speed > 0 && car.a < angle, 'el joystick acelera y gira el coche');
+  const speed = car.speed;
+  els.brake.onpointerdown(ev(103));
+  updatePlayer(0.05);
+  assert(car.speed < speed, 'FRENO prevalece sobre el joystick hacia delante');
+  for (const release of els.brake.listeners.pointerup) release(ev(103));
+  for (const release of joy.listeners.pointercancel) release(ev(101));
+  assert.equal(g.input.jx, 0);
+  assert.equal(g.input.jy, 0);
+  assert(g.input.boost, 'cancelar joystick conserva el otro dedo');
+  joy.onpointerdown(touch(104, 195, 100));
+  windowListeners.resize.forEach((resize) => resize());
+  assert.equal(pointer.joyId, null, 'rotación y resize cancelan el gesto');
+  assert(!g.input.boost && g.input.jy === 0, 'resize suelta turbo y aceleración');
+  g.pauseMenu();
+  joy.onpointerdown(touch(105, 195, 100));
+  assert.equal(pointer.joyId, null, 'el joystick no se activa en pausa');
+  g.closeModal();
+  Object.assign(car, savedCar);
+  Object.assign(g.player, savedPlayer);
+  console.log('Joystick de conducción, turbo, prioridad del freno y cancelación pasaron');
+}
 for (const p of [
   [-81, 69],
   [-10, -155],

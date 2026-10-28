@@ -21,7 +21,9 @@ export function updateHUD() {
   setText('jobTitle', p ? p.text : 'Recorre las calles reales del centro');
   setText('interactText', player.car ? 'BAJAR' : 'SUBIR');
   setText('boostText', player.car ? 'TURBO' : 'CORRER');
-  ui('joy').classList.toggle('hidden', !!player.car);
+  document.body.classList.toggle('drive-stick', session.driveStick);
+  document.body.classList.toggle('has-wanted', state.wanted > 0);
+  ui('joy').classList.toggle('hidden', !!player.car && !session.driveStick);
   ui('driveControls').classList.toggle('hidden', !player.car);
   updateCameraVisibility();
 }

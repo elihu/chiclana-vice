@@ -12,6 +12,19 @@ import { target } from '../game/jobs.js';
 import { toast } from './feedback.js';
 
 let chart, chartCtx;
+// Canvas no hereda colores CSS: resolver la paleta una vez, al preparar el mapa.
+const mapColors = {
+  ground: '#233a40',
+  water: '#2f5f6b',
+  park: '#36534b',
+  building: '#8a9691',
+  street: '#f5f2e8',
+  poi: '#58a6b5',
+  police: '#ef6f5e',
+  albero: '#f0c24b',
+  cal: '#f5f2e8',
+  noche: '#12232b',
+};
 
 function trace(c, poly) {
   const [x0, , z0] = boundsBox();
@@ -20,32 +33,40 @@ function trace(c, poly) {
 }
 
 export function prepareMap() {
+  if (typeof getComputedStyle === 'function') {
+    const theme = getComputedStyle(document.documentElement);
+    for (const name of Object.keys(mapColors)) {
+      const token = ['albero', 'cal', 'noche'].includes(name) ? '--' + name : '--map-' + name;
+      mapColors[name] = theme.getPropertyValue(token).trim() || mapColors[name];
+    }
+  }
   const [x0, x1, z0, z1] = boundsBox();
   chart = document.createElement('canvas');
   chart.width = Math.ceil(x1 - x0);
   chart.height = Math.ceil(z1 - z0);
   chartCtx = chart.getContext('2d');
-  chartCtx.fillStyle = '#6c806f';
+  chartCtx.fillStyle = mapColors.ground;
   chartCtx.fillRect(0, 0, chart.width, chart.height);
   for (let a of world.city.areas) {
     trace(chartCtx, a.p);
-    chartCtx.fillStyle = a.kind === 'water' ? '#234f62' : a.kind === 'park' ? '#57734f' : '#a8aa91';
+    chartCtx.fillStyle =
+      a.kind === 'water' ? mapColors.water : a.kind === 'park' ? mapColors.park : mapColors.ground;
     chartCtx.fill();
   }
   for (let b of world.city.buildings) {
     trace(chartCtx, b.p);
-    chartCtx.fillStyle = '#bfc2aa';
+    chartCtx.fillStyle = mapColors.building;
     chartCtx.fill();
     for (let h of b.holes) {
       trace(chartCtx, h);
-      chartCtx.fillStyle = '#6c806f';
+      chartCtx.fillStyle = mapColors.ground;
       chartCtx.fill();
     }
   }
   chartCtx.lineJoin = chartCtx.lineCap = 'round';
   for (let r of world.city.roads) {
     trace(chartCtx, r.p);
-    chartCtx.strokeStyle = '#d6d7b7';
+    chartCtx.strokeStyle = mapColors.street;
     chartCtx.lineWidth = r.w;
     chartCtx.stroke();
   }
@@ -65,7 +86,7 @@ export function drawMap(canvas, mini = false) {
     scale = mini ? 1.1 : Math.min(cw / width, ch / height) * 0.92;
   let ox = mini ? cw / 2 - player.x * scale : (cw - width * scale) / 2 - x0 * scale,
     oy = mini ? ch / 2 - player.z * scale : (ch - height * scale) / 2 - z0 * scale;
-  c.fillStyle = '#1a343d';
+  c.fillStyle = mapColors.noche;
   c.fillRect(0, 0, cw, ch);
   c.save();
   c.translate(ox + x0 * scale, oy + z0 * scale);
@@ -77,7 +98,7 @@ export function drawMap(canvas, mini = false) {
   } else c.drawImage(chart, 0, 0, width, height);
   c.translate(-x0, -z0);
   if (session.route.length) {
-    c.strokeStyle = '#ddf98a';
+    c.strokeStyle = mapColors.albero;
     c.lineWidth = mini ? 4 : 5 / scale;
     c.lineJoin = 'round';
     c.beginPath();
@@ -88,29 +109,29 @@ export function drawMap(canvas, mini = false) {
     c.stroke();
   }
   for (let p of pois) {
-    c.fillStyle = '#96dcc2';
+    c.fillStyle = mapColors.poi;
     c.beginPath();
     c.arc(p.x, p.z, mini ? 3.5 : 4 / scale, 0, TAU);
     c.fill();
   }
   let goal = target();
   if (goal) {
-    c.strokeStyle = '#ffb677';
+    c.strokeStyle = mapColors.albero;
     c.lineWidth = 2 / scale;
     c.beginPath();
     c.arc(goal.x, goal.z, 8 / scale, 0, TAU);
     c.stroke();
   }
   for (let p of police) {
-    c.fillStyle = '#ee8377';
+    c.fillStyle = mapColors.police;
     c.beginPath();
     c.arc(p.x, p.z, 4 / scale, 0, TAU);
     c.fill();
   }
   c.translate(player.x, player.z);
   c.rotate(-player.a);
-  c.fillStyle = '#f2ffa0';
-  c.strokeStyle = '#182f35';
+  c.fillStyle = mapColors.cal;
+  c.strokeStyle = mapColors.noche;
   c.lineWidth = 2 / scale;
   c.beginPath();
   c.moveTo(0, 8 / scale);
@@ -128,12 +149,12 @@ export function drawMap(canvas, mini = false) {
       let x = ox + p.x * scale,
         y = oy + p.z * scale,
         w = c.measureText(p.name).width;
-      c.fillStyle = '#142d36ee';
+      c.fillStyle = mapColors.noche;
       c.fillRect(x - w / 2 - 5, y + 8, w + 10, 20);
-      c.fillStyle = '#f0f2df';
+      c.fillStyle = mapColors.cal;
       c.fillText(p.name, x, y + 23);
     }
-    c.fillStyle = '#e2edc7';
+    c.fillStyle = mapColors.cal;
     c.textAlign = 'right';
     c.fillText('N ↑', cw - 14, 25);
   }

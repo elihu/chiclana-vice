@@ -92,11 +92,31 @@ para revisar el conjunto antes de integrar, sin cambiar de rama ni tocar `main`:
   puede ocultarse al aprenderla.
 - Revisar tamaños de texto y prioridades con los nombres y mensajes más largos.
 
-### Tanda 3: alternativas de control
+### Tanda 3: revisión en móvil y alternativas de control (en curso)
 
-En otra rama, después de estabilizar la distribución:
+El usuario probó las tandas anteriores en su móvil por red local: en vertical, demasiada
+interfaz sobre el coche; en horizontal, solapes cuando el navegador deja menos altura.
+Conducir con giro, GAS y TURBO obliga a usar tres contactos. Se continúa en la misma rama
+para revisar estas correcciones juntas:
 
-- Giro analógico opcional con zona muerta; decidir el predeterminado tras conducir en móvil.
+- HUD vertical compacto: objetivo sin el rótulo de encargo, velocímetro arriba, mapa y
+  herramientas agrupados bajo esa franja. Las estrellas aparecen solo con búsqueda activa.
+- Joystick fijo para conducir por defecto: arriba acelera, abajo frena y retrocede, izquierda
+  y derecha giran. Zona muerta del 15 % y aceleración proporcional. Freno, turbo y bajar
+  quedan al otro pulgar. El freno tiene prioridad sobre el acelerador del joystick.
+- Pausa permite volver a flechas y pedales; la selección dura la sesión actual. A pie se
+  conserva el joystick fijo. Cancelar un contacto no debe soltar los demás.
+- Limpiar entradas al cambiar de tamaño o pantalla completa, además de al perder foco.
+- Altura dinámica del HUD y disposición específica para horizontal de hasta 320 px de
+  altura, sin exigir pantalla completa para alcanzar las herramientas.
+- Acceso directo a pantalla completa en el HUD. Al empezar en horizontal con una pulsación
+  táctil se intenta entrar; no se bloquea la orientación. Girar por sí solo no basta:
+  [la API requiere activación del usuario](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen#security_considerations).
+- Canvas de mapa y minimapa con la misma paleta CSS: resolver colores al preparar la capa,
+  sin consultar estilos en cada frame. Ruta albero, jugador cal y lugares azul mar.
+
+Después de probar esta tanda quedan:
+
 - Probar joystick flotante a pie por separado.
 - Tamaño de controles y modo zurdo, comprobando también minimapa y velocímetro.
 - Pellizco y doble toque solo si aportan una mejora y no chocan con los controles.
