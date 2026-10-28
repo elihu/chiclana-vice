@@ -1,13 +1,13 @@
 # Estado y pendientes
 
-Revisión: 27/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 28/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Última release: `v1.7.0` (27/10/2026). La CI (`ci.yml`), el despliegue y
-  Dependabot se ejecutan en GitHub sin errores.
+  Actions. Versión actual: `v2.0.0` (28/10/2026); el historial de publicaciones está en
+  [Releases](https://github.com/elihu/chiclana-vice/releases).
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
   la `v1.1.0` el 7/10/2026 en Chrome de escritorio con GPU y en un móvil Android, y el
@@ -16,7 +16,9 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   gráfica de la `v1.4.0`, el 13/10/2026 en el portátil. El motor WebGPU, la luz y el ahorro
   de render de la `v1.5.0`, el 27/10/2026 en un móvil Android, con WebGPU (por `localhost`)
   y con WebGL 2. Las fases visuales de la `v1.6.0`, el 27/10/2026, una a una, servidas en
-  `localhost`.
+  `localhost`. La interfaz de la `v2.0.0` se revisó por tandas en el móvil del usuario por
+  red local, con ajustes de distribución y sensibilidad; el usuario la considera lista
+  para sacar versión el 28/10/2026. Sin registro de modelo/navegador ni FPS de esa sesión.
 - No verificado: la `v1.6.0` junta con FPS medidos, la `v1.5.0` en el portátil, iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
   teselas en móvil.
 
@@ -34,6 +36,27 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Novedades de `v2.0.0`
+
+Versión mayor elegida por el usuario para marcar la renovación de interfaz y manejo.
+Las partidas guardadas siguen siendo compatibles.
+
+- **Interfaz** ([PROPUESTA-UI.md](PROPUESTA-UI.md)): paleta albero/cal/noche, iconos SVG,
+  HUD móvil compacto, menú desplegable hacia abajo en vertical y hacia la izquierda en
+  horizontal, minimapa mayor y controles agrupados a la derecha.
+- **Conducción táctil:** joystick con zona neutra y respuesta progresiva, giro suavizado,
+  freno prioritario y turbo con el otro pulgar. Flechas y pedales como alternativa en Pausa.
+- **Menús:** bienvenida y pausa reorganizadas; guía en Controles, Sobre el mapa y Fuentes;
+  mapa con búsqueda de destinos y selector Callejero/Ortofoto. Fuentes y atribuciones íntegras.
+- **Puentes:** tablero de Remedios con pendiente entre sus accesos, continuidad comprobada
+  en los puentes de prueba y arcos del VII Centenario apoyados en la calzada.
+- **Tranvía estático:** 7 tramos (1.037 m), catenaria, parada de Remedios y aceras que
+  respetan la franja. Sin tranvía en movimiento.
+- **Suelo:** 50 pasos de cebra, cruces sin picos de asfalto, limpieza de copas y sombras
+  en la ortofoto cercana y materiales de césped, tierra y baldosa.
+- **Verificación:** `npm run check` y Chrome con SwiftShader; menús, varios tamaños y
+  dos contactos táctiles simulados. Sin medidas de FPS ni verificación en iOS.
 
 ## Novedades de `v1.7.0`
 
@@ -161,30 +184,21 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
   pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
   en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
-- Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 publicada en `v1.7.0`. Quedan unas franjas de
-  acera sueltas junto al acceso norte del puente de Reyes Católicos (lado oeste) y, a pie, los
-  pies quedan 10 cm bajo la baldosa (la acera es solo visual). Tanda 2 integrada sin publicar el
-  27/10/2026: tablero de `tablero-remedios` con pendiente entre sus accesos (`profile:
-"linear"`), arcos del VII Centenario apoyados en la calzada, sin tramos de acera cortos
-  (`minimumRun`) y `tests/verify-bridges.mjs` (escalón máximo en 1 m en Reyes Católicos de 0,134
-  a 0,095 m); sin revisión visual a pie de puente. Tanda T integrada sin publicar el
-  27/10/2026: `web/tram.json` (7 tramos, 1.037 m, 1 parada) y vías con césped o carril exclusivo,
-  catenaria, parada de Remedios y aceras que respetan la franja; sin línea propia en
-  `THIRD_PARTY_NOTICES.md` (registrada como ODbL en `data-sources.json`), el tráfico puede pisar
-  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Tanda 3 integrada sin publicar el
-  28/10/2026 tras verla el usuario: 50 pasos de cebra (antes 44), cruces sin picos de asfalto,
-  limpieza de copas y de su sombra en la ortofoto de cerca (`ground-clean.js`, `ground-near.js`,
-  con zona de sombra desplazada al norte-noroeste) y materiales de cerca por color (césped,
-  tierra, baldosa algo cálida); ajustes en vivo con `setGroundNear`. Después: la interfaz
-  ([PROPUESTA-UI.md](PROPUESTA-UI.md)) y la noche cerrada.
+- Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 en `v1.7.0`, tandas 2, T y 3 en
+  `v2.0.0`. Pendientes: revisar las franjas de acera junto al acceso norte del puente de
+  Reyes Católicos (lado oeste); a pie, los pies quedan unos 10 cm bajo la baldosa porque
+  la acera es visual; el tráfico puede pisar el carril del tranvía y quedan parches de
+  césped en la rotonda de Plaza de España. Sin revisión visual a pie de puente de la tanda 2.
+- Interfaz ([PROPUESTA-UI.md](PROPUESTA-UI.md)): alcance principal integrado y aceptado
+  para `v2.0.0`. Quedan revisión de legibilidad al anochecer y dispositivos adicionales;
+  modo zurdo, tamaños, preferencias persistentes, gestos, mando y vibración son opcionales.
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Su F5 pasó a
   [PLAN-SUELO.md](PLAN-SUELO.md); queda la noche cerrada (luces reales
-  cercanas, farolas en todas las calles y bloom), aceras y patios, y pretiles. Los bajos con
+  cercanas, farolas en todas las calles y bloom), apoyo de peatones en aceras, patios y pretiles. Los bajos con
   relieve suben los triángulos un 12–31 % en «sigue» con SwiftShader (más del 25 % en
   Alameda, Mercado y San Telmo): medir FPS en el móvil y, si hace falta, simplificar balcones
   y postigos de las plantas altas.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
   el móvil con la luz y el ahorro de render juntos.
 
-- Variables CSS por contexto para `#miniButton` (pendiente de comprobar `env()` en iOS).
-- Verificación en iOS y revisión visual de las fachadas en FrontSide.
+- Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.

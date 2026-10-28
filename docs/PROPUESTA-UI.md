@@ -1,8 +1,7 @@
 # Interfaz de Chiclana Vice: diseño, revisión y pendientes
 
-Actualizado: 28/10/2026. Implementado en `feat/ui-chiclana`, con revisiones del usuario
-en su móvil por red local y aceptado para preparar la v2.0.0. Pendiente de integrar y
-publicar. Este documento sustituye
+Actualizado: 28/10/2026. Integrado en `main` para la v2.0.0, tras las revisiones del
+usuario en su móvil por red local y su aceptación para sacar versión. Este documento sustituye
 la propuesta de investigación del 27/10/2026 y describe el resultado actual.
 
 ## Objetivo y alcance
@@ -100,7 +99,7 @@ no se ha hecho una auditoría completa de contraste.
 | `npm run check`                        | Lint, formato y verificadores; incluye joystick con turbo, prioridad del freno, curva de respuesta, cancelación y Escape del menú       | DOM y WebGL simulados; no prueba GPU ni tacto real                            |
 | Chrome sin interfaz                    | Menús, búsqueda, pestañas con teclado, dos contactos táctiles simulados y ausencia de errores JS                                        | SwiftShader; no acredita rendimiento ni comodidad en un móvil físico          |
 | Capturas y cajas del HUD               | 1280×720, 390×844, 360×640, 844×390, 844×280 y 640×240 a lo largo de las tandas; menú abierto/cerrado en los tamaños afectados          | Las capturas son temporales en `/tmp`; no todas corresponden al último ajuste |
-| Última alineación de BAJAR sobre TURBO | Formato y diff comprobados                                                                                                              | Posterior a las últimas capturas y al último `npm run check` completo         |
+| Última alineación de BAJAR sobre TURBO | `npm run check`, formato y diff comprobados                                                                                             | Posterior a las últimas capturas                                              |
 
 No se ha verificado iOS ni medido FPS o GPU real de esta rama. Tampoco se ha completado
 la revisión de legibilidad al anochecer. Estos límites se informan, sin convertir todas
@@ -110,7 +109,8 @@ las plataformas y mejoras opcionales en requisitos de esta tanda.
 
 El usuario considera lista la interfaz para sacar versión el 28/10/2026 y elige v2.0.0
 para marcar la renovación de interfaz y manejo. Las partidas guardadas siguen siendo
-compatibles. El último ajuste de BAJAR sobre TURBO queda incluido en el cierre de la rama.
+compatibles. El último ajuste de BAJAR sobre TURBO está incluido en el cierre y comprobado con
+`npm run check`. La rama se integró en `main` para preparar la versión.
 
 La revisión de anochecer, textos largos y dispositivos adicionales sigue como mejora de
 validación; los límites constan en la tabla anterior. No bloquean el alcance aceptado.

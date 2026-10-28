@@ -65,7 +65,7 @@ Documenta en `docs/DESARROLLO.md` y, si cambian aproximaciones, en `docs/MAP_SOU
 
 ## Tanda 2. Puentes y accesos (`feat/puentes-rampas`)
 
-> **Integrada el 27/10/2026** (sin publicar).
+> **Publicada en `v2.0.0`** (integrada el 27/10/2026).
 
 Los tableros de plataforma son hoy horizontales con la cota media de sus anclajes
 ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)), y la calle compensa el desnivel en los
@@ -81,7 +81,7 @@ Se planifica en detalle tras revisar la tanda 1.
 
 ## Tanda T. Vías y paradas del tranvía (`feat/tranvia`, después de la tanda 2)
 
-> **Integrada el 27/10/2026** (sin publicar).
+> **Publicada en `v2.0.0`** (integrada el 27/10/2026).
 
 Contexto (27/10/2026): el tranvía pasa por la Avenida de los Reyes Católicos y por el puente
 de Nuestra Señora de los Remedios; su franja es la zona ancha que hoy queda sin resolver junto
@@ -114,6 +114,8 @@ Datos en el OSM ya descargado (`~/.cache/chiclana-vice/sources/osm-ampliado.xml`
 Sin tranvía en movimiento ni colisiones nuevas en esta tanda.
 
 ## Tanda 3. Suelo de cerca y ortofoto (`feat/suelo-cerca`)
+
+> **Publicada en `v2.0.0`** (integrada el 28/10/2026).
 
 1. **Pasos de cebra** desde los 144 nodos `highway=crossing` del OSM ya descargado
    (`~/.cache/chiclana-vice/sources/osm-ampliado.xml`), con la cadena de datos habitual

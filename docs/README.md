@@ -43,8 +43,8 @@ documento; los demás enlazan a él.
   cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
   día; publicado en `v1.6.0` salvo F5.
 - [Interfaz: diseño, revisión y pendientes](PROPUESTA-UI.md): HUD, menús y joystick
-  implementados en `feat/ui-chiclana`, con revisiones del usuario en móvil; pendientes de
-  cierre, integración y publicación. Distingue el alcance actual de las mejoras opcionales.
+  integrados para `v2.0.0`, tras las revisiones del usuario en móvil. Distingue el alcance
+  aceptado, los límites de verificación y las mejoras opcionales.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
   faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
   `v1.7.0`.
