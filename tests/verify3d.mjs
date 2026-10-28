@@ -351,6 +351,13 @@ console.log('Touch holds, cancellation and player scale passed');
   assert.equal(g.input.jy, 0);
   joy.onpointerdown(touch(102, 100, 100));
   assert.equal(pointer.joyId, 101, 'otro dedo no roba el joystick');
+  joy.onpointermove(touch(101, 257.4, 225));
+  const halfTilt = g.input.jx;
+  joy.onpointermove(touch(101, 319.8, 225));
+  assert(
+    halfTilt > 0 && halfTilt < g.input.jx * 0.4,
+    'el medio recorrido permite correcciones suaves',
+  );
   joy.onpointermove(touch(101, 250, 120));
   els.boost.onpointerdown(ev(102));
   assert(
@@ -361,6 +368,10 @@ console.log('Touch holds, cancellation and player scale passed');
   const angle = car.a;
   updatePlayer(0.05);
   assert(car.speed > 0 && car.a < angle, 'el joystick acelera y gira el coche');
+  assert(
+    pointer.driveSteer > 0 && pointer.driveSteer < g.input.jx * 0.75,
+    'el giro entra gradualmente',
+  );
   const speed = car.speed;
   els.brake.onpointerdown(ev(103));
   updatePlayer(0.05);
@@ -369,6 +380,7 @@ console.log('Touch holds, cancellation and player scale passed');
   for (const release of joy.listeners.pointercancel) release(ev(101));
   assert.equal(g.input.jx, 0);
   assert.equal(g.input.jy, 0);
+  assert.equal(pointer.driveSteer, 0, 'cancelar el contacto devuelve la dirección al centro');
   assert(g.input.boost, 'cancelar joystick conserva el otro dedo');
   joy.onpointerdown(touch(104, 195, 100));
   windowListeners.resize.forEach((resize) => resize());
@@ -381,6 +393,13 @@ console.log('Touch holds, cancellation and player scale passed');
   Object.assign(car, savedCar);
   Object.assign(g.player, savedPlayer);
   console.log('Joystick de conducción, turbo, prioridad del freno y cancelación pasaron');
+}
+{
+  els.toolsToggle.onclick();
+  assert.equal(els.toolsToggle.attributes['aria-expanded'], 'true');
+  windowListeners.keydown.forEach((keydown) => keydown({ key: 'Escape', preventDefault() {} }));
+  assert.equal(els.toolsToggle.attributes['aria-expanded'], 'false');
+  assert(!g.paused, 'Escape cierra las herramientas sin abrir la pausa');
 }
 for (const p of [
   [-81, 69],

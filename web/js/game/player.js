@@ -115,10 +115,11 @@ export function updatePlayer(dt) {
   const hand = keys[' '];
   if (player.car) {
     if (session.driveStick && pointer.joyId !== null) {
-      steer = clamp(steer + input.jx, -1, 1);
+      pointer.driveSteer = lerp(pointer.driveSteer, input.jx * 0.75, 1 - Math.exp(-dt * 8));
+      steer = clamp(steer + pointer.driveSteer, -1, 1);
       gas = Math.max(gas, -input.jy);
       brake = Math.max(brake, input.jy);
-    }
+    } else pointer.driveSteer = 0;
     // El freno físico prevalece aunque el pulgar siga acelerando con el joystick.
     if (input.brake || keys.s || keys.ArrowDown) gas = 0;
     let c = player.car,

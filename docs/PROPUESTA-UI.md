@@ -88,8 +88,8 @@ para revisar el conjunto antes de integrar, sin cambiar de rama ni tocar `main`:
 - Mapa y búsqueda con mejor uso del espacio disponible y cierre siempre accesible: mapa
   arriba y búsqueda debajo en vertical, columnas en horizontal. Callejero y Ortofoto con
   selección explícita, contador de destinos y aviso de traslado antes de elegir una calle.
-- Pendiente de la revisión: valorar qué herramientas pueden agruparse y qué ayuda inicial
-  puede ocultarse al aprenderla.
+- Las herramientas se agrupan en el menú desplegable tras la revisión en móvil. Queda
+  valorar qué ayuda inicial puede ocultarse al aprenderla.
 - Revisar tamaños de texto y prioridades con los nombres y mensajes más largos.
 
 ### Tanda 3: revisión en móvil y alternativas de control (en curso)
@@ -102,18 +102,24 @@ para revisar estas correcciones juntas:
 - HUD vertical compacto: objetivo sin el rótulo de encargo, velocímetro arriba, mapa y
   herramientas agrupados bajo esa franja. Las estrellas aparecen solo con búsqueda activa.
 - Joystick fijo para conducir por defecto: arriba acelera, abajo frena y retrocede, izquierda
-  y derecha giran. Zona muerta del 15 % y aceleración proporcional. Freno, turbo y bajar
+  y derecha giran. Tras probarlo, zona muerta del 22 %, curva progresiva, giro máximo un
+  25 % menor y transición de unos 125 ms; a pie se mantiene la respuesta anterior.
+  Freno, turbo y bajar
   quedan al otro pulgar. El freno tiene prioridad sobre el acelerador del joystick.
 - Pausa permite volver a flechas y pedales; la selección dura la sesión actual. A pie se
   conserva el joystick fijo. Cancelar un contacto no debe soltar los demás.
 - Limpiar entradas al cambiar de tamaño o pantalla completa, además de al perder foco.
 - Altura dinámica del HUD y disposición específica para horizontal de hasta 320 px de
   altura, sin exigir pantalla completa para alcanzar las herramientas.
-- Acceso directo a pantalla completa en el HUD. Al empezar en horizontal con una pulsación
+- Pantalla completa en las opciones del HUD. Al empezar en horizontal con una pulsación
   táctil se intenta entrar; no se bloquea la orientación. Girar por sí solo no basta:
   [la API requiere activación del usuario](https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen#security_considerations).
 - Canvas de mapa y minimapa con la misma paleta CSS: resolver colores al preparar la capa,
   sin consultar estilos en cada frame. Ruta albero, jugador cal y lugares azul mar.
+- Segunda revisión: menú de opciones hacia abajo en el borde derecho en vertical y hacia
+  la izquierda en horizontal. Se cierra al elegir, tocar fuera, pulsar Escape o girar.
+  Minimapa horizontal de 144 × 104 px (128 × 72 px con barras que reducen la altura), y
+  BAJAR un poco por encima de freno y turbo.
 
 Después de probar esta tanda quedan:
 

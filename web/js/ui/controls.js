@@ -7,7 +7,7 @@ import { closeModal, help, modal, pauseMenu, toggleFullscreen, trapFocus } from 
 import { cycleCamera } from '../engine/camera.js';
 import { currentTime, nextTime, setTimeOfDay, timeName } from '../engine/time-of-day.js';
 import { toast } from './feedback.js';
-import { gfx, holdPointers, input, keys, pointer, session, view } from '../core/state.js';
+import { gfx, holdPointers, input, keys, player, pointer, session, view } from '../core/state.js';
 import { interact } from '../game/player.js';
 import { save } from '../game/save.js';
 import { start } from '../game/flow.js';
@@ -47,6 +47,28 @@ export function describeTime() {
 }
 
 export function installControls() {
+  function closeTools(focus = false) {
+    $('toolMenu').classList.remove('open');
+    $('toolsToggle').setAttribute('aria-expanded', 'false');
+    if (focus && gfx.coarse) $('toolsToggle').focus?.();
+  }
+  function toolAction(action) {
+    return (...args) => {
+      closeTools(true);
+      return action(...args);
+    };
+  }
+  $('toolsToggle').onclick = () => {
+    const open = $('toolMenu').classList.toggle('open');
+    $('toolsToggle').setAttribute('aria-expanded', String(open));
+  };
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (!event.target.closest?.('#toolMenu')) closeTools();
+    },
+    { capture: true },
+  );
   function useInteract() {
     interact();
     clearInput();
@@ -56,7 +78,7 @@ export function installControls() {
     if (gfx.touchSeen && innerWidth > innerHeight && !document.fullscreenElement)
       void toggleFullscreen();
   };
-  $('fullscreenBtn').onclick = toggleFullscreen;
+  $('fullscreenBtn').onclick = toolAction(toggleFullscreen);
   document.addEventListener('fullscreenchange', () => {
     const active = !!document.fullscreenElement;
     $('fullscreenBtn').setAttribute('aria-pressed', String(active));
@@ -69,13 +91,14 @@ export function installControls() {
   $('introHelp').onclick = help;
   $('credits').onclick = () => help('sources');
   $('closeModal').onclick = closeModal;
-  $('pauseBtn').onclick = pauseMenu;
-  $('mapBtn').onclick = openMap;
+  $('pauseBtn').onclick = toolAction(pauseMenu);
+  $('mapBtn').onclick = toolAction(openMap);
   $('miniButton').onclick = openMap;
   $('closeMap').onclick = closeMap;
-  $('cameraBtn').onclick = cycleCamera;
+  $('cameraBtn').onclick = toolAction(cycleCamera);
   describeTime();
   $('timeBtn').onclick = async () => {
+    closeTools(true);
     await setTimeOfDay(nextTime());
     describeTime();
     save();
@@ -128,7 +151,10 @@ export function installControls() {
       max = r.width * 0.32,
       len = Math.hypot(dx, dz),
       s = len > max ? max / len : 1;
-    const strength = Math.max(0, (Math.min(1, len / max) - 0.15) / 0.85);
+    const deadZone = player.car ? 0.22 : 0.15;
+    const linear = Math.max(0, (Math.min(1, len / max) - deadZone) / (1 - deadZone));
+    // Más recorrido útil cerca del centro; a pie se conserva la respuesta anterior.
+    const strength = player.car ? linear ** 1.7 : linear;
     input.jx = len ? (dx / len) * strength : 0;
     input.jy = len ? (dz / len) * strength : 0;
     $('stick').style.transform = `translate(${dx * s}px,${dz * s}px)`;
@@ -145,6 +171,7 @@ export function installControls() {
     joy.addEventListener(n, (e) => {
       if (e.pointerId !== pointer.joyId) return;
       pointer.joyId = null;
+      pointer.driveSteer = 0;
       input.jx = input.jy = 0;
       $('stick').style.transform = '';
     });
@@ -173,6 +200,11 @@ export function installControls() {
       if (e.pointerId === pointer.dragId) pointer.dragId = null;
     });
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('toolMenu').classList.contains('open')) {
+      e.preventDefault();
+      closeTools(true);
+      return;
+    }
     if (e.key === 'Tab') return trapFocus(e);
     const editable =
       ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
@@ -222,6 +254,7 @@ export function installControls() {
   });
   window.addEventListener('pagehide', save);
   window.addEventListener('resize', () => {
+    closeTools();
     clearInput();
     resizeRenderer();
     if (!$('mapOverlay').classList.contains('hidden')) openMap();

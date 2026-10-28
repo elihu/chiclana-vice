@@ -175,6 +175,7 @@
   <body>
     <svg class="iconSprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
+        <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></symbol>
         <symbol id="icon-fullscreen" viewBox="0 0 24 24">
           <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
         </symbol>
@@ -261,27 +262,44 @@
         <span id="jobTag">01 / EL ENCARGO</span><b id="jobTitle">Acércate al Mercado</b>
         <div><span id="jobDistance"></span><span id="jobTime"></span></div>
       </div>
-      <div class="topButtons">
+      <div class="toolMenu" id="toolMenu">
         <button
-          id="fullscreenBtn"
-          title="Pantalla completa"
-          aria-label="Pantalla completa"
-          aria-pressed="false"
+          id="toolsToggle"
+          aria-label="Opciones del juego"
+          aria-expanded="false"
+          aria-controls="toolsList"
+          title="Opciones del juego"
         >
-          <svg class="icon" aria-hidden="true"><use href="#icon-fullscreen"></use></svg>
+          <svg class="icon" aria-hidden="true"><use href="#icon-menu"></use></svg>
         </button>
-        <button id="cameraBtn" title="Cambiar cámara" aria-label="Cambiar cámara">
-          <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg
-          ><span>Cámara</span></button
-        ><button id="mapBtn" title="Mapa y calles" aria-label="Mapa y calles">
-          <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg
-          ><span>Mapa</span></button
-        ><button id="timeBtn" title="Hora del día: Tarde" aria-label="Hora del día: Tarde. Cambiar">
-          <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg
-          ><span>Hora</span></button
-        ><button id="pauseBtn" title="Pausa" aria-label="Pausa y opciones">
-          <svg class="icon" aria-hidden="true"><use href="#icon-pause"></use></svg>
-        </button>
+        <div class="topButtons" id="toolsList">
+          <button
+            id="fullscreenBtn"
+            title="Pantalla completa"
+            aria-label="Pantalla completa"
+            aria-pressed="false"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#icon-fullscreen"></use></svg
+            ><span class="touchLabel">Pantalla completa</span>
+          </button>
+          <button id="cameraBtn" title="Cambiar cámara" aria-label="Cambiar cámara">
+            <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg
+            ><span>Cámara</span></button
+          ><button id="mapBtn" title="Mapa y calles" aria-label="Mapa y calles">
+            <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg
+            ><span>Mapa</span></button
+          ><button
+            id="timeBtn"
+            title="Hora del día: Tarde"
+            aria-label="Hora del día: Tarde. Cambiar"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg
+            ><span>Hora</span></button
+          ><button id="pauseBtn" title="Pausa" aria-label="Pausa y opciones">
+            <svg class="icon" aria-hidden="true"><use href="#icon-pause"></use></svg
+            ><span class="touchLabel">Pausa</span>
+          </button>
+        </div>
       </div>
       <button id="miniButton" aria-label="Abrir mapa de calles">
         <canvas id="mini"></canvas><span id="street">Plaza de las Bodegas</span><i>N ↑</i>
