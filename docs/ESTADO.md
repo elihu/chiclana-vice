@@ -171,11 +171,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   27/10/2026: `web/tram.json` (7 tramos, 1.037 m, 1 parada) y vías con césped o carril exclusivo,
   catenaria, parada de Remedios y aceras que respetan la franja; sin línea propia en
   `THIRD_PARTY_NOTICES.md` (registrada como ODbL en `data-sources.json`), el tráfico puede pisar
-  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Tanda 3 hecha en la rama `feat/suelo-cerca` (sin integrar, pendiente
-  de revisión del usuario): 50 pasos de cebra (antes 44), cruces sin picos de asfalto, limpieza
-  de copas y sombras de la ortofoto de cerca (`ground-clean.js`, `ground-near.js`) y materiales
-  de cerca por color (césped, tierra, baldosa). En capturas las manchas de copas siguen
-  viéndose de cerca y la baldosa puede quedar fría; se ajusta con `setGroundNear`. Después: la interfaz
+  el carril del tranvía y quedan parches de césped en la rotonda de Plaza de España. Tanda 3 integrada sin publicar el
+  28/10/2026 tras verla el usuario: 50 pasos de cebra (antes 44), cruces sin picos de asfalto,
+  limpieza de copas y de su sombra en la ortofoto de cerca (`ground-clean.js`, `ground-near.js`,
+  con zona de sombra desplazada al norte-noroeste) y materiales de cerca por color (césped,
+  tierra, baldosa algo cálida); ajustes en vivo con `setGroundNear`. Después: la interfaz
   ([PROPUESTA-UI.md](PROPUESTA-UI.md)) y la noche cerrada.
 - Gráficos ([PLAN-VISUAL.md](PLAN-VISUAL.md)): F1–F4 publicadas en `v1.6.0`. Su F5 pasó a
   [PLAN-SUELO.md](PLAN-SUELO.md); queda la noche cerrada (luces reales
