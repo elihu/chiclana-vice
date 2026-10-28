@@ -6,6 +6,7 @@ export function clearInput() {
   for (const k in input) input[k] = typeof input[k] === 'boolean' ? false : 0;
   for (const k in keys) delete keys[k];
   pointer.joyId = null;
+  pointer.driveSteer = 0;
   pointer.dragId = null;
   $('stick').style.transform = '';
   document.querySelectorAll('.pressed').forEach((e) => e.classList.remove('pressed'));

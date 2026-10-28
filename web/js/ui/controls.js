@@ -3,11 +3,11 @@ import { applyQuality, resizeRenderer } from '../engine/renderer.js';
 import { clamp } from '../core/math.js';
 import { clearInput } from './input.js';
 import { closeMap, drawMap, listStreets, openMap } from './map.js';
-import { closeModal, help, modal, pauseMenu, trapFocus } from './dialogs.js';
+import { closeModal, help, modal, pauseMenu, toggleFullscreen, trapFocus } from './dialogs.js';
 import { cycleCamera } from '../engine/camera.js';
 import { currentTime, nextTime, setTimeOfDay, timeName } from '../engine/time-of-day.js';
 import { toast } from './feedback.js';
-import { gfx, holdPointers, input, keys, pointer, session, view } from '../core/state.js';
+import { gfx, holdPointers, input, keys, player, pointer, session, view } from '../core/state.js';
 import { interact } from '../game/player.js';
 import { save } from '../game/save.js';
 import { start } from '../game/flow.js';
@@ -16,9 +16,12 @@ export function installTouchDetection() {
   gfx.W = innerWidth;
   gfx.H = innerHeight;
   gfx.coarse = matchMedia('(any-pointer: coarse)').matches;
+  const syncTouchUI = () => document.body.classList.toggle('touch-enabled', gfx.coarse);
+  syncTouchUI();
   const coarseQuery = matchMedia('(any-pointer: coarse)');
   coarseQuery.addEventListener?.('change', (e) => {
     gfx.coarse = e.matches || gfx.touchSeen;
+    syncTouchUI();
     if (gfx.renderer) applyQuality();
   });
   addEventListener(
@@ -28,6 +31,7 @@ export function installTouchDetection() {
       gfx.touchSeen = true;
       if (!gfx.coarse) {
         gfx.coarse = true;
+        syncTouchUI();
         if (gfx.renderer) applyQuality();
       }
     },
@@ -43,29 +47,73 @@ export function describeTime() {
 }
 
 export function installControls() {
-  $('start').onclick = start;
+  function closeTools(focus = false) {
+    $('toolMenu').classList.remove('open');
+    $('toolsToggle').setAttribute('aria-expanded', 'false');
+    if (focus && gfx.coarse) $('toolsToggle').focus?.();
+  }
+  function toolAction(action) {
+    return (...args) => {
+      closeTools(true);
+      return action(...args);
+    };
+  }
+  $('toolsToggle').onclick = () => {
+    const open = $('toolMenu').classList.toggle('open');
+    $('toolsToggle').setAttribute('aria-expanded', String(open));
+  };
+  document.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (!event.target.closest?.('#toolMenu')) closeTools();
+    },
+    { capture: true },
+  );
+  function useInteract() {
+    interact();
+    clearInput();
+  }
+  $('start').onclick = () => {
+    start();
+    if (gfx.touchSeen && innerWidth > innerHeight && !document.fullscreenElement)
+      void toggleFullscreen();
+  };
+  $('fullscreenBtn').onclick = toolAction(toggleFullscreen);
+  document.addEventListener('fullscreenchange', () => {
+    const active = !!document.fullscreenElement;
+    $('fullscreenBtn').setAttribute('aria-pressed', String(active));
+    $('fullscreenBtn').setAttribute(
+      'aria-label',
+      active ? 'Salir de pantalla completa' : 'Pantalla completa',
+    );
+    clearInput();
+  });
   $('introHelp').onclick = help;
-  $('credits').onclick = help;
+  $('credits').onclick = () => help('sources');
   $('closeModal').onclick = closeModal;
-  $('pauseBtn').onclick = pauseMenu;
-  $('mapBtn').onclick = openMap;
+  $('pauseBtn').onclick = toolAction(pauseMenu);
+  $('mapBtn').onclick = toolAction(openMap);
   $('miniButton').onclick = openMap;
   $('closeMap').onclick = closeMap;
-  $('cameraBtn').onclick = cycleCamera;
+  $('cameraBtn').onclick = toolAction(cycleCamera);
   describeTime();
   $('timeBtn').onclick = async () => {
+    closeTools(true);
     await setTimeOfDay(nextTime());
     describeTime();
     save();
     toast('Hora del día: ' + timeName(), 2);
   };
-  $('interact').onclick = interact;
+  $('interact').onclick = useInteract;
   $('streetSearch').oninput = listStreets;
-  $('mapStyle').onclick = () => {
-    session.mapAerial = !session.mapAerial;
-    $('mapStyle').textContent = session.mapAerial ? 'Ver callejero' : 'Ver ortofoto';
+  function selectMapStyle(aerial) {
+    session.mapAerial = aerial;
+    $('mapStyle').setAttribute('aria-pressed', String(aerial));
+    $('mapStreet').setAttribute('aria-pressed', String(!aerial));
     drawMap($('map'));
-  };
+  }
+  $('mapStyle').onclick = () => selectMapStyle(true);
+  $('mapStreet').onclick = () => selectMapStyle(false);
   function bindHold(id, key) {
     let e = $(id),
       pointers = new Set();
@@ -103,13 +151,17 @@ export function installControls() {
       max = r.width * 0.32,
       len = Math.hypot(dx, dz),
       s = len > max ? max / len : 1;
-    input.jx = (dx * s) / max;
-    input.jy = (dz * s) / max;
+    const deadZone = player.car ? 0.22 : 0.15;
+    const linear = Math.max(0, (Math.min(1, len / max) - deadZone) / (1 - deadZone));
+    // Más recorrido útil cerca del centro; a pie se conserva la respuesta anterior.
+    const strength = player.car ? linear ** 1.7 : linear;
+    input.jx = len ? (dx / len) * strength : 0;
+    input.jy = len ? (dz / len) * strength : 0;
     $('stick').style.transform = `translate(${dx * s}px,${dz * s}px)`;
   }
   joy.onpointerdown = (e) => {
     e.preventDefault();
-    if (pointer.joyId !== null) return;
+    if (!session.started || session.paused || pointer.joyId !== null) return;
     pointer.joyId = e.pointerId;
     joy.setPointerCapture(e.pointerId);
     joyMove(e);
@@ -119,6 +171,7 @@ export function installControls() {
     joy.addEventListener(n, (e) => {
       if (e.pointerId !== pointer.joyId) return;
       pointer.joyId = null;
+      pointer.driveSteer = 0;
       input.jx = input.jy = 0;
       $('stick').style.transform = '';
     });
@@ -147,6 +200,11 @@ export function installControls() {
       if (e.pointerId === pointer.dragId) pointer.dragId = null;
     });
   window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('toolMenu').classList.contains('open')) {
+      e.preventDefault();
+      closeTools(true);
+      return;
+    }
     if (e.key === 'Tab') return trapFocus(e);
     const editable =
       ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
@@ -166,7 +224,7 @@ export function installControls() {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(k)) e.preventDefault();
     if (e.repeat) return;
     keys[k] = true;
-    if (k === 'e') interact();
+    if (k === 'e') useInteract();
     if (k === 'c' && session.started && !session.paused) cycleCamera();
     if (k === 'm') {
       if (!$('mapOverlay').classList.contains('hidden')) closeMap();
@@ -196,6 +254,8 @@ export function installControls() {
   });
   window.addEventListener('pagehide', save);
   window.addEventListener('resize', () => {
+    closeTools();
+    clearInput();
     resizeRenderer();
     if (!$('mapOverlay').classList.contains('hidden')) openMap();
   });

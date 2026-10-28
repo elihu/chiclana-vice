@@ -104,6 +104,7 @@ export const gfx = {
   platform: null,
 };
 export const session = {
+  driveStick: true,
   started: false,
   paused: false,
   t: 0,
@@ -119,5 +120,5 @@ export const session = {
 };
 export const audio = { audioOn: false, audioCtx: null, engineOsc: null, engineGain: null };
 export const view = { mode: 0, orbit: 0, lookPitch: 0, orbitAge: 0, firstPersonCar: null };
-export const pointer = { joyId: null, dragId: null, dragX: 0, dragY: 0 };
+export const pointer = { joyId: null, driveSteer: 0, dragId: null, dragX: 0, dragY: 0 };
 export const actors = { character: null, ring: null, beam: null, arrow: null };

@@ -42,8 +42,9 @@ documento; los demás enlazan a él.
 - [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): agua del Iro,
   cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
   día; publicado en `v1.6.0` salvo F5.
-- [Propuesta de interfaz](PROPUESTA-UI.md): diagnóstico de menús, HUD y controles táctiles,
-  sistema visual propio y fases U0–U5; pendiente de decisiones del usuario.
+- [Interfaz: diseño, revisión y pendientes](PROPUESTA-UI.md): HUD, menús y joystick
+  implementados en `feat/ui-chiclana`, con revisiones del usuario en móvil; pendientes de
+  cierre, integración y publicación. Distingue el alcance actual de las mejoras opcionales.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
   faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
   `v1.7.0`.
