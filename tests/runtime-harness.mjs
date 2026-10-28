@@ -66,6 +66,7 @@ export async function createRuntime({ progress = null, terrain = null, failedAss
   const windowListeners = {};
   globalThis.addEventListener = (n, f) => (windowListeners[n] ??= []).push(f);
   globalThis.document = {
+    body: el('body'),
     getElementById: el,
     createElement: (tag) => ({ ...el('created' + Math.random()), tagName: tag.toUpperCase() }),
     querySelectorAll: () => [],

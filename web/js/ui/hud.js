@@ -30,7 +30,7 @@ export function updateHudReadouts(goal) {
   setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
   setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
   setStyle('conditionFill', 'width', state.health + '%');
-  setStyle('conditionFill', 'background', state.health < 30 ? '#ff9473' : '#e7fa8a');
+  setStyle('conditionFill', 'background', state.health < 30 ? '#ef6f5e' : 'var(--albero)');
   setText(
     'jobDistance',
     goal
@@ -76,7 +76,7 @@ export function drawLabels() {
       continue;
     }
     setStyle(p.el, 'display', 'block');
-    setStyle(p.el, 'left', (v.x * 0.5 + 0.5) * gfx.W + 'px');
+    setStyle(p.el, 'left', Math.max(120, Math.min(gfx.W - 120, (v.x * 0.5 + 0.5) * gfx.W)) + 'px');
     setStyle(p.el, 'top', (-v.y * 0.5 + 0.5) * gfx.H + 'px');
   }
   let goal = target(),

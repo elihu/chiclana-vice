@@ -173,6 +173,36 @@
     <script type="module" src="game3d.js?v=2026-10-27-v1.7.0"></script>
   </head>
   <body>
+    <svg class="iconSprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <symbol id="icon-camera" viewBox="0 0 24 24">
+          <path d="M3 7h4l2-3h6l2 3h4v13H3z" />
+          <circle cx="12" cy="13" r="4" />
+        </symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24">
+          <path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16M15 5v16" />
+        </symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"
+          />
+        </symbol>
+        <symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 4v16M16 4v16" /></symbol>
+        <symbol id="icon-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7" /></symbol>
+        <symbol id="icon-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" /></symbol>
+        <symbol id="icon-brake" viewBox="0 0 24 24">
+          <path d="M5 8h14v9H5zM8 11v3M12 11v3M16 11v3" />
+        </symbol>
+        <symbol id="icon-gas" viewBox="0 0 24 24">
+          <path d="m8 3 9 2-3 16-9-2zM10 7l3 .5M9 11l3 .5M8 15l3 .5" />
+        </symbol>
+        <symbol id="icon-interact" viewBox="0 0 24 24">
+          <path d="M14 3h6v18h-6M3 12h12m-4-4 4 4-4 4" />
+        </symbol>
+        <symbol id="icon-boost" viewBox="0 0 24 24"><path d="m5 5 7 7-7 7m7-14 7 7-7 7" /></symbol>
+      </defs>
+    </svg>
     <canvas id="world" role="img" aria-label="Juego 3D en el centro de Chiclana"></canvas>
     <div id="loading">
       <div class="loadingInner">
@@ -203,7 +233,7 @@
         </div>
         <button class="primary" id="start">SALIR A LA CALLE <span>↗</span></button>
         <p class="note">
-          Conduce con volante y pedales. A pie, usa el joystick.<br />En el móvil, mejor en
+          Conduce con flechas y pedales. A pie, usa el joystick.<br />En el móvil, mejor en
           horizontal.
         </p>
         <button class="textButton" id="introHelp">Controles, alcance y fuentes</button>
@@ -223,12 +253,17 @@
       </div>
       <div class="topButtons">
         <button id="cameraBtn" title="Cambiar cámara" aria-label="Cambiar cámara">
-          ◉ <span>Cámara</span></button
+          <svg class="icon" aria-hidden="true"><use href="#icon-camera"></use></svg
+          ><span>Cámara</span></button
         ><button id="mapBtn" title="Mapa y calles" aria-label="Mapa y calles">
-          ⌖ <span>Mapa</span></button
+          <svg class="icon" aria-hidden="true"><use href="#icon-map"></use></svg
+          ><span>Mapa</span></button
         ><button id="timeBtn" title="Hora del día: Tarde" aria-label="Hora del día: Tarde. Cambiar">
-          ☀ <span>Hora</span></button
-        ><button id="pauseBtn" title="Pausa" aria-label="Pausa y opciones">Ⅱ</button>
+          <svg class="icon" aria-hidden="true"><use href="#icon-sun"></use></svg
+          ><span>Hora</span></button
+        ><button id="pauseBtn" title="Pausa" aria-label="Pausa y opciones">
+          <svg class="icon" aria-hidden="true"><use href="#icon-pause"></use></svg>
+        </button>
       </div>
       <button id="miniButton" aria-label="Abrir mapa de calles">
         <canvas id="mini"></canvas><span id="street">Plaza de las Bodegas</span><i>N ↑</i>
@@ -244,20 +279,29 @@
       <div id="direction" aria-hidden="true">◆</div>
       <div id="driveControls">
         <div id="steering">
-          <button id="left" aria-label="Girar a la izquierda">‹</button
-          ><button id="right" aria-label="Girar a la derecha">›</button>
+          <button id="left" aria-label="Girar a la izquierda">
+            <svg class="icon" aria-hidden="true"><use href="#icon-left"></use></svg></button
+          ><button id="right" aria-label="Girar a la derecha">
+            <svg class="icon" aria-hidden="true"><use href="#icon-right"></use></svg>
+          </button>
         </div>
         <div id="pedals">
           <button id="brake" aria-label="Frenar o marcha atrás">
-            <span>▬</span><small>FRENO / R</small></button
-          ><button id="gas" aria-label="Acelerar"><span>▥</span><small>GAS</small></button>
+            <svg class="icon" aria-hidden="true"><use href="#icon-brake"></use></svg
+            ><small>FRENO / R</small></button
+          ><button id="gas" aria-label="Acelerar">
+            <svg class="icon" aria-hidden="true"><use href="#icon-gas"></use></svg
+            ><small>GAS</small>
+          </button>
         </div>
       </div>
       <div id="joy" class="hidden"><div id="stick"></div></div>
       <button id="interact" aria-labelledby="interactText">
-        <span aria-hidden="true">↥</span><small id="interactText">BAJAR</small></button
+        <svg class="icon" aria-hidden="true"><use href="#icon-interact"></use></svg
+        ><small id="interactText">BAJAR</small></button
       ><button id="boost" aria-labelledby="boostText">
-        <span aria-hidden="true">»</span><small id="boostText">TURBO</small>
+        <svg class="icon" aria-hidden="true"><use href="#icon-boost"></use></svg
+        ><small id="boostText">TURBO</small>
       </button>
       <div id="desktopHelp">
         WASD / flechas · E entrar/salir · Espacio freno · Mayús turbo · C cámara · M mapa

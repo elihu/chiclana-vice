@@ -16,9 +16,12 @@ export function installTouchDetection() {
   gfx.W = innerWidth;
   gfx.H = innerHeight;
   gfx.coarse = matchMedia('(any-pointer: coarse)').matches;
+  const syncTouchUI = () => document.body.classList.toggle('touch-enabled', gfx.coarse);
+  syncTouchUI();
   const coarseQuery = matchMedia('(any-pointer: coarse)');
   coarseQuery.addEventListener?.('change', (e) => {
     gfx.coarse = e.matches || gfx.touchSeen;
+    syncTouchUI();
     if (gfx.renderer) applyQuality();
   });
   addEventListener(
@@ -28,6 +31,7 @@ export function installTouchDetection() {
       gfx.touchSeen = true;
       if (!gfx.coarse) {
         gfx.coarse = true;
+        syncTouchUI();
         if (gfx.renderer) applyQuality();
       }
     },

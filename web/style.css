@@ -1,7 +1,18 @@
 :root {
-  --lime: #e7fa8a;
-  --white: #f5f6e9;
-  --dark: #12232b;
+  --albero: #f0c24b;
+  --cal: #f5f2e8;
+  --noche: #12232b;
+  --surface: #12232bef;
+  --border: #f5f2e830;
+  --edge: 24px;
+  --safe-top: max(var(--edge), env(safe-area-inset-top));
+  --safe-left: max(var(--edge), env(safe-area-inset-left));
+  --safe-right: max(var(--edge), env(safe-area-inset-right));
+  --safe-bottom: max(var(--edge), env(safe-area-inset-bottom));
+  --radius: 14px;
+  --tap: 48px;
+  --white: var(--cal);
+  --dark: var(--noche);
   --muted: #b3c7c5;
   color-scheme: dark;
 }
@@ -17,7 +28,7 @@ body {
   overscroll-behavior: none;
   background: #b0c3cc;
   color: var(--white);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
   touch-action: none;
 }
 button,
@@ -32,7 +43,7 @@ button {
 }
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid var(--lime);
+  outline: 3px solid var(--albero);
   outline-offset: 2px;
 }
 #world {
@@ -47,7 +58,7 @@ input:focus-visible {
 .eyebrow {
   font-size: 11px;
   letter-spacing: 2px;
-  color: var(--lime);
+  color: var(--albero);
   font-weight: 800;
 }
 #loading {
@@ -70,7 +81,7 @@ h1 {
   font-weight: 900;
 }
 h1 em {
-  color: var(--lime);
+  color: var(--albero);
 }
 #loadStatus {
   font-size: 14px;
@@ -84,7 +95,7 @@ h1 em {
 }
 .loadTrack i {
   display: block;
-  background: var(--lime);
+  background: var(--albero);
   height: 100%;
   width: 5%;
   transition: width 0.3s;
@@ -94,7 +105,7 @@ h1 em {
   inset: 0;
   z-index: 50;
   background: #12232bb0;
-  backdrop-filter: blur(5px);
+  backdrop-filter: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,7 +151,7 @@ h1 em {
   padding-top: 15px;
 }
 .primary {
-  background: var(--lime);
+  background: var(--albero);
   color: #172925;
   padding: 18px 20px;
   font-size: 14px;
@@ -151,13 +162,13 @@ h1 em {
   justify-content: space-between;
   width: 100%;
   min-height: 52px;
-  border-radius: 3px;
+  border-radius: 8px;
 }
 .primary span {
   font-size: 26px;
 }
 .primary:hover {
-  background: #f4ffb0;
+  background: #ffda70;
 }
 .welcomePanel .note {
   font-size: 12px;
@@ -176,16 +187,19 @@ h1 em {
 #hud {
   position: fixed;
   inset: 0;
+  isolation: isolate;
   pointer-events: none;
+  --mission-top: var(--safe-top);
+  --notice-top: calc(var(--safe-top) + 124px);
 }
 #hud button {
   pointer-events: auto;
 }
 header {
   position: absolute;
-  top: max(20px, env(safe-area-inset-top));
-  left: max(24px, env(safe-area-inset-left));
-  right: max(24px, env(safe-area-inset-right));
+  top: var(--safe-top);
+  left: var(--safe-left);
+  right: var(--safe-right);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -197,7 +211,7 @@ header {
   letter-spacing: -0.8px;
 }
 .logo em {
-  color: var(--lime);
+  color: var(--albero);
 }
 .logo span {
   display: block;
@@ -224,18 +238,19 @@ header {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: 20px;
-  width: 340px;
-  padding: 13px 16px;
-  background: #152a30e6;
-  border-left: 3px solid var(--lime);
-  backdrop-filter: blur(8px);
+  top: var(--mission-top);
+  width: min(340px, 36vw);
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--albero);
+  border-radius: var(--radius);
 }
 #jobTag {
   display: block;
   font-size: 10px;
   letter-spacing: 1.7px;
-  color: var(--lime);
+  color: var(--albero);
   margin-bottom: 7px;
   font-weight: 800;
 }
@@ -256,36 +271,37 @@ header {
 }
 .topButtons {
   position: absolute;
-  top: 108px;
-  right: 24px;
+  top: calc(var(--safe-top) + 76px);
+  right: var(--safe-right);
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 .topButtons button {
-  background: #142a32db;
-  min-width: 39px;
-  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--surface);
+  min-width: var(--tap);
+  height: var(--tap);
   padding: 0 12px;
-  border: 1px solid #ffffff27;
-  border-radius: 5px;
-  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 .topButtons span {
   font-size: 12px;
-  margin-left: 4px;
 }
 #miniButton {
   position: absolute;
-  left: 24px;
-  bottom: 35px;
-  width: 210px;
-  height: 155px;
-  border: 2px solid #e7f3c6aa;
-  border-radius: 4px;
+  left: var(--safe-left);
+  bottom: calc(var(--safe-bottom) + 24px);
+  width: 190px;
+  height: 144px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: #203c42;
   overflow: hidden;
   padding: 0;
-  box-shadow: 0 4px 25px #102b3655;
 }
 #mini {
   width: 100%;
@@ -310,15 +326,18 @@ header {
   right: 8px;
   font-size: 11px;
   font-style: normal;
-  color: var(--lime);
+  color: var(--albero);
   text-shadow: 0 1px 3px #000;
 }
 #telemetry {
   position: absolute;
-  right: 30px;
-  bottom: 40px;
+  right: var(--safe-right);
+  bottom: calc(var(--safe-bottom) + 24px);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
   text-align: right;
-  text-shadow: 0 2px 10px #102b36;
 }
 #modeName {
   font-size: 10px;
@@ -351,18 +370,19 @@ header {
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--lime);
+  background: var(--albero);
 }
 #toast {
   position: absolute;
   left: 50%;
-  top: 31%;
+  top: var(--notice-top);
   transform: translateX(-50%);
-  padding: 14px 20px;
-  background: #142a32ec;
-  border: 1px solid #e7fa8a44;
-  border-radius: 6px;
-  max-width: min(480px, 90%);
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: max-content;
+  max-width: min(480px, 60%);
   text-align: center;
   font-size: 14px;
   line-height: 1.45;
@@ -374,14 +394,19 @@ header {
 }
 #hint {
   position: absolute;
-  bottom: 24%;
+  top: var(--notice-top);
   left: 50%;
   transform: translateX(-50%);
-  max-width: 75%;
+  width: max-content;
+  max-width: min(480px, 60%);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
   text-align: center;
-  color: var(--lime);
-  font-size: 13px;
-  text-shadow: 0 2px 5px #000;
+  color: var(--cal);
+  font-size: 14px;
+  line-height: 1.45;
 }
 #direction {
   position: absolute;
@@ -398,14 +423,19 @@ header {
 #poiLabels {
   position: absolute;
   inset: 0;
+  z-index: -1;
   overflow: hidden;
 }
 .poi {
   position: absolute;
-  background: #14262bdc;
-  border-bottom: 2px solid var(--lime);
+  background: var(--surface);
+  border-bottom: 2px solid var(--albero);
+  border-radius: 8px;
   padding: 5px 8px;
-  font-size: 10px;
+  font-size: 12px;
+  max-width: min(220px, 60vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   transform: translate(-50%, -100%);
   text-shadow: none;
@@ -418,22 +448,28 @@ header {
 }
 #desktopHelp {
   position: absolute;
-  bottom: 22px; /* above the 11 px credits line */
+  bottom: var(--safe-bottom);
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
-  color: #f3f5e7c0;
-  text-shadow: 0 1px 4px #000;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--cal);
   white-space: nowrap;
 }
 #credits {
   position: absolute;
-  bottom: 4px;
-  left: 8px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 100%;
+  white-space: nowrap;
   font-size: 11px;
-  color: #f5f6e9b0;
-  background: #14283066;
-  padding: 2px 5px;
+  color: var(--cal);
+  background: var(--surface);
+  padding: 3px 8px;
+  border-radius: 8px 8px 0 0;
 }
 .modalPanel {
   position: relative;
@@ -464,7 +500,7 @@ header {
   color: #c1d4d0;
 }
 .modalPanel a {
-  color: var(--lime);
+  color: var(--albero);
 }
 .modalPanel .primary {
   margin-top: 11px;
@@ -492,7 +528,7 @@ header {
   line-height: 1.6;
 }
 .controlTable b {
-  color: var(--lime);
+  color: var(--albero);
 }
 .controlTable span {
   color: #c1d4d0;
@@ -563,7 +599,7 @@ header {
 }
 #streetList button:hover {
   background: #304841;
-  color: var(--lime);
+  color: var(--albero);
 }
 .mapLegend {
   display: flex;
@@ -571,7 +607,7 @@ header {
   gap: 20px;
   font-size: 11px;
   padding-top: 12px;
-  color: var(--lime);
+  color: var(--albero);
 }
 .mapLegend span:nth-child(2) {
   color: #ffbd7d;
@@ -590,94 +626,153 @@ header {
   color: #aec7c5;
   margin-bottom: 0;
 }
+
+.icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.iconSprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+#hint:empty,
+#hud:has(#toast.show) #hint {
+  visibility: hidden;
+}
+#jobTag,
+#job > div,
+#modeName,
+#telemetry small,
+#miniButton > span,
+.logo span,
+.eyebrow,
+.facts,
+.textButton,
+.mapFooter,
+.mapLegend {
+  font-size: 12px;
+}
+#jobTag {
+  letter-spacing: 0.5px;
+}
+.primary {
+  border-radius: var(--radius);
+  color: var(--noche);
+}
+.secondary {
+  background: #29434c;
+  color: var(--cal);
+}
+.modalPanel,
+.mapPanel {
+  background: var(--noche);
+  border-radius: var(--radius);
+}
+.overlay {
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.close {
+  min-width: var(--tap);
+  height: var(--tap);
+}
+.modalPanel {
+  max-height: 100%;
+}
+.pauseActions {
+  display: grid;
+  gap: 8px;
+}
+.pauseActions .primary {
+  margin: 0;
+  min-height: 48px;
+  padding: 12px 16px;
+}
+.pauseActions .textButton {
+  text-align: left;
+  min-height: 48px;
+}
 @media (max-width: 650px) {
-  header {
-    left: 16px;
-    right: 16px;
-    top: max(16px, env(safe-area-inset-top));
+  :root {
+    --edge: 16px;
+  }
+  #hud {
+    --mission-top: calc(var(--safe-top) + 58px);
+    --notice-top: calc(var(--safe-top) + 170px);
   }
   .logo {
     font-size: 16px;
   }
   .logo span {
-    font-size: 8px;
-    letter-spacing: 1px;
+    display: none;
   }
   #money {
-    font-size: 21px;
+    font-size: 20px;
   }
   #stars {
-    font-size: 17px;
+    font-size: 16px;
+    margin-top: 0;
   }
   #job {
-    top: 82px;
-    left: 16px;
-    right: 16px;
+    left: var(--safe-left);
+    right: var(--safe-right);
     width: auto;
     transform: none;
-    padding: 11px 13px;
-  }
-  #jobTitle {
-    font-size: 13px;
   }
   #jobTag {
-    font-size: 9px;
+    margin-bottom: 4px;
   }
-  #miniButton {
-    top: 190px;
-    left: 16px;
-    width: 124px;
-    height: 105px;
+  #jobTitle {
+    font-size: 14px;
+  }
+  #job > div {
+    margin-top: 4px;
   }
   .topButtons {
-    top: 190px;
-    right: 16px;
+    top: calc(var(--safe-top) + 250px);
+    flex-direction: column;
   }
   .topButtons span {
     display: none;
   }
-  .topButtons button {
-    height: 35px;
-    min-width: 35px;
-    padding: 0 9px;
+  #miniButton {
+    top: calc(var(--safe-top) + 250px);
+    bottom: auto;
+    width: 112px;
+    height: 104px;
   }
-  #hint {
-    bottom: 230px;
-    font-size: 12px;
-    width: 80%;
-  }
+  #hint,
   #toast {
-    top: 40%;
-    font-size: 13px;
+    max-width: calc(100% - var(--safe-left) - var(--safe-right));
   }
   #telemetry {
-    bottom: 212px;
-    right: 19px;
+    bottom: calc(var(--safe-bottom) + 28px);
   }
-  .condition {
-    width: 82px;
+  #speed {
+    font-size: 32px;
+  }
+  #desktopHelp {
+    display: none;
   }
   #welcome {
     padding: 28px;
   }
   h1 {
-    font-size: 63px;
-  }
-  h1 small {
-    font-size: 10px;
-    letter-spacing: 2px;
+    font-size: 56px;
   }
   .welcomePanel > p {
     font-size: 18px;
   }
-  .facts {
-    font-size: 10px;
-  }
-  .eyebrow {
-    font-size: 9px;
-  }
   .modalPanel {
-    padding: 28px 22px;
+    padding: 24px 20px;
   }
   .mapPanel {
     padding: 18px;
@@ -693,20 +788,22 @@ header {
     height: 20dvh;
   }
   .mapTitle h2 {
-    font-size: 25px;
-  }
-  .mapFooter {
-    font-size: 10px;
+    font-size: 24px;
   }
   #streetSearch {
     font-size: 16px;
-    padding: 10px;
   }
   .mapLegend {
-    gap: 14px;
+    gap: 12px;
   }
 }
 @media (max-height: 540px) and (orientation: landscape) {
+  :root {
+    --edge: 12px;
+  }
+  #hud {
+    --notice-top: calc(var(--safe-top) + 104px);
+  }
   #welcome {
     padding: 16px 6vw;
   }
@@ -714,117 +811,131 @@ header {
     width: 360px;
   }
   h1 {
-    font-size: 46px;
-    margin: 17px 0;
+    font-size: 44px;
+    margin: 12px 0;
   }
   h1 small {
-    margin-top: 13px;
-    font-size: 9px;
+    margin-top: 12px;
   }
   .welcomePanel > p {
     font-size: 16px;
-    margin: 10px 0;
+    margin: 8px 0;
   }
   .facts {
-    margin: 15px 0;
+    margin: 12px 0;
     padding-top: 8px;
-    font-size: 9px;
   }
   .primary {
-    padding: 10px 16px;
-    min-height: 43px;
-    font-size: 12px;
+    padding: 12px 16px;
+    min-height: 48px;
   }
   .welcomePanel .note {
-    font-size: 10px;
-    margin: 9px 0 0;
-  }
-  .textButton {
-    font-size: 10px;
+    font-size: 12px;
+    margin: 8px 0 0;
   }
   .logo {
-    font-size: 15px;
+    font-size: 16px;
   }
   .logo span {
-    font-size: 8px;
-  }
-  header {
-    top: 12px;
+    display: none;
   }
   #money {
     font-size: 20px;
   }
   #stars {
-    font-size: 17px;
+    font-size: 16px;
   }
   #job {
-    top: 12px;
-    width: 285px;
-    padding: 9px 12px;
-  }
-  #jobTitle {
-    font-size: 12px;
+    width: 36vw;
+    padding: 8px 12px;
   }
   #jobTag {
-    font-size: 9px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+  }
+  #jobTitle {
+    font-size: 14px;
+  }
+  #job > div {
+    margin-top: 4px;
   }
   .topButtons {
-    top: 82px;
+    top: calc(var(--safe-top) + 64px);
+    display: grid;
+    grid-template-columns: repeat(2, 48px);
+    gap: 6px;
   }
-  .topButtons button {
-    height: 32px;
-    min-width: 33px;
+  .topButtons span {
+    display: none;
   }
   #miniButton {
-    top: 82px;
-    width: 110px;
-    height: 84px;
+    top: calc(var(--safe-top) + 60px);
+    bottom: auto;
+    width: 112px;
+    height: 86px;
   }
   #miniButton > span {
-    font-size: 9px;
     padding: 5px;
   }
-  #telemetry {
-    bottom: 170px;
-    right: 27px;
+  #hint,
+  #toast {
+    max-width: 42%;
   }
   #speed {
-    font-size: 27px;
+    font-size: 28px;
   }
   #modeName {
-    font-size: 8px;
+    display: none;
   }
-  #hint {
-    bottom: 35px;
-    width: 45%;
-    font-size: 12px;
+  #desktopHelp {
+    display: none;
   }
-  #toast {
-    top: 38%;
+  .modalPanel:has(.pauseLayout) {
+    width: min(800px, 100%);
+    padding: 20px;
+  }
+  .pauseLayout {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 24px;
+  }
+  .pauseSummary h2 {
+    font-size: 28px;
+  }
+  .pauseActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 44px;
+  }
+  .pauseActions #resume,
+  .pauseActions #reset,
+  .pauseActions #rescue {
+    grid-column: 1 / -1;
+  }
+  .pauseActions .primary {
     font-size: 12px;
   }
   .mapPanel {
-    padding: 18px;
+    padding: 16px;
   }
   .mapTitle h2 {
     font-size: 22px;
     margin: 7px 0 12px;
   }
   #map {
-    height: 54dvh;
+    height: 52dvh;
   }
   #streetList {
-    height: 40dvh;
-  }
-  .mapFooter {
-    font-size: 10px;
+    height: 38dvh;
   }
   .mapLayout {
     grid-template-columns: minmax(0, 1fr) 210px;
   }
-  .poi {
-    font-size: 9px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
   }
 }
 /* The play surface owns touches; text fields in overlays remain editable. */
@@ -861,50 +972,23 @@ textarea {
 #hud button:active {
   filter: brightness(1.15);
 }
-/* Touch controls and touch HUD layout. Declarations overridden later in this block were
-   removed when the two former blocks were merged; the size-specific overrides of the
-   touch controls live here as nested queries. */
-@media (any-pointer: coarse) {
-  header {
-    top: calc(env(safe-area-inset-top) + 12px);
-    left: calc(env(safe-area-inset-left) + 16px);
-    right: calc(env(safe-area-inset-right) + 16px);
+/* Un único estado táctil, compartido con la detección del juego. */
+body.touch-enabled {
+  --edge: 16px;
+  --safe-top: max(var(--edge), env(safe-area-inset-top));
+  --safe-left: max(var(--edge), env(safe-area-inset-left));
+  --safe-right: max(var(--edge), env(safe-area-inset-right));
+  --safe-bottom: max(var(--edge), env(safe-area-inset-bottom));
+}
+.touch-enabled {
+  #desktopHelp {
+    display: none;
   }
   .logo span {
     display: none;
   }
-  .topButtons button {
-    min-width: 44px;
-    height: 44px;
-    border-radius: 12px;
-  }
-  .topButtons {
-    right: calc(env(safe-area-inset-right) + 16px);
-  }
-  #job {
-    border-radius: 10px;
-    background: #122730d9;
-  }
-  #jobTag {
-    font-size: 12px;
-    letter-spacing: 0.7px;
-  }
-  #jobTitle {
-    font-size: 14px;
-  }
-  #job > div {
-    font-size: 12px;
-  }
-  #desktopHelp {
+  .topButtons span {
     display: none;
-  }
-  #miniButton {
-    bottom: auto;
-    border-radius: 12px;
-    border: 1px solid #e7f3c680;
-  }
-  #miniButton > span {
-    font-size: 12px;
   }
   #driveControls {
     display: block;
@@ -913,95 +997,78 @@ textarea {
   #pedals {
     position: absolute;
     display: flex;
-    bottom: calc(env(safe-area-inset-bottom) + 22px);
-  }
-  #steering {
-    left: calc(env(safe-area-inset-left) + 16px);
+    bottom: calc(var(--safe-bottom) + 12px);
     gap: 10px;
-  }
-  #pedals {
-    right: calc(env(safe-area-inset-right) + 16px);
-    gap: 12px;
     align-items: flex-end;
   }
-  #steering button {
-    width: 66px;
-    height: 68px;
-    background: #102630b8;
-    border: 1px solid #f0fad681;
-    border-radius: 20px;
-    font-size: 57px;
-    line-height: 1;
-    backdrop-filter: blur(3px);
+  #steering {
+    left: var(--safe-left);
   }
-  #pedals button {
-    width: 64px;
-    height: 70px;
-    border-radius: 18px;
-    background: #172f39b8;
-    border: 1px solid #f0fad663;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  #pedals {
+    right: var(--safe-right);
   }
-  #pedals button span {
-    font-size: 23px;
-  }
-  #pedals button small {
-    font-size: 12px;
-    letter-spacing: 0;
-    margin-top: 8px;
-    font-weight: 800;
-  }
-  #pedals #gas {
-    height: 88px;
-    background: var(--lime);
-    color: #1b302b;
-    border-color: var(--lime);
-  }
+  #steering button,
+  #pedals button,
   #interact,
   #boost {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
     display: flex;
-    position: absolute;
-    bottom: calc(env(safe-area-inset-bottom) + 125px);
-    width: 62px;
-    height: 62px;
     align-items: center;
     justify-content: center;
+  }
+  #steering button {
+    width: 64px;
+    height: 72px;
+  }
+  #steering .icon {
+    width: 32px;
+    height: 32px;
+  }
+  #pedals button {
+    width: 66px;
+    height: 72px;
     flex-direction: column;
-    border-radius: 18px;
-    border: 1px solid #eefbd380;
-    background: #192e37cb;
   }
-  #boost {
-    right: calc(env(safe-area-inset-right) + 16px);
-  }
-  #interact {
-    right: calc(env(safe-area-inset-right) + 90px);
-  }
-  #interact span,
-  #boost span {
-    font-size: 23px;
-  }
+  #pedals button small,
   #interact small,
   #boost small {
     font-size: 12px;
-    letter-spacing: 0;
-    margin-top: 4px;
-    font-weight: bold;
+    margin-top: 6px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  #pedals #gas {
+    height: 88px;
+    background: var(--albero);
+    color: var(--noche);
+  }
+  #interact,
+  #boost {
+    position: absolute;
+    bottom: calc(var(--safe-bottom) + 112px);
+    width: 66px;
+    height: 60px;
+    flex-direction: column;
+  }
+  #boost {
+    right: var(--safe-right);
+  }
+  #interact {
+    right: calc(var(--safe-right) + 76px);
   }
   #joy {
     display: block;
     position: absolute;
     pointer-events: auto;
-    left: calc(env(safe-area-inset-left) + 22px);
-    bottom: calc(env(safe-area-inset-bottom) + 24px);
+    left: var(--safe-left);
+    bottom: calc(var(--safe-bottom) + 12px);
     width: 132px;
     height: 132px;
-    border: 1px solid #f0fad663;
+    border: 1px solid var(--border);
     border-radius: 50%;
-    background: #152e3880;
+    background: var(--surface);
   }
   #stick {
     position: absolute;
@@ -1010,126 +1077,76 @@ textarea {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 2px solid #f0fad6c0;
-    background: #cfe8c840;
+    border: 2px solid var(--albero);
+    background: #f0c24b40;
   }
   #telemetry {
-    right: calc(env(safe-area-inset-right) + 18px);
-    bottom: calc(env(safe-area-inset-bottom) + 200px);
+    bottom: calc(var(--safe-bottom) + 188px);
+    padding: 6px 10px;
   }
   #modeName {
     font-size: 12px;
     letter-spacing: 0.5px;
   }
-  #telemetry small {
-    font-size: 12px;
-  }
   #speed {
     font-size: 32px;
   }
-  #credits {
-    bottom: 1px;
-    font-size: 11px;
-    padding: 3px 6px;
-  }
-  #hint {
-    bottom: calc(env(safe-area-inset-bottom) + 198px);
-  }
   button.pressed {
-    background: #fff !important;
-    color: #142b2d !important;
-    transform: scale(0.96);
+    background: var(--cal) !important;
+    color: var(--noche) !important;
   }
-  @media (max-width: 650px) {
-    #steering {
-      gap: 8px;
+}
+@media (orientation: portrait) {
+  .touch-enabled {
+    #hud {
+      --mission-top: calc(var(--safe-top) + 58px);
+      --notice-top: calc(var(--safe-top) + 170px);
     }
-    #pedals {
-      gap: 9px;
+    #job {
+      left: var(--safe-left);
+      right: var(--safe-right);
+      width: auto;
+      transform: none;
     }
-  }
-  @media (max-height: 540px) and (orientation: landscape) {
-    #joy {
-      width: 115px;
-      height: 115px;
+    .topButtons {
+      top: calc(var(--safe-top) + 250px);
+      flex-direction: column;
     }
-    #stick {
-      left: 33.5px;
-      top: 33.5px;
+    #miniButton {
+      top: calc(var(--safe-top) + 250px);
+      bottom: auto;
+      width: 112px;
+      height: 104px;
     }
   }
 }
-@media (any-pointer: coarse) and (orientation: portrait) {
-  #job {
-    top: calc(env(safe-area-inset-top) + 64px);
-    left: 16px;
-    right: 16px;
-    width: auto;
-    transform: none;
-    padding: 10px 12px;
-  }
-  #miniButton {
-    top: calc(env(safe-area-inset-top) + 165px);
-    left: 16px;
-    width: 116px;
-    height: 96px;
-  }
-  .topButtons {
-    top: calc(env(safe-area-inset-top) + 165px);
-    gap: 6px;
-  }
-  .topButtons span {
-    display: none;
-  }
-  #toast {
-    top: 42%;
-  }
-}
-@media (any-pointer: coarse) and (orientation: landscape) {
-  #job {
-    top: calc(env(safe-area-inset-top) + 10px);
-    left: 50%;
-    right: auto;
-    width: min(310px, 40vw);
-    transform: translateX(-50%);
-    padding: 8px 12px;
-  }
-  #jobTag {
-    margin-bottom: 4px;
-  }
-  #jobTitle {
-    font-size: 14px;
-  }
-  #miniButton {
-    top: calc(env(safe-area-inset-top) + 56px);
-    left: calc(env(safe-area-inset-left) + 16px);
-    width: 112px;
-    height: 86px;
-  }
-  .topButtons {
-    top: calc(env(safe-area-inset-top) + 62px);
-    gap: 6px;
-  }
-  .topButtons span {
-    display: none;
-  }
-  #telemetry {
-    bottom: calc(env(safe-area-inset-bottom) + 112px);
-    right: calc(env(safe-area-inset-right) + 168px);
-  }
-  #speed {
-    font-size: 28px;
-  }
-  #modeName {
-    display: none;
-  }
-  .condition {
-    width: 65px;
-  }
-  #hint {
-    bottom: calc(env(safe-area-inset-bottom) + 28px);
-    width: 40%;
-    font-size: 12px;
+@media (orientation: landscape) {
+  .touch-enabled {
+    #job {
+      width: 36vw;
+    }
+    .topButtons {
+      top: calc(var(--safe-top) + 64px);
+      display: grid;
+      grid-template-columns: repeat(2, 48px);
+      gap: 6px;
+    }
+    #miniButton {
+      top: calc(var(--safe-top) + 60px);
+      bottom: auto;
+      width: 112px;
+      height: 86px;
+    }
+    #telemetry {
+      right: calc(var(--safe-right) + 160px);
+      bottom: calc(var(--safe-bottom) + 12px);
+    }
+    #modeName {
+      display: none;
+    }
+    .condition {
+      width: 65px;
+    }
   }
 }
 
@@ -1157,7 +1174,7 @@ textarea {
   margin: 8px 0;
 }
 .debugPanel dt {
-  color: var(--lime);
+  color: var(--albero);
   margin-top: 6px;
 }
 .debugPanel dd {
