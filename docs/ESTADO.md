@@ -6,7 +6,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Versión actual: `v2.0.0` (28/10/2026); el historial de publicaciones está en
+  Actions. Versión actual: `v2.1.0` (29/10/2026); el historial de publicaciones está en
   [Releases](https://github.com/elihu/chiclana-vice/releases).
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
@@ -37,41 +37,34 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
-## Integrado sin publicar
+## Novedades de `v2.1.0`
 
-- **Revisión del mundo** ([REVISION-MUNDO.md](REVISION-MUNDO.md), rama
-  `fix/mundo-transitabilidad`, integrada el 29/10/2026 con el visto bueno del usuario en
-  el navegador): río más claro con reflejo del cielo, sin la cubeta de la Alameda; 145
-  troncos fuera de las vías pavimentadas; pavimento peatonal y aceras recortados contra las
-  calzadas; glorietas, túneles y niveles de OSM; tablero y pasos inferiores del VII
-  Centenario separados; peatones sobre recorridos continuos; separadores entre ramales
-  como calzada; junta del tranvía con Remedios. `npm run check` pasa; sin FPS medidos ni
-  prueba en móvil.
-- **Herramientas** (`chore/versiones`): eslint 10.13.0, prettier 3.9.10 y
-  `actions/setup-node` v7.1.0. Three.js 0.186.1 sigue siendo la última.
-- **Plan** [PLAN-REFACTOR.md](historico/PLAN-REFACTOR.md): rendimiento, simplificación y documentación
-  sin cambios visibles, por fases R0–R5.
-- **R0** (`perf/medir-arranque`): etapas de arranque medidas y `tools/bench-startup.mjs`.
-  Referencia en Node: arranque 10,5 s y 0,53 ms por paso de `update`; sin cambios visibles.
-- **R1** (`perf/indices-espaciales`): rejilla común `core/grid.js` para obstáculos, agua y
-  tramos, sincronizada con sus listas; aceras sin comprobaciones repetidas. En Node, arranque
-  10,3 → 7,2 s (−30 %) y `update` 0,58 → 0,27 ms por paso; huellas idénticas, sin FPS ni
-  prueba en móvil.
-- **R2** (`refactor/modulos-grandes`): superficies, calles, aceras, edificios, vegetación,
-  tranvía, jugador, controles e inspector partidos en funciones con nombre; validación de
-  superficies en `world/surface-validate.js`. Huellas idénticas y arranque +0,9 %.
-- **R3** (`refactor/validadores`): un validador por archivo (`validate-city.js`,
-  `validate-facades.js`, `validate-corrections.js`) con el ayudante `validate-kit.js`; mismos
-  mensajes. La complejidad apenas baja (`validateSurfaceDesign` 154 → 135).
-- **Humo de superficies** (`fix/humo-tablero`): los tableros con pendiente se comprueban con
-  su perfil, no con la cota nominal; `browser-smoke --surfaces` vuelve a pasar.
-- **Junta norte de Remedios** (`fix/remedios-junta-norte`): `endExtension` admite un par
-  `[inicio, fin]`; el extremo norte se prolonga 5,25 m y cierra el hueco hasta el cauce entre
-  el tablero y la orilla. Revisado por el usuario en el navegador el 29/10/2026.
-- **R4** (`perf/fotograma`): sin consultas de suelo repetidas en el barrido de cámara, el
-  balanceo del coche y el HUD; huellas idénticas. Con cinco ejecuciones alternas, `update`
-  0,272 → 0,264 ms por paso, dentro del ruido. Reglas de complejidad de ESLint sin activar:
-  quedan 11 funciones por encima ([RESULTADO-R4.md](historico/RESULTADO-R4.md)).
+Versión menor: mundo más transitable y motor más rápido, sin cambios en las partidas
+guardadas.
+
+- **Mundo** ([REVISION-MUNDO.md](REVISION-MUNDO.md)): río más claro con reflejo del cielo,
+  sin la cubeta de la Alameda; 145 troncos fuera de las vías pavimentadas; pavimento
+  peatonal y aceras recortados contra las calzadas; glorietas, túneles y niveles de OSM;
+  tablero y pasos inferiores del VII Centenario separados; peatones sobre recorridos
+  continuos; separadores entre ramales como calzada; junta del tranvía con Remedios.
+  Revisado por el usuario en el navegador.
+- **Puente de Remedios:** el extremo norte del tablero se prolonga 5,25 m y cierra el hueco
+  hasta el cauce entre el puente y la orilla (`endExtension` admite un par `[inicio, fin]`).
+  Revisado por el usuario en el navegador.
+- **Rendimiento** ([PLAN-REFACTOR.md](historico/PLAN-REFACTOR.md)), sin cambios visibles
+  (huellas de escena idénticas con y sin relieve): rejilla espacial común `core/grid.js`,
+  aceras sin comprobaciones repetidas y menos consultas de suelo por fotograma. En Node con
+  DOM y WebGL simulados, arranque de unos 10,3 a 7,2 s (−30 %) y `update` de 0,58 a unos
+  0,27 ms por paso. Sin FPS medidos ni prueba en móvil.
+- **Código y documentación:** arranque en etapas medidas (`tools/bench-startup.mjs`),
+  módulos grandes partidos en funciones con nombre, un validador por archivo, código muerto
+  retirado, guía de módulos completa y planes ejecutados en `docs/historico/`.
+- **Herramientas:** eslint 10.13.0, prettier 3.9.10 y `actions/setup-node` v7.1.0;
+  Three.js 0.186.1 sigue siendo la última. El humo de superficies comprueba los tableros con
+  su perfil y `verify-bridges.mjs` informa de la caída tras sus extremos (`endDrop`).
+- **Verificación:** `npm run check` y Chrome con SwiftShader (normal, ligero, `?debug` y
+  superficies). Reglas de complejidad de ESLint sin activar: quedan 11 funciones por encima
+  ([RESULTADO-R4.md](historico/RESULTADO-R4.md)).
 
 ## Novedades de `v2.0.0`
 
