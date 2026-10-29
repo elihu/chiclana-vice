@@ -68,6 +68,10 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 - **Junta norte de Remedios** (`fix/remedios-junta-norte`): `endExtension` admite un par
   `[inicio, fin]`; el extremo norte se prolonga 5,25 m y cierra el hueco hasta el cauce entre
   el tablero y la orilla. Revisado por el usuario en el navegador el 29/10/2026.
+- **R4** (`perf/fotograma`): sin consultas de suelo repetidas en el barrido de cámara, el
+  balanceo del coche y el HUD; huellas idénticas. Con cinco ejecuciones alternas, `update`
+  0,272 → 0,264 ms por paso, dentro del ruido. Reglas de complejidad de ESLint sin activar:
+  quedan 11 funciones por encima ([RESULTADO-R4.md](RESULTADO-R4.md)).
 
 ## Novedades de `v2.0.0`
 
