@@ -84,27 +84,32 @@ z ≈ −1100) y calle Juan de la Cierva (x ≈ −300, z ≈ −900).
 - **D7. Fachadas con relieve** (`frontages.json`, 45 calles del centro): en C1 y C2 una nave
   o gran superficie no recibe relieve (se queda con el muro pintado); los locales de las
   calles con relieve eligen variante por familia en la receta `street-generic` en C2.
-- **D8. Altura de las naves: pendiente del usuario.** Opciones: (a) dejarla como está
-  (3,45 m por planta); (b) una altura de planta propia para `industrial` y `bigRetail` en
-  la política de alturas (`facade-profiles.json`), documentada como aproximación en
-  `MAP_SOURCES.md`; (c) usar el LiDAR del IGN cuando pase los filtros, que hoy aceptan
-  muy pocas partes. Recomendación: (b), en un paso aparte al final de C1, solo con su
-  visto bueno.
+- **D8. Altura de las naves: la del Catastro** (decisión del usuario del 29/10/2026). Las
+  plantas y la política de alturas no cambian: una nave de una planta mide 3,45 m.
 
 ## Fases
 
 Orden: C0 prepara datos sin cambios visibles; C1 (naves y grandes superficies) es lo que
-más se nota en las zonas nuevas; C2 y C3 afinan los locales y ponen nombres.
+más se nota en las zonas nuevas; C2 y C3 afinan los locales y ponen nombres; C4 añade las
+gasolineras con los datos de C0 y los rótulos de C3.
 
 ### C0. Datos de comercios (`feat/datos-comercios`)
 
-1. **Herramienta** `tools/export-ground-floors.py`: cada comercio pasa de `[x, z, tipo]`
-   a `[x, z, tipo, nombre]` (nombre de `name`, o `null`), y se añade `brand` solo si
-   existe. Añade por parte un indicio de zona a partir de los polígonos `landuse=industrial`
-   y `landuse=retail` y de las vías con `building=industrial|warehouse|retail` que
-   contienen el centroide de la parte. Actualiza el formato en `docs/DATOS.md` §9 y el
-   verificador `tests/verify-ground-floors.mjs`. El juego sigue leyendo los tres primeros
-   campos. Commit `feat(datos): nombres de comercio e indicios de zona en la capa de bajos`.
+1. **Herramienta** `tools/export-ground-floors.py`:
+   - cada comercio pasa de `[x, z, tipo]` a `[x, z, tipo, nombre]` (`name`, o `null`), con
+     un quinto elemento `brand` solo si existe; el juego sigue leyendo los tres primeros;
+   - `zoneKinds: ["industrial", "retail"]` y `zones`, un entero por parte (0 = ninguno;
+     1 o 2 = índice + 1 en `zoneKinds`) cuando el centroide de la parte cae en un polígono
+     `landuse=industrial|retail` o en una vía cerrada `building=industrial|warehouse|retail`;
+     el indicio del edificio prevalece sobre el de la zona;
+   - `fuel`: gasolineras (`amenity=fuel`) dentro del mundo, como
+     `{x, z, name, brand, outline}` (`outline` es el contorno si OSM la dibuja como área,
+     o `null` si es un punto).
+
+   Actualiza el formato en `docs/DATOS.md` §9 y el verificador
+   `tests/verify-ground-floors.mjs`. Commit
+   `feat(datos): nombres de comercio, indicios de zona y gasolineras en la capa de bajos`.
+
 2. **Procedencia y fuentes**: `node tools/export-provenance.mjs`; en `MAP_SOURCES.md`, qué
    se toma de OSM y sus límites. La capa ya es ODbL; no cambies textos de licencia. Si
    hiciera falta algo más que describir los campos, para y pregunta. Commit
@@ -112,7 +117,7 @@ más se nota en las zonas nuevas; C2 y C3 afinan los locales y ponen nombres.
 
 Verificación: `npm run check`, huellas de escena iguales a `main`, recuento en el informe
 (comercios con nombre y con marca dentro del mundo, partes con indicio industrial o
-comercial) y tamaño del archivo.
+comercial, gasolineras) y tamaño del archivo.
 
 ### C1. Naves industriales y grandes superficies (`feat/naves`)
 
@@ -145,7 +150,6 @@ comercial) y tamaño del archivo.
 3. **Fachadas con relieve**: excluir de `street-generic` los frentes de partes
    `industrial` o `bigRetail` (D7). Regenera `web/frontages.json` y la procedencia.
    Commit `feat(fachadas): sin relieve de vivienda en naves`.
-4. **Altura (solo con el visto bueno del usuario sobre D8).** Commit propio.
 
 Vistas para el usuario: avenida del Comercio, calle Forjadores y el Mercadona de la calle
 Nuestra Señora de los Dolores (x ≈ −465, z ≈ −188), a pie y en coche; una al anochecer.
@@ -181,6 +185,25 @@ de `scene-budget` frente a `main`.
 
 Vistas: el Mercadona, la Alameda y la calle con bares de C2, de día y al anochecer. Una
 medida de `scene-budget` frente a `main`.
+
+### C4. Gasolineras (`feat/gasolineras`, después de C3)
+
+Datos de C0 (`fuel`): 6 dentro del mundo el 29/10/2026, cuatro como punto (Moeve, BP
+Urbisur, Repsol y BP) y dos como área (Plenergy y Gasolinera CLC).
+
+1. **Receta** `gasolinera` en `facade-designs.json` (validada con `tests/verify-design.mjs`):
+   marquesina plana sobre pilares, de 2 a 4 islas de surtidores según el tamaño, tienda
+   pequeña al fondo y banda de color en el canto de la marquesina. Tamaño estándar para las
+   de punto y, para las de área, la marquesina inscrita en el contorno. Commit
+   `feat(fachadas): receta de gasolinera`.
+2. **Colocación**: una por entrada de `fuel`, orientada hacia la vía rodada más cercana, sin
+   invadir calzadas ni edificios (si no cabe, se omite y se informa). Geometría fusionada por
+   material, como el mobiliario. El nombre va en el canto de la marquesina con los rótulos de
+   C3 (D4: sin logotipos ni colores de marca). Commit
+   `feat(fachadas): gasolineras desde OSM`.
+
+Vistas: las seis gasolineras, de día y al anochecer. Una medida de `scene-budget` frente a
+`main`.
 
 ## Fuera de este plan
 
