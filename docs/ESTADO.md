@@ -258,9 +258,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   cercano con la ortofoto de 2025 (la limpieza de copas y sombras se ajustó con la de 2022) y
   los 114 tramos de calle que el tráfico excluye por cruzar edificios (antes 58), casi todos
   vías de servicio de OSM a través de naves.
-- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0 y C1 integradas (datos de
-  comercios; naves, grandes superficies y bodegas del casco en los muros genéricos, con la altura
-  del Catastro). Siguen C2–C4. Sin medir en el móvil el shader de muros, algo más largo. Después,
+- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C2 integradas (datos de
+  comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
+  por tipo con tono, frente y toldo). Siguen C3 y C4. Sin medir en el móvil el shader de muros, algo más largo. Después,
   vallas y muros de parcela.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
