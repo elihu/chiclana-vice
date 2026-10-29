@@ -139,3 +139,82 @@ if (STRICT_TOP_LEVEL) {
   assert.equal(child.status, 0, 'módulos evaluables sin DOM:\n' + child.stderr);
 }
 console.log('Modules', files.length, 'versioned', version, 'acyclic, no top-level effects');
+
+// Rejilla común: cajas, límites negativos, deduplicación y orden entre celdas.
+const { createGrid } = await import('../web/js/core/grid.js');
+const grid = createGrid(10),
+  first = {},
+  second = {},
+  third = {};
+grid.insert(first, 10, 20, -10, 10);
+grid.insert(second, -10, 20, -10, 10);
+grid.insert(third, -10, -1, -10, -1);
+assert.deepEqual(grid.queryPoint(10, 0), [first, second]);
+assert.deepEqual(grid.queryPoint(-1, -1), [second, third]);
+assert.deepEqual(grid.queryPoint(30, 0), []);
+const found = [];
+grid.queryBox(-10, 20, -10, 10, (item) => {
+  found.push(item);
+});
+assert.deepEqual(found, [first, second, third]);
+assert.equal(
+  grid.queryBox(-10, 20, -10, 10, (item) => item === first),
+  true,
+);
+assert.equal(
+  grid.queryBox(30, 40, 30, 40, () => true),
+  false,
+);
+
+// Empates y proyecciones: misma aritmética y mismo tramo que el recorrido lineal.
+const { segments, streetEnvironment } = await import('../web/js/core/state.js');
+const { nearestRoad, someCollider } = await import('../web/js/world/spatial.js');
+assert.equal(nearestRoad(0, 0), null);
+segments.push(
+  { a: [10, -40], b: [10, 40], drive: true },
+  { a: [-10, -40], b: [-10, 40], drive: true },
+  { a: [-80, 25], b: [80, 25], drive: false },
+  { a: [-80, -25], b: [80, -25], drive: true },
+);
+function linearRoad(x, z, driveOnly) {
+  let best = null,
+    md = Infinity;
+  for (const s of segments) {
+    if (driveOnly && !s.drive) continue;
+    const dx = s.b[0] - s.a[0],
+      dz = s.b[1] - s.a[1],
+      u = Math.max(
+        0,
+        Math.min(1, ((x - s.a[0]) * dx + (z - s.a[1]) * dz) / (dx * dx + dz * dz || 1)),
+      ),
+      d = Math.hypot(x - s.a[0] - dx * u, z - s.a[1] - dz * u);
+    if (d < md) {
+      md = d;
+      best = { x: s.a[0] + dx * u, z: s.a[1] + dz * u, d, u, s };
+    }
+  }
+  return best;
+}
+for (const drive of [false, true])
+  for (let x = -100; x <= 100; x += 2.5)
+    for (let z = -100; z <= 100; z += 2.5)
+      assert.deepEqual(nearestRoad(x, z, drive), linearRoad(x, z, drive));
+assert.equal(nearestRoad(0, 0).s, segments[0], 'empate entre celdas: gana el índice menor');
+for (const s of segments) s.drive = false;
+assert.equal(nearestRoad(0, 0, true), null, 'respaldo sin candidatos rodados');
+for (const p of [
+  { x: -16, z: 0, r: 3 },
+  { x: 16, z: 0, r: 0.2 },
+  { x: 0, z: 16, r: 5 },
+])
+  streetEnvironment.colliders.push(p);
+for (let x = -30; x <= 30; x++)
+  for (let z = -30; z <= 30; z++) {
+    const test = (p) => Math.hypot(x - p.x, z - p.z) < p.r + 2;
+    assert.equal(someCollider(x, z, 2, test), streetEnvironment.colliders.some(test));
+  }
+const touches = (p) => Math.hypot(p.x + 16, p.z) < p.r + 1;
+streetEnvironment.colliders.length = 0;
+assert.equal(someCollider(-16, 0, 1, touches), false, 'la rejilla sigue a la lista vaciada');
+streetEnvironment.colliders.push({ x: -16, z: 0, r: 3 });
+assert.equal(someCollider(-16, 0, 1, touches), true, 'y a lo añadido después');

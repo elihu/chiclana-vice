@@ -1,9 +1,9 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { mat } from '../engine/materials.js';
-import { gfx, segments, waterAreas, world } from '../core/state.js';
+import { gfx, segments, world } from '../core/state.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside } from '../core/math.js';
-import { inBuilding } from './spatial.js';
+import { inBuilding, inWater } from './spatial.js';
 import { tramBlocks } from './tram.js';
 import { createRoadSpace, carvePavement } from './road-space.js';
 
@@ -74,7 +74,7 @@ export function buildSidewalks(slabs, paved, include) {
     !nearOther(x, z, a, b, len) &&
     !tramBlocks(x, z, cfg.junctionMargin) &&
     !platforms.some((p) => pInside(x, z, p.polygon)) &&
-    !waterAreas.some((w) => pInside(x, z, w.p));
+    !inWater(x, z);
 
   const quad = (out, a, b, c, d) => {
     for (const v of [a, b, c, a, c, d]) out.push(...v);
@@ -106,6 +106,17 @@ export function buildSidewalks(slabs, paved, include) {
           a[1] + (dz0 * k) / count + dx * off * side,
         ],
         centerY = [],
+        // free() no tiene efectos: las piezas vecinas y el faldón reutilizan sus puntos.
+        seen = new Map(),
+        freeAt = (kk, o, side) => {
+          const key = kk + ',' + o + ',' + side;
+          let ok = seen.get(key);
+          if (ok === undefined) {
+            const p = at(kk, o, side);
+            seen.set(key, (ok = free(p[0], p[1], a, b, len)));
+          }
+          return ok;
+        },
         // Lado con otra calzada pegada a lo largo de buena parte del tramo (dobles calzadas,
         // glorietas): sin acera por ese lado.
         crowded = { 1: 0, '-1': 0 };
@@ -129,10 +140,9 @@ export function buildSidewalks(slabs, paved, include) {
             },
             // Esquinas, bordes y centro de la pieza entre la calzada y `off`.
             testEdge = (off) => {
-              const pts = [];
               for (const o of [half, (half + off) / 2, off])
-                for (const kk of [k, k + 0.5, k + 1]) pts.push(at(kk, o, side));
-              return pts.every((p) => free(p[0], p[1], a, b, len));
+                for (const kk of [k, k + 0.5, k + 1]) if (!freeAt(kk, o, side)) return false;
+              return true;
             };
           // Faldón: cara vertical bajo el borde (de la calzada o de la acera) hasta un poco
           // por debajo del terreno, solo donde el terreno queda por debajo.

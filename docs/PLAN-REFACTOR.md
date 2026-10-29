@@ -75,6 +75,12 @@ Versiones el 29/10/2026: Three.js 0.186.1 es la última publicada y no se cambia
   elemento: marca con un contador de consulta (`item` en un `Map` interno de
   sello → último sello), sin crear un `Set` por llamada. **El orden de visita es el de
   inserción**, para que «el primero que cumple» y los empates den lo mismo que hoy.
+  **Las rejillas que indexan una lista de `core/state.js`** (obstáculos, agua, tramos) se
+  sincronizan al consultarse con `syncedGrid` de `world/spatial.js`: indexan lo añadido al
+  final y se rehacen si la lista mengua o cambia su primer elemento, porque esas listas se
+  mutan directamente (`push`, `length = 0`), también en los tests. No se añaden funciones
+  `add…` obligatorias. Una rejilla de datos que no cambian tras construirse (superficies,
+  aceras) puede crearse una vez en su constructor.
 - **D2. Mismo resultado, no «casi».** Cada sustitución de una búsqueda lineal debe dar
   el mismo elemento, también en empates: entre candidatos a igual distancia gana el de
   menor índice original, como en el recorrido lineal. `nearestRoad` busca por anillos de
@@ -134,9 +140,43 @@ Entrega: tabla de etapas de la referencia (mediana de tres).
 7. **Resto de rejillas** (`ground-floors.js`, `tram.js`, `shadow-proxies.js`) solo si la
    sustitución es directa; si no, anotarlo.
 
-Objetivo orientativo: arranque al menos un 30 % menor en `bench-startup`. Si un paso no
-mejora su etapa o la empeora, se revierte y se anota. Entrega: tabla antes/después por
+Objetivo orientativo: arranque al menos un 30 % menor en `bench-startup`. Un paso se
+revierte solo si el arranque total empeora más del 3 % (el ruido entre ejecuciones ronda
+ese valor), no por una etapa suelta; se anota. Entrega: tabla antes/después por
 etapa.
+
+### Continuación de R1 (29/10/2026)
+
+Ejecución de los pasos 5–7 sobre `perf/indices-espaciales`, sin repetir el paso 3.
+Medianas de tres procesos separados, Node v26.8.2 en la misma máquina, con DOM y WebGL
+simulados. Las referencias y los JSON se guardan fuera del repositorio en
+`/tmp/chiclana-r1-cont/`.
+
+- **Paso 5 revertido.** La rejilla común y las cajas de polígonos conservaban la huella
+  con relieve. Frente al punto de partida de esta continuación, `prepareTerrainPlacement`
+  pasó de 372,34 a 383,10 ms y `buildRoadDetails` de 744,88 a 785,59 ms; la bajada de
+  `buildStreetSurfaces` de 4.171,81 a 4.116,63 ms no compensa el criterio del plan de
+  revertir pasos que empeoran sus etapas. Se conserva la implementación anterior de
+  `surface-model.js` y `road-space.js`.
+- **Paso 6 revertido por huella distinta.** `git bisect` en una copia temporal aisló
+  `0067233`. Cambiaban `scene.triangles` (−1.477 con relieve, −115 sin relieve),
+  `scene.trianglesWithoutInstancing`, `scene.strict` y `scene.unordered`. El conjunto
+  mutable de vecinos continuos se actualizaba por tramo, pero los `fallback` de aceras
+  cortas se ejecutan al terminar la calle: consultaban los vecinos del último tramo,
+  en lugar de los de su tramo original. Se revierte el paso completo sin rehacerlo.
+- **Paso 7 revertido tras medirlo aislado.** Se probaron las sustituciones directas en
+  bajos y tranvía. La mejora observada junto al paso 6 descartado no se confirmó al medir
+  el paso 7 solo: frente al inicio de esta continuación, `buildBuildings` pasó de
+  552,91 a 561,60 ms, `buildDetailedFacades` de 1.159,20 a 1.218,48 ms y `buildTram`
+  de 8,11 a 8,13 ms. Sus dos huellas sí eran idénticas a `main`; se revierte por tiempos.
+  `shadow-proxies.js` no se sustituyó: agrupa buffers por material y celda y luego los
+  itera; `createGrid` no ofrece esa operación y el reemplazo no es directo.
+
+Los pasos 5–7 no dejan cambios en el código del juego. Se conservan los pasos 1, 2 y 4
+anteriores y la sincronización de `ff2b1be`.
+El paso 3 sigue descartado por no mejorar, según la ejecución anterior. No se modifica
+`docs/ESTADO.md`; no se ejecutan Chrome, capturas, push ni merge. Estas medidas no
+acreditan GPU, FPS ni móvil.
 
 ## Fase R2. Partir los módulos grandes (`refactor/modulos-grandes`)
 
@@ -203,3 +243,12 @@ Entrega: ms por fotograma antes/después (mediana de tres). No afirmar FPS.
 GPU, memoria real, fluidez, FPS ni móvil. La mejora de arranque se mide en Node con DOM y
 WebGL simulados; en el navegador el tiempo real incluye descarga, compilación de shaders
 y GPU.
+
+### Cierre de R1 (29/10/2026)
+
+Tanda del revisor sobre la misma rama: `free()` de `sidewalks.js` consulta el agua con la
+rejilla sincronizada (`inWater`) y memoriza por tramo sus puntos, que comparten las piezas
+vecinas y el faldón (`free()` no tiene efectos). Huellas idénticas con y sin relieve.
+Mediana de tres, `main` frente a la rama: `buildStreetSurfaces` 4.262 → 3.250 ms,
+`spawnActors` 2.250 → 214 ms, arranque 10.267 → 7.173 ms (−30 %) y `update` 0,58 →
+0,27 ms por paso. El índice de extremos del paso 6 sigue descartado.

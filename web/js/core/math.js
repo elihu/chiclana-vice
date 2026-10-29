@@ -54,3 +54,18 @@ export const gridX = (m, i) => m.bounds[0] + i * m.step[0],
   gridZ = (m, j) => m.bounds[2] + j * m.step[1],
   gridColumn = (m, x) => (x - m.bounds[0]) / m.step[0],
   gridRow = (m, z) => (z - m.bounds[2]) / m.step[1];
+
+// Admite puntos de mapa [x,z] y vértices [x,y,z,…].
+export function polygonBounds(polygon, zIndex = 1) {
+  let minX = Infinity,
+    maxX = -Infinity,
+    minZ = Infinity,
+    maxZ = -Infinity;
+  for (const p of polygon) {
+    minX = Math.min(minX, p[0]);
+    maxX = Math.max(maxX, p[0]);
+    minZ = Math.min(minZ, p[zIndex]);
+    maxZ = Math.max(maxZ, p[zIndex]);
+  }
+  return { minX, maxX, minZ, maxZ };
+}

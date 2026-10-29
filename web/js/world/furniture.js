@@ -2,7 +2,7 @@ import { insideBounds } from './bounds.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx, segments, streetEnvironment, waterAreas, world } from '../core/state.js';
-import { inBuilding } from './spatial.js';
+import { someCollider, inBuilding } from './spatial.js';
 import { lerp, pInside } from '../core/math.js';
 import { mat } from '../engine/materials.js';
 import { addLampGlow } from '../engine/night-glow.js';
@@ -46,7 +46,7 @@ export function buildUrbanFurniture() {
       !inBuilding(x, z, r) &&
       !waterAreas.some((p) => pInside(x, z, p.p)) &&
       !rules.protectedPoints.some((p) => Math.hypot(x - p[0], z - p[1]) < rules.protectedRadius) &&
-      !streetEnvironment.colliders.some((p) => Math.hypot(x - p.x, z - p.z) < p.r + r + 0.35)
+      !someCollider(x, z, r + 0.35, (p) => Math.hypot(x - p.x, z - p.z) < p.r + r + 0.35)
     );
   }
   function group(x, z, a = 0) {
