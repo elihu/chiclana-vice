@@ -47,6 +47,20 @@ export function describeTime() {
 }
 
 export function installControls() {
+  const { closeTools, toolAction } = installToolMenu();
+  function useInteract() {
+    interact();
+    clearInput();
+  }
+  installControlButtons(closeTools, toolAction, useInteract);
+  installHoldControls();
+  installJoystick();
+  installCameraDrag();
+  installKeyboard(closeTools, useInteract);
+  installWindowControls(closeTools);
+}
+
+function installToolMenu() {
   function closeTools(focus = false) {
     $('toolMenu').classList.remove('open');
     $('toolsToggle').setAttribute('aria-expanded', 'false');
@@ -69,10 +83,10 @@ export function installControls() {
     },
     { capture: true },
   );
-  function useInteract() {
-    interact();
-    clearInput();
-  }
+  return { closeTools, toolAction };
+}
+
+function installControlButtons(closeTools, toolAction, useInteract) {
   $('start').onclick = () => {
     start();
     if (gfx.touchSeen && innerWidth > innerHeight && !document.fullscreenElement)
@@ -114,6 +128,9 @@ export function installControls() {
   }
   $('mapStyle').onclick = () => selectMapStyle(true);
   $('mapStreet').onclick = () => selectMapStyle(false);
+}
+
+function installHoldControls() {
   function bindHold(id, key) {
     let e = $(id),
       pointers = new Set();
@@ -142,6 +159,9 @@ export function installControls() {
   bindHold('gas', 'gas');
   bindHold('brake', 'brake');
   bindHold('boost', 'boost');
+}
+
+function installJoystick() {
   const joy = $('joy');
   function joyMove(e) {
     if (e.pointerId !== pointer.joyId) return;
@@ -175,6 +195,9 @@ export function installControls() {
       input.jx = input.jy = 0;
       $('stick').style.transform = '';
     });
+}
+
+function installCameraDrag() {
   $('world').onpointerdown = (e) => {
     if (!session.started || session.paused || pointer.dragId !== null) return;
     pointer.dragId = e.pointerId;
@@ -199,6 +222,9 @@ export function installControls() {
     $('world').addEventListener(n, (e) => {
       if (e.pointerId === pointer.dragId) pointer.dragId = null;
     });
+}
+
+function installKeyboard(closeTools, useInteract) {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && $('toolMenu').classList.contains('open')) {
       e.preventDefault();
@@ -240,6 +266,9 @@ export function installControls() {
     'keyup',
     (e) => (keys[e.key.length === 1 ? e.key.toLowerCase() : e.key] = false),
   );
+}
+
+function installWindowControls(closeTools) {
   window.addEventListener('blur', () => {
     clearInput();
     if (session.started && !session.paused) pauseMenu();
