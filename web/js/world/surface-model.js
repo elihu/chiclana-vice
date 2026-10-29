@@ -1,10 +1,10 @@
-import { gridX, gridZ } from '../core/math.js';
+import { createGrid } from '../core/grid.js';
+import { gridX, gridZ, polygonBounds } from '../core/math.js';
 // Diseño de superficies: perfiles de autor sobre un MDT inmutable, sin física.
 import { pInside, boundaryDistance } from '../core/math.js';
 import { gridHeightAt } from './terrain.js';
 import { dividerFaces } from './road-space.js';
 
-const key = (x, z) => Math.floor(x / 25) * 65536 + Math.floor(z / 25);
 const mix = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t);
 
@@ -276,31 +276,31 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
     surfaceRoads = [...city.roads, ...tramRoads],
     raw = terrain.heightAt,
     roadMap = new Map(surfaceRoads.map((r) => [r.id, r])),
-    grid = new Map(),
-    bridgeSegments = new Map(),
-    ordinarySegments = new Map(),
+    grid = createGrid(25),
+    bridgeSegments = createGrid(25),
+    ordinarySegments = createGrid(25),
     profiles = new Map(),
     roadPoints = new Map(),
     platforms = [],
     water = [],
-    waterGrid = new Map(),
-    platformGrid = new Map(),
+    waterGrid = createGrid(25),
+    platformGrid = createGrid(25),
     supportRoads = new Map(),
     cfg = design.roads;
-  const empty = [];
+  const empty = [],
+    boundsCache = new WeakMap();
+  const boundsOf = (polygon) => {
+    if (!boundsCache.has(polygon)) boundsCache.set(polygon, polygonBounds(polygon));
+    return boundsCache.get(polygon);
+  };
   const indexBounds = (index, value, minX, maxX, minZ, maxZ, padding = 0) => {
-    for (let i = Math.floor((minX - padding) / 25); i <= Math.floor((maxX + padding) / 25); i++)
-      for (let j = Math.floor((minZ - padding) / 25); j <= Math.floor((maxZ + padding) / 25); j++) {
-        const cell = i * 65536 + j;
-        if (!index.has(cell)) index.set(cell, []);
-        index.get(cell).push(value);
-      }
+    index.insert(value, minX - padding, maxX + padding, minZ - padding, maxZ + padding);
   };
   const waterShapes = new Map();
   const waterShape = (area) => {
     const polygon = area.p,
       rows = new Map(),
-      shores = new Map();
+      shores = createGrid(25);
     for (let i = 0; i < polygon.length; i++) {
       const a = polygon[i],
         b = polygon[(i + polygon.length - 1) % polygon.length],
@@ -332,7 +332,7 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
     };
     const shoreDistance = (x, z) => {
       let distance = design.water.shoreWidth;
-      for (const edge of shores.get(key(x, z)) ?? empty)
+      for (const edge of shores.queryPoint(x, z))
         distance = Math.min(distance, boundaryDistance(x, z, edge));
       return distance;
     };
@@ -422,10 +422,7 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
       supportId: `platform:${p.id}`,
       y: level,
       heightAt,
-      minX: Math.min(...polygon.map((v) => v[0])),
-      maxX: Math.max(...polygon.map((v) => v[0])),
-      minZ: Math.min(...polygon.map((v) => v[1])),
-      maxZ: Math.max(...polygon.map((v) => v[1])),
+      ...boundsOf(polygon),
     });
   }
   for (const platform of platforms)
@@ -439,27 +436,23 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
       cfg.shoulder,
     );
   const atPlatform = (x, z) =>
-    (platformGrid.get(key(x, z)) ?? empty).find(
-      (p) =>
-        x >= p.minX - 1e-6 &&
-        x <= p.maxX + 1e-6 &&
-        z >= p.minZ - 1e-6 &&
-        z <= p.maxZ + 1e-6 &&
-        (pInside(x, z, p.polygon) || boundaryDistance(x, z, p.polygon) < 1e-6),
-    );
+    platformGrid
+      .queryPoint(x, z)
+      .find(
+        (p) =>
+          x >= p.minX - 1e-6 &&
+          x <= p.maxX + 1e-6 &&
+          z >= p.minZ - 1e-6 &&
+          z <= p.maxZ + 1e-6 &&
+          (pInside(x, z, p.polygon) || boundaryDistance(x, z, p.polygon) < 1e-6),
+      );
   for (const a of city.areas) {
     if (a.kind !== 'water') continue;
     // El cauce sigue su MDT local, no el mínimo de un polígono de kilómetros.
     water.push(a);
     waterShapes.set(a, waterShape(a));
-    indexBounds(
-      waterGrid,
-      a,
-      Math.min(...a.p.map((p) => p[0])),
-      Math.max(...a.p.map((p) => p[0])),
-      Math.min(...a.p.map((p) => p[1])),
-      Math.max(...a.p.map((p) => p[1])),
-    );
+    const bounds = boundsOf(a.p);
+    indexBounds(waterGrid, a, bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ);
   }
   const basins = (design.water.features ?? []).map((f) => {
     const area = city.areas.find(anchoredArea(f.areaAnchor));
@@ -497,9 +490,11 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
   }
   const waterHeightAt = (x, z, area = null) => {
     if (!area)
-      area = (waterGrid.get(key(x, z)) ?? empty).find(
-        (a) => waterShapes.get(a).contains(x, z) || waterShapes.get(a).shoreDistance(x, z) < 1e-6,
-      );
+      area = waterGrid
+        .queryPoint(x, z)
+        .find(
+          (a) => waterShapes.get(a).contains(x, z) || waterShapes.get(a).shoreDistance(x, z) < 1e-6,
+        );
     const basin = basins.find((b) => b.area === area);
     if (basin) return basin.y;
     const levels = waterLevels.get(area);
@@ -551,23 +546,17 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
       cfg.shoulder,
       Math.hypot(...terrain.manifest.step.map((v) => v / cfg.meshSubdivisions)),
     );
-    for (
-      let i = Math.floor((Math.min(s.a[0], s.b[0]) - s.width / 2 - padding) / 25);
-      i <= Math.floor((Math.max(s.a[0], s.b[0]) + s.width / 2 + padding) / 25);
-      i++
-    )
-      for (
-        let j = Math.floor((Math.min(s.a[1], s.b[1]) - s.width / 2 - padding) / 25);
-        j <= Math.floor((Math.max(s.a[1], s.b[1]) + s.width / 2 + padding) / 25);
-        j++
-      ) {
-        const k = i * 65536 + j;
-        if (!grid.has(k)) grid.set(k, []);
-        grid.get(k).push(s);
-        const index = s.bridge ? bridgeSegments : ordinarySegments;
-        if (!index.has(k)) index.set(k, []);
-        index.get(k).push(s);
-      }
+    const bounds = polygonBounds([s.a, s.b]);
+    for (const index of [grid, s.bridge ? bridgeSegments : ordinarySegments])
+      indexBounds(
+        index,
+        s,
+        bounds.minX - s.width / 2,
+        bounds.maxX + s.width / 2,
+        bounds.minZ - s.width / 2,
+        bounds.maxZ + s.width / 2,
+        padding,
+      );
   };
   for (const r of surfaceRoads) {
     const points = [],
@@ -801,7 +790,7 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
       distance2 = Infinity,
       y = 0;
     const index = bridgesOnly ? bridgeSegments : includeDeck ? grid : ordinarySegments;
-    for (const s of index.get(key(x, z)) ?? empty) {
+    for (const s of index.queryPoint(x, z)) {
       if ((id && s.roadId !== id) || (!includeDeck && s.bridge)) continue;
       if (bridgesOnly && !s.bridge) continue;
       const t = Math.max(
@@ -828,54 +817,33 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
   const constructedRoad = {},
     constructedDeck = {};
   const dividers = dividerFaces(city.roads, city.bounds),
-    dividerGrid = new Map(),
-    blockerGrid = new Map();
-  for (const face of dividers) {
-    const xs = face.polygon.map((p) => p[0]),
-      zs = face.polygon.map((p) => p[1]);
-    indexBounds(
-      dividerGrid,
-      face,
-      Math.min(...xs),
-      Math.max(...xs),
-      Math.min(...zs),
-      Math.max(...zs),
-    );
-  }
-  for (const building of city.buildings ?? []) {
-    const xs = building.p.map((p) => p[0]),
-      zs = building.p.map((p) => p[1]);
-    indexBounds(
-      blockerGrid,
-      building,
-      Math.min(...xs),
-      Math.max(...xs),
-      Math.min(...zs),
-      Math.max(...zs),
-    );
-  }
-  const greenGrid = new Map(),
-    treeGrid = new Map();
-  for (const a of (city.areas ?? []).filter((a) => ['park', 'water'].includes(a.kind))) {
-    const xs = a.p.map((p) => p[0]),
-      zs = a.p.map((p) => p[1]);
-    indexBounds(greenGrid, a, Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs));
-  }
+    dividerGrid = createGrid(25),
+    blockerGrid = createGrid(25);
+  const indexPolygon = (index, item, polygon) => {
+    const bounds = boundsOf(polygon);
+    indexBounds(index, item, bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ);
+  };
+  for (const face of dividers) indexPolygon(dividerGrid, face, face.polygon);
+  for (const building of city.buildings ?? []) indexPolygon(blockerGrid, building, building.p);
+  const greenGrid = createGrid(25),
+    treeGrid = createGrid(25);
+  for (const a of (city.areas ?? []).filter((a) => ['park', 'water'].includes(a.kind)))
+    indexPolygon(greenGrid, a, a.p);
   for (const p of [...(city.trees ?? []), ...vegetation]) {
     const r = Math.max(1.5, p[2] ?? 0);
     indexBounds(treeGrid, { p, r }, p[0] - r, p[0] + r, p[1] - r, p[1] + r);
   }
   const dividerHeightAt = (x, z) => {
-    const faces = dividerGrid.get(key(x, z));
-    if (!faces || atPlatform(x, z)) return null;
+    const faces = dividerGrid.queryPoint(x, z);
+    if (!faces.length || atPlatform(x, z)) return null;
     const face = faces.find((f) => pInside(x, z, f.polygon));
     if (
       !face ||
-      (blockerGrid.get(key(x, z)) ?? empty).some(
-        (b) => pInside(x, z, b.p) && !(b.holes ?? []).some((h) => pInside(x, z, h)),
-      ) ||
-      (greenGrid.get(key(x, z)) ?? empty).some((a) => pInside(x, z, a.p)) ||
-      (treeGrid.get(key(x, z)) ?? empty).some(({ p, r }) => Math.hypot(x - p[0], z - p[1]) < r)
+      blockerGrid
+        .queryPoint(x, z)
+        .some((b) => pInside(x, z, b.p) && !(b.holes ?? []).some((h) => pInside(x, z, h))) ||
+      greenGrid.queryPoint(x, z).some((a) => pInside(x, z, a.p)) ||
+      treeGrid.queryPoint(x, z).some(({ p, r }) => Math.hypot(x - p[0], z - p[1]) < r)
     )
       return null;
     let first = null,
@@ -909,12 +877,16 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
   };
   const constructedHeightAt = (x, z) => {
     let y = raw(x, z);
-    const cell = key(x, z);
-    if (!grid.has(cell) && !platformGrid.has(cell) && !waterGrid.has(cell)) return y;
+    if (
+      !grid.queryPoint(x, z).length &&
+      !platformGrid.queryPoint(x, z).length &&
+      !waterGrid.queryPoint(x, z).length
+    )
+      return y;
     const p = atPlatform(x, z);
     if (p) y = Math.min(y, p.heightAt(x, z) - p.thickness - p.clearance);
     else
-      for (const platform of platformGrid.get(cell) ?? empty) {
+      for (const platform of platformGrid.queryPoint(x, z)) {
         if (
           x < platform.minX - cfg.shoulder ||
           x > platform.maxX + cfg.shoulder ||
@@ -930,7 +902,7 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
             1 - smooth(distance / cfg.shoulder),
           );
       }
-    for (const a of waterGrid.get(cell) ?? empty)
+    for (const a of waterGrid.queryPoint(x, z))
       if (!basins.some((b) => b.area === a) && waterShapes.get(a).contains(x, z)) {
         const depth =
           design.water.bedDepth *
@@ -969,7 +941,7 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
         z = gridZ(meshManifest, j);
       let y = constructedHeightAt(x, z);
       const margin = Math.hypot(...meshManifest.step);
-      for (const s of grid.get(key(x, z)) ?? empty) {
+      for (const s of grid.queryPoint(x, z)) {
         if (s.bridge) continue;
         const along = ((x - s.a[0]) * s.dx + (z - s.a[1]) * s.dz) / (s.length * s.length),
           t = Math.max(0, Math.min(1, along));
@@ -1053,9 +1025,9 @@ export function createSurfaceModel(city, terrain, design, vegetation = [], tram 
     return y;
   };
   const affectedAt = (x, z) =>
-    grid.has(key(x, z)) ||
+    grid.queryPoint(x, z).length > 0 ||
     !!atPlatform(x, z) ||
-    (waterGrid.get(key(x, z)) ?? empty).some((a) => waterShapes.get(a).contains(x, z));
+    waterGrid.queryPoint(x, z).some((a) => waterShapes.get(a).contains(x, z));
   const ceilingAt = (x, z, reference) => {
     if (reference === null) return Infinity;
     const p = atPlatform(x, z),
