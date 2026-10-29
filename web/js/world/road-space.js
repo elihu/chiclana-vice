@@ -1,9 +1,7 @@
-import { createGrid } from '../core/grid.js';
-import { polygonBounds } from '../core/math.js';
-
 // Huella horizontal de las calzadas: consultas y recorte sin modificar sus ejes ni el grafo.
 // Las piezas son rectángulos de tramo; una referencia de altura separa pasos inferiores.
 const CELL = 32;
+const key = (x, z) => Math.floor(x / CELL) + ',' + Math.floor(z / CELL);
 const area = (p) =>
   p.reduce((s, a, i) => {
     const b = p[(i + 1) % p.length];
@@ -168,7 +166,7 @@ function split(polygon, distance) {
 }
 
 export function createRoadSpace(roads, nonDrivableTypes, heightAt = null, joins = false) {
-  const grid = createGrid(CELL);
+  const grid = new Map();
   for (const road of roads) {
     if (nonDrivableTypes.includes(road.type)) continue;
     for (let i = 1; i < road.p.length; i++) {
@@ -179,15 +177,20 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null, joins 
         length = Math.hypot(dx, dz);
       if (length < 0.1) continue;
       const s = { a, b, dx: dx / length, dz: dz / length, length, half: road.w / 2, road };
-      const bounds = polygonBounds([a, b]),
-        padding = s.half + 1;
-      grid.insert(
-        s,
-        bounds.minX - padding,
-        bounds.maxX + padding,
-        bounds.minZ - padding,
-        bounds.maxZ + padding,
-      );
+      for (
+        let x = Math.floor((Math.min(a[0], b[0]) - s.half - 1) / CELL);
+        x <= Math.floor((Math.max(a[0], b[0]) + s.half + 1) / CELL);
+        x++
+      )
+        for (
+          let z = Math.floor((Math.min(a[1], b[1]) - s.half - 1) / CELL);
+          z <= Math.floor((Math.max(a[1], b[1]) + s.half + 1) / CELL);
+          z++
+        ) {
+          const k = x + ',' + z;
+          if (!grid.has(k)) grid.set(k, []);
+          grid.get(k).push(s);
+        }
     }
     if (joins)
       for (let i = 1; i < road.p.length - 1; i++) {
@@ -214,14 +217,23 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null, joins 
                 sign * ((next[0] - p[0]) * (v[2] - p[1]) - (next[1] - p[1]) * (v[0] - p[0]));
             }),
             s = { planes, road };
-          grid.insert(s, b[0] - half, b[0] + half, b[1] - half, b[1] + half);
+          for (let x = Math.floor((b[0] - half) / CELL); x <= Math.floor((b[0] + half) / CELL); x++)
+            for (
+              let z = Math.floor((b[1] - half) / CELL);
+              z <= Math.floor((b[1] + half) / CELL);
+              z++
+            ) {
+              const k = x + ',' + z;
+              if (!grid.has(k)) grid.set(k, []);
+              grid.get(k).push(s);
+            }
         }
       }
   }
   const sameLevel = (s, x, z, reference) =>
     reference === null || !heightAt || Math.abs(heightAt(x, z, s.road.id) - reference) < 1.5;
   function covers(x, z, margin = 0, reference = null) {
-    for (const s of grid.queryPoint(x, z)) {
+    for (const s of grid.get(key(x, z)) ?? []) {
       if (s.planes) {
         if (s.planes.every((p) => p([x, 0, z]) >= -margin) && sameLevel(s, x, z, reference))
           return true;
@@ -240,14 +252,14 @@ export function createRoadSpace(roads, nonDrivableTypes, heightAt = null, joins 
     return false;
   }
   function subtract(polygon, reference = null) {
-    const bounds = polygonBounds(polygon, 2),
+    const xs = polygon.map((p) => p[0]),
+      zs = polygon.map((p) => p[2]),
       candidates = new Set(),
-      cx = polygon.reduce((sum, p) => sum + p[0], 0) / polygon.length,
-      cz = polygon.reduce((sum, p) => sum + p[2], 0) / polygon.length;
-    // El orden de recorte por celda forma parte de la geometría resultante.
-    for (let x = Math.floor(bounds.minX / CELL); x <= Math.floor(bounds.maxX / CELL); x++)
-      for (let z = Math.floor(bounds.minZ / CELL); z <= Math.floor(bounds.maxZ / CELL); z++)
-        for (const s of grid.queryPoint(x * CELL, z * CELL))
+      cx = xs.reduce((a, b) => a + b, 0) / xs.length,
+      cz = zs.reduce((a, b) => a + b, 0) / zs.length;
+    for (let x = Math.floor(Math.min(...xs) / CELL); x <= Math.floor(Math.max(...xs) / CELL); x++)
+      for (let z = Math.floor(Math.min(...zs) / CELL); z <= Math.floor(Math.max(...zs) / CELL); z++)
+        for (const s of grid.get(x + ',' + z) ?? [])
           if (sameLevel(s, cx, cz, reference)) candidates.add(s);
     let pieces = [polygon];
     for (const s of candidates) {
