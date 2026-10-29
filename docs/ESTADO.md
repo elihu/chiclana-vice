@@ -258,7 +258,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   cercano con la ortofoto de 2025 (la limpieza de copas y sombras se ajustó con la de 2022) y
   los 114 tramos de calle que el tráfico excluye por cruzar edificios (antes 58), casi todos
   vías de servicio de OSM a través de naves.
-- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C2 integradas (datos de
+- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C4 integradas (datos de
   comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
   por tipo con tono, frente y toldo; 267 rótulos con el nombre de OSM; 5 de 6 gasolineras, con la
   marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo. Después,
