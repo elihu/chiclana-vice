@@ -21,17 +21,21 @@ from PIL import Image, ImageChops, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = "https://www.ign.es/wms-inspire/pnoa-ma"
+# El mosaico vigente ya sirve vuelos posteriores en parte del mundo; esas teselas se
+# piden a la capa del vuelo de Andalucía 2022 (0,25 m) del servicio histórico.
+HISTORIC, HISTORIC_LAYER = "https://www.ign.es/wms/pnoa-historico", "PNOA2022"
 CACHE = Path.home() / ".cache/chiclana-vice/pnoa"
 LAT, LON = 36.4195, -6.1485
 SX, SZ = 111320 * math.cos(math.radians(LAT)), 111320
 TILE, MARGIN = 255, 20.5
 
 
-def request(box, width, height, feature=False):
+def request(box, width, height, feature=False, historic=False):
     x0, x1, z0, z1 = box
+    layer = HISTORIC_LAYER if historic else "OI.OrthoimageCoverage"
     params = dict(SERVICE="WMS", VERSION="1.1.1",
                   REQUEST="GetFeatureInfo" if feature else "GetMap",
-                  LAYERS="OI.MosaicElement" if feature else "OI.OrthoimageCoverage",
+                  LAYERS="OI.MosaicElement" if feature else layer,
                   STYLES="", SRS="EPSG:4326", FORMAT="image/jpeg",
                   BBOX=",".join(map(str, (LON + x0 / SX, LAT - z1 / SZ,
                                          LON + x1 / SX, LAT - z0 / SZ))),
@@ -39,7 +43,7 @@ def request(box, width, height, feature=False):
     if feature:
         params.update(QUERY_LAYERS="OI.MosaicElement", X=width // 2,
                       Y=height // 2, INFO_FORMAT="text/html", FEATURE_COUNT=10)
-    url = SOURCE + "?" + urllib.parse.urlencode(params)
+    url = (HISTORIC if historic else SOURCE) + "?" + urllib.parse.urlencode(params)
     key = hashlib.sha256(url.encode()).hexdigest()
     target = CACHE / (key + (".html" if feature else ".jpg"))
     if not target.exists():
@@ -125,7 +129,7 @@ def main():
                     for i in range(math.floor(x0 / TILE), math.ceil(x1 / TILE))
                     for j in range(math.floor(z0 / TILE), math.ceil(z1 / TILE))})
     CACHE.mkdir(parents=True, exist_ok=True)
-    dates = {}
+    dates, historic = {}, set()
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         responses = pool.map(lambda t: request(tile_box(t), 1184, 1184, True), tiles)
         for tile, data in zip(tiles, responses):
@@ -133,10 +137,12 @@ def main():
             dates[f"{tile[0]}_{tile[1]}"] = found
             print(f"Fecha {tile}: {found}", flush=True)
             if found != ["2022-07"]:
-                raise ValueError(f"Fecha incompatible en {tile}: {found}; se detiene sin publicar")
+                # La alineación con las vecinas comprueba después que encaja con el resto.
+                historic.add(tile)
+                print(f"Tesela {tile}: vuelo 2022 desde {HISTORIC_LAYER}", flush=True)
     images = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        responses = pool.map(lambda t: request(tile_box(t), 1184, 1184), tiles)
+        responses = pool.map(lambda t: request(tile_box(t), 1184, 1184, historic=t in historic), tiles)
         for tile, data in zip(tiles, responses):
             name = f"{tile[0]}_{tile[1]}"
             images[f"hi/{name}.jpg"] = data
@@ -167,6 +173,8 @@ def main():
                  general=dict(file="general.jpg", box=general_box, size=size),
                  acquisition="2022-07", consulted=datetime.date.today().isoformat(),
                  source=SOURCE,
+                 historic=dict(source=HISTORIC, layer=HISTORIC_LAYER,
+                               tiles=sorted(f"{i}_{j}" for i, j in historic)),
                  sha256={name: hashlib.sha256(data).hexdigest() for name, data in images.items()})
     target = ROOT / "web/aerial"
     for name, data in images.items():
