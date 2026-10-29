@@ -213,6 +213,25 @@ export function buildStreetSurfaces() {
   const bands = Object.fromEntries(
     Object.entries(groups).map(([k, g]) => [k, { ...g, p: [], uv: [] }]),
   );
+  buildStreetDividers(paved, heights, groups);
+  buildPlatformBands(heights, bands);
+  const localRoad = (road) =>
+    road.p.some((p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ);
+  function tri(g, pts, uv) {
+    for (let i of [0, 1, 2, 0, 2, 3]) {
+      g.p.push(...pts[i]);
+      g.uv.push(...uv[i]);
+    }
+  }
+  buildRoadPavements(paved, heights, space, groups, localRoad, tri);
+  buildSidewalkBands(paved, space, bands, localRoad);
+  buildStreetIslands();
+  buildStreetSquares(heights, squareMinX, squareMaxX, squareMinZ, squareMaxZ, groups);
+  emitStreetPavements(space, groups, bands);
+  buildStreetCrossings(design, heights);
+}
+
+function buildStreetDividers(paved, heights, groups) {
   // Completar separadores como calzada con pintura, sin una caja elevada ni baldosa.
   const dividerPositions = [],
     dividerUV = [],
@@ -256,6 +275,9 @@ export function buildStreetSurfaces() {
     gfx.scene.add(stripes);
   }
   streetEnvironment.paintedDividers = paintedDividers;
+}
+
+function buildPlatformBands(heights, bands) {
   for (const platform of world.surfaces?.platforms || [])
     for (const band of platform.bands) {
       const original = flatGeometry(band.polygon),
@@ -273,14 +295,9 @@ export function buildStreetSurfaces() {
       }
       geo.dispose();
     }
-  const localRoad = (road) =>
-    road.p.some((p) => p[0] > roadMinX && p[0] < roadMaxX && p[1] > roadMinZ && p[1] < roadMaxZ);
-  function tri(g, pts, uv) {
-    for (let i of [0, 1, 2, 0, 2, 3]) {
-      g.p.push(...pts[i]);
-      g.uv.push(...uv[i]);
-    }
-  }
+}
+
+function buildRoadPavements(paved, heights, space, groups, localRoad, tri) {
   for (const road of world.city.roads) {
     if (road.bridge && !world.surfaces) continue;
     let pedestrian = paved.pedestrianTypes.includes(road.type);
@@ -366,6 +383,9 @@ export function buildStreetSurfaces() {
       }
     }
   }
+}
+
+function buildSidewalkBands(paved, space, bands, localRoad) {
   // Aceras con bordillo (visual; ver sidewalks.js). Con terreno de rejilla sin modelo de
   // superficies no hay cota de calzada que seguir, y no se dibujan.
   if (world.surfaces || world.terrain?.kind !== 'grid') {
@@ -375,6 +395,9 @@ export function buildStreetSurfaces() {
     bands.slabs.p = bands.slabs.p.concat(cut.position);
     bands.slabs.uv = bands.slabs.uv.concat(cut.uv);
   }
+}
+
+function buildStreetIslands() {
   const islands = roundaboutIslands(world.city.roads),
     islandParts = [];
   for (const island of islands) {
@@ -390,6 +413,9 @@ export function buildStreetSurfaces() {
     gfx.scene.add(mesh);
   }
   streetEnvironment.roundabouts = islands.length;
+}
+
+function buildStreetSquares(heights, squareMinX, squareMaxX, squareMinZ, squareMaxZ, groups) {
   // Mapped pedestrian squares retain their real polygon outlines.
   // Evita pavimento duplicado cuando >80% del contorno coincide con un tablero;
   // 3 m tolera el margen de acera entre dos huellas de una misma plaza. Son criterios
@@ -431,6 +457,9 @@ export function buildStreetSurfaces() {
     geo.dispose();
     streetEnvironment.surfaces++;
   }
+}
+
+function emitStreetPavements(space, groups, bands) {
   const squares = carvePavement(groups.slabs.p, groups.slabs.uv, space, (x, z) =>
     surfaceHeightAt(x, z),
   );
@@ -460,6 +489,9 @@ export function buildStreetSurfaces() {
     mesh.receiveShadow = true;
     gfx.scene.add(mesh);
   }
+}
+
+function buildStreetCrossings(design, heights) {
   // Crossing locations are taken from mapped OSM crossing nodes, not invented intersections.
   const mark = [],
     cross = design.crossings;
