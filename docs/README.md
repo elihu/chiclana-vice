@@ -3,12 +3,11 @@
 Los comandos se ejecutan desde la raíz del repositorio. Cada afirmación vive en un solo
 documento; los demás enlazan a él.
 
-## Trabajar en el proyecto
+## Trabajar
 
-- [Desarrollo, estructura y convenciones](DESARROLLO.md): ejecutar, comprobar, modo ligero,
-  herramientas de medición.
-- [Flujo de Git](GIT_WORKFLOW.md): ramas, varios agentes, revisión, planes para otro
-  agente, integración, commits, etiquetas e historial.
+- [Desarrollo, estructura y convenciones](DESARROLLO.md): ejecutar, comprobar, módulos,
+  modo ligero y herramientas de medición.
+- [Flujo de Git](GIT_WORKFLOW.md): ramas, agentes, revisión, integración, commits y versiones.
 - [Publicación y CI](PUBLICACION.md): GitHub Actions, Pages y ajustes del repositorio.
 - [Reproducir los datos](DATOS.md): conversores y orden de los pasos.
 
@@ -16,46 +15,39 @@ documento; los demás enlazan a él.
 
 - [Fuentes del mapa y aproximaciones](MAP_SOURCES.md).
 - [Las 15 correcciones del piloto de alturas](ALTURAS_PILOTO.md).
+- [Kit de fachadas y correcciones](KIT-FACHADAS.md): recetas, expresiones, compositor y
+  anclajes; esquemas de [fachadas](facade-designs.schema.json) y
+  [correcciones](map-corrections.schema.json). Los esquemas actuales para el editor están
+  en [`schemas/`](../schemas/).
+- [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato, perfiles de
+  autor y niveles superior e inferior.
+- [Relieve: implementación, validación y reproducción](TERRENO_PILOTO.md): auditoría,
+  validación del 8/10/2026 y pendientes.
 - [Licencias, atribuciones y retirada](../THIRD_PARTY_NOTICES.md): única fuente legal.
 
 ## Estado
 
 - [Estado actual y pendientes](ESTADO.md).
-- [Propuesta de convenciones](historico/PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
-  documentación, Git y CI, ya aplicadas; se conserva como registro.
-- [Plan de modularización y diseño desde datos](historico/PLAN-MODULAR.md): plan por fases, ya
-  ejecutado (fases 0 a 3). Se conserva como registro; la referencia vigente está en
-  [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md), salvo el formato de recetas y
-  correcciones de [KIT-FACHADAS.md](KIT-FACHADAS.md).
+- [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): F1–F4 publicadas en
+  `v1.6.0`; mantiene pendientes gráficos y remite F5 al plan de suelo.
+- [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): tandas integradas y
+  revisiones pendientes de suelo y puentes.
+- [Interfaz: diseño, revisión y pendientes](PROPUESTA-UI.md): alcance aceptado para
+  `v2.0.0`, límites de verificación y mejoras opcionales.
+- [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado, pavimentos,
+  rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
 
-- [Estudio de ampliación y ortofoto por teselas](historico/ESTUDIO-AMPLIACION.md): Santa Ana, Puente VII
-  Centenario, ferial y carga de la ortofoto alrededor del jugador; preliminar.
-- [Plan de ampliación y ortofoto por teselas](historico/PLAN-AMPLIACION.md): relieve anclado al
-  origen, límites con rectángulos, teselas, anexos y modelos; publicado en `v1.3.0`. Se
-  conserva como registro.
-- [Plan de mejora gráfica y presupuesto de render](historico/PLAN-MEJORA-GRAFICA.md): medición de
-  llamadas y triángulos, agrupación de fachadas, luz, modo ligero, suelo cercano y árboles
-  sobre la ortofoto; terminado y publicado en `v1.4.0`. Se conserva como registro.
-- [Plan de motor WebGPU, eficiencia y gráficos](historico/PLAN-MOTOR-GRAFICOS.md): three.js 0.186.1
-  con WebGPU, shaders sin tirones, pase de sombras, llamadas, cielo, luz y color; E0, E1,
-  E2, V1 y VL publicadas en `v1.5.0`; lo pendiente pasa al plan siguiente.
-- [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): agua del Iro,
-  cristales y persianas, bajos según su uso, viento y contraluz en los árboles, horas del
-  día; publicado en `v1.6.0` salvo F5.
-- [Interfaz: diseño, revisión y pendientes](PROPUESTA-UI.md): HUD, menús y joystick
-  integrados para `v2.0.0`, tras las revisiones del usuario en móvil. Distingue el alcance
-  aceptado, los límites de verificación y las mejoras opcionales.
-- [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado en calzadas,
-  pavimentos, rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
-- [Plan de rendimiento, simplificación y mantenimiento](PLAN-REFACTOR.md): índices
-  espaciales, etapas de arranque medidas, módulos grandes partidos, validadores
-  declarativos, coste por fotograma y documentación al día; sin cambios visibles.
-- [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
-  faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
-  `v1.7.0`.
-- [Plan de implementación del relieve](historico/PLAN-TERRENO.md): datos del MDT, malla, edificios,
-  puentes, actores y validación por fases.
-- [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
-  perfiles de autor y niveles superior/inferior.
-- [Relieve: implementación, validación y reproducción](TERRENO_PILOTO.md): historia del
-  piloto, auditoría, validación del 8/10/2026 y pendientes.
+## Histórico
+
+Estos documentos conservan decisiones y resultados de ejecución. Los pendientes vigentes
+se consultan en [ESTADO.md](ESTADO.md), aunque enlacen a un plan archivado.
+
+- [Convenciones](historico/PROPUESTA-CONVENCIONES.md): propuesta de agentes, documentación, Git y CI ya aplicada.
+- [Modularización](historico/PLAN-MODULAR.md): fases 0–3 ejecutadas; inventarios y ejemplos en [sus anexos](historico/plan-modular/).
+- [Estudio de ampliación](historico/ESTUDIO-AMPLIACION.md): estudio preliminar de Santa Ana, norte y ortofoto por teselas.
+- [Ampliación](historico/PLAN-AMPLIACION.md): fases 0–5 publicadas en `v1.3.0`.
+- [Mejora gráfica](historico/PLAN-MEJORA-GRAFICA.md): presupuesto de render, agrupación, luz, suelo y árboles de `v1.4.0`.
+- [Motor y gráficos](historico/PLAN-MOTOR-GRAFICOS.md): WebGPU, shaders, sombras y luz de `v1.5.0`; pendientes derivados al plan visual.
+- [Terreno](historico/PLAN-TERRENO.md): plan original del MDT y la integración del relieve.
+- [Rendimiento y mantenimiento](PLAN-REFACTOR.md): fases R0–R5; arranque medido, índices, módulos, validadores y documentación.
+- [Resultado de R4](historico/RESULTADO-R4.md): medidas de CPU y motivos para no activar los avisos de complejidad.
