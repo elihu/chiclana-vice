@@ -5,13 +5,13 @@ referencias de línea de las fases pendientes son de `main` en `37e751b`, con la
 a 3 ya integradas.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/DATOS.md`, `docs/MAP_SOURCES.md`,
-`tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md) y
-[TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+`tools/AGENTS.md`, [SUPERFICIES_TERRENO.md](../SUPERFICIES_TERRENO.md) y
+[TERRENO_PILOTO.md](../TERRENO_PILOTO.md).
 
 ## Cómo ejecutar este plan
 
 - **Una fase = una rama** en el repositorio principal, como indican `AGENTS.md` y
-  [GIT_WORKFLOW.md](GIT_WORKFLOW.md): desde `main` limpio, `git switch -c` con el nombre
+  [GIT_WORKFLOW.md](../GIT_WORKFLOW.md): desde `main` limpio, `git switch -c` con el nombre
   de la fase. Sin worktrees ni `stash`; si el árbol no está limpio u otra rama está en
   curso, preguntar. Un commit por paso. Sin push, merge ni rebase: la integración la pide
   el usuario.

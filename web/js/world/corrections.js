@@ -1,5 +1,5 @@
 // Correcciones manuales sobre las capas de base (web/map-corrections.json). Función pura de
-// datos: sin DOM ni Three, importable desde Node. Formato en docs/plan-modular/KIT-FACHADAS.md (K7).
+// datos: sin DOM ni Three, importable desde Node. Formato en docs/KIT-FACHADAS.md (K7).
 
 const K = new Uint32Array([
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,

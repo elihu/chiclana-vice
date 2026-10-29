@@ -28,13 +28,28 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-| Script                 | Qué hace                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)                                                |
-| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración                                     |
-| `npm run format`       | Aplica el formato                                                                                |
-| `npm test`             | `verify-world.mjs` (datos), `verify-modules.mjs`, `verify-design.mjs` (diseños) y `verify3d.mjs` |
-| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                                                     |
+| Script                 | Qué hace                                                     |
+| ---------------------- | ------------------------------------------------------------ |
+| `npm run lint`         | ESLint sobre JavaScript propio (no Python ni CSS)            |
+| `npm run format:check` | Prettier sobre JS, HTML, CSS, Markdown, YAML y configuración |
+| `npm run format`       | Aplica el formato                                            |
+| `npm test`             | Verificadores por archivo descritos debajo                   |
+| `npm run check`        | Los tres anteriores; es lo que ejecuta la CI                 |
+
+`npm test` ejecuta, en este orden, los siguientes archivos de `tests/`:
+
+| Archivo                        | Qué comprueba                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `verify-world.mjs`             | Capas, procedencia, checksums y coherencia de los datos publicados.                               |
+| `verify-modules.mjs`           | Capas de módulos, importmap, precargas e importación sin DOM.                                     |
+| `verify-design.mjs`            | Diseños de autor y contratos de los validadores.                                                  |
+| `verify-party-walls.mjs`       | Medianeras y muros compartidos.                                                                   |
+| `verify-terrain.mjs`           | Contrato, muestreo y malla del terreno.                                                           |
+| `verify-surfaces.mjs`          | Modelo de superficies y perfiles.                                                                 |
+| `verify-surface-junctions.mjs` | Continuidad de las uniones entre vías.                                                            |
+| `verify-bridges.mjs`           | Uniones, escalones, altura libre y acuerdo entre calzada y tablero; informa también de `endDrop`. |
+| `verify-terrain-runtime.mjs`   | Integración del relieve con el juego en el arnés.                                                 |
+| `verify3d.mjs`                 | Flujos del juego, colisiones, cámaras y controles simulados.                                      |
 
 Los verificadores usan DOM y WebGL simulados: comprueban datos, misiones, colisiones,
 controles táctiles simulados y cámaras, pero no el render en GPU, el rendimiento ni un
@@ -108,6 +123,87 @@ sin bundler ni compilación:
 | `js/app.js`      | `startGame`, `init`, `frame` y `showStartupError`                              |
 | `js/test-api.js` | API de pruebas (`createPublicApi`, `createTestApi`)                            |
 
+| Archivo bajo `web/js/`          | Responsabilidad                                                        |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `app.js`                        | Arranque por etapas, bucle de dibujo y errores de inicio.              |
+| `core/assets.js`                | Versión y rutas de recursos.                                           |
+| `core/dom.js`                   | Acceso al DOM, opciones de URL y espera de un fotograma.               |
+| `core/grid.js`                  | Rejilla espacial común con claves numéricas.                           |
+| `core/math.js`                  | Geometría y matemáticas compartidas.                                   |
+| `core/random.js`                | Azar con semilla.                                                      |
+| `core/state.js`                 | Contenedores y estado compartido.                                      |
+| `debug/inspector.js`            | Inspector de mapa y revisión de copas con `?debug`.                    |
+| `engine/audio.js`               | Audio del juego.                                                       |
+| `engine/camera.js`              | Posición y actualización de cámaras.                                   |
+| `engine/contact-shadows.js`     | Sombras de contacto de los actores.                                    |
+| `engine/expr.js`                | Evaluación de expresiones de las recetas.                              |
+| `engine/foliage.js`             | Material de vegetación animada.                                        |
+| `engine/ground-near.js`         | Detalle cercano del suelo y sus materiales.                            |
+| `engine/materials.js`           | Materiales, geometrías y agrupación de piezas.                         |
+| `engine/night-glow.js`          | Brillos nocturnos de farolas y vehículos.                              |
+| `engine/post.js`                | Gradación de color y viñeta.                                           |
+| `engine/precompile.js`          | Compilación anticipada de shaders.                                     |
+| `engine/renderer.js`            | Renderizador, suelo, sol y dibujo de la escena.                        |
+| `engine/sky.js`                 | Cielo y entorno iluminado.                                             |
+| `engine/terrain-drape.js`       | Recorte y proyección de geometría sobre el terreno.                    |
+| `engine/terrain-sampling.js`    | Muestreo de superficies y colocación de vehículos.                     |
+| `engine/textures.js`            | Texturas procedurales.                                                 |
+| `engine/time-of-day.js`         | Horas del día y transición de iluminación.                             |
+| `engine/wall-ao.js`             | Oscurecimiento ambiental al pie de los muros.                          |
+| `engine/water.js`               | Material del agua del río.                                             |
+| `engine/windows.js`             | Materiales y aspecto de las ventanas.                                  |
+| `game/car-batch.js`             | Instancias de coches agrupadas por material.                           |
+| `game/car-model.js`             | Geometría del modelo de coche.                                         |
+| `game/flow.js`                  | Inicio de la partida.                                                  |
+| `game/graph.js`                 | Grafos, conexiones y rutas.                                            |
+| `game/jobs.js`                  | Lugares, objetivos y creación de marcadores.                           |
+| `game/missions.js`              | Avance de encargos y actualización de marcadores.                      |
+| `game/people.js`                | Modelo de personas.                                                    |
+| `game/player.js`                | Actualización del jugador a pie y conduciendo.                         |
+| `game/police.js`                | Comportamiento policial.                                               |
+| `game/save.js`                  | Carga y guardado del progreso del juego.                               |
+| `game/traffic.js`               | Tráfico, avance de agentes y peatones.                                 |
+| `game/update.js`                | Secuencia de actualización de la simulación.                           |
+| `game/vehicles.js`              | Creación, selección y colisiones de vehículos.                         |
+| `test-api.js`                   | API pública y API del arnés de pruebas.                                |
+| `ui/controls.js`                | Instalación de teclado, joystick, botones, menú y controles de cámara. |
+| `ui/dialogs.js`                 | Diálogos y paneles de ayuda.                                           |
+| `ui/feedback.js`                | Avisos y progreso de carga.                                            |
+| `ui/hud.js`                     | Marcador, lecturas y etiquetas.                                        |
+| `ui/input.js`                   | Limpieza del estado de entrada.                                        |
+| `ui/map.js`                     | Mapa y minimapa.                                                       |
+| `ui/perf.js`                    | Panel de medición de fotogramas.                                       |
+| `world/aerial-tiles.js`         | Carga y sustitución de teselas de ortofoto.                            |
+| `world/bounds.js`               | Consultas de la unión de límites del mundo.                            |
+| `world/buildings.js`            | Construcción de edificios genéricos.                                   |
+| `world/corrections.js`          | Aplicación de correcciones del mapa y sus guardas.                     |
+| `world/design-validate.js`      | Fachada pública de los validadores de fachadas, ciudad y correcciones. |
+| `world/facade-composer.js`      | Ejecución de composiciones de fachada.                                 |
+| `world/facade-kit.js`           | Piezas geométricas del kit de fachadas.                                |
+| `world/facades.js`              | Preparación y construcción de fachadas detalladas.                     |
+| `world/furniture.js`            | Mobiliario urbano y obstáculos de calle.                               |
+| `world/ground-clean.js`         | Máscaras y entorno limpio bajo las copas de la ortofoto.               |
+| `world/ground-floors.js`        | Bajos de edificios según su uso.                                       |
+| `world/loader.js`               | Carga y validación de capas y aplicación de alturas.                   |
+| `world/party-walls.js`          | Detección de muros compartidos.                                        |
+| `world/road-space.js`           | Espacio ocupado por las calzadas y sus bordes.                         |
+| `world/shadow-proxies.js`       | Geometrías estáticas sustitutas para el pase de sombras.               |
+| `world/sidewalks.js`            | Aceras, bordillos y faldones.                                          |
+| `world/signs.js`                | Señales y rótulos de calle.                                            |
+| `world/spatial.js`              | Índices, proximidad a vías, agua, obstáculos y colisiones.             |
+| `world/streets.js`              | Calzadas, juntas, marcas y detalles de calle.                          |
+| `world/surface-model.js`        | Construcción y consultas de perfiles, plataformas, agua y terreno.     |
+| `world/surface-validate.js`     | Validación de superficies y anclajes de área.                          |
+| `world/terrain-mesh.js`         | Malla del terreno y transición exterior.                               |
+| `world/terrain-placement.js`    | Bases y preparación de superficies para la escena.                     |
+| `world/terrain.js`              | Contrato y muestreo puro de la rejilla del terreno.                    |
+| `world/tram.js`                 | Vías, paradas y modelo del tranvía.                                    |
+| `world/validate-city.js`        | Validación de `city-design.json`.                                      |
+| `world/validate-corrections.js` | Validación estructural de `map-corrections.json`.                      |
+| `world/validate-facades.js`     | Validación de `facade-designs.json` y contratos de las piezas.         |
+| `world/validate-kit.js`         | Comprobaciones elementales y acumulación ordenada de errores.          |
+| `world/vegetation.js`           | Construcción de árboles y arbustos.                                    |
+
 Dependencias en un solo sentido: `core` ← `engine` ← `world` ← `game` ← `ui` ← `app`. Dos
 excepciones: `ui/feedback.js` (avisos y barra de carga), que solo depende de `core` y
 puede importarse desde cualquier capa, y las funciones de actualización de
@@ -121,7 +217,7 @@ explícitas de interfaz.
   que ejecuta `world/facade-composer.js` con las piezas de `world/facade-kit.js`
   (`engine/expr.js` evalúa las expresiones). `web/city-design.json` fija qué calles y zonas
   reciben frentes y con qué receta. `world/design-validate.js` valida ambos al cargar y en
-  `tests/verify-world.mjs`; el formato está en `docs/plan-modular/KIT-FACHADAS.md`.
+  `tests/verify-world.mjs`; el formato está en `docs/KIT-FACHADAS.md`.
 - **Variación de edificios**: `tools/building-variation.mjs` resuelve los colores al
   generar `buildings.json` y guarda un `paletteIndex` por parte. El navegador lee el
   índice, sin calcular hashes ni consumir azar. La identidad del generador normaliza
@@ -149,6 +245,34 @@ explícitas de interfaz.
 - **Cambiar la versión**: sustituir todas las apariciones a la vez, por ejemplo
   `sed -i 's/?v=[^"]*"/?v=NUEVA"/g' web/index.html`; `verify-modules.mjs` detecta
   cualquier olvido.
+
+### Índices, arranque y validadores
+
+`core/grid.js` exporta `createGrid(cell)`: `insert(item, minX, maxX, minZ, maxZ)`
+indexa una caja; `queryPoint(x, z)` devuelve los candidatos de su celda;
+`queryBox(minX, maxX, minZ, maxZ, visit)` visita sin duplicados y en orden de inserción.
+Un visitante que devuelve `true` termina la consulta. Son candidatos: el consumidor
+comprueba la geometría exacta.
+
+El ayudante privado `syncedGrid` de `world/spatial.js` sincroniza al consultar los índices
+de obstáculos, agua y tramos con sus listas mutables de `core/state.js`. Indexa las
+adiciones al final y reconstruye si la lista mengua o cambia su primer elemento; no
+detecta cambios en mitad de la lista. `nearestRoad` busca por anillos y resuelve empates
+por índice original. Edificios, superficies, espacio de calzada, aceras, bajos, tranvía y
+sustitutos de sombra conservan sus implementaciones específicas; no todos usan la rejilla común.
+
+`init` en `app.js` declara etapas `{ name, run }` y las ejecuta en orden con `await`,
+registrando cada duración con `performance.now()`. Abarcan carga y preparación del
+mundo, renderizador, grafos e índices, terreno y constructores, actores y cámara,
+compilación de shaders y final de carga. Los mensajes y las esperas de la barra de carga
+viven dentro de esas etapas. `startupTimings()`, la consola y `bench-startup` se describen
+en [Comprobar](#comprobar).
+
+Los validadores están separados por archivo: `validate-city.js`, `validate-facades.js`
+y `validate-corrections.js`, reexportados por `design-validate.js`;
+`surface-validate.js` exporta `validateSurfaceDesign`, que también reexporta
+`surface-model.js`. Comparten `createValidationKit` de `validate-kit.js` para números,
+opciones, arrays y objetos, y conservan comprobaciones específicas y mensajes propios.
 
 ## Modo de depuración (`?debug`)
 
@@ -224,7 +348,18 @@ está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
 La implementación, la validación y los límites del recorte están en
 [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles de pasarelas, accesos y agua son
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
-[plan-modular/TERRENO.md](plan-modular/TERRENO.md).
+[TERRENO.md](historico/plan-modular/TERRENO.md).
+
+En los corredores de plataforma, `roadAnchor.endExtension` admite un número no negativo
+(prolonga ambos extremos por igual) o un par `[inicio, fin]` en metros, según el orden de
+los vértices de la vía anclada. Si se omite, vale cero. `surface-validate.js` valida ambas
+formas y `surface-model.js` las aplica al construir el polígono del tablero.
+
+`tests/verify-bridges.mjs` informa de `endDrop`: la mayor caída positiva desde el borde
+de los extremos cortos del tablero hasta la superficie medio metro hacia fuera, con
+muestras cada 25 cm y excluyendo puntos dentro del tablero o del agua. Es informativo,
+sin aserción: junto a bocas de pasos inferiores puede haber caídas reales. Los límites y
+pendientes conocidos siguen en [ESTADO.md](ESTADO.md#pendientes).
 
 ## Suelo cercano
 

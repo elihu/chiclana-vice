@@ -427,7 +427,7 @@
           }
         },
         "layerHeights": {
-          "description": "Altura en metros de cada capa sobre el suelo; ver docs/plan-modular/TERRENO.md.",
+          "description": "Altura en metros de cada capa sobre el suelo; ver docs/historico/plan-modular/TERRENO.md.",
           "type": "object",
           "required": [
             "asphalt",

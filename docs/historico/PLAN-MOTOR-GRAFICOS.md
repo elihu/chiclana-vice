@@ -2,7 +2,7 @@
 
 > **Estado (27/10/2026)**: base WebGPU, E0, E1, E2 y VL (que incluye V1 y lo visible de
 > V2) integradas en `main` y probadas por el usuario en su Android. V3–V5 sin empezar; pasan
-> a [PLAN-VISUAL.md](PLAN-VISUAL.md).
+> a [PLAN-VISUAL.md](../PLAN-VISUAL.md).
 
 Fecha: 26/10/2026. Continúa [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md) (G0–G5,
 publicadas en `v1.4.0`) con lo aprendido de
@@ -36,7 +36,7 @@ geometría y agrupación, no shaders) y V1 se rehace en GLSL.
 
 - **Una fase = una rama = un worktree**, creado por quien coordina desde
   `feat/base-webgpu`, en `.claude/worktrees/<rama-con-guion>` con `node_modules` enlazado
-  ([GIT_WORKFLOW.md](GIT_WORKFLOW.md#agentes-en-paralelo-excepción)). Trabaja **solo** en
+  ([GIT_WORKFLOW.md](../GIT_WORKFLOW.md#agentes-en-paralelo-excepción)). Trabaja **solo** en
   tu worktree. No toques el repositorio principal ni otras ramas. Sin `npm install`.
 - Un commit por paso, Conventional Commits en español, **sin** `Co-Authored-By` ni líneas
   de atribución. Sin merge, rebase ni push: integra el usuario cuando lo haya probado.

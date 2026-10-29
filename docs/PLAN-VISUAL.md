@@ -3,8 +3,8 @@
 > **Estado (27/10/2026)**: F1, F2, F2b, F2c, F3 y F4 (pasos 1–3) publicadas en `v1.6.0`. Sin
 > hacer: el bloom de F4, F5 y la noche cerrada.
 
-Fecha: 27/10/2026. Sigue a [PLAN-MOTOR-GRAFICOS.md](PLAN-MOTOR-GRAFICOS.md) (publicado en
-`v1.5.0`) y recoge lo pendiente de [PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md)
+Fecha: 27/10/2026. Sigue a [PLAN-MOTOR-GRAFICOS.md](historico/PLAN-MOTOR-GRAFICOS.md) (publicado en
+`v1.5.0`) y recoge lo pendiente de [PLAN-MEJORA-GRAFICA.md](historico/PLAN-MEJORA-GRAFICA.md)
 («Más adelante») y de V3–V5, con ideas de
 [slop-newyork](https://github.com/mrdoob/slop-newyork) (MIT). No se copia código literal de
 slop: se toman las ideas y se escriben en TSL a la medida de Chiclana.

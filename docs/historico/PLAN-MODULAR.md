@@ -2,8 +2,8 @@
 
 > **Ejecutado.** Las fases 0 a 3 están integradas en `main` (7/10/2026). Se conserva como
 > registro de decisiones: las rutas, nombres y cifras de los pasos son las de su momento.
-> La referencia vigente es [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md); el
-> formato de recetas y correcciones, [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
+> La referencia vigente es [DESARROLLO.md](../DESARROLLO.md) y [DATOS.md](../DATOS.md); el
+> formato de recetas y correcciones, [KIT-FACHADAS.md](../KIT-FACHADAS.md).
 
 Fecha: 6/10/2026. Rama `docs/plan-modular`, creada desde `main` (5666928). Este documento
 es un plan: no cambia el juego. Lo ejecuta un agente sin posibilidad de preguntar, así que
@@ -11,7 +11,8 @@ cada paso dice qué tocar, cómo comprobarlo y qué hacer si falla. Las decision
 tomadas; si algo no encaja con lo que encuentres, **para y deja una nota** en el informe
 final en lugar de improvisar un diseño distinto.
 
-Anexos en [`docs/plan-modular/`](plan-modular/):
+Anexos históricos en [`docs/historico/plan-modular/`](plan-modular/); el kit y los
+esquemas vigentes están en `docs/`:
 
 | Anexo                                                                     | Contenido                                                                   |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -19,7 +20,7 @@ Anexos en [`docs/plan-modular/`](plan-modular/):
 | [ESTADO-COMPARTIDO.md](plan-modular/ESTADO-COMPARTIDO.md)                 | Contenido exacto de `state.js` y tabla de renombrado de variables           |
 | [HERRAMIENTAS.md](plan-modular/HERRAMIENTAS.md)                           | Código de la huella de escena, del humo en Chrome, del arnés y de los tests |
 | [INVENTARIO-DATOS.md](plan-modular/INVENTARIO-DATOS.md)                   | Qué está ya en datos y qué sigue en el código, con valores                  |
-| [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md)                           | Formato del kit, lenguaje de expresiones y compositor                       |
+| [KIT-FACHADAS.md](../KIT-FACHADAS.md)                                     | Formato del kit, lenguaje de expresiones y compositor                       |
 | [facade-designs.schema.json](plan-modular/facade-designs.schema.json)     | Esquema JSON de las composiciones de fachada                                |
 | [facade-designs.example.json](plan-modular/facade-designs.example.json)   | Ejemplo completo: el Mercado, equivalente al código actual                  |
 | [city-design.example.json](plan-modular/city-design.example.json)         | Ejemplo de reglas de calle, zonas y mobiliario                              |

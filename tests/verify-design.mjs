@@ -1097,7 +1097,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
 
   // Ejemplo del anexo: válido; sobre los datos reales, fix-001 y fix-003 se aplican y
   // fix-002 y fix-004 fallan por guarda (sus valores son marcadores).
-  const example = read('docs/plan-modular/map-corrections.example.json');
+  const example = read('docs/historico/plan-modular/map-corrections.example.json');
   assert.deepEqual(validateCorrections(example), [], 'ejemplo del anexo válido');
   const real = () => {
     const w = readWorld();

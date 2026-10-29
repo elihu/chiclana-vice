@@ -1,8 +1,8 @@
 # Anexo: kit de fachadas, expresiones, compositor y correcciones
 
-Parte de [PLAN-MODULAR.md](../PLAN-MODULAR.md), decisiones D8 y D9 y fase 2. El formato
+Parte de [PLAN-MODULAR.md](historico/PLAN-MODULAR.md), decisiones D8 y D9 y fase 2. El formato
 se ha probado en el scratchpad el 6/10/2026: un intérprete equivalente al descrito aquí,
-con la receta de [facade-designs.example.json](facade-designs.example.json), sustituyó al
+con la receta de [facade-designs.example.json](historico/plan-modular/facade-designs.example.json), sustituyó al
 bucle del Mercado y la huella de escena salió idéntica a la de `main`.
 
 ## K1. Conceptos
@@ -81,8 +81,8 @@ a ? b : c ? d : e · 2 * PI · TAU / 12 · hypot(3, 4) · .5e1 + 1e-3
 
 ## K3. Formato de `web/facade-designs.json`
 
-Esquema completo: [facade-designs.schema.json](facade-designs.schema.json). Ejemplo
-completo: [facade-designs.example.json](facade-designs.example.json).
+Esquema completo: [facade-designs.schema.json](../schemas/facade-designs.schema.json). Ejemplo
+completo: [facade-designs.example.json](historico/plan-modular/facade-designs.example.json).
 
 ```text
 {
@@ -254,8 +254,8 @@ validación JSON Schema en el proyecto); el validador propio es la referencia.
 
 ## K7. Correcciones (`web/js/world/corrections.js`)
 
-Esquema: [map-corrections.schema.json](map-corrections.schema.json). Ejemplo:
-[map-corrections.example.json](map-corrections.example.json).
+Esquema: [map-corrections.schema.json](../schemas/map-corrections.schema.json). Ejemplo:
+[map-corrections.example.json](historico/plan-modular/map-corrections.example.json).
 
 `export function applyCorrections(world, file)` recibe el objeto de `loadWorld` (antes de
 devolverlo) y el JSON; modifica `world.roads`, `world.areas` y `world.buildings` en
