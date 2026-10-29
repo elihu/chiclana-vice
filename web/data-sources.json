@@ -141,6 +141,19 @@
     },
     {
       "files": [
+        "barriers.json"
+      ],
+      "source": "OpenStreetMap (barrier=wall, fence, hedge, city_wall, retaining_wall y gate), descarga local 2026",
+      "conditions": "ODbL-1.0 as a whole (derived database from OpenStreetMap)",
+      "attribution": "© OpenStreetMap contributors",
+      "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "transformation": "Walls, fences and hedges clipped to the world bounds and gates, in local metres rounded to 0.01 m",
+      "sha256": {
+        "barriers.json": "19d46bcef47fa89d7f51cd5ca8527f6e747e4b007b1f5fca9dc2eca36f4a1f6f"
+      }
+    },
+    {
+      "files": [
         "aerial/index.json",
         "aerial/hi/-4_-5.jpg",
         "aerial/lo/-4_-5.jpg",

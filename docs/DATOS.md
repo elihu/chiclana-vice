@@ -526,6 +526,27 @@ Publica `web/tram.json` (ODbL, como `osm-world.json`) solo con lo que cae dentro
 
 El juego la carga como `world.tram` (opcional; sin ella no hay tranvía).
 
+## 10b. Vallas, muros y setos
+
+```sh
+uv run --no-project --with shapely python tools/export-barriers.py --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
+node tools/export-provenance.mjs
+npm test
+```
+
+Publica `web/barriers.json` (ODbL, como `osm-world.json`) con lo que cae dentro de
+`world.json:bounds`; `tests/verify-barriers.mjs` comprueba formato, tipos, atribución y límites.
+Formato:
+
+- `lines`: `{id, kind, p}`, eje de cada vía `barrier=wall|fence|hedge|city_wall|retaining_wall`
+  en metros locales, recortado al mundo (un recorte con varias partes añade el sufijo `.n` al
+  `id`); un contorno cerrado repite su primer punto al final.
+- `gates`: `[x, z]` de cada `barrier=gate`.
+- Más `version`, `origin`, `source`, `license`, `attribution`, `limits` y `format`.
+
+El juego la carga como `world.barriers` (opcional) y de momento no la dibuja
+([PLAN-VALLAS.md](PLAN-VALLAS.md)).
+
 ## 11. Pasos de peatones que faltan
 
 `street-objects.json` no tiene generador propio. `tools/complete-crossings.py` añade a esa

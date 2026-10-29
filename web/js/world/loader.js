@@ -120,6 +120,7 @@ export async function loadLayers() {
     vegetation,
     groundFloors,
     tram,
+    barriers,
   ] = await Promise.all([
     loadWorld(),
     orthophoto,
@@ -153,6 +154,10 @@ export async function loadLayers() {
     fetch(asset('tram.json'))
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
+    // Optional layer: walls, fences and hedges inside the world (OSM).
+    fetch(asset('barriers.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null),
   ]);
   const { terrain, warning } = await loadTerrain(
     (file) => fetch(asset(file)),
@@ -177,6 +182,7 @@ export async function loadLayers() {
     vegetation,
     groundFloors,
     tram,
+    barriers,
     terrain,
     warning: terrain.manifest?.preview
       ? 'Relieve provisional: superficies y accesos pendientes de revisión'

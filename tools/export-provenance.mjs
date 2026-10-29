@@ -114,6 +114,18 @@ if (fs.existsSync(directory + '/tram.json')) {
       'Tram tracks clipped to the world bounds, stops, platforms and crossings in local metres rounded to 0.01 m',
   });
 }
+if (fs.existsSync(directory + '/barriers.json')) {
+  const barriers = JSON.parse(fs.readFileSync(directory + '/barriers.json', 'utf8'));
+  records.push({
+    files: ['barriers.json'],
+    source: barriers.source,
+    conditions: 'ODbL-1.0 as a whole (derived database from OpenStreetMap)',
+    attribution: barriers.attribution,
+    licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/',
+    transformation:
+      'Walls, fences and hedges clipped to the world bounds and gates, in local metres rounded to 0.01 m',
+  });
+}
 if (fs.existsSync(directory + '/aerial/index.json')) {
   const aerial = JSON.parse(fs.readFileSync(directory + '/aerial/index.json', 'utf8'));
   records.push({

@@ -334,6 +334,16 @@ trastero; 4 o más viviendas sugiere un bloque de pisos, pero el recuento es del
 catastral entero, no de la planta baja. Los puntos de OSM están incompletos y no se vinculan
 a una parte; los nombres y marcas son los que figuran en OSM, sin comprobar. No es un dato catastral certificado.
 
+## Vallas, muros y setos
+
+`tools/export-barriers.py` publica `web/barriers.json` desde `osm-ampliado.xml` (misma proyección
+que `tools/rebuild-map.py`): las vías `barrier=wall`, `fence`, `hedge`, `city_wall` y
+`retaining_wall` recortadas a los límites del mundo y las puertas `barrier=gate`. El 29/10/2026:
+49 trazos (muros 2.593 m, vallas 572 m, seto 525 m, muralla 18 m, muros de contención 2.635 m) y
+3 puertas. Límites: OSM recoge pocas vallas de Chiclana y ninguna lleva altura ni material, así
+que el aspecto que se les dé en el juego es una aproximación; no se añaden muros sobre límites
+de parcela por suposición.
+
 ## Vías y paradas del tranvía
 
 `tools/export-tram.py` publica `web/tram.json` desde `osm-ampliado.xml` (misma proyección que
