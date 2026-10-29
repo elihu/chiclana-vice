@@ -1,7 +1,7 @@
 import { setRandomSeed } from './core/random.js';
 import { boundsBox } from './world/bounds.js';
 import * as THREE from '../vendor/three.webgpu.min.js';
-import { $, sleepFrame, ui } from './core/dom.js';
+import { $, sleepFrame, ui, urlOptions } from './core/dom.js';
 import { SPAWN_POSITION } from '../game-data.js';
 import {
   actors,
@@ -52,9 +52,8 @@ import { surfaceHeightAt, placeVehicle, placeVehicleIfChanged } from './engine/t
 import { aerialMaterial, updateAerialTiles } from './world/aerial-tiles.js';
 import { update } from './game/update.js';
 
-async function init() {
-  loadProgress('Descargando el trazado y los edificios reales…', 8);
-  const {
+async function init(startupTimings) {
+  let {
     res,
     tex,
     aerial,
@@ -69,105 +68,261 @@ async function init() {
     tram,
     terrain,
     warning,
-  } = await loadLayers();
-  world.city = res;
-  world.vegetation = vegetation;
-  world.groundFloors = groundFloors;
-  world.tram = tram;
-  world.terrain = terrain;
-  if (warning) toast(warning, 5);
-  world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
-  if (profiles.version !== 1) throw Error('Perfiles incompatibles');
-  world.facadeProfiles = profiles;
-  const cityErrors = validateCityDesign(cityDesign, {
-    recipes: Object.keys(designs?.recipes || {}),
-  });
-  if (cityErrors.length) throw Error('Diseño de ciudad incompatible: ' + cityErrors.join('; '));
-  const designErrors = validateFacadeDesigns(designs, {
-    kitPieces: KIT_PIECES,
-    palette: profiles.palette,
-    frontRecipes: [cityDesign.frontages.recipe],
-  });
-  if (designErrors.length)
-    throw Error('Diseños de fachada incompatibles: ' + designErrors.join('; '));
-  world.facadeDesigns = designs;
-  world.cityDesign = cityDesign;
-  setRandomSeed(cityDesign.randomSeed);
-  world.groundTexture = tex;
-  world.groundTextureFile = tex ? aerial : null;
-  if (world.groundTexture) {
-    world.groundTexture.colorSpace = THREE.SRGBColorSpace;
-    world.groundTexture.anisotropy = 4;
-  } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
-  world.aerialIndex = aerialIndex;
-  world.aerialBox = aerialIndex?.general.box ?? boundsBox();
-  loadProgress('Preparando el mundo 3D…', 25);
-  await setupRenderer(() => {
-    setTimeOfDay(initialTime(), { bake: false });
-    describeTime();
-  });
-  buildRoadGraph();
-  indexBuildings();
-  prepareTerrainPlacement();
-  addGroundPlanes(
-    terrainTiles(terrain).map((tile) => ({
-      ...tile,
-      material: aerialMaterial(tile.i, tile.j, { roughness: 1, detail: true }),
-    })),
-    terrainExterior(terrain),
-  );
-  connectOpenSpaces();
-  orientDriveGraph();
-  applyHeightSamples(heightSamples);
-  prepareFacades();
-  await buildBuildings();
-  buildDetailedFacades();
-  loadProgress('Colocando puentes, vehículos y señales…', 68);
-  await sleepFrame();
-  buildStreetSurfaces();
-  buildRoadDetails();
-  buildTram();
-  buildUrbanFurniture();
-  buildTrees();
-  prepareGroundClean();
-  addSigns();
-  buildShadowProxies();
-  setupPOIs();
-  let spawn = safePoint(SPAWN_POSITION.x, SPAWN_POSITION.z, true);
-  Object.assign(base, spawn);
-  let car = createCar('#bba979');
-  Object.assign(car, spawn);
-  cars.push(car);
-  Object.assign(player, spawn);
-  player.car = car;
-  updateAerialTiles(player.x, player.z);
-  actors.character = createPerson('#d7d5b0');
-  actors.character.mesh.visible = false;
-  spawnTraffic();
-  if (terrain.kind === 'grid') updatePedestrians(0);
-  vehicles.push(...cars, ...traffic);
-  createMissionMarkers();
-  for (const c of vehicles) placeVehicle(c);
-  camPos.set(player.x - 15, surfaceHeightAt(player.x, player.z) + 12, player.z - 15);
-  camTarget.set(player.x, surfaceHeightAt(player.x, player.z) + 1, player.z);
-  gfx.camera.position.copy(camPos);
-  gfx.camera.lookAt(camTarget);
-  $('streetCount').textContent =
-    new Set(world.city.roads.filter((r) => r.name).map((r) => r.name)).size + ' calles con nombre';
-  loadProgress('Compilando los shaders…', 80);
-  await sleepFrame();
-  await precompileShaders(({ loaded, total }) =>
-    loadProgress('Compilando los shaders…', 80 + Math.round((loaded / total) * 19)),
-  );
-  loadProgress('Centro de Chiclana listo.', 100);
-  updateHUD();
-  prepareMap();
-  await sleepFrame();
-  $('loading').classList.add('hidden');
-  $('welcome').classList.remove('hidden');
-  session.last = performance.now();
-  requestAnimationFrame(frame);
-  window.__cityGame = createPublicApi();
+  } = {};
+  const stages = [
+    {
+      name: 'loadLayers',
+      run: async () => {
+        loadProgress('Descargando el trazado y los edificios reales…', 8);
+        ({
+          res,
+          tex,
+          aerial,
+          aerialIndex,
+          heightSamples,
+          profiles,
+          streetObjects,
+          designs,
+          cityDesign,
+          vegetation,
+          groundFloors,
+          tram,
+          terrain,
+          warning,
+        } = await loadLayers());
+      },
+    },
+    {
+      name: 'prepareWorld',
+      run: () => {
+        world.city = res;
+        world.vegetation = vegetation;
+        world.groundFloors = groundFloors;
+        world.tram = tram;
+        world.terrain = terrain;
+        if (warning) toast(warning, 5);
+        world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
+        if (profiles.version !== 1) throw Error('Perfiles incompatibles');
+        world.facadeProfiles = profiles;
+        const cityErrors = validateCityDesign(cityDesign, {
+          recipes: Object.keys(designs?.recipes || {}),
+        });
+        if (cityErrors.length)
+          throw Error('Diseño de ciudad incompatible: ' + cityErrors.join('; '));
+        const designErrors = validateFacadeDesigns(designs, {
+          kitPieces: KIT_PIECES,
+          palette: profiles.palette,
+          frontRecipes: [cityDesign.frontages.recipe],
+        });
+        if (designErrors.length)
+          throw Error('Diseños de fachada incompatibles: ' + designErrors.join('; '));
+        world.facadeDesigns = designs;
+        world.cityDesign = cityDesign;
+        setRandomSeed(cityDesign.randomSeed);
+        world.groundTexture = tex;
+        world.groundTextureFile = tex ? aerial : null;
+        if (world.groundTexture) {
+          world.groundTexture.colorSpace = THREE.SRGBColorSpace;
+          world.groundTexture.anisotropy = 4;
+        } else toast('Ortofoto no disponible: suelo y tejados en color liso', 5);
+        world.aerialIndex = aerialIndex;
+        world.aerialBox = aerialIndex?.general.box ?? boundsBox();
+      },
+    },
+    {
+      name: 'setupRenderer',
+      run: async () => {
+        loadProgress('Preparando el mundo 3D…', 25);
+        await setupRenderer(() => {
+          setTimeOfDay(initialTime(), { bake: false });
+          describeTime();
+        });
+      },
+    },
+    {
+      name: 'buildRoadGraph',
+      run: () => {
+        buildRoadGraph();
+      },
+    },
+    {
+      name: 'indexBuildings',
+      run: () => {
+        indexBuildings();
+      },
+    },
+    {
+      name: 'prepareTerrainPlacement',
+      run: () => {
+        prepareTerrainPlacement();
+      },
+    },
+    {
+      name: 'addGroundPlanes',
+      run: () => {
+        addGroundPlanes(
+          terrainTiles(terrain).map((tile) => ({
+            ...tile,
+            material: aerialMaterial(tile.i, tile.j, { roughness: 1, detail: true }),
+          })),
+          terrainExterior(terrain),
+        );
+      },
+    },
+    {
+      name: 'connectOpenSpaces',
+      run: () => {
+        connectOpenSpaces();
+      },
+    },
+    {
+      name: 'orientDriveGraph',
+      run: () => {
+        orientDriveGraph();
+      },
+    },
+    {
+      name: 'applyHeightSamples',
+      run: () => {
+        applyHeightSamples(heightSamples);
+      },
+    },
+    {
+      name: 'prepareFacades',
+      run: () => {
+        prepareFacades();
+      },
+    },
+    {
+      name: 'buildBuildings',
+      run: async () => {
+        await buildBuildings();
+      },
+    },
+    {
+      name: 'buildDetailedFacades',
+      run: () => {
+        buildDetailedFacades();
+      },
+    },
+    {
+      name: 'buildStreetSurfaces',
+      run: async () => {
+        loadProgress('Colocando puentes, vehículos y señales…', 68);
+        await sleepFrame();
+        buildStreetSurfaces();
+      },
+    },
+    {
+      name: 'buildRoadDetails',
+      run: () => {
+        buildRoadDetails();
+      },
+    },
+    {
+      name: 'buildTram',
+      run: () => {
+        buildTram();
+      },
+    },
+    {
+      name: 'buildUrbanFurniture',
+      run: () => {
+        buildUrbanFurniture();
+      },
+    },
+    {
+      name: 'buildTrees',
+      run: () => {
+        buildTrees();
+      },
+    },
+    {
+      name: 'prepareGroundClean',
+      run: () => {
+        prepareGroundClean();
+      },
+    },
+    {
+      name: 'addSigns',
+      run: () => {
+        addSigns();
+      },
+    },
+    {
+      name: 'buildShadowProxies',
+      run: () => {
+        buildShadowProxies();
+      },
+    },
+    {
+      name: 'setupPOIs',
+      run: () => {
+        setupPOIs();
+      },
+    },
+    {
+      name: 'spawnActors',
+      run: () => {
+        let spawn = safePoint(SPAWN_POSITION.x, SPAWN_POSITION.z, true);
+        Object.assign(base, spawn);
+        let car = createCar('#bba979');
+        Object.assign(car, spawn);
+        cars.push(car);
+        Object.assign(player, spawn);
+        player.car = car;
+        updateAerialTiles(player.x, player.z);
+        actors.character = createPerson('#d7d5b0');
+        actors.character.mesh.visible = false;
+        spawnTraffic();
+        if (terrain.kind === 'grid') updatePedestrians(0);
+        vehicles.push(...cars, ...traffic);
+        createMissionMarkers();
+        for (const c of vehicles) placeVehicle(c);
+      },
+    },
+    {
+      name: 'prepareCamera',
+      run: () => {
+        camPos.set(player.x - 15, surfaceHeightAt(player.x, player.z) + 12, player.z - 15);
+        camTarget.set(player.x, surfaceHeightAt(player.x, player.z) + 1, player.z);
+        gfx.camera.position.copy(camPos);
+        gfx.camera.lookAt(camTarget);
+        $('streetCount').textContent =
+          new Set(world.city.roads.filter((r) => r.name).map((r) => r.name)).size +
+          ' calles con nombre';
+      },
+    },
+    {
+      name: 'precompileShaders',
+      run: async () => {
+        loadProgress('Compilando los shaders…', 80);
+        await sleepFrame();
+        await precompileShaders(({ loaded, total }) =>
+          loadProgress('Compilando los shaders…', 80 + Math.round((loaded / total) * 19)),
+        );
+      },
+    },
+    {
+      name: 'finishStartup',
+      run: async () => {
+        loadProgress('Centro de Chiclana listo.', 100);
+        updateHUD();
+        prepareMap();
+        await sleepFrame();
+        $('loading').classList.add('hidden');
+        $('welcome').classList.remove('hidden');
+        session.last = performance.now();
+        requestAnimationFrame(frame);
+        window.__cityGame = createPublicApi();
+      },
+    },
+  ];
+  for (const stage of stages) {
+    const started = performance.now();
+    await stage.run();
+    startupTimings.push({ name: stage.name, ms: performance.now() - started });
+  }
 }
 
 let frameCount = 0;
@@ -231,13 +386,16 @@ export async function startGame({ version = null, platform: injected = {} } = {}
     ...injected,
   };
   installPerf();
+  const startupTimings = [];
   try {
-    await init();
+    await init(startupTimings);
   } catch (err) {
     showStartupError(err);
     return null;
   }
-  const api = createTestApi(frame);
+  const options = urlOptions();
+  if (options.has('fps') || options.has('debug')) console.table(startupTimings);
+  const api = createTestApi(frame, () => startupTimings.map((stage) => ({ ...stage })));
   // Modo de depuración opcional: sin `?debug` el módulo ni se pide.
   if (new URLSearchParams(globalThis.location?.search ?? '').has('debug'))
     (await import('./debug/inspector.js')).installInspector(api);

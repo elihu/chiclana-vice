@@ -87,8 +87,9 @@ export function createPublicApi() {
   };
 }
 
-export function createTestApi(frame) {
+export function createTestApi(frame, startupTimings) {
   const extra = {
+    startupTimings,
     placeVehicle,
     inBuilding,
     pInside,
