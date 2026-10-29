@@ -165,6 +165,12 @@ Una medida de `scene-budget` frente a `main`.
 
 ### C2. Locales por familia (`feat/locales`)
 
+> **Hecha el 29/10/2026** (commits `5c49a38`, `885cdbe` y `5ec6f5a`). La tabla vive en
+> `groundFloors.families` (hasta 6 tipos; etiquetas con comodín `clave:*`), el tipo va en el
+> atributo `bajo` como código + 16 × tipo y el shader lo lee de uniformes (`setShopFamilies`).
+> De 313 comercios: 70 de hostelería, 34 de alimentación, 41 de moda, 89 de servicios, 15 de
+> motor y 64 genéricos; 124 de los 375 frentes con relieve que son local tienen tipo.
+
 1. **Tabla de familias** (D3) en `city-design.json`, con su color de toldo o franja y su
    tipo de escaparate. Validación y esquema. Commit `feat(diseño): familias de locales`.
 2. **Muros genéricos**: el frente clasificado `shop` por un comercio de OSM delante toma la
