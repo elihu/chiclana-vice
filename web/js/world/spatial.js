@@ -1,3 +1,4 @@
+import { createGrid } from '../core/grid.js';
 import { insideBounds } from './bounds.js';
 import {
   base,
@@ -8,6 +9,20 @@ import {
   world,
 } from '../core/state.js';
 import { clamp, pInside, pointSeg } from '../core/math.js';
+
+const colliderGrid = createGrid(16);
+let colliderMaxRadius = 0;
+
+export function addCollider(p) {
+  streetEnvironment.colliders.push(p);
+  colliderMaxRadius = Math.max(colliderMaxRadius, p.r);
+  colliderGrid.insert(p, p.x, p.x, p.z, p.z);
+}
+
+export function someCollider(x, z, radius, test) {
+  const reach = radius + colliderMaxRadius;
+  return colliderGrid.queryBox(x - reach, x + reach, z - reach, z + reach, test);
+}
 
 export function inBuilding(x, z, pad = 0.3) {
   const seen = new Set();
@@ -92,7 +107,10 @@ export function blocked(x, z, r = 0.3, reference = null) {
   if (!insideBounds(x, z, 5)) return true;
   if (inBuilding(x, z, r)) return true;
   if (
-    streetEnvironment.colliders.some(
+    someCollider(
+      x,
+      z,
+      r,
       (p) =>
         Math.hypot(x - p.x, z - p.z) < p.r + r &&
         (reference === null || p.y === undefined || Math.abs(p.y - reference) < 2),

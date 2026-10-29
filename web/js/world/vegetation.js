@@ -3,7 +3,7 @@ import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { TAU, clamp, lerp, pInside } from '../core/math.js';
 import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
-import { inBuilding, nearestRoad } from './spatial.js';
+import { addCollider, someCollider, inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts, shareInstanceShader } from '../engine/materials.js';
 import { foliageMaterial } from '../engine/foliage.js';
 import { createRoadSpace } from './road-space.js';
@@ -114,7 +114,10 @@ export function buildTrees() {
       !inBuilding(x, z, market.buildingClearance) &&
       near &&
       near.d > near.s.width / 2 + market.roadClearance &&
-      !streetEnvironment.colliders.some(
+      !someCollider(
+        x,
+        z,
+        market.colliderClearance,
         (p) => Math.hypot(x - p.x, z - p.z) < market.colliderClearance,
       )
     ) {
@@ -193,8 +196,8 @@ export function buildTrees() {
         crownMesh.setColorAt(index, color);
       }
     }
-    if (keep && !streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
-      streetEnvironment.colliders.push({
+    if (keep && !someCollider(p[0], p[1], 1, (o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
+      addCollider({
         x: p[0],
         z: p[1],
         r: 0.23 * size,
