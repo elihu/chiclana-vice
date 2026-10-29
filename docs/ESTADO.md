@@ -60,6 +60,11 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 - **R2** (`refactor/modulos-grandes`): superficies, calles, aceras, edificios, vegetación,
   tranvía, jugador, controles e inspector partidos en funciones con nombre; validación de
   superficies en `world/surface-validate.js`. Huellas idénticas y arranque +0,9 %.
+- **R3** (`refactor/validadores`): un validador por archivo (`validate-city.js`,
+  `validate-facades.js`, `validate-corrections.js`) con el ayudante `validate-kit.js`; mismos
+  mensajes. La complejidad apenas baja (`validateSurfaceDesign` 154 → 135).
+- **Humo de superficies** (`fix/humo-tablero`): los tableros con pendiente se comprueban con
+  su perfil, no con la cota nominal; `browser-smoke --surfaces` vuelve a pasar.
 
 ## Novedades de `v2.0.0`
 
@@ -213,9 +218,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   Reyes Católicos (lado oeste); a pie, los pies quedan unos 10 cm bajo la baldosa porque
   la acera es visual; el tráfico puede pisar el carril del tranvía y quedan parches de
   césped en la rotonda de Plaza de España. Sin revisión visual a pie de puente de la tanda 2.
-  `node tools/browser-smoke.mjs URL --surfaces` falla en `main` desde la junta del tranvía con
-  Remedios: sobre `tablero-remedios-upper` espera 0,643 m y obtiene 0,707 m. Falta decidir si
-  la comprobación espera una cota antigua o hay un escalón real de 6 cm.
+  En la esquina suroeste del tablero de Remedios (x ≈ 329, z ≈ −157, junto a la vía 757857214) hay un escalón de hasta 12,6 cm en medio metro cuadrado; pendiente de revisión
+  visual del usuario.
 - Interfaz ([PROPUESTA-UI.md](PROPUESTA-UI.md)): alcance principal integrado y aceptado
   para `v2.0.0`. Quedan revisión de legibilidad al anochecer y dispositivos adicionales;
   modo zurdo, tamaños, preferencias persistentes, gestos, mando y vibración son opcionales.
