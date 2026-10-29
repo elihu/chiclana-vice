@@ -33,15 +33,19 @@ export function placeVehicleIfChanged(c) {
     previous.x === c.x &&
     previous.z === c.z &&
     previous.a === c.a &&
-    previous.bank === c.bank &&
     previous.surfaceY === c.surfaceY &&
     previous.support === c.surfaceSupport &&
     previous.road === c.surfaceRoad &&
     previous.model === world.surfaces &&
     previous.terrain === world.terrain &&
     previous.mesh === c.mesh
-  )
-    return false;
+  ) {
+    if (previous.bank === c.bank) return false;
+    // Solo cambia el balanceo: la pendiente y la altura conservan sus entradas.
+    c.mesh.rotation.set(previous.pitch, c.a, tilt(previous.roll + (c.bank ?? 0)), 'YXZ');
+    previous.bank = c.bank;
+    return true;
+  }
   placeVehicle(c);
   return true;
 }
@@ -55,14 +59,11 @@ export function placeVehicle(c) {
   const front = surfaceHeightAt(c.x + sin * 1.4, c.z + cos * 1.4, y),
     rear = surfaceHeightAt(c.x - sin * 1.4, c.z - cos * 1.4, y),
     right = surfaceHeightAt(c.x + cos * 0.7, c.z - sin * 0.7, y),
-    left = surfaceHeightAt(c.x - cos * 0.7, c.z + sin * 0.7, y);
+    left = surfaceHeightAt(c.x - cos * 0.7, c.z + sin * 0.7, y),
+    pitch = tilt(-Math.atan2(front - rear, 2.8)),
+    roll = Math.atan2(right - left, 1.4);
   c.mesh.position.set(c.x, y, c.z);
-  c.mesh.rotation.set(
-    tilt(-Math.atan2(front - rear, 2.8)),
-    c.a,
-    tilt(Math.atan2(right - left, 1.4) + (c.bank ?? 0)),
-    'YXZ',
-  );
+  c.mesh.rotation.set(pitch, c.a, tilt(roll + (c.bank ?? 0)), 'YXZ');
   let placement = placements.get(c);
   if (!placement) {
     placement = {};
@@ -72,6 +73,8 @@ export function placeVehicle(c) {
   placement.z = c.z;
   placement.a = c.a;
   placement.bank = c.bank;
+  placement.pitch = pitch;
+  placement.roll = roll;
   placement.surfaceY = c.surfaceY;
   placement.support = c.surfaceSupport;
   placement.road = c.surfaceRoad;

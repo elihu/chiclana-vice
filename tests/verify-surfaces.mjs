@@ -605,6 +605,17 @@ console.log('Superficies genéricas: rampa, calzada suave, agua y paso inferior/
   assert.equal(samples, 5);
   for (let i = 0; i < 120; i++) assert.equal(placeVehicleIfChanged(parked), false);
   assert.equal(samples, 5, 'cero consultas del vehículo parado');
+  for (const bank of [0.7, -0.7, 0]) {
+    parked.bank = bank;
+    const reference = { ...parked, mesh: new THREE.Group() };
+    placeVehicle(reference);
+    const before = samples;
+    assert(placeVehicleIfChanged(parked));
+    assert.equal(samples, before, 'el balanceo solo no vuelve a consultar el suelo');
+    assert.deepEqual(parked.mesh.rotation.toArray(), reference.mesh.rotation.toArray());
+    assert.deepEqual(parked.mesh.position.toArray(), reference.mesh.position.toArray());
+    assert.equal(placeVehicleIfChanged(parked), false);
+  }
   for (const [field, value] of [
     ['x', 1],
     ['a', 1],

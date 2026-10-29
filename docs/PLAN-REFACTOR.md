@@ -55,8 +55,11 @@ Versiones el 29/10/2026: Three.js 0.186.1 es la última publicada y no se cambia
   `git bisect` (un commit por paso), deshazlo y entrega el diagnóstico (qué clave cambia y
   por qué); que «se vea igual» no basta.
 - **Sin capturas, scene-budget ni Chrome**: el revisor hace el humo en navegador.
-- Medidas de tiempo: tres ejecuciones de `bench-startup` y se informa la mediana, en la
-  misma máquina y versión de Node que la referencia. No afirmes FPS ni rendimiento de GPU
+- Medidas de tiempo: cinco ejecuciones de `bench-startup`, alternando `main` y rama sin otros
+  procesos, y se informa la mediana, en la misma máquina y versión de Node. El ruido entre
+  ejecuciones supera a menudo el 3 %: un cambio que elimina trabajo comprobable y deja las
+  huellas idénticas se conserva aunque la mejora no se distinga del ruido, y un paso que
+  solo toca el fotograma no se juzga por el arranque. No afirmes FPS ni rendimiento de GPU
   o móvil.
 - **Reglas de código**: las de `docs/DESARROLLO.md` (capas, estado compartido, sin
   efectos de nivel superior, importmap y `modulepreload` para cada módulo nuevo). Sin

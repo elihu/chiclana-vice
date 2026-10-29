@@ -58,20 +58,24 @@ export function snapCamera(resetSurface = false) {
 // Sweep against cadastral volumes at the ray height; camera only, no physics changes.
 const actorSurface = () => player.car?.surfaceY ?? player.surfaceY ?? null;
 
-export function cameraSweep(position) {
+export function cameraSweep(
+  position,
+  ground = surfaceHeightAt(player.x, player.z, actorSurface()),
+) {
   let dx = position.x - player.x,
     dz = position.z - player.z,
     length = Math.hypot(dx, dz),
     steps = Math.max(1, Math.ceil(length / 0.25));
+  const seen = new Set();
   for (let i = 1; i <= steps; i++) {
     let u = i / steps,
       x = player.x + dx * u,
       z = player.z + dz * u,
-      y = lerp(surfaceHeightAt(player.x, player.z, actorSurface()) + 1.1, position.y, u),
+      y = lerp(ground + 1.1, position.y, u),
       pad = 0.18;
     if (y < surfaceHeightAt(x, z, actorSurface()) + pad) return Math.max(0, (i - 1) / steps);
     if (y > surfaceCeilingAt(x, z, actorSurface()) - pad) return Math.max(0, (i - 1) / steps);
-    const seen = new Set();
+    seen.clear();
     for (let gx = Math.floor((x - pad) / 25); gx <= Math.floor((x + pad) / 25); gx++)
       for (let gz = Math.floor((z - pad) / 25); gz <= Math.floor((z + pad) / 25); gz++)
         for (const b of buildingGrid.get(gx + ',' + gz) || []) {
@@ -96,8 +100,8 @@ export function cameraSweep(position) {
   return 1;
 }
 
-function constrainCamera(position) {
-  let u = cameraSweep(position);
+function constrainCamera(position, ground) {
+  let u = cameraSweep(position, ground);
   if (u < 1) {
     position.x = lerp(player.x, position.x, u);
     position.z = lerp(player.z, position.z, u);
@@ -151,10 +155,10 @@ export function updateCamera(dt) {
       ground + (view.mode === 2 ? 0 : 1.1 + Math.tan(view.lookPitch) * look),
       player.z + Math.cos(heading) * look,
     );
-    if (view.mode === 0) constrainCamera(desired);
+    if (view.mode === 0) constrainCamera(desired, ground);
     camPos.lerp(desired, 1 - Math.exp(-dt * 6));
     camTarget.lerp(target, 1 - Math.exp(-dt * 8));
-    if (view.mode === 0) constrainCamera(camPos);
+    if (view.mode === 0) constrainCamera(camPos, ground);
   }
   updateCameraVisibility();
   gfx.camera.position.copy(camPos);
