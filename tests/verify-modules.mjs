@@ -139,3 +139,29 @@ if (STRICT_TOP_LEVEL) {
   assert.equal(child.status, 0, 'módulos evaluables sin DOM:\n' + child.stderr);
 }
 console.log('Modules', files.length, 'versioned', version, 'acyclic, no top-level effects');
+
+// Rejilla común: cajas, límites negativos, deduplicación y orden entre celdas.
+const { createGrid } = await import('../web/js/core/grid.js');
+const grid = createGrid(10),
+  first = {},
+  second = {},
+  third = {};
+grid.insert(first, 10, 20, -10, 10);
+grid.insert(second, -10, 20, -10, 10);
+grid.insert(third, -10, -1, -10, -1);
+assert.deepEqual(grid.queryPoint(10, 0), [first, second]);
+assert.deepEqual(grid.queryPoint(-1, -1), [second, third]);
+assert.deepEqual(grid.queryPoint(30, 0), []);
+const found = [];
+grid.queryBox(-10, 20, -10, 10, (item) => {
+  found.push(item);
+});
+assert.deepEqual(found, [first, second, third]);
+assert.equal(
+  grid.queryBox(-10, 20, -10, 10, (item) => item === first),
+  true,
+);
+assert.equal(
+  grid.queryBox(30, 40, 30, 40, () => true),
+  false,
+);
