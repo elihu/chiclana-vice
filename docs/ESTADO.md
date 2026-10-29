@@ -49,7 +49,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   prueba en móvil.
 - **Herramientas** (`chore/versiones`): eslint 10.13.0, prettier 3.9.10 y
   `actions/setup-node` v7.1.0. Three.js 0.186.1 sigue siendo la última.
-- **Plan** [PLAN-REFACTOR.md](PLAN-REFACTOR.md): rendimiento, simplificación y documentación
+- **Plan** [PLAN-REFACTOR.md](historico/PLAN-REFACTOR.md): rendimiento, simplificación y documentación
   sin cambios visibles, por fases R0–R5.
 - **R0** (`perf/medir-arranque`): etapas de arranque medidas y `tools/bench-startup.mjs`.
   Referencia en Node: arranque 10,5 s y 0,53 ms por paso de `update`; sin cambios visibles.

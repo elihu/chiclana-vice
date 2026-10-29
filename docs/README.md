@@ -49,5 +49,5 @@ se consultan en [ESTADO.md](ESTADO.md), aunque enlacen a un plan archivado.
 - [Mejora gráfica](historico/PLAN-MEJORA-GRAFICA.md): presupuesto de render, agrupación, luz, suelo y árboles de `v1.4.0`.
 - [Motor y gráficos](historico/PLAN-MOTOR-GRAFICOS.md): WebGPU, shaders, sombras y luz de `v1.5.0`; pendientes derivados al plan visual.
 - [Terreno](historico/PLAN-TERRENO.md): plan original del MDT y la integración del relieve.
-- [Rendimiento y mantenimiento](PLAN-REFACTOR.md): fases R0–R5; arranque medido, índices, módulos, validadores y documentación.
+- [Rendimiento y mantenimiento](historico/PLAN-REFACTOR.md): fases R0–R5; arranque medido, índices, módulos, validadores y documentación.
 - [Resultado de R4](historico/RESULTADO-R4.md): medidas de CPU y motivos para no activar los avisos de complejidad.
