@@ -1,5 +1,3 @@
-import { createGrid } from '../core/grid.js';
-
 // Clase del bajo de un frente (F2c). Combina los indicios del Catastro y de OSM por edificio
 // (web/ground-floors.json) con el tipo de la calle, según las reglas de city-design.json →
 // groundFloors. Los datos del Catastro describen el edificio entero y sobreestiman bloques y
@@ -40,20 +38,24 @@ export function groundCode({ kind, main }) {
 // Prepara la capa (opcional) y devuelve las consultas. Sin capa, todos los bajos salen sin indicio.
 export function createGroundFloors(layer, rules) {
   const CELL = 25,
-    grid = createGrid(CELL);
-  for (const shop of layer?.shops ?? []) grid.insert(shop, shop[0], shop[0], shop[1], shop[1]);
+    grid = new Map();
+  for (const shop of layer?.shops ?? []) {
+    const key = Math.floor(shop[0] / CELL) + ',' + Math.floor(shop[1] / CELL);
+    if (!grid.has(key)) grid.set(key, []);
+    grid.get(key).push(shop);
+  }
   // ¿Hay un comercio de OSM delante del frente (a→q, normal n)? Se mide en el sistema del frente:
   // t a lo largo (con `shopMargin` de holgura) y s hacia fuera (hasta `shopDistance`; hasta
   // `shopBehind` hacia dentro, por los comercios que OSM marca sobre el propio edificio).
   function shopNear(a, q, nx, nz) {
     const len = Math.hypot(q[0] - a[0], q[1] - a[1]);
-    if (len === 0 || !layer?.shops?.length) return false;
+    if (len === 0 || grid.size === 0) return false;
     const reach = rules.shopDistance + len + rules.shopMargin,
       cx = (a[0] + q[0]) / 2,
       cz = (a[1] + q[1]) / 2;
     for (let gx = Math.floor((cx - reach) / CELL); gx <= Math.floor((cx + reach) / CELL); gx++)
       for (let gz = Math.floor((cz - reach) / CELL); gz <= Math.floor((cz + reach) / CELL); gz++)
-        for (const [x, z] of grid.queryPoint(gx * CELL, gz * CELL)) {
+        for (const [x, z] of grid.get(gx + ',' + gz) ?? []) {
           const s = (x - cx) * nx + (z - cz) * nz,
             t = ((x - a[0]) * (q[0] - a[0]) + (z - a[1]) * (q[1] - a[1])) / len;
           if (
@@ -84,18 +86,23 @@ export function createGroundFloors(layer, rules) {
 // genéricos de toda la ciudad lo consultan una vez por arista.
 export function createRoadLookup(segments, reach) {
   const CELL = 40,
-    grid = createGrid(CELL);
+    grid = new Map();
   for (const s of segments) {
     const x0 = Math.min(s.a[0], s.b[0]) - reach,
       x1 = Math.max(s.a[0], s.b[0]) + reach,
       z0 = Math.min(s.a[1], s.b[1]) - reach,
       z1 = Math.max(s.a[1], s.b[1]) + reach;
-    grid.insert(s, x0, x1, z0, z1);
+    for (let gx = Math.floor(x0 / CELL); gx <= Math.floor(x1 / CELL); gx++)
+      for (let gz = Math.floor(z0 / CELL); gz <= Math.floor(z1 / CELL); gz++) {
+        const key = gx + ',' + gz;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(s);
+      }
   }
   return (x, z) => {
     let best = null,
       md = reach;
-    for (const s of grid.queryPoint(x, z)) {
+    for (const s of grid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)) ?? []) {
       const dx = s.b[0] - s.a[0],
         dz = s.b[1] - s.a[1],
         u = Math.min(
