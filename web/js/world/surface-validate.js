@@ -1,3 +1,5 @@
+import { createValidationKit } from './validate-kit.js';
+
 // Anclaje de área: el ID de OSM la identifica (si se declara) y la forma comprueba que
 // la geometría no ha cambiado desde que se escribió el diseño.
 export const anchoredArea = (anchor) => (a) =>
@@ -12,13 +14,9 @@ export function validateSurfaceDesign(design, city = null) {
     fail = (p, text) => errors.push(`terrainSurfaces.${p}: ${text}`),
     positive = (v) => Number.isFinite(v) && v > 0,
     roads = city ? new Map(city.roads.map((r) => [r.id, r])) : null;
-  if (!design || design.version !== 1) return ['terrainSurfaces.version: se esperaba 1'];
-  const keys = (object, allowed, path) => {
-    if (!object || typeof object !== 'object' || Array.isArray(object))
-      return fail(path, 'se esperaba un objeto');
-    for (const k of Object.keys(object))
-      if (!allowed.includes(k)) fail(path + '.' + k, 'clave desconocida');
-  };
+  const kit = createValidationKit(errors, { prefix: 'terrainSurfaces.' });
+  if (!kit.oneOf('version', design?.version, [1], 'se esperaba 1')) return errors;
+  const keys = (object, allowed, path) => kit.object(path, object, { keys: allowed });
   keys(design, ['version', 'roads', 'water', 'platforms'], '$');
   keys(
     design.roads,
@@ -48,12 +46,25 @@ export function validateSurfaceDesign(design, city = null) {
     'shoulder',
     'bridgeAnchorRadius',
   ])
-    if (!positive(design.roads?.[p])) fail(`roads.${p}`, 'se esperaba un número positivo');
-  if (![1, 2, 4].includes(design.roads?.meshSubdivisions))
-    fail('roads.meshSubdivisions', 'se esperaba 1, 2 o 4');
+    kit.number(`roads.${p}`, design.roads?.[p], {
+      min: 0,
+      exclusiveMin: true,
+      message: 'se esperaba un número positivo',
+    });
+  kit.oneOf(
+    'roads.meshSubdivisions',
+    design.roads?.meshSubdivisions,
+    [1, 2, 4],
+    'se esperaba 1, 2 o 4',
+  );
   for (const k of ['accessRadius', 'maximumAccessStep', 'coverageGap', 'groundMargin'])
-    if (design.roads?.[k] !== undefined && (!positive(design.roads[k]) || design.roads[k] > 20))
-      fail('roads.' + k, 'se esperaba un número positivo hasta 20');
+    if (design.roads?.[k] !== undefined)
+      kit.number('roads.' + k, design.roads[k], {
+        min: 0,
+        exclusiveMin: true,
+        max: 20,
+        message: 'se esperaba un número positivo hasta 20',
+      });
   if (
     design.roads?.sampleStep < 0.5 ||
     design.roads?.smoothingRadius > 100 ||
@@ -62,7 +73,11 @@ export function validateSurfaceDesign(design, city = null) {
   )
     fail('roads', 'resolución o radio fuera del presupuesto permitido');
   for (const p of ['bedDepth', 'shoreWidth'])
-    if (!positive(design.water?.[p])) fail(`water.${p}`, 'se esperaba un número positivo');
+    kit.number(`water.${p}`, design.water?.[p], {
+      min: 0,
+      exclusiveMin: true,
+      message: 'se esperaba un número positivo',
+    });
   if (!(design.water?.percentile >= 0 && design.water.percentile <= 1))
     fail('water.percentile', 'se esperaba un percentil entre 0 y 1');
   if (
@@ -71,11 +86,10 @@ export function validateSurfaceDesign(design, city = null) {
     !['x', 'z'].includes(design.water?.axis)
   )
     fail('water', 'eje, longitud de tramo y pendiente positiva obligatorios');
-  if (!Array.isArray(design.platforms)) fail('platforms', 'se esperaba una lista');
+  kit.array('platforms', design.platforms);
   const ids = new Set();
   for (const [i, p] of (Array.isArray(design.platforms) ? design.platforms : []).entries()) {
-    if (!p || typeof p !== 'object' || Array.isArray(p)) {
-      fail(`platforms.${i}`, 'se esperaba un objeto');
+    if (!kit.object(`platforms.${i}`, p)) {
       continue;
     }
     keys(
@@ -106,26 +120,35 @@ export function validateSurfaceDesign(design, city = null) {
     if (typeof p.id !== 'string' || !p.id || ids.has(p.id))
       fail(`platforms.${i}.id`, 'identificador único obligatorio');
     ids.add(p.id);
-    if (!positive(p.clearance))
-      fail(`platforms.${i}.clearance`, 'se esperaba altura libre positiva');
-    if (p.thickness !== undefined && (!positive(p.thickness) || p.thickness > 3))
-      fail(`platforms.${i}.thickness`, 'grosor positivo hasta 3 m');
-    if (
-      p.roadAnchor?.endExtension !== undefined &&
-      (!Number.isFinite(p.roadAnchor.endExtension) || p.roadAnchor.endExtension < 0)
-    )
-      fail(
-        'platforms.' + i + '.roadAnchor.endExtension',
-        'se esperaba una prolongación no negativa',
+    kit.number(`platforms.${i}.clearance`, p.clearance, {
+      min: 0,
+      exclusiveMin: true,
+      message: 'se esperaba altura libre positiva',
+    });
+    if (p.thickness !== undefined)
+      kit.number(`platforms.${i}.thickness`, p.thickness, {
+        min: 0,
+        exclusiveMin: true,
+        max: 3,
+        message: 'grosor positivo hasta 3 m',
+      });
+    if (p.roadAnchor?.endExtension !== undefined)
+      kit.number('platforms.' + i + '.roadAnchor.endExtension', p.roadAnchor.endExtension, {
+        min: 0,
+        message: 'se esperaba una prolongación no negativa',
+      });
+    if (p.roadAnchor?.lateralOffset !== undefined)
+      kit.number(`platforms.${i}.roadAnchor.lateralOffset`, p.roadAnchor.lateralOffset);
+    if (p.profile !== undefined)
+      kit.oneOf(
+        `platforms.${i}.profile`,
+        p.profile,
+        ['flat', 'linear'],
+        'se esperaba "flat" o "linear"',
       );
-    if (p.roadAnchor?.lateralOffset !== undefined && !Number.isFinite(p.roadAnchor.lateralOffset))
-      fail(`platforms.${i}.roadAnchor.lateralOffset`, 'se esperaba un número');
-    if (p.profile !== undefined && !['flat', 'linear'].includes(p.profile))
-      fail(`platforms.${i}.profile`, 'se esperaba "flat" o "linear"');
     if (p.profile === 'linear' && !p.roadAnchor)
       fail(`platforms.${i}.profile`, 'el perfil lineal requiere roadAnchor');
-    if (p.bands !== undefined && !Array.isArray(p.bands))
-      fail(`platforms.${i}.bands`, 'se esperaba una lista');
+    if (p.bands !== undefined) kit.array(`platforms.${i}.bands`, p.bands);
     for (const band of Array.isArray(p.bands) ? p.bands : []) {
       if (
         !band ||
@@ -166,8 +189,10 @@ export function validateSurfaceDesign(design, city = null) {
       fail(`platforms.${i}.areaAnchor`, 'se esperaba vértice de área existente');
     else if (city && city.areas.filter(anchoredArea(p.areaAnchor)).length !== 1)
       fail(`platforms.${i}.areaAnchor`, 'anclaje ambiguo o área modificada');
-    if (!Array.isArray(p.heightAnchors) || p.heightAnchors.length < 2)
-      fail(`platforms.${i}.heightAnchors`, 'mínimo dos accesos');
+    kit.array(`platforms.${i}.heightAnchors`, p.heightAnchors, {
+      min: 2,
+      message: 'mínimo dos accesos',
+    });
     for (const a of Array.isArray(p.heightAnchors) ? p.heightAnchors : []) {
       if (!a || typeof a !== 'object') {
         fail(`platforms.${i}.heightAnchors`, 'se esperaba un objeto');
@@ -201,8 +226,7 @@ export function validateSurfaceDesign(design, city = null) {
     )
       fail(`platforms.${i}`, 'una vía no puede ocupar ambos niveles');
   }
-  if (design.water?.features !== undefined && !Array.isArray(design.water.features))
-    fail('water.features', 'se esperaba una lista');
+  if (design.water?.features !== undefined) kit.array('water.features', design.water.features);
   for (const f of Array.isArray(design.water?.features) ? design.water.features : []) {
     if (
       !f ||
