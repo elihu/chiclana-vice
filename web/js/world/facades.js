@@ -5,7 +5,7 @@ import { composeBuilding, composeFront } from './facade-composer.js';
 import { createFacadeKit, outwardOf } from './facade-kit.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { wallMaterial } from '../engine/wall-ao.js';
-import { createGroundFloors } from './ground-floors.js';
+import { createGroundFloors, partArea } from './ground-floors.js';
 import { nearestRoad } from './spatial.js';
 
 // Reference-led facade upgrade: civic landmarks and the streets listed in city-design.json.
@@ -14,7 +14,11 @@ export function prepareFacades() {
     [pilotMinX, pilotMaxX, pilotMinZ, pilotMaxZ] = world.cityDesign.zones.frontagePilot,
     [origMinX, origMaxX, origMinZ, origMaxZ] = world.cityDesign.zones.frontageOriginal;
   facadeWork.streetNames = [...rules.streets];
-  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors);
+  const groundFloors = createGroundFloors(
+    world.groundFloors,
+    world.cityDesign.groundFloors,
+    world.cityDesign.zones,
+  );
   const special = world.city.landmarks.filter((p) =>
     /Ayuntamiento de Chiclana|Mercado Municipal/.test(p.name),
   );
@@ -35,6 +39,8 @@ export function prepareFacades() {
       continue;
     }
     if (cx < pilotMinX || cx > pilotMaxX || cz < pilotMinZ || cz > pilotMaxZ) continue;
+    // Naves y grandes superficies se quedan con su muro genérico, sin relieve de vivienda.
+    if (groundFloors.building(buildingIndex, b.floors, partArea(b), cx, cz)) continue;
     for (let i = 0; i < b.p.length; i++) {
       let a = b.p[i],
         q = b.p[(i + 1) % b.p.length],
