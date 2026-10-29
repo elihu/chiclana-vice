@@ -44,6 +44,11 @@ export const FRONT_PREDEFINED = [
   'isHouse',
   'isGarage',
   'mainStreet',
+  // Tipo de local (groundFloors.families): tono, frente y toldo.
+  'hasFamily',
+  'familyTone',
+  'familyFront',
+  'familyAwning',
 ];
 
 const NODE_TYPES = ['let', 'box', 'piece', 'geo', 'group', 'for', 'if', 'use'];

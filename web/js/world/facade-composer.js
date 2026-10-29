@@ -114,9 +114,13 @@ function run(body, scope, g, env) {
 // mismo hash determinista por frente, `street` el nombre de la calle y `commercialStreet` que
 // esa calle no figura en `context.residentialStreets` (city-design.json, frontages). La clase del
 // bajo (`f.ground`, de js/world/ground-floors.js) llega como `isShop`, `isBlock`, `isHouse` e
-// `isGarage` (solo una es cierta; sin clase, `isHouse`) y `mainStreet`.
+// `isGarage` (solo una es cierta; sin clase, `isHouse`) y `mainStreet`. El tipo de local (posición en
+// `context.families` más uno) llega como `hasFamily`, `familyTone`, `familyFront` (0 escaparate
+// amplio, 1 puerta y cristalera, 2 portón) y `familyAwning`.
+const FAMILY_FRONTS = ['wide', 'door', 'gate'];
 function frontWall(kit, f, context) {
-  const w = kit.wall(f.a, f.q, [f.nx, f.nz]);
+  const w = kit.wall(f.a, f.q, [f.nx, f.nz]),
+    family = (context.families ?? [])[(f.ground?.family ?? 0) - 1];
   w.g.position.y = f.baseY ?? 0;
   return {
     ...w,
@@ -132,6 +136,10 @@ function frontWall(kit, f, context) {
       isHouse: !['shop', 'block', 'garage'].includes(f.ground?.kind),
       isGarage: f.ground?.kind === 'garage',
       mainStreet: !!f.ground?.main,
+      hasFamily: !!family,
+      familyTone: family?.tone ?? '#7d2f2a',
+      familyFront: family ? FAMILY_FRONTS.indexOf(family.front) : 0,
+      familyAwning: !!family?.awning,
     },
   };
 }
