@@ -65,6 +65,9 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   mensajes. La complejidad apenas baja (`validateSurfaceDesign` 154 → 135).
 - **Humo de superficies** (`fix/humo-tablero`): los tableros con pendiente se comprueban con
   su perfil, no con la cota nominal; `browser-smoke --surfaces` vuelve a pasar.
+- **Junta norte de Remedios** (`fix/remedios-junta-norte`): `endExtension` admite un par
+  `[inicio, fin]`; el extremo norte se prolonga 5,25 m y cierra el hueco hasta el cauce entre
+  el tablero y la orilla. Revisado por el usuario en el navegador el 29/10/2026.
 
 ## Novedades de `v2.0.0`
 
