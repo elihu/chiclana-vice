@@ -36,6 +36,8 @@ documento; los demás enlazan a él.
   rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
 - [Plan de locales comerciales y naves](PLAN-COMERCIOS.md): datos de comercios, naves
   industriales y grandes superficies, locales por familia, rótulos y gasolineras; hecho.
+- [Plan de vallas, muros y setos](PLAN-VALLAS.md): datos de OSM, dibujo, colisiones y cajeros
+  del río; V0 hecha.
 
 ## Histórico
 
