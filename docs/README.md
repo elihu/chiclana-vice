@@ -35,7 +35,7 @@ documento; los demás enlazan a él.
 - [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado, pavimentos,
   rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
 - [Plan de locales comerciales y naves](PLAN-COMERCIOS.md): datos de comercios, naves
-  industriales y grandes superficies, locales por familia, rótulos y gasolineras; C0–C3 hechas.
+  industriales y grandes superficies, locales por familia, rótulos y gasolineras; hecho.
 
 ## Histórico
 

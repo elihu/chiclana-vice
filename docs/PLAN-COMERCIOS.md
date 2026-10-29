@@ -207,6 +207,14 @@ medida de `scene-budget` frente a `main`.
 
 ### C4. Gasolineras (`feat/gasolineras`, después de C3)
 
+> **Hecha el 29/10/2026** (commits `4cb4659` y `8cd7cd8`), con un cambio sobre lo previsto: el
+> Catastro ya recoge la marquesina (con la tienda) como una parte de una planta, así que no se
+> inventa una marquesina al lado. `js/world/fuel.js` toma esa parte (la mayor de 60 a 1500 m² que
+> contiene el punto de OSM, está a menos de 10 m o tiene el centro en su área), la dibuja sin
+> paredes, con su cubierta y un canto de color, y la receta pone debajo pilares e islas orientados
+> a la calle principal. Altura y colisiones, las del Catastro. Colocadas 5 de 6; la Gasolinera
+> CLC no tiene ninguna parte adecuada en su área.
+
 Datos de C0 (`fuel`): 6 dentro del mundo el 29/10/2026, cuatro como punto (Moeve, BP
 Urbisur, Repsol y BP) y dos como área (Plenergy y Gasolinera CLC).
 
