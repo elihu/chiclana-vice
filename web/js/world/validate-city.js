@@ -192,6 +192,14 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       blockMinimumFloors: 'int',
       extraUnits: 'int',
       mainRoadTypes: 'strings',
+      buildingKinds: {
+        maximumFloors: 'int',
+        industrialUses: 'strings',
+        industrialMinimumArea: 'pos',
+        bigRetailUses: 'strings',
+        bigRetailMinimumArea: 'pos',
+        zoneExcludedUses: 'strings',
+      },
     },
     'groundFloors',
   );

@@ -120,7 +120,8 @@
         "blockMinimumDwellings",
         "blockMinimumFloors",
         "extraUnits",
-        "mainRoadTypes"
+        "mainRoadTypes",
+        "buildingKinds"
       ],
       "additionalProperties": false,
       "properties": {
@@ -168,6 +169,39 @@
             "minLength": 1
           },
           "uniqueItems": true
+        },
+        "buildingKinds": {
+          "description": "Clase del edificio entero (naves industriales y grandes superficies, C1 de docs/PLAN-COMERCIOS.md): cambia todo el muro genérico. Industrial: uso de industrialUses o indicio de zona industrial de OSM (ground-floors.json → zones) salvo zoneExcludedUses. Gran superficie: uso de bigRetailUses o indicio de zona comercial, con la misma excepción. Ambas con hasta maximumFloors plantas y una planta de al menos el área mínima (m², sin patios).",
+          "type": "object",
+          "required": [
+            "maximumFloors",
+            "industrialUses",
+            "industrialMinimumArea",
+            "bigRetailUses",
+            "bigRetailMinimumArea",
+            "zoneExcludedUses"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "maximumFloors": { "type": "integer", "minimum": 1 },
+            "industrialUses": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "industrialMinimumArea": { "$ref": "#/$defs/positive" },
+            "bigRetailUses": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "bigRetailMinimumArea": { "$ref": "#/$defs/positive" },
+            "zoneExcludedUses": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          }
         }
       }
     },
