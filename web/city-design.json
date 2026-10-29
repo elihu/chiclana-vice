@@ -518,7 +518,7 @@
           "roadId": "50664224",
           "width": 24,
           "lateralOffset": -4,
-          "endExtension": 2
+          "endExtension": [5.25, 2]
         },
         "heightAnchors": [
           {
@@ -547,7 +547,8 @@
           "Aproximación de autor: tablero en plano inclinado entre las cotas de sus accesos y gálibo 3,2 m, anchura agregada 24 m por huella de puente y tranvía; no cotas medidas.",
           "https://www.openstreetmap.org/way/759565059",
           "Desplazamiento y grosor de autor aproximados; reserva de tranvía diferenciada sin simular la línea.",
-          "Prolongación de autor de 2 m para incluir la junta oblicua del tranvía y resolver las rampas con su eje OSM, sin cotas medidas."
+          "Prolongación de autor de 2 m para incluir la junta oblicua del tranvía y resolver las rampas con su eje OSM, sin cotas medidas.",
+          "Extremo norte prolongado a 5,25 m (revisión del 29/10/2026): cierra el hueco sobre el talud entre el tablero y las vías de la orilla norte; con 5,5 m o más reaparece una franja sin superficie. Aproximación de autor, sin cotas medidas."
         ],
         "profile": "linear",
         "thickness": 0.8,

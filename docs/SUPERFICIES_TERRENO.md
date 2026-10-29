@@ -218,7 +218,8 @@ libre y coincidencia entre perfil y tablero.
 ### Prolongación de tableros y pasos inferiores (revisión posterior a v2.0.0)
 
 `roadAnchor.endExtension` es una prolongación opcional no negativa, en metros, de ambos
-extremos del corredor del tablero o de su banda. No cambia el eje OSM ni los puntos usados
+extremos del corredor del tablero o de su banda; un par `[inicio, fin]` prolonga cada
+extremo por separado, en el sentido de los vértices de la vía. No cambia el eje OSM ni los puntos usados
 para calcular su plano inclinado. Permite que el tablero cubra un paso inferior situado
 inmediatamente después del extremo cartografiado de la calzada elevada.
 

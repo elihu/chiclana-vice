@@ -134,7 +134,44 @@ export function measureBridges(options = {}) {
         }
       }
     }
-    report.push({ name: group.name, roads: ids, junction, step, clearance, deckGap });
+    // Extremos del tablero (lados cortos del corredor): caída medio metro hacia fuera, sobre
+    // tierra. Es informativa: junto a las bocas de los pasos inferiores la caída es real. El
+    // polígono es un lado y el otro invertido.
+    let endDrop = { drop: 0 };
+    if (group.platform) {
+      const p = group.platform,
+        n = p.polygon.length / 2,
+        cx = p.polygon.reduce((s, q) => s + q[0], 0) / p.polygon.length,
+        cz = p.polygon.reduce((s, q) => s + q[1], 0) / p.polygon.length;
+      for (const [i, j] of [
+        [n - 1, n],
+        [2 * n - 1, 0],
+      ]) {
+        const a = p.polygon[i],
+          b = p.polygon[j],
+          len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        let nx = -(b[1] - a[1]) / len,
+          nz = (b[0] - a[0]) / len;
+        if (nx * ((a[0] + b[0]) / 2 - cx) + nz * ((a[1] + b[1]) / 2 - cz) < 0) {
+          nx = -nx;
+          nz = -nz;
+        }
+        for (let d = 0.25; d < len - 0.25; d += 0.25) {
+          const ex = a[0] + ((b[0] - a[0]) * d) / len,
+            ez = a[1] + ((b[1] - a[1]) * d) / len,
+            x = ex + nx * 0.5,
+            z = ez + nz * 0.5;
+          if (
+            pInside(x, z, p.polygon) ||
+            city.areas.some((w) => w.kind === 'water' && pInside(x, z, w.p))
+          )
+            continue;
+          const drop = heightOf(p, ex, ez) - model.surfaceHeightAt(x, z);
+          if (drop > endDrop.drop) endDrop = { drop, point: [x, z] };
+        }
+      }
+    }
+    report.push({ name: group.name, roads: ids, junction, step, clearance, deckGap, endDrop });
   }
   return { report, model, city };
 }
@@ -153,6 +190,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           step: +g.step.step.toFixed(3),
           clearanceMargin: g.clearance.margin === Infinity ? null : +g.clearance.margin.toFixed(3),
           deckGap: +g.deckGap.gap.toFixed(3),
+          endDrop: +g.endDrop.drop.toFixed(3),
         }),
       );
     assert(report.length >= 2, 'se encontraron los dos puentes de prueba');

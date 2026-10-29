@@ -206,19 +206,21 @@ function createSurfaceHelpers({ design, raw, roadMap, empty, indexBounds }) {
   const roadPolygon = (anchor) => {
     const points = roadMap.get(anchor.roadId).p.map((p) => [...p]),
       normals = [];
-    const extension = anchor.endExtension ?? 0;
-    if (extension) {
-      for (const [i, j] of [
-        [0, 1],
-        [points.length - 1, points.length - 2],
-      ]) {
+    // Un número prolonga ambos extremos; un par [inicio, fin], cada uno por separado.
+    const extensions = Array.isArray(anchor.endExtension)
+      ? anchor.endExtension
+      : [anchor.endExtension ?? 0, anchor.endExtension ?? 0];
+    for (const [i, j, extension] of [
+      [0, 1, extensions[0]],
+      [points.length - 1, points.length - 2, extensions[1]],
+    ])
+      if (extension) {
         const dx = points[i][0] - points[j][0],
           dz = points[i][1] - points[j][1],
           len = Math.hypot(dx, dz);
         points[i][0] += (dx / len) * extension;
         points[i][1] += (dz / len) * extension;
       }
-    }
     for (let i = 1; i < points.length; i++) {
       const dx = points[i][0] - points[i - 1][0],
         dz = points[i][1] - points[i - 1][1],

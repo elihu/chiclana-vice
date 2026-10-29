@@ -187,6 +187,24 @@ streetEnvironment.colliders.length = 0;
 assert.equal(blocked(0, 0, 0.3, 4), false, 'interior de plataforma transitable sobre agua');
 waterAreas.length = 0;
 world.surfaces = null;
+for (const [extension, valid] of [
+  [[1, 2], true],
+  [3, true],
+  [[1], false],
+  [[-1, 2], false],
+]) {
+  const anchored = structuredClone(design);
+  anchored.platforms[0].roadAnchor = {
+    roadId: city.roads[0].id,
+    width: 4,
+    endExtension: extension,
+  };
+  assert.equal(
+    validateSurfaceDesign(anchored, city).some((e) => e.includes('endExtension')),
+    !valid,
+    'endExtension ' + JSON.stringify(extension),
+  );
+}
 const invalid = structuredClone(design);
 invalid.platforms[0].lowerRoads = ['missing'];
 assert(validateSurfaceDesign(invalid, city).some((e) => e.includes('vía inexistente')));
