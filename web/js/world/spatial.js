@@ -10,18 +10,40 @@ import {
 } from '../core/state.js';
 import { clamp, pInside, pointSeg, polygonBounds } from '../core/math.js';
 
-const colliderGrid = createGrid(16);
-let colliderMaxRadius = 0;
-
-export function addCollider(p) {
-  streetEnvironment.colliders.push(p);
-  colliderMaxRadius = Math.max(colliderMaxRadius, p.r);
-  colliderGrid.insert(p, p.x, p.x, p.z, p.z);
+// Rejilla que sigue a una lista de core/state.js, que se muta en lugar de reasignarse: al
+// consultarla indexa lo añadido al final y se rehace si la lista menguó o cambió su primer
+// elemento. No detecta cambios en mitad de la lista.
+function syncedGrid(list, cell, add, reset = () => {}) {
+  let grid = null,
+    count = 0,
+    head;
+  return () => {
+    if (!grid || list.length < count || list[0] !== head) {
+      grid = createGrid(cell);
+      count = 0;
+      head = list[0];
+      reset();
+    }
+    for (; count < list.length; count++) add(grid, list[count], count);
+    return grid;
+  };
 }
 
+let colliderReach = 0;
+const colliderIndex = syncedGrid(
+  streetEnvironment.colliders,
+  16,
+  (grid, p) => {
+    colliderReach = Math.max(colliderReach, p.r);
+    grid.insert(p, p.x, p.x, p.z, p.z);
+  },
+  () => (colliderReach = 0),
+);
+
 export function someCollider(x, z, radius, test) {
-  const reach = radius + colliderMaxRadius;
-  return colliderGrid.queryBox(x - reach, x + reach, z - reach, z + reach, test);
+  const grid = colliderIndex(),
+    reach = radius + colliderReach;
+  return grid.queryBox(x - reach, x + reach, z - reach, z + reach, test);
 }
 
 export function inBuilding(x, z, pad = 0.3) {
@@ -76,33 +98,37 @@ export function crossesWall(x0, z0, x1, z1) {
   return false;
 }
 
-// Los tramos se indexan tras construir el grafo; los empates conservan su índice original.
-const roadGrid = createGrid(25),
-  roadOrder = new Map(),
+// Los empates conservan el índice original del tramo, como el recorrido lineal.
+const roadOrder = new Map(),
   roadStamps = new Map();
-let roadCount = 0,
-  roadStamp = 0,
-  roadMinX = Infinity,
-  roadMaxX = -Infinity,
-  roadMinZ = Infinity,
-  roadMaxZ = -Infinity;
-function indexRoads() {
-  for (; roadCount < segments.length; roadCount++) {
-    const s = segments[roadCount],
-      minX = Math.min(s.a[0], s.b[0]),
+let roadStamp = 0,
+  roadMinX,
+  roadMaxX,
+  roadMinZ,
+  roadMaxZ;
+const roadIndex = syncedGrid(
+  segments,
+  25,
+  (grid, s, i) => {
+    const minX = Math.min(s.a[0], s.b[0]),
       maxX = Math.max(s.a[0], s.b[0]),
       minZ = Math.min(s.a[1], s.b[1]),
       maxZ = Math.max(s.a[1], s.b[1]);
-    roadOrder.set(s, roadCount);
-    roadGrid.insert(s, minX, maxX, minZ, maxZ);
+    roadOrder.set(s, i);
+    grid.insert(s, minX, maxX, minZ, maxZ);
     roadMinX = Math.min(roadMinX, Math.floor(minX / 25));
     roadMaxX = Math.max(roadMaxX, Math.floor(maxX / 25));
     roadMinZ = Math.min(roadMinZ, Math.floor(minZ / 25));
     roadMaxZ = Math.max(roadMaxZ, Math.floor(maxZ / 25));
-  }
-}
+  },
+  () => {
+    roadOrder.clear();
+    roadMinX = roadMinZ = Infinity;
+    roadMaxX = roadMaxZ = -Infinity;
+  },
+);
 export function nearestRoad(x, z, driveOnly = false) {
-  indexRoads();
+  const roadGrid = roadIndex();
   let best = null,
     md = Infinity,
     bx = 0,
@@ -156,9 +182,14 @@ export function nearestRoad(x, z, driveOnly = false) {
   return best && { x: bx, z: bz, d: md, u: bu, s: best };
 }
 
-const waterGrid = createGrid(25);
+const waterIndex = syncedGrid(waterAreas, 25, (grid, a) => {
+  const b = polygonBounds(a.p);
+  grid.insert(a, b.minX, b.maxX, b.minZ, b.maxZ);
+});
 export function inWater(x, z) {
-  return waterGrid.queryPoint(x, z).some((a) => pInside(x, z, a.p));
+  return waterIndex()
+    .queryPoint(x, z)
+    .some((a) => pInside(x, z, a.p));
 }
 
 export function blocked(x, z, r = 0.3, reference = null) {
@@ -212,8 +243,4 @@ export function indexBuildings() {
       }
   }
   waterAreas.push(...world.city.areas.filter((a) => a.kind === 'water'));
-  for (const a of waterAreas) {
-    const b = polygonBounds(a.p);
-    waterGrid.insert(a, b.minX, b.maxX, b.minZ, b.maxZ);
-  }
 }

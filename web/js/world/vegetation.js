@@ -3,7 +3,7 @@ import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { TAU, clamp, lerp, pInside } from '../core/math.js';
 import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
-import { addCollider, someCollider, inBuilding, nearestRoad } from './spatial.js';
+import { someCollider, inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts, shareInstanceShader } from '../engine/materials.js';
 import { foliageMaterial } from '../engine/foliage.js';
 import { createRoadSpace } from './road-space.js';
@@ -197,7 +197,7 @@ export function buildTrees() {
       }
     }
     if (keep && !someCollider(p[0], p[1], 1, (o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
-      addCollider({
+      streetEnvironment.colliders.push({
         x: p[0],
         z: p[1],
         r: 0.23 * size,

@@ -168,7 +168,7 @@ assert.equal(
 
 // Empates y proyecciones: misma aritmética y mismo tramo que el recorrido lineal.
 const { segments, streetEnvironment } = await import('../web/js/core/state.js');
-const { nearestRoad, addCollider, someCollider } = await import('../web/js/world/spatial.js');
+const { nearestRoad, someCollider } = await import('../web/js/world/spatial.js');
 assert.equal(nearestRoad(0, 0), null);
 segments.push(
   { a: [10, -40], b: [10, 40], drive: true },
@@ -207,9 +207,14 @@ for (const p of [
   { x: 16, z: 0, r: 0.2 },
   { x: 0, z: 16, r: 5 },
 ])
-  addCollider(p);
+  streetEnvironment.colliders.push(p);
 for (let x = -30; x <= 30; x++)
   for (let z = -30; z <= 30; z++) {
     const test = (p) => Math.hypot(x - p.x, z - p.z) < p.r + 2;
     assert.equal(someCollider(x, z, 2, test), streetEnvironment.colliders.some(test));
   }
+const touches = (p) => Math.hypot(p.x + 16, p.z) < p.r + 1;
+streetEnvironment.colliders.length = 0;
+assert.equal(someCollider(-16, 0, 1, touches), false, 'la rejilla sigue a la lista vaciada');
+streetEnvironment.colliders.push({ x: -16, z: 0, r: 3 });
+assert.equal(someCollider(-16, 0, 1, touches), true, 'y a lo añadido después');
