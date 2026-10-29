@@ -7,6 +7,7 @@ import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { wallMaterial } from '../engine/wall-ao.js';
 import { createGroundFloors, partArea } from './ground-floors.js';
 import { nearestRoad } from './spatial.js';
+import { fuelStations } from './fuel.js';
 
 // Reference-led facade upgrade: civic landmarks and the streets listed in city-design.json.
 export function prepareFacades() {
@@ -105,6 +106,17 @@ export function buildDetailedFacades() {
   };
   for (const f of facadeWork.fronts)
     composeFront(kit, world.facadeDesigns, world.cityDesign.frontages.recipe, f, frontContext);
+  // Gasolineras de OSM: la receta sobre el fondo de su solar (js/world/fuel.js).
+  for (const station of fuelStations())
+    composeFront(kit, world.facadeDesigns, 'gasolinera', {
+      ...station,
+      with: {
+        depth: station.depth,
+        islands: station.islands,
+        canopyH: station.clearance,
+        variant: station.seed % 3,
+      },
+    });
   // Closed solids only show their outside, so they can use FrontSide; flat shapes and
   // open surfaces (half tori, tubes, the dome) keep DoubleSide.
   function closedSolid(geometry) {

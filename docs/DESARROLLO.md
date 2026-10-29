@@ -181,6 +181,7 @@ sin bundler ni compilación:
 | `world/facade-composer.js`      | Ejecución de composiciones de fachada.                                 |
 | `world/facade-kit.js`           | Piezas geométricas del kit de fachadas.                                |
 | `world/facades.js`              | Preparación y construcción de fachadas detalladas.                     |
+| `world/fuel.js`                 | Solares de las gasolineras de OSM.                                     |
 | `world/furniture.js`            | Mobiliario urbano y obstáculos de calle.                               |
 | `world/ground-clean.js`         | Máscaras y entorno limpio bajo las copas de la ortofoto.               |
 | `world/ground-floors.js`        | Bajos según su uso; naves, grandes superficies y bodegas.              |
