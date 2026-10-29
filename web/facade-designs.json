@@ -1532,6 +1532,33 @@
         }
       ]
     },
+    "gasolinera": {
+      "description": "Lo que hay bajo la marquesina de una gasolinera de OSM (C4 de docs/PLAN-COMERCIOS.md). La marquesina es una parte del Catastro que se dibuja sin paredes, con su cubierta y un canto de color (js/world/fuel.js y buildings.js); el muro de la receta es el fondo de su caja, de frente len y fondo depth, y z crece hacia la calle principal. Pone un pilar y una isla con dos surtidores por cada una de las islands, con pilares de canopyH m (la altura libre bajo el canto). Tonos genéricos, sin colores de marca.",
+      "params": { "depth": 20, "islands": 2, "canopyH": 2.75, "variant": 0 },
+      "body": [
+        {
+          "let": {
+            "cz": "depth / 2",
+            "band": { "pick": ["#2e6f9e", "#3f7d4a", "#b5532c"], "index": "variant % 3" }
+          }
+        },
+        {
+          "for": "i",
+          "from": 0,
+          "while": "i < islands",
+          "step": 1,
+          "body": [
+            { "let": { "ix": "(i + 0.5) * len / islands" } },
+            { "box": ["ix", "canopyH / 2", "cz", 0.36, "canopyH", 0.36], "color": "#d8d8d4" },
+            { "box": ["ix", 0.1, "cz", 1.2, 0.2, "min(depth * 0.6, 9)"], "color": "#bdbab2" },
+            { "box": ["ix", 0.95, "cz - min(depth * 0.18, 2.6)", 0.62, 1.5, 0.46], "color": "#f0f0ec" },
+            { "box": ["ix", 0.95, "cz + min(depth * 0.18, 2.6)", 0.62, 1.5, 0.46], "color": "#f0f0ec" },
+            { "box": ["ix", 1.62, "cz - min(depth * 0.18, 2.6)", 0.64, 0.16, 0.48], "color": "band" },
+            { "box": ["ix", 1.62, "cz + min(depth * 0.18, 2.6)", 0.64, 0.16, 0.48], "color": "band" }
+          ]
+        }
+      ]
+    },
     "street-generic": {
       "description": "Generic street frontage: plastered wall with plinth and cornice, and a ground floor chosen by the front's class (isShop, isBlock, isHouse, isGarage; mainStreet): shopfront with metal shutter or awning, portal, house door or garage door, and barred windows. Shops with an OSM type (hasFamily) take its tone for sign and awning (familyTone, familyAwning) and its front (familyFront: 0 wide, 1 door, 2 gate shown as a metal shutter). Framed openings with shutters or balconies per storey. Variants depend on `hash`.",
       "params": {
