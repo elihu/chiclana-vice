@@ -500,7 +500,8 @@ Publica `web/ground-floors.json` sin tocar `buildings.json`. Se regenera cada ve
 
 El juego la carga como `world.groundFloors` (opcional): `uses`, `parts` y `shops` deciden la
 clase y el tipo de los bajos, `zones` la de los edificios (naves, grandes superficies y bodegas)
-y los nombres de `shops` los rótulos de los comercios. Las gasolineras (`fuel`) aún no.
+y los nombres de `shops` los rótulos de los comercios. Con `fuel` se busca la parte del Catastro
+que es la marquesina de cada gasolinera (`js/world/fuel.js`).
 
 ## 10. Vías y paradas del tranvía
 

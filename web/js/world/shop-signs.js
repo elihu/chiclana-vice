@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx, streetEnvironment, world } from '../core/state.js';
 import { createGroundFloors, partArea, shopFamily } from './ground-floors.js';
+import { fuelStations } from './fuel.js';
 
 // Rótulos con el nombre de los comercios de OSM (C3 de PLAN-COMERCIOS): un atlas de canvas, un
 // material y una malla fusionada. Cada comercio con nombre busca el frente que tiene delante con el
@@ -17,6 +18,8 @@ export const SHOP_SIGNS = {
   bigHeight: 1.1, // m del rótulo de una gran superficie, en lo alto de la fachada
   bigTop: 0.25, // m desde lo alto del muro hasta el borde superior del rótulo
   minimumEdge: 2, // m de frente mínimo
+  fuelHeight: 0.5, // m del rótulo en el canto de la marquesina de una gasolinera
+  fuelOffset: 0.08, // m delante del canto
   background: '#2b3a40', // fondo de los comercios sin tipo de local
   text: '#f2eedc',
 };
@@ -74,6 +77,63 @@ function fitText(context, text, width) {
   return cut.trimEnd() + '…';
 }
 
+// Encuadre del rótulo de un local: centro delante del muro, normal, base, ancho y alto.
+function edgeFrame(sign, groundFloors) {
+  const { e } = sign,
+    b = world.city.buildings[e.index],
+    big =
+      groundFloors.building(
+        e.index,
+        b.floors,
+        partArea(b),
+        (b.minX + b.maxX) / 2,
+        (b.minZ + b.maxZ) / 2,
+      ) === 'bigRetail',
+    relief = b.detailType === 'street',
+    top = b.baseY + (b.renderH ?? b.h);
+  let height = big ? SHOP_SIGNS.bigHeight : SHOP_SIGNS.height,
+    width = height * ASPECT;
+  // En frentes cortos el rótulo se reduce entero para no salirse de la fachada.
+  if (width > e.len * 0.9) {
+    height *= (e.len * 0.9) / width;
+    width = e.len * 0.9;
+  }
+  const y0 = big
+      ? top - SHOP_SIGNS.bigTop - height
+      : Math.min(
+          b.baseY + (relief ? SHOP_SIGNS.reliefBottom : SHOP_SIGNS.bottom),
+          top - height - 0.1,
+        ),
+    offset = relief ? SHOP_SIGNS.reliefOffset : SHOP_SIGNS.offset,
+    along = Math.min(Math.max(sign.t, width / 2), e.len - width / 2),
+    dx = (e.q[0] - e.a[0]) / e.len,
+    dz = (e.q[1] - e.a[1]) / e.len;
+  return {
+    cx: e.a[0] + dx * along + e.nx * offset,
+    cz: e.a[1] + dz * along + e.nz * offset,
+    nx: e.nx,
+    nz: e.nz,
+    y0,
+    width,
+    height,
+  };
+}
+
+// Encuadre del rótulo de una gasolinera: centrado en el canto de la marquesina hacia la calle.
+function fuelFrame(f) {
+  const height = SHOP_SIGNS.fuelHeight,
+    width = Math.min(height * ASPECT, f.width * 0.8);
+  return {
+    cx: f.x + f.nx * SHOP_SIGNS.fuelOffset,
+    cz: f.z + f.nz * SHOP_SIGNS.fuelOffset,
+    nx: f.nx,
+    nz: f.nz,
+    y0: f.y - width / ASPECT / 2,
+    width,
+    height: width / ASPECT,
+  };
+}
+
 export function addShopSigns() {
   const layer = world.groundFloors,
     rules = world.cityDesign.groundFloors;
@@ -109,7 +169,11 @@ export function addShopSigns() {
     if (best && (!byEdge.has(key) || bestDistance < byEdge.get(key).distance))
       byEdge.set(key, { ...best, distance: bestDistance });
   }
-  const signs = [...byEdge.values()].slice(0, COLS * MAX_ROWS);
+  // Gasolineras: el nombre en el canto de la marquesina, hacia la calle.
+  const fuel = fuelStations()
+    .filter((station) => station.name)
+    .map((station) => ({ name: station.name, type: null, fuel: station.sign }));
+  const signs = [...byEdge.values(), ...fuel].slice(0, COLS * MAX_ROWS);
   if (!signs.length) return;
 
   const atlas = document.createElement('canvas');
@@ -136,37 +200,9 @@ export function addShopSigns() {
       oy + GUTTER + CELL_H / 2 + 1,
     );
 
-    const { e } = sign,
-      b = world.city.buildings[e.index],
-      big =
-        groundFloors.building(
-          e.index,
-          b.floors,
-          partArea(b),
-          (b.minX + b.maxX) / 2,
-          (b.minZ + b.maxZ) / 2,
-        ) === 'bigRetail',
-      relief = b.detailType === 'street',
-      top = b.baseY + (b.renderH ?? b.h);
-    let height = big ? SHOP_SIGNS.bigHeight : SHOP_SIGNS.height,
-      width = height * ASPECT;
-    // En frentes cortos el rótulo se reduce entero para no salirse de la fachada.
-    if (width > e.len * 0.9) {
-      height *= (e.len * 0.9) / width;
-      width = e.len * 0.9;
-    }
-    const y0 = big
-        ? top - SHOP_SIGNS.bigTop - height
-        : Math.min(
-            b.baseY + (relief ? SHOP_SIGNS.reliefBottom : SHOP_SIGNS.bottom),
-            top - height - 0.1,
-          ),
-      offset = relief ? SHOP_SIGNS.reliefOffset : SHOP_SIGNS.offset,
-      along = Math.min(Math.max(sign.t, width / 2), e.len - width / 2),
-      dx = (e.q[0] - e.a[0]) / e.len,
-      dz = (e.q[1] - e.a[1]) / e.len,
-      cx = e.a[0] + dx * along + e.nx * offset,
-      cz = e.a[1] + dz * along + e.nz * offset,
+    const { cx, cz, nx, nz, y0, width, height } = sign.fuel
+        ? fuelFrame(sign.fuel)
+        : edgeFrame(sign, groundFloors),
       base = position.length / 3;
     // Derecha de quien mira la fachada desde fuera (hacia -n): (nz, -nx). Así el texto se lee
     // de izquierda a derecha sea cual sea el sentido de la arista.
@@ -177,7 +213,7 @@ export function addShopSigns() {
       [0, 1],
     ]) {
       const l = (u - 0.5) * width;
-      position.push(cx + e.nz * l, y0 + v * height, cz - e.nx * l);
+      position.push(cx + nz * l, y0 + v * height, cz - nx * l);
       uv.push(
         (ox + GUTTER + u * CELL_W) / atlas.width,
         1 - (oy + GUTTER + (1 - v) * CELL_H) / atlas.height,

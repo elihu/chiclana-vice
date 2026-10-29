@@ -304,6 +304,11 @@ export function composeFront(kit, designs, recipeName, front, context = {}) {
     Object.assign(scope, w.extra);
     for (const [k, v] of Object.entries(recipe.params || {}))
       scope[k] = value(v, scope, kit.palette);
+    // Valores numéricos del frente para los params de la receta (las gasolineras, su solar).
+    for (const [k, v] of Object.entries(front.with ?? {})) {
+      if (!(k in (recipe.params ?? {}))) throw new Error(`«${k}» no es un param de la receta`);
+      scope[k] = v;
+    }
     run(recipe.body, scope, w.g, { kit, designs, palette: kit.palette, ring: null });
     return w.g;
   } catch (e) {

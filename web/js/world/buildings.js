@@ -8,6 +8,7 @@ import { loadProgress } from '../ui/feedback.js';
 import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
+import { FUEL, fuelStations } from './fuel.js';
 import { edgeKey, sharedWallSpans } from './party-walls.js';
 import {
   BUILDING_CODES,
@@ -53,6 +54,8 @@ export async function buildBuildings() {
   const { bucket } = createBuildingBuckets(groups);
   const { orientation, windowWall, partyWall } = createBuildingWalls({ rules });
   setBuildingHeights(rules);
+  // Marquesinas de gasolinera (js/world/fuel.js): sin paredes, solo su cubierta y un canto de color.
+  const canopies = new Map(fuelStations().map((station) => [station.part, station]));
   // Muro compartido con un vecino: oculto hasta su tejado, medianera ciega por encima.
   const shared = sharedWallSpans(
       world.city.buildings,
@@ -143,8 +146,16 @@ export async function buildBuildings() {
         b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
       ),
       partyCol = col.clone().lerp(partyTint, rules.partyWall.blend);
-    const kindCodes = buildingCodes(index, b);
+    const kindCodes = buildingCodes(index, b),
+      canopy = canopies.get(index);
+    if (canopy) {
+      const tone = new THREE.Color(FUEL.tones[canopy.seed % FUEL.tones.length]);
+      b.p.forEach((start, i) =>
+        partyWall(g, b, tone, start, b.p[(i + 1) % b.p.length], top - FUEL.fascia, top),
+      );
+    }
     [b.p, ...b.holes].forEach((ring, ringIndex) => {
+      if (canopy) return;
       let area = 0;
       for (let i = 0; i < ring.length; i++) {
         const [x0, z0] = ring[i],
