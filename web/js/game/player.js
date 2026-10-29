@@ -114,82 +114,86 @@ export function updatePlayer(dt) {
     boost = input.boost || keys.Shift;
   const hand = keys[' '];
   if (player.car) {
-    if (session.driveStick && pointer.joyId !== null) {
-      pointer.driveSteer = lerp(pointer.driveSteer, input.jx * 0.75, 1 - Math.exp(-dt * 8));
-      steer = clamp(steer + pointer.driveSteer, -1, 1);
-      gas = Math.max(gas, -input.jy);
-      brake = Math.max(brake, input.jy);
-    } else pointer.driveSteer = 0;
-    // El freno físico prevalece aunque el pulgar siga acelerando con el joystick.
-    if (input.brake || keys.s || keys.ArrowDown) gas = 0;
-    let c = player.car,
-      max = boost ? 40 : 28;
-    if (gas) c.speed += dt * (c.speed < 0 ? 16 : 9.5) * gas;
-    else if (brake) c.speed -= dt * (c.speed > 0 ? 17 : 5) * brake;
-    else
-      c.speed =
-        Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - dt * (2.3 + Math.abs(c.speed) * 0.08));
-    if (hand) c.speed *= Math.exp(-dt * 4);
-    c.speed = clamp(c.speed, -7, max);
-    let steerAngle = (steer * 0.48) / (1 + Math.abs(c.speed) * 0.028);
-    c.a -= (c.speed / 2.8) * Math.tan(steerAngle) * dt;
-    let nx = c.x + Math.sin(c.a) * c.speed * dt,
-      nz = c.z + Math.cos(c.a) * c.speed * dt;
-    if (carCollision(c, nx, nz)) {
-      if (Math.abs(c.speed) > 4 && session.collisionClock <= 0) {
-        c.health -= Math.min(20, Math.abs(c.speed) * 0.45);
-        session.collisionClock = 0.6;
-        toast('Golpe · Frena y maniobra hacia atrás.', 1.8);
-      }
-      c.speed *= -0.15;
-    } else {
-      c.x = nx;
-      c.z = nz;
-    }
-    for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
-      const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
-      if (
-        other === c ||
-        d(c, other) > 3.1 ||
-        Math.abs((c.surfaceY ?? 0) - (other.surfaceY ?? 0)) > 2
-      )
-        continue;
-      if (session.collisionClock <= 0 && Math.abs(c.speed) > 3) {
-        c.health -= 5;
-        c.speed *= -0.15;
-        session.collisionClock = 1.3;
-        setHeat(other.cop ? 1 : state.wanted < 2 ? 1 : 0);
-      }
-    }
-    player.x = c.x;
-    player.z = c.z;
-    player.a = c.a;
-    player.speed = c.speed;
-    state.health = c.health;
-    c.bank = lerp(c.bank ?? 0, -steer * Math.min(0.04, Math.abs(c.speed) * 0.002), dt * 6);
-    if (c.health <= 0) rescue();
+    updateDriving(dt, steer, gas, brake, boost, hand);
   } else {
-    let ix = input.jx,
-      iy = -input.jy;
-    if (pointer.joyId === null) {
-      ix = steer;
-      iy = (gas ? 1 : 0) - (brake ? 1 : 0);
-    }
-    let mag = Math.min(1, Math.hypot(ix, iy)),
-      heading = player.a + view.orbit;
-    let a = heading - Math.atan2(ix, iy),
-      v = (boost ? 6.1 : 3.2) * mag;
-    if (mag > 0.1) {
-      let nx = player.x + Math.sin(a) * v * dt,
-        nz = player.z + Math.cos(a) * v * dt;
-      if (!blocked(nx, player.z, 0.28, player.surfaceY ?? null)) player.x = nx;
-      if (!blocked(player.x, nz, 0.28, player.surfaceY ?? null)) player.z = nz;
-      actors.character.mesh.rotation.y = a;
-    }
-    player.speed = v;
-    player.surfaceY = actorHeightAt(player);
-    actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
-    animateWalk(actors.character, session.t * (boost ? 12 : 8), Math.min(0.65, v * 0.13));
+    updateOnFoot(dt, steer, gas, brake, boost);
   }
   updateEngineSound();
+}
+
+function updateDriving(dt, steer, gas, brake, boost, hand) {
+  if (session.driveStick && pointer.joyId !== null) {
+    pointer.driveSteer = lerp(pointer.driveSteer, input.jx * 0.75, 1 - Math.exp(-dt * 8));
+    steer = clamp(steer + pointer.driveSteer, -1, 1);
+    gas = Math.max(gas, -input.jy);
+    brake = Math.max(brake, input.jy);
+  } else pointer.driveSteer = 0;
+  // El freno físico prevalece aunque el pulgar siga acelerando con el joystick.
+  if (input.brake || keys.s || keys.ArrowDown) gas = 0;
+  let c = player.car,
+    max = boost ? 40 : 28;
+  if (gas) c.speed += dt * (c.speed < 0 ? 16 : 9.5) * gas;
+  else if (brake) c.speed -= dt * (c.speed > 0 ? 17 : 5) * brake;
+  else
+    c.speed =
+      Math.sign(c.speed) * Math.max(0, Math.abs(c.speed) - dt * (2.3 + Math.abs(c.speed) * 0.08));
+  if (hand) c.speed *= Math.exp(-dt * 4);
+  c.speed = clamp(c.speed, -7, max);
+  let steerAngle = (steer * 0.48) / (1 + Math.abs(c.speed) * 0.028);
+  c.a -= (c.speed / 2.8) * Math.tan(steerAngle) * dt;
+  let nx = c.x + Math.sin(c.a) * c.speed * dt,
+    nz = c.z + Math.cos(c.a) * c.speed * dt;
+  if (carCollision(c, nx, nz)) {
+    if (Math.abs(c.speed) > 4 && session.collisionClock <= 0) {
+      c.health -= Math.min(20, Math.abs(c.speed) * 0.45);
+      session.collisionClock = 0.6;
+      toast('Golpe · Frena y maniobra hacia atrás.', 1.8);
+    }
+    c.speed *= -0.15;
+  } else {
+    c.x = nx;
+    c.z = nz;
+  }
+  for (let k = 0, total = vehicles.length + police.length; k < total; k++) {
+    const other = k < vehicles.length ? vehicles[k] : police[k - vehicles.length];
+    if (other === c || d(c, other) > 3.1 || Math.abs((c.surfaceY ?? 0) - (other.surfaceY ?? 0)) > 2)
+      continue;
+    if (session.collisionClock <= 0 && Math.abs(c.speed) > 3) {
+      c.health -= 5;
+      c.speed *= -0.15;
+      session.collisionClock = 1.3;
+      setHeat(other.cop ? 1 : state.wanted < 2 ? 1 : 0);
+    }
+  }
+  player.x = c.x;
+  player.z = c.z;
+  player.a = c.a;
+  player.speed = c.speed;
+  state.health = c.health;
+  c.bank = lerp(c.bank ?? 0, -steer * Math.min(0.04, Math.abs(c.speed) * 0.002), dt * 6);
+  if (c.health <= 0) rescue();
+}
+
+function updateOnFoot(dt, steer, gas, brake, boost) {
+  let ix = input.jx,
+    iy = -input.jy;
+  if (pointer.joyId === null) {
+    ix = steer;
+    iy = (gas ? 1 : 0) - (brake ? 1 : 0);
+  }
+  let mag = Math.min(1, Math.hypot(ix, iy)),
+    heading = player.a + view.orbit;
+  let a = heading - Math.atan2(ix, iy),
+    v = (boost ? 6.1 : 3.2) * mag;
+  if (mag > 0.1) {
+    let nx = player.x + Math.sin(a) * v * dt,
+      nz = player.z + Math.cos(a) * v * dt;
+    if (!blocked(nx, player.z, 0.28, player.surfaceY ?? null)) player.x = nx;
+    if (!blocked(player.x, nz, 0.28, player.surfaceY ?? null)) player.z = nz;
+    actors.character.mesh.rotation.y = a;
+  }
+  player.speed = v;
+  player.surfaceY = actorHeightAt(player);
+  actors.character.mesh.position.set(player.x, player.surfaceY, player.z);
+  animateWalk(actors.character, session.t * (boost ? 12 : 8), Math.min(0.65, v * 0.13));
 }
