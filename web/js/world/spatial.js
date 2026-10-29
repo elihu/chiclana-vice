@@ -8,7 +8,7 @@ import {
   waterAreas,
   world,
 } from '../core/state.js';
-import { clamp, pInside, pointSeg } from '../core/math.js';
+import { clamp, pInside, pointSeg, polygonBounds } from '../core/math.js';
 
 const colliderGrid = createGrid(16);
 let colliderMaxRadius = 0;
@@ -76,31 +76,89 @@ export function crossesWall(x0, z0, x1, z1) {
   return false;
 }
 
-// Misma aritmética que pointSeg, en línea para no crear un objeto por tramo; solo se crea
-// el resultado (quien llama puede conservarlo).
+// Los tramos se indexan tras construir el grafo; los empates conservan su índice original.
+const roadGrid = createGrid(25),
+  roadOrder = new Map(),
+  roadStamps = new Map();
+let roadCount = 0,
+  roadStamp = 0,
+  roadMinX = Infinity,
+  roadMaxX = -Infinity,
+  roadMinZ = Infinity,
+  roadMaxZ = -Infinity;
+function indexRoads() {
+  for (; roadCount < segments.length; roadCount++) {
+    const s = segments[roadCount],
+      minX = Math.min(s.a[0], s.b[0]),
+      maxX = Math.max(s.a[0], s.b[0]),
+      minZ = Math.min(s.a[1], s.b[1]),
+      maxZ = Math.max(s.a[1], s.b[1]);
+    roadOrder.set(s, roadCount);
+    roadGrid.insert(s, minX, maxX, minZ, maxZ);
+    roadMinX = Math.min(roadMinX, Math.floor(minX / 25));
+    roadMaxX = Math.max(roadMaxX, Math.floor(maxX / 25));
+    roadMinZ = Math.min(roadMinZ, Math.floor(minZ / 25));
+    roadMaxZ = Math.max(roadMaxZ, Math.floor(maxZ / 25));
+  }
+}
 export function nearestRoad(x, z, driveOnly = false) {
+  indexRoads();
   let best = null,
     md = Infinity,
     bx = 0,
     bz = 0,
     bu = 0;
-  for (const s of segments) {
-    if (driveOnly && !s.drive) continue;
+  const stamp = ++roadStamp;
+  const visit = (s) => {
+    if (roadStamps.get(s) === stamp || (driveOnly && !s.drive)) return;
+    roadStamps.set(s, stamp);
     const a = s.a,
       b = s.b,
       dx = b[0] - a[0],
       dz = b[1] - a[1],
       u = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1), 0, 1),
       d = Math.hypot(x - a[0] - dx * u, z - a[1] - dz * u);
-    if (d < md) {
+    if (d < md || (best && d === md && roadOrder.get(s) < roadOrder.get(best))) {
       md = d;
       best = s;
       bx = a[0] + dx * u;
       bz = a[1] + dz * u;
       bu = u;
     }
-  }
+  };
+  const cx = Math.floor(x / 25),
+    cz = Math.floor(z / 25),
+    limit = Math.max(
+      Math.abs(cx - roadMinX),
+      Math.abs(cx - roadMaxX),
+      Math.abs(cz - roadMinZ),
+      Math.abs(cz - roadMaxZ),
+    );
+  if (segments.length)
+    for (let ring = 0; ring <= limit; ring++) {
+      for (let gx = cx - ring; gx <= cx + ring; gx++) {
+        for (const s of roadGrid.queryPoint(gx * 25, (cz - ring) * 25)) visit(s);
+        if (ring) for (const s of roadGrid.queryPoint(gx * 25, (cz + ring) * 25)) visit(s);
+      }
+      for (let gz = cz - ring + 1; gz < cz + ring; gz++) {
+        for (const s of roadGrid.queryPoint((cx - ring) * 25, gz * 25)) visit(s);
+        for (const s of roadGrid.queryPoint((cx + ring) * 25, gz * 25)) visit(s);
+      }
+      const distance = Math.min(
+        x - (cx - ring) * 25,
+        (cx + ring + 1) * 25 - x,
+        z - (cz - ring) * 25,
+        (cz + ring + 1) * 25 - z,
+      );
+      if (distance > md) break;
+    }
+  if (!best) for (const s of segments) visit(s);
   return best && { x: bx, z: bz, d: md, u: bu, s: best };
+}
+
+const waterGrid = createGrid(25);
+export function inWater(x, z) {
+  return waterGrid.queryPoint(x, z).some((a) => pInside(x, z, a.p));
 }
 
 export function blocked(x, z, r = 0.3, reference = null) {
@@ -117,7 +175,7 @@ export function blocked(x, z, r = 0.3, reference = null) {
     )
   )
     return true;
-  if (waterAreas.some((a) => pInside(x, z, a.p))) {
+  if (inWater(x, z)) {
     if (world.surfaces?.drySurfaceAt(x, z, reference)) return false;
     let n = nearestRoad(x, z);
     if (!n || !n.s.bridge || n.d > n.s.width * 0.55) return true;
@@ -154,4 +212,8 @@ export function indexBuildings() {
       }
   }
   waterAreas.push(...world.city.areas.filter((a) => a.kind === 'water'));
+  for (const a of waterAreas) {
+    const b = polygonBounds(a.p);
+    waterGrid.insert(a, b.minX, b.maxX, b.minZ, b.maxZ);
+  }
 }

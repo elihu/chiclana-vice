@@ -165,3 +165,51 @@ assert.equal(
   grid.queryBox(30, 40, 30, 40, () => true),
   false,
 );
+
+// Empates y proyecciones: misma aritmética y mismo tramo que el recorrido lineal.
+const { segments, streetEnvironment } = await import('../web/js/core/state.js');
+const { nearestRoad, addCollider, someCollider } = await import('../web/js/world/spatial.js');
+assert.equal(nearestRoad(0, 0), null);
+segments.push(
+  { a: [10, -40], b: [10, 40], drive: true },
+  { a: [-10, -40], b: [-10, 40], drive: true },
+  { a: [-80, 25], b: [80, 25], drive: false },
+  { a: [-80, -25], b: [80, -25], drive: true },
+);
+function linearRoad(x, z, driveOnly) {
+  let best = null,
+    md = Infinity;
+  for (const s of segments) {
+    if (driveOnly && !s.drive) continue;
+    const dx = s.b[0] - s.a[0],
+      dz = s.b[1] - s.a[1],
+      u = Math.max(
+        0,
+        Math.min(1, ((x - s.a[0]) * dx + (z - s.a[1]) * dz) / (dx * dx + dz * dz || 1)),
+      ),
+      d = Math.hypot(x - s.a[0] - dx * u, z - s.a[1] - dz * u);
+    if (d < md) {
+      md = d;
+      best = { x: s.a[0] + dx * u, z: s.a[1] + dz * u, d, u, s };
+    }
+  }
+  return best;
+}
+for (const drive of [false, true])
+  for (let x = -100; x <= 100; x += 2.5)
+    for (let z = -100; z <= 100; z += 2.5)
+      assert.deepEqual(nearestRoad(x, z, drive), linearRoad(x, z, drive));
+assert.equal(nearestRoad(0, 0).s, segments[0], 'empate entre celdas: gana el índice menor');
+for (const s of segments) s.drive = false;
+assert.equal(nearestRoad(0, 0, true), null, 'respaldo sin candidatos rodados');
+for (const p of [
+  { x: -16, z: 0, r: 3 },
+  { x: 16, z: 0, r: 0.2 },
+  { x: 0, z: 16, r: 5 },
+])
+  addCollider(p);
+for (let x = -30; x <= 30; x++)
+  for (let z = -30; z <= 30; z++) {
+    const test = (p) => Math.hypot(x - p.x, z - p.z) < p.r + 2;
+    assert.equal(someCollider(x, z, 2, test), streetEnvironment.colliders.some(test));
+  }
