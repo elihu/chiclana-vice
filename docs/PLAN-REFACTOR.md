@@ -47,11 +47,13 @@ Versiones el 29/10/2026: Three.js 0.186.1 es la última publicada y no se cambia
   - `node tools/scene-fingerprint.mjs --out <scratch>/huella-base.json` en el árbol.
   - La misma huella **sin relieve**: `git archive main | tar -x -C <scratch>/plano`, borrar
     `web/terrain.json` y `web/terrain.bin`, enlazar `node_modules` y ejecutar la huella
-    desde esa copia. Repetir con la rama al final de cada paso.
+    desde esa copia. Repetir con la rama al final de la fase.
   - `node tools/bench-startup.mjs --out <scratch>/arranque-base.json` (desde R0).
-- **Verificación de cada paso**: `npm run check` y las dos huellas con `--compare`: deben
-  ser **idénticas**. Si una huella cambia, el paso está mal aunque «se vea igual»: para,
-  deshaz ese paso y entrega el diagnóstico (qué clave cambia y por qué).
+- **Verificación al final de la fase**, no en cada paso: `npm run check` y las dos huellas
+  con `--compare`, que deben ser **idénticas**. Durante los pasos basta `npm run lint` y el
+  verificador que toque lo cambiado. Si una huella cambia, busca el paso culpable con
+  `git bisect` (un commit por paso), deshazlo y entrega el diagnóstico (qué clave cambia y
+  por qué); que «se vea igual» no basta.
 - **Sin capturas, scene-budget ni Chrome**: el revisor hace el humo en navegador.
 - Medidas de tiempo: tres ejecuciones de `bench-startup` y se informa la mediana, en la
   misma máquina y versión de Node que la referencia. No afirmes FPS ni rendimiento de GPU
