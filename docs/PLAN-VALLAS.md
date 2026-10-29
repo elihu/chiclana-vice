@@ -70,6 +70,12 @@ Más 3 nodos `barrier=gate` y un `bollard`. Ninguna vía lleva `height`, `materi
 
 ### V1. Dibujo (`feat/vallas`)
 
+> **Hecha el 29/10/2026** (commits `78dbb15` y `fdf0ac4`). Con un cambio sobre D4: el hueco se
+> abre solo donde una vía de OSM **cruza** el trazo (con su media anchura y `roadClearance` a cada
+> lado, medido a lo largo del trazo); una vía paralela no lo corta, porque la anchura de OSM es
+> aproximada y cortaba 300 m de muros que bordean calles. 3.503 m dibujados en 1.828 tramos, 111
+> huecos, unos 30.500 triángulos y dos llamadas de dibujo.
+
 1. **Reglas** en `city-design.json` → `barriers` (esquema y validación): por tipo, altura, grosor,
    color y remate. Commit `feat(diseño): aspecto de vallas y muros`.
 2. **Módulo** `world/barriers.js`: muros y muralla como prismas con albardilla, vallas como paño

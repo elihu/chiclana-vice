@@ -144,6 +144,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     'centerLines',
     'signs',
     'tram',
+    'barriers',
     'vegetation',
     'buildings',
   ];
@@ -419,6 +420,20 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       },
     },
     'tram',
+  );
+  const solid = { height: 'pos', thickness: 'pos', color: 'color' };
+  check(
+    json.barriers,
+    {
+      pieceLength: 'pos',
+      roadClearance: 'nonneg',
+      gateGap: 'nonneg',
+      wall: { ...solid, cap: 'color' },
+      city_wall: { ...solid, cap: 'color' },
+      hedge: solid,
+      fence: { height: 'pos', postSpacing: 'pos', postWidth: 'pos', color: 'color' },
+    },
+    'barriers',
   );
   check(
     json.buildings,

@@ -174,6 +174,7 @@ sin bundler ni compilación:
 | `ui/map.js`                     | Mapa y minimapa.                                                       |
 | `ui/perf.js`                    | Panel de medición de fotogramas.                                       |
 | `world/aerial-tiles.js`         | Carga y sustitución de teselas de ortofoto.                            |
+| `world/barriers.js`             | Vallas, muros y setos de OSM.                                          |
 | `world/bounds.js`               | Consultas de la unión de límites del mundo.                            |
 | `world/buildings.js`            | Construcción de edificios genéricos.                                   |
 | `world/corrections.js`          | Aplicación de correcciones del mapa y sus guardas.                     |
