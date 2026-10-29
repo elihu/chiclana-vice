@@ -43,8 +43,9 @@ assert.equal(g.terrain.kind, 'grid');
 for (const p of g.people)
   assert.equal(
     p.mesh.position.y,
-    g.surfaceHeightAt(p.mesh.position.x, p.mesh.position.z, p.surfaceY, p.s.roadId),
-    'peatón ya colocado antes de iniciar',
+    g.surfaceHeightAt(p.mesh.position.x, p.mesh.position.z, p.surfaceY - p.walk.rise, p.s.roadId) +
+      p.walk.rise,
+    'peatón ya colocado sobre la acera o vía peatonal antes de iniciar',
   );
 for (const b of g.city.buildings) {
   assert(Number.isFinite(b.baseY));

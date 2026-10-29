@@ -323,3 +323,45 @@ a una parte. No es un dato catastral certificado.
 a nivel y 2 pasos peatonales; el resto de la línea, fuera del mapa. Licencia ODbL como
 `osm-world.json`. Límites: OSM traza un solo eje por vía (sin separar los dos sentidos) y la
 geometría del juego es una aproximación visual; no hay tranvía en marcha.
+
+## Revisión de agua y transitabilidad tras v2.0.0
+
+Tanda local del 28/10/2026, pendiente de revisión visual del usuario:
+
+- El OSM local del 8/10/2026 aporta `junction=roundabout`, `tunnel=yes` y `layer` a las
+  mismas vías ya publicadas (`tools/export-road-semantics.py`). No cambian ejes, anchuras,
+  sentidos, contornos catastrales ni límites. Las isletas son un desplazamiento interior
+  del anillo cartografiado, con medio ancho de calzada y 12 cm de borde; acabado neutro,
+  sin inventar jardines, monumentos ni glorietas en cadenas que no cierran.
+- La cubeta de Alameda del Río (área OSM 184499839) se retira del juego por petición
+  expresa del usuario. `map-corrections.json` conserva la decisión y su guarda; la capa
+  OSM de base conserva el contorno y la procedencia. No se declara un error de OSM.
+- En VII Centenario, OSM identifica dos pasos inferiores `tunnel=yes`: 148083444 y 184499299. Se separan del tablero y de sus dos aceras elevadas (760833292/760833297).
+  El ancho agregado de 22 m, prolongación de 6 m, grosor de 0,6 m y gálibo de 2,5 m son
+  parámetros de autor, sin cotas medidas; el plano conserva los anclajes de acceso.
+- El material del río usa reflejo aproximado del cielo y ondulación fina; los colores y
+  ondas son una interpretación visual, sin medir turbidez, corriente ni profundidad.
+- Se omiten 145 troncos sobre calzadas, calles peatonales y caminos renderizados, con
+  margen de 25 cm. Las copas
+  publicadas se conservan como dato de origen; no se eliminan árboles reales del catálogo
+  ni se impide que una copa de acera dé sombra sobre el asfalto.
+- El pavimento peatonal se recorta contra calzadas de la misma cota; el caso señalado por
+  el usuario es La Vega con Alameda del Río. Los peatones usan tramos continuos de acera
+  o vía peatonal, sin inventar cruces entre fachadas ni itinerarios de pasos de cebra.
+- Los separadores pintados se aproximan con caras de 12–1.200 m² entre al menos dos vías
+  de sentido único. Se descartan los interiores formados solo por vías de glorieta.
+  Dos extremos a menos de 24 m cortados por el mismo borde del mapa pueden cerrar una
+  huella; ese cierre no se añade al grafo de tráfico. Se rellenan los huecos entre las
+  bandas de calzada, con un alcance máximo de 8 m desde su borde y perfiles próximos
+  en altura (diferencia menor de 1,5 m), sin ocupar edificios, jardines, agua, arbolado
+  existentes. Los ejes peatonales se conservan, pero no generan baldosa donde cruzan
+  estos separadores. El relleno tiene asfalto y pintura blanca (rayas de 45 cm cada
+  1,5 m, 6 mm sobre el asfalto), sin volumen de acera ni bordillo. Colocación y orientación
+  de las rayas son de autor: no se han vectorizado las marcas individuales de la foto.
+  Es una regla global por topología, no una clasificación exhaustiva de isletas físicas
+  y pintadas. Referencias confirmadas por el usuario: accesos del VII Centenario y giro
+  hacia Calle Iro; la ortofoto PNOA publicada permite revisar sus huellas.
+- En Remedios, el eje OSM del tranvía se incluye como soporte interno de rasante para
+  unir tablero y accesos. No se añade al grafo de calles. La prolongación de 2 m del
+  tablero es de autor y evita que su junta oblicua deje fuera el extremo del tranvía;
+  franja y raíles siguen el perfil común en lugar del terreno rebajado bajo el puente.

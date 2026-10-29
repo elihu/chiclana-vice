@@ -6,6 +6,7 @@ import { detailCells, gfx, streetEnvironment, world } from '../core/state.js';
 import { inBuilding, nearestRoad } from './spatial.js';
 import { mat, mergeParts, shareInstanceShader } from '../engine/materials.js';
 import { foliageMaterial } from '../engine/foliage.js';
+import { createRoadSpace } from './road-space.js';
 import { rnd } from '../core/random.js';
 
 // Partition static vegetation without changing any instance transform or color.
@@ -121,6 +122,10 @@ export function buildTrees() {
       counts.market++;
     }
   }
+  // También las calles peatonales y caminos tienen pavimento transitable.
+  const roadSpace = createRoadSpace(world.city.roads, []);
+  counts.removedOnRoad = 0;
+  let woodK = 0;
   const branchGeometry = new THREE.CylinderGeometry(0.045, 0.09, 2, 5),
     trunkGeometry = new THREE.CylinderGeometry(0.13, 0.23, 3.3, 7),
     parts = [{ geometry: trunkGeometry, matrix: new THREE.Matrix4() }],
@@ -151,7 +156,9 @@ export function buildTrees() {
     color = new THREE.Color();
   let k = 0,
     smallK = 0;
-  points.forEach((p, i) => {
+  points.forEach((p) => {
+    const keep = !roadSpace.covers(p[0], p[1], 0.25);
+    if (!keep) counts.removedOnRoad++;
     let randomSize = 0.8 + rnd() * 0.55,
       size = p.length === 3 ? clamp(p[2] / 1.6, 0.6, 1.8) : randomSize,
       h = 3.3 * size,
@@ -160,7 +167,7 @@ export function buildTrees() {
     dummy.rotation.set(0, 0, 0);
     dummy.scale.set(size, size, size);
     dummy.updateMatrix();
-    wood.setMatrixAt(i, dummy.matrix);
+    if (keep) wood.setMatrixAt(woodK++, dummy.matrix);
     const small = p.length === 3 && p[2] <= 2,
       crownMesh = small ? smallCrowns : crowns;
     for (let j = 0; j < 5; j++) {
@@ -178,12 +185,15 @@ export function buildTrees() {
         (1.4 + rnd() * 0.35) * size,
       );
       dummy.updateMatrix();
-      const index = small ? smallK++ : k++;
-      crownMesh.setMatrixAt(index, dummy.matrix);
+      // Consumir el mismo azar incluso en árboles retirados conserva los demás actores.
       color.setHSL(0.23 + rnd() * 0.08, 0.18 + rnd() * 0.13, 0.24 + rnd() * 0.13);
-      crownMesh.setColorAt(index, color);
+      if (keep) {
+        const index = small ? smallK++ : k++;
+        crownMesh.setMatrixAt(index, dummy.matrix);
+        crownMesh.setColorAt(index, color);
+      }
     }
-    if (!streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
+    if (keep && !streetEnvironment.colliders.some((o) => Math.hypot(o.x - p[0], o.z - p[1]) < 1))
       streetEnvironment.colliders.push({
         x: p[0],
         z: p[1],
@@ -191,13 +201,15 @@ export function buildTrees() {
         y: baseY,
       });
   });
+  wood.count = woodK;
   crowns.count = k;
+  smallCrowns.count = smallK;
   wood.castShadow = crowns.castShadow = smallCrowns.castShadow = true;
   crowns.receiveShadow = smallCrowns.receiveShadow = true;
   addVegetationCells(vegetation, wood, 'wood');
   addVegetationCells(vegetation, crowns, 'crowns');
   addVegetationCells(vegetation, smallCrowns, 'crowns-small');
-  streetEnvironment.trees = points.length;
+  streetEnvironment.trees = woodK;
   // Low shrubs use the same compact instancing approach in mapped green areas.
   // Copas bajas de la capa (ver tools/export-vegetation.mjs): arbustos a su tamaño.
   const layerShrubs = (layer?.shrubs ?? []).map((p) => {

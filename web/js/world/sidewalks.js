@@ -5,6 +5,7 @@ import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { pInside } from '../core/math.js';
 import { inBuilding } from './spatial.js';
 import { tramBlocks } from './tram.js';
+import { createRoadSpace, carvePavement } from './road-space.js';
 
 // Aceras con bordillo y faldones de las calzadas. Todo es visual: no cambia las cotas que
 // devuelve surfaceHeightAt ni la transitabilidad. Las reglas están en
@@ -69,6 +70,7 @@ export function buildSidewalks(slabs, paved, include) {
   };
   const free = (x, z, a, b, len) =>
     !inBuilding(x, z, cfg.buildingMargin) &&
+    world.surfaces?.dividerHeightAt(x, z) == null &&
     !nearOther(x, z, a, b, len) &&
     !tramBlocks(x, z, cfg.junctionMargin) &&
     !platforms.some((p) => pInside(x, z, p.polygon)) &&
@@ -225,8 +227,24 @@ export function buildSidewalks(slabs, paved, include) {
     }
   }
   if (!curb.length) return stats;
+  // También las caras verticales se recortan: recortar solo la baldosa dejaba
+  // tabiques de bordillo atravesando los cruces. Conservar el borde propio (2 cm).
+  const roadSpace = createRoadSpace(
+      world.city.roads.map((r) => ({ ...r, w: Math.max(0.1, r.w - 0.04) })),
+      paved.nonDrivableTypes,
+      (x, z, id) => surfaceHeightAt(x, z, null, id),
+      true,
+    ),
+    cut = carvePavement(curb, [], roadSpace, (x, z) => surfaceHeightAt(x, z)),
+    visible = [];
+  for (let i = 0; i < cut.position.length; i += 9) {
+    const x = (cut.position[i] + cut.position[i + 3] + cut.position[i + 6]) / 3,
+      z = (cut.position[i + 2] + cut.position[i + 5] + cut.position[i + 8]) / 3;
+    if (world.surfaces?.dividerHeightAt(x, z) != null) continue;
+    visible.push(...cut.position.slice(i, i + 9));
+  }
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(curb, 3));
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(visible, 3));
   geo.computeVertexNormals();
   const mesh = new THREE.Mesh(geo, mat(cfg.curbColor, { side: THREE.DoubleSide, roughness: 0.95 }));
   mesh.name = 'street-curbs';

@@ -139,7 +139,10 @@
         "commercialUses": {
           "description": "Valores de currentUse del Catastro que dan siempre un bajo comercial.",
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         },
         "blockMinimumDwellings": {
@@ -160,7 +163,10 @@
         "mainRoadTypes": {
           "description": "Tipos de vía de OSM que son calles principales o peatonales del centro (locales y portales); el resto son calles menores (casas y cocheras).",
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         }
       }
@@ -360,7 +366,10 @@
           "properties": {
             "roadTypes": {
               "type": "array",
-              "items": { "type": "string", "minLength": 1 },
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
               "uniqueItems": true,
               "description": "Tipos de vía OSM con acera."
             },
@@ -372,12 +381,17 @@
               "$ref": "#/$defs/positive",
               "description": "Ancho mínimo al recortar contra edificios; por debajo no se dibuja acera."
             },
-            "curbWidth": { "$ref": "#/$defs/positive" },
+            "curbWidth": {
+              "$ref": "#/$defs/positive"
+            },
             "curbHeight": {
               "$ref": "#/$defs/positive",
               "description": "Altura de la acera sobre la cota de la calzada."
             },
-            "curbColor": { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+            "curbColor": {
+              "type": "string",
+              "pattern": "^#[0-9a-f]{6}$"
+            },
             "step": {
               "$ref": "#/$defs/positive",
               "description": "Longitud máxima de cada pieza de acera, en metros."
@@ -1257,6 +1271,11 @@
                   },
                   "lateralOffset": {
                     "type": "number"
+                  },
+                  "endExtension": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Prolongación de autor en metros en ambos extremos del corredor; por defecto 0."
                   }
                 }
               },
@@ -1340,6 +1359,11 @@
                         },
                         "lateralOffset": {
                           "type": "number"
+                        },
+                        "endExtension": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Prolongación de autor en metros en ambos extremos del corredor; por defecto 0."
                         }
                       }
                     }

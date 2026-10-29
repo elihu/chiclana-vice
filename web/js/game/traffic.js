@@ -1,10 +1,11 @@
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { POPULATION } from '../../game-data.js';
 import { blocked, inBuilding, safePoint } from '../world/spatial.js';
-import { cars, graph, people, player, segments, session, traffic } from '../core/state.js';
+import { world, cars, graph, people, player, segments, session, traffic } from '../core/state.js';
 import { clamp, d, lerp } from '../core/math.js';
 import { createCar } from './vehicles.js';
 import { animateWalk, createPerson } from './people.js';
+import { createRoadSpace } from '../world/road-space.js';
 import { rnd } from '../core/random.js';
 
 export function spawnTraffic() {
@@ -32,17 +33,56 @@ export function spawnTraffic() {
     Object.assign(car, p);
     cars.push(car);
   }
-  // 28 pedestrians on segments of at least 8 m; bounded attempts keep start-up predictable.
-  for (
-    let i = 0, attempts = 0;
-    i < POPULATION.pedestrians && attempts < POPULATION.pedestrianAttempts;
-    attempts++
-  ) {
-    let s = segments[Math.floor(rnd() * segments.length)];
-    if (s.length < 8) continue;
-    let person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i++ % 4]);
-    // Fase de paso propia (sin consumir el azar compartido): no andan todos al compás.
-    Object.assign(person, { x: s.a[0], z: s.a[1], s, u: rnd(), dir: 1, phase: i * 2.39 });
+  // Recorridos continuos sobre aceras o vías peatonales; nunca sobre otra calzada.
+  const paved = world.cityDesign.pavements,
+    space = createRoadSpace(world.city.roads, paved.nonDrivableTypes, (x, z, id) =>
+      surfaceHeightAt(x, z, null, id),
+    ),
+    walks = [];
+  for (const segment of segments) {
+    const pedestrian = paved.pedestrianTypes.includes(segment.type);
+    if (!pedestrian && (!paved.sidewalks.roadTypes.includes(segment.type) || segment.length < 15))
+      continue;
+    const dx = (segment.b[0] - segment.a[0]) / segment.length,
+      dz = (segment.b[1] - segment.a[1]) / segment.length,
+      n = Math.ceil(segment.length),
+      rise = pedestrian ? 0 : paved.sidewalks.curbHeight;
+    for (const side of pedestrian ? [0] : [-1, 1]) {
+      const offset = side * (segment.width / 2 + paved.sidewalks.width / 2),
+        at = (k) => [
+          lerp(segment.a[0], segment.b[0], k / n) - dz * offset,
+          lerp(segment.a[1], segment.b[1], k / n) + dx * offset,
+        ];
+      let start = null;
+      for (let k = 0; k <= n + 1; k++) {
+        const point = at(Math.min(k, n)),
+          y = surfaceHeightAt(...point, null, segment.roadId),
+          free =
+            k <= n &&
+            world.surfaces?.dividerHeightAt(...point) == null &&
+            !space.covers(...point, 0.35, y) &&
+            !blocked(...point, 0.3, y);
+        if (free && start === null) start = k;
+        if (!free && start !== null) {
+          const length = ((k - 1 - start) * segment.length) / n;
+          if (length >= 8) walks.push({ a: at(start), b: at(k - 1), length, s: segment, rise });
+          start = null;
+        }
+      }
+    }
+  }
+  for (let i = 0; i < POPULATION.pedestrians && walks.length; i++) {
+    const walk = walks[Math.floor(rnd() * walks.length)],
+      person = createPerson(['#d5be8a', '#697b70', '#8d6d62', '#9cadaa'][i % 4]);
+    Object.assign(person, {
+      x: walk.a[0],
+      z: walk.a[1],
+      s: walk.s,
+      walk,
+      u: rnd(),
+      dir: 1,
+      phase: (i + 1) * 2.39,
+    });
     people.push(person);
   }
 }
@@ -99,18 +139,21 @@ export function stepAgent(c, dt, isCop = false) {
 
 export function updatePedestrians(dt) {
   for (const p of people) {
-    p.u += (p.dir * dt * 1.05) / p.s.length;
+    const walk = p.walk;
+    p.u += (p.dir * dt * 1.05) / walk.length;
     if (p.u > 1 || p.u < 0) {
       p.dir *= -1;
       p.u = clamp(p.u, 0, 1);
     }
-    let x = lerp(p.s.a[0], p.s.b[0], p.u),
-      z = lerp(p.s.a[1], p.s.b[1], p.u),
-      a = Math.atan2(p.s.b[0] - p.s.a[0], p.s.b[1] - p.s.a[1]);
-    x += Math.cos(a) * (p.s.width / 2 + 0.5);
-    z -= Math.sin(a) * (p.s.width / 2 + 0.5);
+    const x = lerp(walk.a[0], walk.b[0], p.u),
+      z = lerp(walk.a[1], walk.b[1], p.u),
+      a = Math.atan2(walk.b[0] - walk.a[0], walk.b[1] - walk.a[1]);
+    p.x = x;
+    p.z = z;
     p.mesh.visible = !inBuilding(x, z, 0.2) && Math.hypot(x - player.x, z - player.z) < 140;
-    p.surfaceY = surfaceHeightAt(x, z, p.surfaceY ?? null, p.s.roadId);
+    p.surfaceY =
+      surfaceHeightAt(x, z, p.surfaceY == null ? null : p.surfaceY - walk.rise, p.s.roadId) +
+      walk.rise;
     p.mesh.position.set(x, p.surfaceY, z);
     p.mesh.rotation.y = a + (p.dir < 0 ? Math.PI : 0);
     animateWalk(p, session.t * 7 + p.phase, 0.35);

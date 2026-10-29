@@ -45,6 +45,8 @@ documento; los demás enlazan a él.
 - [Interfaz: diseño, revisión y pendientes](PROPUESTA-UI.md): HUD, menús y joystick
   integrados para `v2.0.0`, tras las revisiones del usuario en móvil. Distingue el alcance
   aceptado, los límites de verificación y las mejoras opcionales.
+- [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado en calzadas,
+  pavimentos, rotondas, pasos inferiores y peatones; tanda local pendiente de revisión.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
   faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
   `v1.7.0`.

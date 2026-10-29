@@ -524,3 +524,28 @@ uv run --no-project --with shapely python tools/complete-crossings.py --osm ~/.c
 node tools/export-provenance.mjs
 npm test
 ```
+
+## 12. Semántica de las vías ya publicadas
+
+```sh
+uv run --no-project python tools/export-road-semantics.py --osm ~/.cache/chiclana-vice/sources/osm-ampliado.xml
+node tools/export-provenance.mjs
+npm test
+```
+
+Añade `junction: "roundabout"`, `tunnel: true` y `layer` cuando existen en el OSM local,
+por el identificador de cada vía de `osm-world.json`, sin volver a recortar edificios ni
+regenerar los ejes. Actualiza el checksum OSM de `world.json`; es idempotente. Si se vuelve
+a generar todo el mapa, ejecutar este paso después de `prepare-world.mjs`.
+
+`map-corrections.json` admite también `area.remove`, con `area: {index, expectFirst}` y
+`expectKind`. Retira el área solo en memoria después de comprobar el índice, el primer
+vértice y el tipo. La cubeta de la Alameda usa esa operación por petición del usuario;
+no se borra de la capa OSM publicada. Si se retira una cubeta, quitar también su anclaje
+correspondiente de `city-design.json.terrainSurfaces.water.features`.
+
+El conversor comprueba que solo cambian etiquetas y checksums antes de renovar los hashes
+de entrada de `tree-candidates.json` y la huella de su revisión. No cambia candidatos,
+identificadores ni decisiones. Una diferencia de geometría obliga a regenerar y revisar
+las copas; `--previous-osm` y `--previous-world` permiten aportar las instantáneas derivadas
+anteriores para una migración inicial de metadatos. No son originales OSM ni Catastro.

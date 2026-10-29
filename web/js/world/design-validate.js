@@ -916,6 +916,16 @@ export function validateCorrections(json) {
         fail(`${p}.expect`, 'se esperaba {name}');
       else onlyKeys(c.expect, ['name'], `${p}.expect`);
     },
+    'area.remove': (c, p) => {
+      if (!isObject(c.area)) fail(p + '.area', 'se esperaba {index, expectFirst}');
+      else {
+        onlyKeys(c.area, ['index', 'expectFirst'], p + '.area');
+        index(c.area.index, p + '.area.index');
+        point(c.area.expectFirst, p + '.area.expectFirst');
+      }
+      if (typeof c.expectKind !== 'string' || !c.expectKind)
+        fail(p + '.expectKind', 'se esperaba el tipo del área');
+    },
     'area.movePoint': (c, p) => {
       if (!isObject(c.area)) fail(`${p}.area`, 'se esperaba {index, expectFirst}');
       else {
@@ -947,6 +957,7 @@ export function validateCorrections(json) {
     'road.insertPoint': ['road', 'after', 'expectAfter', 'at'],
     'road.add': ['add'],
     'road.remove': ['road', 'expect'],
+    'area.remove': ['area', 'expectKind'],
     'area.movePoint': ['area', 'index', 'expect', 'to'],
     'building.moveVertex': ['building', 'vertex', 'expect', 'to'],
   };

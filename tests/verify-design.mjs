@@ -1128,10 +1128,17 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
   );
   const touched = new Set(published.corrections.map((c) => c.road?.id).filter(Boolean));
   assert(
-    published.corrections.every((c) => c.op === 'road.set'),
+    published.corrections.every((c) => ['road.set', 'area.remove'].includes(c.op)),
     'ampliar esta comprobación si se publican otras operaciones',
   );
-  assert.equal(JSON.stringify(l.areas), JSON.stringify(base.areas));
+  const removedAreas = new Set(
+    published.corrections.filter((c) => c.op === 'area.remove').map((c) => c.area.index),
+  );
+  assert.deepEqual(
+    l.areas,
+    base.areas.filter((_, i) => !removedAreas.has(i)),
+    'solo se retiran las áreas autorizadas',
+  );
   assert.equal(JSON.stringify(l.buildings), JSON.stringify(base.buildings));
   l.roads.forEach((r, i) => {
     if (!touched.has(r.id)) assert.deepEqual(r, base.roads[i], 'vía sin corrección intacta');

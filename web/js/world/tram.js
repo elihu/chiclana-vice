@@ -502,12 +502,14 @@ export function buildTram() {
         points[i][0] + normal[i][0] * offset,
         points[i][1] + normal[i][1] * offset,
       ],
-      floor = (p) => surfaceHeightAt(p[0], p[1]) + cfg.bedHeight;
+      support = world.surfaces?.profiles.has('tram:' + track.id) ? 'tram:' + track.id : null,
+      level = (p) => surfaceHeightAt(p[0], p[1], null, support),
+      floor = (p) => level(p) + cfg.bedHeight;
 
     // Franja: un cuadrilátero por muestra. Empotrada (lane, paved): cota del eje en ambos lados
     // (sigue a la calzada, plana en sentido transversal); de césped: cota de cada esquina.
     for (let i = 1; i < points.length; i++) {
-      const centre = [i - 1, i].map((k) => surfaceHeightAt(points[k][0], points[k][1])),
+      const centre = [i - 1, i].map((k) => level(points[k])),
         kind = kinds[i - 1],
         flat = kind !== 'grass',
         corner = (k, s, w = half, lift = 0) => {
