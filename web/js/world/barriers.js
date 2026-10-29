@@ -10,7 +10,7 @@ import { inBuilding } from './spatial.js';
 // relieve por sus extremos. Hay hueco donde una vía de OSM cruza el trazo (también peatonal: suelen
 // ser entradas), con su media anchura más `roadClearance` a cada lado; una vía que solo corre en
 // paralelo no lo corta. También junto a las puertas y dentro de los edificios. Los muros de
-// contención van aparte (V3).
+// contención van aparte (V3). Cada tramo dibujado bloquea el paso (spatial.js → inBarrier).
 const SOLID_KINDS = ['wall', 'city_wall', 'hedge'],
   FOOT = 0.15; // m que el pie se hunde bajo el terreno, para no dejar rendija en cuesta
 
@@ -162,6 +162,13 @@ export function buildBarriers() {
           y1 = groundHeightAt(...q);
         stats.pieces++;
         stats.meters += len / pieces;
+        // Colisión (spatial.js → inBarrier, crossesWall): el tramo con su media anchura.
+        streetEnvironment.barrierSegments.push({
+          a: p,
+          b: q,
+          half: SOLID_KINDS.includes(line.kind) ? rule.thickness / 2 : rule.postWidth / 2,
+          y: (y0 + y1) / 2,
+        });
         if (SOLID_KINDS.includes(line.kind)) {
           prism(
             solid,

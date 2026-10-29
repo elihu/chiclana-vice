@@ -1,4 +1,12 @@
-import { chunks, detailCells, gfx, pointer, world as runtimeWorld } from '../web/js/core/state.js';
+import {
+  chunks,
+  detailCells,
+  gfx,
+  pointer,
+  streetEnvironment,
+  world as runtimeWorld,
+} from '../web/js/core/state.js';
+import { crossesWall, inBarrier } from '../web/js/world/spatial.js';
 import { updatePlayer } from '../web/js/game/player.js';
 import { createRoadSpace } from '../web/js/world/road-space.js';
 import { spawnSync } from 'node:child_process';
@@ -75,6 +83,32 @@ assert(
   assert(g.pInside(5, 5, ring) && g.pInside(5, 5, hole), 'courtyard lies within outer ring');
 }
 assert(!g.blocked(g.player.x, g.player.z, 1), 'spawn center is clear');
+// Vallas y muros (V2 de PLAN-VALLAS): un muro bloquea y no se cruza en línea recta; a su lado se
+// puede estar; las puertas quedan libres y un puente pasa por encima.
+{
+  const walls = streetEnvironment.barrierSegments;
+  assert(walls.length > 1000, 'tramos de vallas con colisión');
+  const s = walls.reduce((best, w) =>
+      Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]) >
+      Math.hypot(best.b[0] - best.a[0], best.b[1] - best.a[1])
+        ? w
+        : best,
+    ),
+    len = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]),
+    mx = (s.a[0] + s.b[0]) / 2,
+    mz = (s.a[1] + s.b[1]) / 2,
+    nx = -(s.b[1] - s.a[1]) / len,
+    nz = (s.b[0] - s.a[0]) / len;
+  assert(inBarrier(mx, mz, 0.3) && g.blocked(mx, mz, 0.3), 'el muro bloquea');
+  assert(
+    crossesWall(mx - nx * 1.5, mz - nz * 1.5, mx + nx * 1.5, mz + nz * 1.5),
+    'no se cruza un muro en línea recta',
+  );
+  assert(!inBarrier(mx + nx * 1.5, mz + nz * 1.5, 0.3), 'a 1,5 m del muro no hay choque');
+  assert(!inBarrier(mx, mz, 0.3, s.y + 6), 'sobre un puente no se choca con el muro de abajo');
+  for (const [x, z] of runtimeWorld.barriers.gates)
+    assert(!inBarrier(x, z, 0.3), `la puerta ${x},${z} queda libre`);
+}
 console.log(
   'spawn',
   g.player.x,

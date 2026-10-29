@@ -56,6 +56,8 @@ export const facadeWork = {
 };
 export const streetEnvironment = {
   colliders: [],
+  // Tramos de vallas y muros (world/barriers.js): {a, b, half, y}, con media anchura y cota del pie.
+  barrierSegments: [],
   lamps: 0,
   benches: 0,
   bollards: 0,
