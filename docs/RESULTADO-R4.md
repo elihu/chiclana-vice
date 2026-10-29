@@ -66,3 +66,73 @@ Perfil del ensayo descartado, con el mismo procedimiento del paso 1:
 | `updateCamera` | `engine/camera.js:116`       |                        27,574 |
 | `cameraSweep`  | `engine/camera.js:61`        |                        14,598 |
 | `stepAgent`    | `game/traffic.js:90`         |                        14,268 |
+
+## Paso 3: reglas de ESLint sin activar
+
+La comprobación temporal de `complexity: [warn, 40]` y
+`max-lines-per-function: [warn, 150]`, limitada a `web/js/`, da 12 avisos en 11
+funciones. No se activa ninguna de las reglas ni se amplía esta fase para partir
+funciones. ESLint usa los valores predeterminados para contar líneas, incluidos
+comentarios y líneas en blanco.
+
+| Función                 | Archivo                            | Líneas si supera 150 | Complejidad si supera 40 |
+| ----------------------- | ---------------------------------- | -------------------: | -----------------------: |
+| `init`                  | `app.js:55`                        |                  192 |                        — |
+| `carModel`              | `game/car-model.js:586`            |                  176 |                        — |
+| `buildBody`             | `game/people.js:85`                |                  182 |                        — |
+| `composeBuilding`       | `world/facade-composer.js:197`     |                    — |                       43 |
+| `createFacadeKit`       | `world/facade-kit.js:39`           |                  257 |                        — |
+| `buildUrbanFurniture`   | `world/furniture.js:15`            |                  205 |                        — |
+| `validateSurfaceDesign` | `world/surface-validate.js:17`     |                  263 |                      135 |
+| `validateCityDesign`    | `world/validate-city.js:11`        |                  388 |                        — |
+| `validateCorrections`   | `world/validate-corrections.js:18` |                  153 |                        — |
+| `validateFacadeDesigns` | `world/validate-facades.js:80`     |                  353 |                        — |
+| `checkNode`             | `world/validate-facades.js:155`    |                    — |                       50 |
+
+## Estado final conservado
+
+Solo cambia este informe. `git diff main -- web tests eslint.config.mjs` está vacío.
+No queda ninguna optimización ni cambio de configuración en la rama.
+
+Se repite el perfil sobre el estado final (`conservado-rama.cpuprofile`), con
+451,513 ms de muestras dentro de `update`:
+
+| Función propia    | Archivo y línea              | Tiempo propio muestreado (ms) |
+| ----------------- | ---------------------------- | ----------------------------: |
+| `roadAt`          | `world/surface-model.js:716` |                       163,522 |
+| `inBuilding`      | `world/spatial.js:49`        |                        43,490 |
+| `updateCamera`    | `engine/camera.js:112`       |                        28,082 |
+| `dividerHeightAt` | `world/surface-model.js:807` |                        21,593 |
+| `pInside`         | `core/math.js:9`             |                        19,120 |
+
+Medianas finales de tres, misma máquina y Node v26.8.2. La referencia main es la
+tanda alternada anterior; la rama conservada se mide después de la reversión,
+sin otras verificaciones concurrentes:
+
+| Medida              |         main | Rama conservada |
+| ------------------- | -----------: | --------------: |
+| Arranque total (ms) | 6.638,575014 |    7.876,531709 |
+| update (ms/paso)    |  0,266123016 |     0,291067938 |
+
+| Ejecución de rama conservada | Arranque (ms) | update (ms/paso) |
+| ---------------------------- | ------------: | ---------------: |
+| 1                            |  6.958,962423 |      0,268369667 |
+| 2                            |  9.070,092985 |      0,291067938 |
+| 3                            |  7.876,531709 |      0,293326813 |
+
+Los JSON son `conservado-rama-{1,2,3}.json`. Hay dispersión incluso con el código
+idéntico a main; los tiempos finales no demuestran una regresión causada por
+código ni una mejora. No se repite la medición buscando un resultado favorable.
+El ensayo se mantiene descartado por el umbral literal de su comparación.
+
+## Verificación de cierre
+
+- Huella final con relieve: idéntica a `huella-main.json`, sin omitir claves.
+- Huella final sin relieve: idéntica a `huella-main-plano.json`, sin omitir claves;
+  copia de `git archive HEAD`, sin `terrain.json` ni `terrain.bin`.
+- Ambas comparan escena, render, rutas, recursos y comportamiento de 600 pasos,
+  incluido el DOM inicial y final.
+- Comprobación completa: `npm run check` (lint sin avisos, formato y verificadores).
+- Las huellas y los bancos emiten el aviso del arnés sobre `addColorStop` al
+  preparar el suelo cercano, tanto en main como en la rama; no impide las huellas.
+- Sin capturas, Chrome, push ni merge. No se cambia `docs/ESTADO.md`.
