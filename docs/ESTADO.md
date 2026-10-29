@@ -1,6 +1,6 @@
 # Estado y pendientes
 
-Revisión: 28/10/2026. Este archivo describe solo el estado actual; la historia está en Git
+Revisión: 29/10/2026. Este archivo describe solo el estado actual; la historia está en Git
 y en las releases. Se actualiza en `main` al integrar ramas.
 
 ## Estado
@@ -36,6 +36,17 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   FrontSide se vería a través de los edificios con la cámara pegada a un muro o en
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
+
+## Integrado sin publicar
+
+- **Revisión del mundo** ([REVISION-MUNDO.md](REVISION-MUNDO.md), rama
+  `fix/mundo-transitabilidad`, integrada el 29/10/2026 con el visto bueno del usuario en
+  el navegador): río más claro con reflejo del cielo, sin la cubeta de la Alameda; 145
+  troncos fuera de las vías pavimentadas; pavimento peatonal y aceras recortados contra las
+  calzadas; glorietas, túneles y niveles de OSM; tablero y pasos inferiores del VII
+  Centenario separados; peatones sobre recorridos continuos; separadores entre ramales
+  como calzada; junta del tranvía con Remedios. `npm run check` pasa; sin FPS medidos ni
+  prueba en móvil.
 
 ## Novedades de `v2.0.0`
 

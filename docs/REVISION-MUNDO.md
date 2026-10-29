@@ -2,9 +2,9 @@
 
 Fecha: 28/10/2026. Rama: `fix/mundo-transitabilidad`. El usuario prioriza agua y elementos
 fuera de sitio, junto con calles, rotondas, puentes y peatones. Se trabaja sobre el mapa
-actual; no se ha autorizado publicar esta tanda.
+actual; el usuario dio el visto bueno el 29/10/2026 y está integrada en `main` sin publicar.
 
-## Tanda implementada, pendiente de revisión
+## Tanda implementada (integrada el 29/10/2026, sin publicar)
 
 - Río más claro, reflejo conectado al cielo de cada hora y ondulación fina con menos
   deformación. Material compartido, sin pases adicionales de reflejo.
