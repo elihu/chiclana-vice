@@ -11,7 +11,7 @@ export function prepareTerrainPlacement() {
     world.terrain,
     world.cityDesign?.terrainSurfaces,
     world.vegetation?.trees,
-    { tracks: world.tram?.tracks ?? [], width: world.cityDesign.tram.stripWidth },
+    { tracks: world.tram?.tracks ?? [], width: world.cityDesign?.tram?.stripWidth },
   );
   for (const b of world.city.buildings) {
     let high = -Infinity,
