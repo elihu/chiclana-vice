@@ -48,49 +48,12 @@ export function modelMaterial(color, extra = {}) {
   return modelMaterialCache.get(key);
 }
 
-export function modelCylinder(top, bottom, height, segments) {
-  return modelGeometry(
-    'cylinder:' + top + ',' + bottom + ',' + height + ',' + segments,
-    () => new THREE.CylinderGeometry(top, bottom, height, segments),
-  );
-}
-
 export function modelBox(w, h, l, material, x = 0, y = 0, z = 0) {
   let g = modelGeometry('box:' + w + ',' + h + ',' + l, () => new THREE.BoxGeometry(w, h, l)),
     m = new THREE.Mesh(g, material);
   m.position.set(x, y, z);
   m.castShadow = m.receiveShadow = true;
   return m;
-}
-
-export function bevelGeometry(w, h, l, bevel) {
-  return modelGeometry('bevel:' + w + ',' + h + ',' + l + ',' + bevel, () => {
-    let shape = new THREE.Shape();
-    shape.moveTo(-w / 2 + bevel, -l / 2 + bevel);
-    shape.lineTo(w / 2 - bevel, -l / 2 + bevel);
-    shape.lineTo(w / 2 - bevel, l / 2 - bevel);
-    shape.lineTo(-w / 2 + bevel, l / 2 - bevel);
-    shape.closePath();
-    let g = new THREE.ExtrudeGeometry(shape, {
-      depth: h - 2 * bevel,
-      bevelEnabled: true,
-      bevelThickness: bevel,
-      bevelSize: bevel,
-      bevelSegments: 2,
-      steps: 1,
-      curveSegments: 1,
-    });
-    g.rotateX(-Math.PI / 2);
-    g.translate(0, -h / 2 + bevel, 0);
-    return g;
-  });
-}
-
-export function sculptedBox(w, h, l, material, x, y, z, bevel = 0.06) {
-  let mesh = new THREE.Mesh(bevelGeometry(w, h, l, bevel), material);
-  mesh.position.set(x, y, z);
-  mesh.castShadow = true;
-  return mesh;
 }
 
 // Merge transformed parts (position + normal) into one indexed geometry; mirrored parts keep winding.
