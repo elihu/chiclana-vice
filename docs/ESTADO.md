@@ -41,6 +41,21 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
+## Integrado en `main` sin publicar
+
+- **Mapa ampliado** a toda la caja del minimapa, `[-820, 671.835, -1120, 650]` (de unos 1,67
+  a 2,64 km²): 11.771 partes de edificio (antes 7.862) y 1.019 vías, con el mismo origen;
+  los edificios anteriores no cambian ni de forma ni de color y el relieve es el mismo.
+  Revisado por el usuario en el navegador el 29/10/2026.
+- **Ortofoto PNOA 2025-07** en las 56 teselas (antes 2022-07), con un poco más de contraste en
+  el shader (`setOrthoContrast`, 1,15). Misma resolución; la Alameda aparece ya reformada.
+  Atribuciones actualizadas con permiso del usuario.
+- **Copas** detectadas sobre la imagen de 2025 con un umbral de verdor más bajo (ExG 0,04): 2.872
+  árboles y 1.491 arbustos.
+- Plan nuevo: [PLAN-COMERCIOS.md](PLAN-COMERCIOS.md).
+- Verificación: `npm run check` y Chrome con SwiftShader (normal y ligero). Sin medidas en
+  móvil con el mapa ampliado (un 50 % más de edificios).
+
 ## Novedades de `v2.1.0`
 
 Versión menor: mundo más transitable y motor más rápido, sin cambios en las partidas
@@ -238,5 +253,12 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   Alameda, Mercado y San Telmo), pero el móvil se mantiene a 90 FPS en las tres (ver
   «Estado»): simplificar balcones y postigos solo si un móvil más modesto lo pide.
 - Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo.
+
+- Mapa ampliado: medir FPS en el móvil con un 50 % más de edificios; revisar árboles y suelo
+  cercano con la ortofoto de 2025 (la limpieza de copas y sombras se ajustó con la de 2022) y
+  los 114 tramos de calle que el tráfico excluye por cruzar edificios (antes 58), casi todos
+  vías de servicio de OSM a través de naves.
+- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): sin empezar; antes de C1 el
+  usuario decide la altura de las naves (D8). Después, vallas y muros de parcela.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
