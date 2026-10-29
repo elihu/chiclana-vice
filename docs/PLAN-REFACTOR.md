@@ -140,8 +140,9 @@ Entrega: tabla de etapas de la referencia (mediana de tres).
 7. **Resto de rejillas** (`ground-floors.js`, `tram.js`, `shadow-proxies.js`) solo si la
    sustitución es directa; si no, anotarlo.
 
-Objetivo orientativo: arranque al menos un 30 % menor en `bench-startup`. Si un paso no
-mejora su etapa o la empeora, se revierte y se anota. Entrega: tabla antes/después por
+Objetivo orientativo: arranque al menos un 30 % menor en `bench-startup`. Un paso se
+revierte solo si el arranque total empeora más del 3 % (el ruido entre ejecuciones ronda
+ese valor), no por una etapa suelta; se anota. Entrega: tabla antes/después por
 etapa.
 
 ### Continuación de R1 (29/10/2026)
@@ -242,3 +243,12 @@ Entrega: ms por fotograma antes/después (mediana de tres). No afirmar FPS.
 GPU, memoria real, fluidez, FPS ni móvil. La mejora de arranque se mide en Node con DOM y
 WebGL simulados; en el navegador el tiempo real incluye descarga, compilación de shaders
 y GPU.
+
+### Cierre de R1 (29/10/2026)
+
+Tanda del revisor sobre la misma rama: `free()` de `sidewalks.js` consulta el agua con la
+rejilla sincronizada (`inWater`) y memoriza por tramo sus puntos, que comparten las piezas
+vecinas y el faldón (`free()` no tiene efectos). Huellas idénticas con y sin relieve.
+Mediana de tres, `main` frente a la rama: `buildStreetSurfaces` 4.262 → 3.250 ms,
+`spawnActors` 2.250 → 214 ms, arranque 10.267 → 7.173 ms (−30 %) y `update` 0,58 →
+0,27 ms por paso. El índice de extremos del paso 6 sigue descartado.
