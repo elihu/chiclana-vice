@@ -367,6 +367,67 @@ export function treeCandidateStatus(candidate, review) {
 }
 
 function installTreeReview(root, scene) {
+  const {
+    make,
+    toggle,
+    panel,
+    status,
+    candidatesInput,
+    reviewInput,
+    rect,
+    zoneId,
+    zones,
+    selected,
+    exclude,
+    save,
+    accept,
+    pilot,
+    remove,
+    overlay,
+  } = createTreeReviewPanel(root, scene);
+  const reviewState = { candidates: [], review: null, fingerprint: '', current: null };
+  const { redraw } = createTreeReviewRedraw({
+    make,
+    status,
+    zones,
+    selected,
+    overlay,
+    reviewState,
+  });
+  installTreeReviewActions({
+    make,
+    toggle,
+    panel,
+    status,
+    candidatesInput,
+    reviewInput,
+    rect,
+    zoneId,
+    zones,
+    exclude,
+    save,
+    accept,
+    pilot,
+    remove,
+    overlay,
+    reviewState,
+    redraw,
+  });
+  return (point) => {
+    if (panel.hidden || !reviewState.review) return;
+    reviewState.current =
+      reviewState.candidates
+        .filter((c) => Math.hypot(c.x - point.x, c.z - point.z) <= Math.min(10, c.r + 2))
+        .sort(
+          (a, b) =>
+            Math.hypot(a.x - point.x, a.z - point.z) - Math.hypot(b.x - point.x, b.z - point.z),
+        )[0] ?? null;
+    redraw();
+    return true;
+  };
+}
+
+function createTreeReviewPanel(root, scene) {
   const make = (tag, text) => {
     const e = document.createElement(tag);
     if (text) e.textContent = text;
@@ -414,17 +475,34 @@ function installTreeReview(root, scene) {
   overlay.name = 'debug-tree-candidates';
   overlay.visible = false;
   scene.add(overlay);
-  let candidates = [],
-    review = null,
-    fingerprint = '',
-    current = null;
+  return {
+    make,
+    toggle,
+    panel,
+    status,
+    candidatesInput,
+    reviewInput,
+    rect,
+    zoneId,
+    zones,
+    selected,
+    exclude,
+    save,
+    accept,
+    pilot,
+    remove,
+    overlay,
+  };
+}
+
+function createTreeReviewRedraw({ make, status, zones, selected, overlay, reviewState }) {
   const redraw = () => {
     for (const child of [...overlay.children]) {
       child.geometry.dispose();
       child.material.dispose();
       overlay.remove(child);
     }
-    if (!review) return;
+    if (!reviewState.review) return;
     const positions = [],
       colors = [],
       totals = { pendiente: 0, aceptado: 0, excluido: 0 },
@@ -438,8 +516,8 @@ function installTreeReview(root, scene) {
         colors.push(color.r, color.g, color.b);
       }
     };
-    for (const c of candidates) {
-      const state = treeCandidateStatus(c, review),
+    for (const c of reviewState.candidates) {
+      const state = treeCandidateStatus(c, reviewState.review),
         color = new THREE.Color(palette[state]);
       totals[state]++;
       for (let k = 0; k < 24; k++) {
@@ -454,7 +532,7 @@ function installTreeReview(root, scene) {
         );
       }
     }
-    for (const { rect: r } of review.acceptedZones) {
+    for (const { rect: r } of reviewState.review.acceptedZones) {
       const corners = [
         [r[0], r[2]],
         [r[1], r[2]],
@@ -474,17 +552,39 @@ function installTreeReview(root, scene) {
     lines.renderOrder = 999;
     overlay.add(lines);
     zones.replaceChildren();
-    for (const zone of review.acceptedZones) {
+    for (const zone of reviewState.review.acceptedZones) {
       const option = make('option', zone.id);
       option.value = zone.id;
       zones.appendChild(option);
     }
-    status.textContent = `${candidates.length} copas: ${totals.pendiente} pendientes, ${totals.aceptado} aceptadas, ${totals.excluido} excluidas. Cambios en memoria: descarga para guardar.`;
-    selected.textContent = current
-      ? `${current.id}: ${treeCandidateStatus(current, review)} · radio ${current.r} m · ExG ${current.score}`
+    status.textContent = `${reviewState.candidates.length} copas: ${totals.pendiente} pendientes, ${totals.aceptado} aceptadas, ${totals.excluido} excluidas. Cambios en memoria: descarga para guardar.`;
+    selected.textContent = reviewState.current
+      ? `${reviewState.current.id}: ${treeCandidateStatus(reviewState.current, reviewState.review)} · radio ${reviewState.current.r} m · ExG ${reviewState.current.score}`
       : 'Toca cerca del centro de un anillo.';
     gfx.needsRender = true;
   };
+  return { redraw };
+}
+
+function installTreeReviewActions({
+  make,
+  toggle,
+  panel,
+  status,
+  candidatesInput,
+  reviewInput,
+  rect,
+  zoneId,
+  zones,
+  exclude,
+  save,
+  accept,
+  pilot,
+  remove,
+  overlay,
+  reviewState,
+  redraw,
+}) {
   const action = (fn) => async () => {
     try {
       await fn();
@@ -517,27 +617,27 @@ function installTreeReview(root, scene) {
           throw Error('Candidato inválido o repetido.');
         ids.add(c.id);
       }
-      fingerprint = sha256Hex(new TextEncoder().encode(text));
-      candidates = data.candidates;
-      review = {
+      reviewState.fingerprint = sha256Hex(new TextEncoder().encode(text));
+      reviewState.candidates = data.candidates;
+      reviewState.review = {
         version: 1,
-        candidatesSha256: fingerprint,
+        candidatesSha256: reviewState.fingerprint,
         acceptedZones: [],
         excludedCandidates: [],
       };
-      current = null;
+      reviewState.current = null;
       redraw();
     }),
   );
   reviewInput.addEventListener(
     'change',
     action(async () => {
-      if (!review) throw Error('Carga los candidatos primero.');
+      if (!reviewState.review) throw Error('Carga los candidatos primero.');
       if (!reviewInput.files[0]) return;
-      review = validateTreeReview(
+      reviewState.review = validateTreeReview(
         JSON.parse(await reviewInput.files[0].text()),
-        candidates,
-        fingerprint,
+        reviewState.candidates,
+        reviewState.fingerprint,
       );
       redraw();
     }),
@@ -549,41 +649,49 @@ function installTreeReview(root, scene) {
   accept.addEventListener(
     'click',
     action(() => {
-      if (!review) throw Error('Carga los candidatos primero.');
+      if (!reviewState.review) throw Error('Carga los candidatos primero.');
       const next = {
-        ...review,
+        ...reviewState.review,
         acceptedZones: [
-          ...review.acceptedZones,
+          ...reviewState.review.acceptedZones,
           {
             id: zoneId.value.trim(),
             rect: rect.value.split(',').map((v) => (v.trim() ? Number(v) : NaN)),
           },
         ],
       };
-      review = validateTreeReview(next, candidates, fingerprint);
+      reviewState.review = validateTreeReview(
+        next,
+        reviewState.candidates,
+        reviewState.fingerprint,
+      );
       redraw();
     }),
   );
   remove.addEventListener('click', () => {
-    if (!review) return;
-    review.acceptedZones = review.acceptedZones.filter((zone) => zone.id !== zones.value);
+    if (!reviewState.review) return;
+    reviewState.review.acceptedZones = reviewState.review.acceptedZones.filter(
+      (zone) => zone.id !== zones.value,
+    );
     redraw();
   });
   exclude.addEventListener('click', () => {
-    if (!current || !review) return;
-    const ids = review.excludedCandidates;
-    review.excludedCandidates = ids.includes(current.id)
-      ? ids.filter((id) => id !== current.id)
-      : [...ids, current.id];
+    if (!reviewState.current || !reviewState.review) return;
+    const ids = reviewState.review.excludedCandidates;
+    reviewState.review.excludedCandidates = ids.includes(reviewState.current.id)
+      ? ids.filter((id) => id !== reviewState.current.id)
+      : [...ids, reviewState.current.id];
     redraw();
   });
   save.addEventListener(
     'click',
     action(() => {
-      if (!review) throw Error('Carga los candidatos primero.');
-      validateTreeReview(review, candidates, fingerprint);
+      if (!reviewState.review) throw Error('Carga los candidatos primero.');
+      validateTreeReview(reviewState.review, reviewState.candidates, reviewState.fingerprint);
       const url = URL.createObjectURL(
-          new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }),
+          new Blob([JSON.stringify(reviewState.review, null, 2) + '\n'], {
+            type: 'application/json',
+          }),
         ),
         link = make('a');
       link.href = url;
@@ -592,16 +700,4 @@ function installTreeReview(root, scene) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }),
   );
-  return (point) => {
-    if (panel.hidden || !review) return;
-    current =
-      candidates
-        .filter((c) => Math.hypot(c.x - point.x, c.z - point.z) <= Math.min(10, c.r + 2))
-        .sort(
-          (a, b) =>
-            Math.hypot(a.x - point.x, a.z - point.z) - Math.hypot(b.x - point.x, b.z - point.z),
-        )[0] ?? null;
-    redraw();
-    return true;
-  };
 }
