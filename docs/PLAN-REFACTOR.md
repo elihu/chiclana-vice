@@ -144,6 +144,35 @@ Objetivo orientativo: arranque al menos un 30 % menor en `bench-startup`. Si un 
 mejora su etapa o la empeora, se revierte y se anota. Entrega: tabla antes/después por
 etapa.
 
+### Continuación de R1 (29/10/2026)
+
+Ejecución de los pasos 5–7 sobre `perf/indices-espaciales`, sin repetir el paso 3.
+Medianas de tres procesos separados, Node v26.8.2 en la misma máquina, con DOM y WebGL
+simulados. Las referencias y los JSON se guardan fuera del repositorio en
+`/tmp/chiclana-r1-cont/`.
+
+- **Paso 5 revertido.** La rejilla común y las cajas de polígonos conservaban la huella
+  con relieve. Frente al punto de partida de esta continuación, `prepareTerrainPlacement`
+  pasó de 372,34 a 383,10 ms y `buildRoadDetails` de 744,88 a 785,59 ms; la bajada de
+  `buildStreetSurfaces` de 4.171,81 a 4.116,63 ms no compensa el criterio del plan de
+  revertir pasos que empeoran sus etapas. Se conserva la implementación anterior de
+  `surface-model.js` y `road-space.js`.
+- **Paso 6 revertido por huella distinta.** `git bisect` en una copia temporal aisló
+  `0067233`. Cambiaban `scene.triangles` (−1.477 con relieve, −115 sin relieve),
+  `scene.trianglesWithoutInstancing`, `scene.strict` y `scene.unordered`. El conjunto
+  mutable de vecinos continuos se actualizaba por tramo, pero los `fallback` de aceras
+  cortas se ejecutan al terminar la calle: consultaban los vecinos del último tramo,
+  en lugar de los de su tramo original. Se revierte el paso completo sin rehacerlo.
+- **Paso 7: sustitución directa en bajos y tranvía.** Se conservan las muestras,
+  candidatos, orden y empates. `shadow-proxies.js` queda sin sustituir: agrupa buffers
+  por material y celda y luego los itera; `createGrid` no ofrece esa operación y el
+  reemplazo no es directo. Tras revertir el paso 6, las huellas con y sin relieve son
+  idénticas a `main`.
+
+El paso 3 sigue descartado por no mejorar, según la ejecución anterior. No se modifica
+`docs/ESTADO.md`; no se ejecutan Chrome, capturas, push ni merge. Estas medidas no
+acreditan GPU, FPS ni móvil.
+
 ## Fase R2. Partir los módulos grandes (`refactor/modulos-grandes`)
 
 Movimientos de código con huella idéntica (D3). Un commit por módulo.
