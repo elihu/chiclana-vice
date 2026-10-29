@@ -15,19 +15,34 @@ export const GROUND_KINDS = ['shop', 'block', 'house', 'garage'];
 // Los bloques en calle principal llevan locales junto al portal.
 export const GROUND_CODES = { shop: 1, blockShops: 2, blockHomes: 3, house: 4, garage: 5 };
 
+// El tipo de local (C2 de PLAN-COMERCIOS) va en el mismo atributo: código + FAMILY_STRIDE × tipo,
+// donde el tipo es la posición en groundFloors.families más uno (0 = genérico).
+export const FAMILY_STRIDE = 16;
+
+// Tipo de local de un comercio de OSM (`shop:bakery`…): el primero de `families` que lo incluye,
+// literalmente o con un comodín `clave:*`. Devuelve su posición más uno, o 0 si ninguno.
+export function shopFamily(families, type) {
+  if (!type) return 0;
+  const key = type.slice(0, type.indexOf(':') + 1) + '*';
+  const index = families.findIndex((f) => f.types.includes(type) || f.types.includes(key));
+  return index + 1;
+}
+
+// `shopNear` es el comercio de OSM delante del frente (`[x, z, tipo…]`) o null; el tipo de local
+// solo cuenta cuando ese comercio es el que hace del bajo un local.
 export function classifyGroundFloor(rules, { part, uses, floors, roadType, shopNear }) {
   const main = rules.mainRoadTypes.includes(roadType),
     use = part ? (uses[part[0]] ?? '') : '',
     units = part ? part[1] : 0,
     dwellings = part ? part[2] : 0;
   let kind;
-  if (shopNear) kind = 'shop';
-  else if (rules.commercialUses.includes(use)) kind = 'shop';
+  if (shopNear) return { kind: 'shop', main, family: shopFamily(rules.families, shopNear[2]) };
+  if (rules.commercialUses.includes(use)) kind = 'shop';
   else if (dwellings >= rules.blockMinimumDwellings && floors >= rules.blockMinimumFloors)
     kind = 'block';
   else if (units - dwellings >= rules.extraUnits) kind = main ? 'shop' : 'garage';
   else kind = main ? 'shop' : 'house';
-  return { kind, main };
+  return { kind, main, family: 0 };
 }
 
 // Clase del edificio entero (C1 de PLAN-COMERCIOS): nave industrial o gran superficie, con hasta
@@ -78,9 +93,9 @@ export function partArea(b) {
   return ring(b.p) - (b.holes ?? []).reduce((sum, hole) => sum + ring(hole), 0);
 }
 
-export function groundCode({ kind, main }) {
+export function groundCode({ kind, main, family = 0 }) {
   if (kind === 'block') return main ? GROUND_CODES.blockShops : GROUND_CODES.blockHomes;
-  return GROUND_CODES[kind];
+  return GROUND_CODES[kind] + (kind === 'shop' ? family * FAMILY_STRIDE : 0);
 }
 
 // Prepara la capa (opcional) y devuelve las consultas. Sin capa, todos los bajos salen sin indicio.
@@ -93,29 +108,37 @@ export function createGroundFloors(layer, rules, zones = {}) {
     if (!grid.has(key)) grid.set(key, []);
     grid.get(key).push(shop);
   }
-  // ¿Hay un comercio de OSM delante del frente (a→q, normal n)? Se mide en el sistema del frente:
+  // Comercio de OSM delante del frente (a→q, normal n), o null. Se mide en el sistema del frente:
   // t a lo largo (con `shopMargin` de holgura) y s hacia fuera (hasta `shopDistance`; hasta
-  // `shopBehind` hacia dentro, por los comercios que OSM marca sobre el propio edificio).
+  // `shopBehind` hacia dentro, por los comercios que OSM marca sobre el propio edificio). Si hay
+  // varios, el más cercano al centro del frente.
   function shopNear(a, q, nx, nz) {
     const len = Math.hypot(q[0] - a[0], q[1] - a[1]);
-    if (len === 0 || grid.size === 0) return false;
+    if (len === 0 || grid.size === 0) return null;
+    let best = null,
+      bestDistance = Infinity;
     const reach = rules.shopDistance + len + rules.shopMargin,
       cx = (a[0] + q[0]) / 2,
       cz = (a[1] + q[1]) / 2;
     for (let gx = Math.floor((cx - reach) / CELL); gx <= Math.floor((cx + reach) / CELL); gx++)
       for (let gz = Math.floor((cz - reach) / CELL); gz <= Math.floor((cz + reach) / CELL); gz++)
-        for (const [x, z] of grid.get(gx + ',' + gz) ?? []) {
-          const s = (x - cx) * nx + (z - cz) * nz,
-            t = ((x - a[0]) * (q[0] - a[0]) + (z - a[1]) * (q[1] - a[1])) / len;
+        for (const shop of grid.get(gx + ',' + gz) ?? []) {
+          const [x, z] = shop,
+            s = (x - cx) * nx + (z - cz) * nz,
+            t = ((x - a[0]) * (q[0] - a[0]) + (z - a[1]) * (q[1] - a[1])) / len,
+            distance = Math.hypot(x - cx, z - cz);
           if (
             s <= rules.shopDistance &&
             s >= -rules.shopBehind &&
             t >= -rules.shopMargin &&
-            t <= len + rules.shopMargin
-          )
-            return true;
+            t <= len + rules.shopMargin &&
+            distance < bestDistance
+          ) {
+            best = shop;
+            bestDistance = distance;
+          }
         }
-    return false;
+    return best;
   }
   return {
     shopNear,

@@ -111,6 +111,22 @@ const tones = WINDOWS.tones.map((hex) => uniform(new THREE.Color(hex))),
   retailTones = WINDOWS.retailTones.map((hex) => uniform(new THREE.Color(hex))),
   cellarPlinthTones = WINDOWS.cellarPlinthTones.map((hex) => uniform(new THREE.Color(hex)));
 
+// Tipos de local (city-design.json → groundFloors.families, hasta 6): tono de toldo y rótulo, frente
+// (0 escaparate amplio, 1 puerta y cristalera, 2 portón) y toldo. Los carga buildings.js.
+const FAMILY_FRONTS = ['wide', 'door', 'gate'],
+  familyTones = Array.from({ length: 6 }, () => uniform(new THREE.Color('#7d2f2a'))),
+  familyFronts = Array.from({ length: 6 }, () => uniform(0)),
+  familyAwnings = Array.from({ length: 6 }, () => uniform(0));
+
+export function setShopFamilies(families) {
+  families.slice(0, 6).forEach((family, i) => {
+    familyTones[i].value.set(family.tone);
+    familyFronts[i].value = FAMILY_FRONTS.indexOf(family.front);
+    familyAwnings[i].value = family.awning ? 1 : 0;
+  });
+  gfx.needsRender = true;
+}
+
 export function setWindows(patch = {}) {
   Object.assign(WINDOWS, patch);
   for (const key of Object.keys(u)) u[key].value = WINDOWS[key];
@@ -159,7 +175,16 @@ export function windowWallMaterial(parameters) {
       // 4 casa, 5 cochera). Solo la planta baja (altura de planta < 1) cambia. Del 6 al 9, clase del
       // edificio entero: 6 nave, 7 nave a la calle, 8 gran superficie, 9 su entrada, 10 bodega,
       // 11 bodega a la calle.
-      bajo = attribute('bajo', 'float').add(0.5).floor(),
+      // El tipo de local va en el mismo atributo: código + 16 × tipo (ver ground-floors.js).
+      coded = attribute('bajo', 'float').add(0.5).floor(),
+      family = coded.div(16).floor(),
+      bajo = coded.sub(family.mul(16)),
+      ofFamily = (list) =>
+        list.slice(1).reduce((value, item, i) => select(family.equal(i + 2), item, value), list[0]),
+      hasFamily = step(0.5, family),
+      familyTone = ofFamily(familyTones),
+      familyFront = ofFamily(familyFronts).mul(hasFamily),
+      familyAwning = ofFamily(familyAwnings).mul(hasFamily),
       gy = coord.y,
       is = (n) => step(n - 0.5, bajo).mul(step(bajo, n + 0.5)),
       nave = is(6).add(is(7)),
@@ -212,17 +237,30 @@ export function windowWallMaterial(parameters) {
         windowHash(cell, seed, float(8)),
         windowHash(building, seed, float(8)),
       ),
+      // Frente según el tipo de local: puerta de madera en medio de la cristalera o portón metálico
+      // en todo el hueco; el portón no lleva persiana. Toldo a rayas sobre el hueco si el tipo lo pide.
+      shopGate = shopBay.mul(step(1.5, familyFront)),
       shopOpening = shopBay.mul(rect(0.1, 0.9, 0.1, 0.76)),
-      shopClosed = shopOpening.mul(step(r3, u.shopShutter)),
-      shopGlass = shopOpening.sub(shopClosed),
+      shopDoor = shopOpening
+        .mul(step(0.5, familyFront).mul(step(familyFront, 1.5)))
+        .mul(step(f.x.sub(0.5).abs(), 0.1)),
+      shopClosed = shopOpening.mul(step(r3, u.shopShutter)).mul(float(1).sub(shopGate)),
+      shopGlass = shopOpening.sub(shopClosed).mul(float(1).sub(shopGate)).sub(shopDoor).max(0),
       shopSign = shopBay.mul(rect(0.1, 0.9, 0.76, 0.92)),
+      shopAwning = shopBay.mul(familyAwning).mul(rect(0.06, 0.94, 0.66, 0.76)),
+      awningStripes = mix(vec3(familyTone), vec3(0.93, 0.91, 0.86), step(0.5, fract(f.x.mul(9)))),
+      gateColor = vec3(0.56, 0.58, 0.57).mul(float(1).sub(step(0.5, fract(gy.mul(22))).mul(0.15))),
       mullion = step(f.x.sub(0.5).abs(), 0.015),
       shopColor = mix(vec3(0.1, 0.15, 0.17).add(gy.mul(0.16)), vec3(0.2, 0.22, 0.22), mullion),
       closedColor = vec3(0.5, 0.52, 0.5).mul(float(1).sub(step(0.5, fract(gy.mul(30))).mul(0.16))),
-      signColor = select(
-        r2.lessThan(0.34),
-        signTones[0],
-        select(r2.lessThan(0.67), signTones[1], signTones[2]),
+      signColor = mix(
+        select(
+          r2.lessThan(0.34),
+          signTones[0],
+          select(r2.lessThan(0.67), signTones[1], signTones[2]),
+        ),
+        vec3(familyTone),
+        hasFamily,
       ),
       // Portal, puerta de casa y cochera.
       portalFrame = portalBay.mul(rect(0.24, 0.76, 0.08, 0.84)),
@@ -250,6 +288,9 @@ export function windowWallMaterial(parameters) {
     color = mix(color, shopColor, shopGlass);
     color = mix(color, closedColor, shopClosed);
     color = mix(color, signColor, shopSign);
+    color = mix(color, gateColor, shopGate.mul(rect(0.1, 0.9, 0.1, 0.76)));
+    color = mix(color, vec3(0.3, 0.2, 0.13), shopDoor);
+    color = mix(color, awningStripes, shopAwning);
     color = mix(color, vec3(0.72, 0.68, 0.6), portalFrame.max(houseFrame));
     color = mix(color, vec3(0.29, 0.22, 0.17), portalDoor);
     color = mix(color, vec3(tone), houseDoor);

@@ -46,6 +46,32 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
     rect,
     color: (v, p) => (typeof v === 'string' && HEX.test(v) ? 0 : fail(p, 'se esperaba #rrggbb')),
     names,
+    // Tipos de local (groundFloors.families): hasta 6, con id y etiquetas de OSM sin repetir.
+    families: (v, p) => {
+      if (!Array.isArray(v) || v.length > 6)
+        return fail(p, 'se esperaba una lista de hasta 6 tipos');
+      const ids = new Set(),
+        types = new Set();
+      v.forEach((family, i) => {
+        const at = `${p}[${i}]`;
+        check(
+          family,
+          { id: 'text', types: 'strings', tone: 'color', front: 'text', awning: 'bool' },
+          at,
+        );
+        if (ids.has(family?.id)) fail(`${at}.id`, `tipo repetido «${family.id}»`);
+        ids.add(family?.id);
+        if (!['wide', 'door', 'gate'].includes(family?.front))
+          fail(`${at}.front`, 'debe ser wide, door o gate');
+        for (const type of family?.types ?? []) {
+          if (!/^[a-z_]+:[A-Za-z0-9_*;-]+$/.test(type))
+            fail(`${at}.types`, `etiqueta inválida «${type}»`);
+          if (types.has(type)) fail(`${at}.types`, `«${type}» ya está en otro tipo`);
+          types.add(type);
+        }
+      });
+    },
+    bool: (v, p) => (typeof v === 'boolean' ? 0 : fail(p, 'se esperaba true o false')),
     strings: (v, p) =>
       Array.isArray(v) && v.every((n) => typeof n === 'string' && n) && new Set(v).size === v.length
         ? 0
@@ -201,6 +227,7 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
         zoneExcludedUses: 'strings',
         cellarZone: 'text',
       },
+      families: 'families',
     },
     'groundFloors',
   );

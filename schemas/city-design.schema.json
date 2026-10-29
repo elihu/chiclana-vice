@@ -121,7 +121,8 @@
         "blockMinimumFloors",
         "extraUnits",
         "mainRoadTypes",
-        "buildingKinds"
+        "buildingKinds",
+        "families"
       ],
       "additionalProperties": false,
       "properties": {
@@ -206,6 +207,28 @@
               "description": "Nombre de una zona de zones: dentro, lo industrial se dibuja como bodega encalada (cellar) en vez de nave de chapa.",
               "type": "string",
               "minLength": 1
+            }
+          }
+        },
+        "families": {
+          "description": "Tipos de local (C2 de docs/PLAN-COMERCIOS.md), por orden: un local con un comercio de OSM delante toma el primero cuyo types incluye su tipo (clave:valor, o clave:* como comodín). tone colorea toldo y rótulo; front es el frente del bajo (wide: escaparate amplio; door: puerta y cristalera; gate: portón); awning añade toldo a rayas. Sin tipo, el local genérico. Hasta 6 tipos.",
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": ["id", "types", "tone", "front", "awning"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "types": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "pattern": "^[a-z_]+:[A-Za-z0-9_*;-]+$" },
+                "uniqueItems": true
+              },
+              "tone": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+              "front": { "enum": ["wide", "door", "gate"] },
+              "awning": { "type": "boolean" }
             }
           }
         }

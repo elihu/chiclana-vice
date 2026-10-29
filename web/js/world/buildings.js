@@ -2,7 +2,7 @@ import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, segments, world } from '../core/state.js';
 import { facadeTexture, orthoPhotoNode } from '../engine/textures.js';
-import { WINDOWS, windowWallMaterial } from '../engine/windows.js';
+import { WINDOWS, setShopFamilies, windowWallMaterial } from '../engine/windows.js';
 import { wallMaterial } from '../engine/wall-ao.js';
 import { loadProgress } from '../ui/feedback.js';
 import { sleepFrame } from '../core/dom.js';
@@ -49,6 +49,7 @@ export async function buildBuildings() {
   // Paleta, colores por tipo, alturas mínimas y escala UV en web/city-design.json (`buildings`).
   const rules = world.cityDesign.buildings,
     palette = rules.palette;
+  setShopFamilies(world.cityDesign.groundFloors.families);
   const { bucket } = createBuildingBuckets(groups);
   const { orientation, windowWall, partyWall } = createBuildingWalls({ rules });
   setBuildingHeights(rules);

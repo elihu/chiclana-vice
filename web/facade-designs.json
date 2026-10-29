@@ -1533,7 +1533,7 @@
       ]
     },
     "street-generic": {
-      "description": "Generic street frontage: plastered wall with plinth and cornice, and a ground floor chosen by the front's class (isShop, isBlock, isHouse, isGarage; mainStreet): shopfront with metal shutter or awning, portal, house door or garage door, and barred windows. Framed openings with shutters or balconies per storey. Variants depend on `hash`.",
+      "description": "Generic street frontage: plastered wall with plinth and cornice, and a ground floor chosen by the front's class (isShop, isBlock, isHouse, isGarage; mainStreet): shopfront with metal shutter or awning, portal, house door or garage door, and barred windows. Shops with an OSM type (hasFamily) take its tone for sign and awning (familyTone, familyAwning) and its front (familyFront: 0 wide, 1 door, 2 gate shown as a metal shutter). Framed openings with shutters or balconies per storey. Variants depend on `hash`.",
       "params": {
         "bayWidth": 3.35
       },
@@ -1640,7 +1640,7 @@
                 {
                   "let": {
                     "width": "step * 0.8",
-                    "closed": "(hash + floor(j / 2)) % 4 == 0"
+                    "closed": "familyFront == 2 || (hash + floor(j / 2)) % 4 == 0"
                   }
                 },
                 {
@@ -1722,15 +1722,32 @@
                         "pick": [
                           "#586d63",
                           "#94765a",
-                          "#5e6b79"
+                          "#5e6b79",
+                          "familyTone"
                         ],
-                        "index": "hash % 3"
+                        "index": "hasFamily ? 3 : hash % 3"
                       }
                     }
                   ]
                 },
                 {
-                  "if": "!closed && hash % 3 == 1",
+                  "if": "!closed && familyFront == 1",
+                  "then": [
+                    {
+                      "box": [
+                        "x",
+                        1.2,
+                        0.29,
+                        0.95,
+                        2.3,
+                        0.07
+                      ],
+                      "color": "#4b3423"
+                    }
+                  ]
+                },
+                {
+                  "if": "!closed && (hasFamily ? familyAwning : hash % 3 == 1)",
                   "then": [
                     {
                       "box": [
@@ -1741,7 +1758,13 @@
                         0.08,
                         1.12
                       ],
-                      "color": "#d0c4a7",
+                      "color": {
+                        "pick": [
+                          "#d0c4a7",
+                          "familyTone"
+                        ],
+                        "index": "familyAwning ? 1 : 0"
+                      },
                       "rotation": [
                         0.16,
                         0,

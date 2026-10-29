@@ -593,6 +593,9 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           zoneExcludedUses: ['1_residential'],
           cellarZone: 'frontagePilot',
         },
+        families: [
+          { id: 'bar', types: ['amenity:bar'], tone: '#7d2f2a', front: 'door', awning: true },
+        ],
       },
       furniture: {
         protectedPoints: [[1, 2]],
@@ -809,6 +812,15 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check(
       (c) => (c.groundFloors.buildingKinds.cellarZone = 'nada'),
       /cellarZone: zona desconocida «nada»/,
+    );
+    check((c) => (c.groundFloors.families[0].front = 'x'), /families\[0\]\.front: debe ser/);
+    check(
+      (c) => c.groundFloors.families.push({ ...c.groundFloors.families[0], id: 'otro' }),
+      /«amenity:bar» ya está en otro tipo/,
+    );
+    check(
+      (c) => (c.groundFloors.families[0].tone = 'rojo'),
+      /families\[0\]\.tone: se esperaba #rrggbb/,
     );
     check((c) => delete c.zones.streetLamps, /zones\.streetLamps: falta/);
     check((c) => delete c.furniture, /furniture: se esperaba un objeto/);
@@ -1238,11 +1250,37 @@ console.log('Facade kit, validator, composer and map corrections passed');
     blockMinimumFloors: 3,
     extraUnits: 1,
     mainRoadTypes: ['secondary', 'pedestrian'],
+    families: [
+      { id: 'bar', types: ['amenity:bar'], tone: '#7d2f2a', front: 'door', awning: true },
+      { id: 'oficina', types: ['office:*'], tone: '#25495f', front: 'door', awning: false },
+    ],
   };
   const uses = ['', '1_residential', '4_2_retail'];
-  const kind = (part, floors, roadType, shopNear = false) =>
+  const kind = (part, floors, roadType, shopNear = null) =>
     classifyGroundFloor(rules, { part, uses, floors, roadType, shopNear }).kind;
-  assert.equal(kind([1, 1, 1], 2, 'residential', true), 'shop', 'comercio de OSM delante');
+  assert.equal(
+    kind([1, 1, 1], 2, 'residential', [0, 0, 'shop:x', null]),
+    'shop',
+    'comercio de OSM delante',
+  );
+  // Tipo de local: el primero que incluye la etiqueta, con comodín clave:*; 0 si ninguno.
+  const { shopFamily, FAMILY_STRIDE } = await import('../web/js/world/ground-floors.js');
+  assert.equal(shopFamily(rules.families, 'amenity:bar'), 1);
+  assert.equal(shopFamily(rules.families, 'office:insurance'), 2, 'comodín office:*');
+  assert.equal(shopFamily(rules.families, 'shop:clothes'), 0);
+  const bar = classifyGroundFloor(rules, {
+    part: [1, 1, 1],
+    uses,
+    floors: 2,
+    roadType: 'residential',
+    shopNear: [0, 0, 'amenity:bar', 'Bar'],
+  });
+  assert.equal(groundCode(bar), 1 + FAMILY_STRIDE, 'el tipo va en el código del local');
+  assert.equal(
+    groundCode(classifyGroundFloor(rules, { part: [2, 1, 0], uses, floors: 1, roadType: 'x' })),
+    1,
+    'local por uso del Catastro: genérico',
+  );
   assert.equal(kind([2, 1, 0], 1, 'residential'), 'shop', 'uso comercial');
   assert.equal(kind([1, 9, 8], 5, 'pedestrian'), 'block', 'bloque en calle principal');
   assert.equal(kind([1, 9, 8], 2, 'residential'), 'garage', 'pocas plantas: no es bloque');

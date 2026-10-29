@@ -99,7 +99,10 @@ export function buildDetailedFacades() {
     composeBuilding(kit, world.facadeDesigns, building.id, { landmarks: world.city.landmarks });
 
   // Nearby residential and commercial frontages: varied plaster, framed openings, shutters and balconies.
-  const frontContext = { residentialStreets: world.cityDesign.frontages.residentialStreets };
+  const frontContext = {
+    residentialStreets: world.cityDesign.frontages.residentialStreets,
+    families: world.cityDesign.groundFloors.families,
+  };
   for (const f of facadeWork.fronts)
     composeFront(kit, world.facadeDesigns, world.cityDesign.frontages.recipe, f, frontContext);
   // Closed solids only show their outside, so they can use FrontSide; flat shapes and
