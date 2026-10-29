@@ -30,13 +30,62 @@ export function classifyGroundFloor(rules, { part, uses, floors, roadType, shopN
   return { kind, main };
 }
 
+// Clase del edificio entero (C1 de PLAN-COMERCIOS): nave industrial o gran superficie, con hasta
+// `maximumFloors` plantas y una planta de al menos el área mínima. Industrial: uso del Catastro o
+// indicio de zona industrial de OSM (salvo los usos excluidos, como las viviendas de un polígono).
+// Gran superficie: uso comercial o indicio de zona comercial. `null` para el resto. Dentro de la
+// zona `cellarZone` (el casco histórico) lo industrial son bodegas y almacenes encalados: `cellar`.
+export const BUILDING_KINDS = ['industrial', 'bigRetail', 'cellar'];
+
+// Valores del atributo `bajo` para todo el muro de esas clases (los de los bajos van de 1 a 5).
+export const BUILDING_CODES = {
+  industrial: 6,
+  industrialStreet: 7,
+  bigRetail: 8,
+  bigRetailEntrance: 9,
+  cellar: 10,
+  cellarStreet: 11,
+};
+
+export function classifyBuilding(rules, { part, uses, zone, zoneKinds, floors, area }) {
+  if (!part || floors > rules.maximumFloors) return null;
+  const use = uses[part[0]] ?? '',
+    zoneKind = zone > 0 ? zoneKinds[zone - 1] : null;
+  if (
+    area >= rules.industrialMinimumArea &&
+    (rules.industrialUses.includes(use) ||
+      (zoneKind === 'industrial' && !rules.zoneExcludedUses.includes(use)))
+  )
+    return 'industrial';
+  if (
+    area >= rules.bigRetailMinimumArea &&
+    (rules.bigRetailUses.includes(use) ||
+      (zoneKind === 'retail' && !rules.zoneExcludedUses.includes(use)))
+  )
+    return 'bigRetail';
+  return null;
+}
+
+// Área de planta de una parte de buildings.json (contorno menos patios), en m².
+export function partArea(b) {
+  const ring = (points) =>
+    Math.abs(
+      points.reduce((sum, [x0, z0], i) => {
+        const [x1, z1] = points[(i + 1) % points.length];
+        return sum + x0 * z1 - x1 * z0;
+      }, 0),
+    ) / 2;
+  return ring(b.p) - (b.holes ?? []).reduce((sum, hole) => sum + ring(hole), 0);
+}
+
 export function groundCode({ kind, main }) {
   if (kind === 'block') return main ? GROUND_CODES.blockShops : GROUND_CODES.blockHomes;
   return GROUND_CODES[kind];
 }
 
 // Prepara la capa (opcional) y devuelve las consultas. Sin capa, todos los bajos salen sin indicio.
-export function createGroundFloors(layer, rules) {
+// `zones` son las de city-design.json, para la zona de bodegas.
+export function createGroundFloors(layer, rules, zones = {}) {
   const CELL = 25,
     grid = new Map();
   for (const shop of layer?.shops ?? []) {
@@ -69,6 +118,28 @@ export function createGroundFloors(layer, rules) {
     return false;
   }
   return {
+    shopNear,
+    // Clase del edificio entero de la parte `index` (ver classifyBuilding), con su área de planta y
+    // un punto suyo (x, z) para la zona de bodegas.
+    building(index, floors, area, x, z) {
+      const kind = classifyBuilding(rules.buildingKinds, {
+          part: layer?.parts[index] ?? null,
+          uses: layer?.uses ?? [],
+          zone: layer?.zones?.[index] ?? 0,
+          zoneKinds: layer?.zoneKinds ?? [],
+          floors,
+          area,
+        }),
+        cellar = zones[rules.buildingKinds.cellarZone];
+      return kind === 'industrial' &&
+        cellar &&
+        x >= cellar[0] &&
+        x <= cellar[1] &&
+        z >= cellar[2] &&
+        z <= cellar[3]
+        ? 'cellar'
+        : kind;
+    },
     // Clase del frente a→q (normal hacia fuera n) de la parte `index` de buildings.json.
     classify(index, floors, a, q, nx, nz, roadType) {
       return classifyGroundFloor(rules, {

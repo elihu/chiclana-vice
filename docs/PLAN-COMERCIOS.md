@@ -121,6 +121,14 @@ comercial, gasolineras) y tamaño del archivo.
 
 ### C1. Naves industriales y grandes superficies (`feat/naves`)
 
+> **Hecha el 29/10/2026** (commits `3e95a04`, `73c9a64` y `ce85d2f`), con tres cambios sobre lo
+> previsto: las reglas viven en `groundFloors.buildingKinds`, junto a las de los bajos; la regla
+> de supermercados se quita porque ningún punto `shop=supermarket` de OSM cae dentro de un
+> edificio (suelen marcar la entrada), y, por decisión del usuario, lo industrial dentro de
+> `zones.frontagePilot` (el casco) se dibuja como **bodega** encalada (`cellarZone`), no como
+> nave de chapa. Con los datos actuales: 510 partes industriales (unas 30 bodegas en el centro)
+> y 22 grandes superficies; 47 frentes del centro dejan el relieve de vivienda.
+
 1. **Reglas** en `city-design.json`, bloque nuevo `buildingKinds` (esquema en `schemas/` y
    validación en `design-validate.js`), por orden de confianza:
    1. uso `3_industrial`, o indicio industrial de OSM, con hasta `maximumFloors` plantas y

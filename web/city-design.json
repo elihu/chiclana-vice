@@ -116,7 +116,22 @@
       "secondary",
       "tertiary",
       "pedestrian"
-    ]
+    ],
+    "buildingKinds": {
+      "maximumFloors": 2,
+      "industrialUses": [
+        "3_industrial"
+      ],
+      "industrialMinimumArea": 150,
+      "bigRetailUses": [
+        "4_2_retail"
+      ],
+      "bigRetailMinimumArea": 400,
+      "zoneExcludedUses": [
+        "1_residential"
+      ],
+      "cellarZone": "frontagePilot"
+    }
   },
   "furniture": {
     "protectedPoints": [

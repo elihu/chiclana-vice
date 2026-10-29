@@ -192,9 +192,21 @@ export function validateCityDesign(json, { recipes = [] } = {}) {
       blockMinimumFloors: 'int',
       extraUnits: 'int',
       mainRoadTypes: 'strings',
+      buildingKinds: {
+        maximumFloors: 'int',
+        industrialUses: 'strings',
+        industrialMinimumArea: 'pos',
+        bigRetailUses: 'strings',
+        bigRetailMinimumArea: 'pos',
+        zoneExcludedUses: 'strings',
+        cellarZone: 'text',
+      },
     },
     'groundFloors',
   );
+  const cellarZone = json.groundFloors?.buildingKinds?.cellarZone;
+  if (typeof cellarZone === 'string' && !(cellarZone in (json.zones ?? {})))
+    fail('groundFloors.buildingKinds.cellarZone', `zona desconocida «${cellarZone}»`);
 
   check(
     json.furniture,

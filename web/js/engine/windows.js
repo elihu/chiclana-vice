@@ -53,6 +53,24 @@ export const WINDOWS = {
   litStrength: 1.5, // intensidad de las ventanas
   litShops: 0.65, // fracción de escaparates iluminados
   litShopStrength: 0.55, // intensidad del escaparate
+  // Naves industriales y grandes superficies (clase de edificio, códigos `bajo` 6–9): todo el muro,
+  // sin ventanas de vivienda, persianas ni cornisa. Alturas en plantas (3,05 m), anchos en vanos (4,8 m).
+  naveTones: ['#a3a6a0', '#cdc4ac', '#7e8e7b'], // chapa: gris, crema y verde apagado
+  naveRibs: 24, // nervios de la chapa por vano (unos 20 cm)
+  naveRibShade: 0.12, // oscurecimiento de cada nervio
+  navePlinth: 0.33, // zócalo de bloque de hormigón (1 m)
+  naveBand: [0.74, 0.84], // banda de ventanas altas, en fracción de planta
+  naveDoors: 0.5, // fracción de vanos con portón en los frentes a la calle
+  retailWall: '#e2ded4', // paño de la gran superficie
+  retailTones: ['#2f6b4f', '#b5532c', '#2c4f7c'], // franja alta: verde, teja y azul
+  retailBand: 0.78, // la franja de color empieza a esta fracción de planta
+  retailGlass: 0.7, // altura de la cristalera de la entrada, en fracción de planta
+  // Bodegas y almacenes del casco (códigos 10–11): encalado, zócalo, ventanucos altos y portón.
+  cellarWall: '#eeeae1', // cal
+  cellarPlinthTones: ['#c39a45', '#8e3b2b', '#7b7871'], // zócalo: albero, almagra y gris
+  cellarPlinth: 0.3, // altura del zócalo, en fracción de planta (unos 90 cm)
+  cellarWindows: 0.5, // fracción de vanos con ventanuco alto
+  cellarDoors: 0.35, // fracción de vanos con portón de madera en los frentes a la calle
 };
 
 const u = {
@@ -72,11 +90,26 @@ const u = {
   litStrength: uniform(WINDOWS.litStrength),
   litShops: uniform(WINDOWS.litShops),
   litShopStrength: uniform(WINDOWS.litShopStrength),
+  naveRibs: uniform(WINDOWS.naveRibs),
+  naveRibShade: uniform(WINDOWS.naveRibShade),
+  navePlinth: uniform(WINDOWS.navePlinth),
+  naveDoors: uniform(WINDOWS.naveDoors),
+  retailBand: uniform(WINDOWS.retailBand),
+  retailGlass: uniform(WINDOWS.retailGlass),
+  cellarPlinth: uniform(WINDOWS.cellarPlinth),
+  cellarWindows: uniform(WINDOWS.cellarWindows),
+  cellarDoors: uniform(WINDOWS.cellarDoors),
 };
+const naveBand = uniform(new THREE.Vector2(...WINDOWS.naveBand)),
+  retailWall = uniform(new THREE.Color(WINDOWS.retailWall)),
+  cellarWall = uniform(new THREE.Color(WINDOWS.cellarWall));
 const litColor = uniform(new THREE.Color(WINDOWS.litColor));
 const tones = WINDOWS.tones.map((hex) => uniform(new THREE.Color(hex))),
   signTones = WINDOWS.signTones.map((hex) => uniform(new THREE.Color(hex))),
-  plinthTones = WINDOWS.plinthTones.map((hex) => uniform(new THREE.Color(hex)));
+  plinthTones = WINDOWS.plinthTones.map((hex) => uniform(new THREE.Color(hex))),
+  naveTones = WINDOWS.naveTones.map((hex) => uniform(new THREE.Color(hex))),
+  retailTones = WINDOWS.retailTones.map((hex) => uniform(new THREE.Color(hex))),
+  cellarPlinthTones = WINDOWS.cellarPlinthTones.map((hex) => uniform(new THREE.Color(hex)));
 
 export function setWindows(patch = {}) {
   Object.assign(WINDOWS, patch);
@@ -84,6 +117,12 @@ export function setWindows(patch = {}) {
   WINDOWS.tones.forEach((hex, i) => tones[i].value.set(hex));
   WINDOWS.signTones.forEach((hex, i) => signTones[i].value.set(hex));
   WINDOWS.plinthTones.forEach((hex, i) => plinthTones[i].value.set(hex));
+  WINDOWS.naveTones.forEach((hex, i) => naveTones[i].value.set(hex));
+  WINDOWS.retailTones.forEach((hex, i) => retailTones[i].value.set(hex));
+  naveBand.value.set(...WINDOWS.naveBand);
+  retailWall.value.set(WINDOWS.retailWall);
+  WINDOWS.cellarPlinthTones.forEach((hex, i) => cellarPlinthTones[i].value.set(hex));
+  cellarWall.value.set(WINDOWS.cellarWall);
   litColor.value.set(WINDOWS.litColor);
   gfx.needsRender = true;
 }
@@ -116,17 +155,23 @@ export function windowWallMaterial(parameters) {
       cell = floor(coord),
       f = fract(coord),
       seed = buildingSeed(),
-      inU = step(GLASS.u0, f.x).mul(step(f.x, GLASS.u1)),
-      inV = step(GLASS.v0, f.y).mul(step(f.y, GLASS.v1)),
-      inGlassWindow = inU.mul(inV),
-      t = f.y.sub(GLASS.v0).div(GLASS.v1 - GLASS.v0), // 0 abajo del cristal, 1 arriba
-      whole = vec2(0),
       // Bajo: clase por vértice (0 = ninguna; 1 local, 2 bloque con locales, 3 bloque con viviendas,
-      // 4 casa, 5 cochera). Solo la planta baja (altura de planta < 1) cambia.
+      // 4 casa, 5 cochera). Solo la planta baja (altura de planta < 1) cambia. Del 6 al 9, clase del
+      // edificio entero: 6 nave, 7 nave a la calle, 8 gran superficie, 9 su entrada, 10 bodega,
+      // 11 bodega a la calle.
       bajo = attribute('bajo', 'float').add(0.5).floor(),
       gy = coord.y,
-      ground = step(gy, 1).mul(step(0.5, bajo)),
       is = (n) => step(n - 0.5, bajo).mul(step(bajo, n + 0.5)),
+      nave = is(6).add(is(7)),
+      retail = is(8).add(is(9)),
+      cellar = is(10).add(is(11)),
+      whole = nave.add(retail).add(cellar),
+      inU = step(GLASS.u0, f.x).mul(step(f.x, GLASS.u1)),
+      inV = step(GLASS.v0, f.y).mul(step(f.y, GLASS.v1)),
+      inGlassWindow = inU.mul(inV).mul(float(1).sub(whole)),
+      t = f.y.sub(GLASS.v0).div(GLASS.v1 - GLASS.v0), // 0 abajo del cristal, 1 arriba
+      building = vec2(0),
+      ground = step(gy, 1).mul(step(0.5, bajo)).mul(float(1).sub(whole)),
       first = float(1).sub(step(0.5, cell.x.abs())), // primer vano de la arista
       rest = float(1).sub(first),
       rect = (x0, x1, y0, y1) =>
@@ -142,9 +187,9 @@ export function windowWallMaterial(parameters) {
       r1 = select(
         windowHash(cell, seed, float(3)).lessThan(u.variety),
         windowHash(cell, seed, float(0)),
-        windowHash(whole, seed, float(0)),
+        windowHash(building, seed, float(0)),
       ),
-      r2 = windowHash(whole, seed, float(1)), // un solo tono por edificio
+      r2 = windowHash(building, seed, float(1)), // un solo tono por edificio
       cover = select(
         r1.lessThan(u.shutterDown),
         float(1),
@@ -158,14 +203,14 @@ export function windowWallMaterial(parameters) {
       base = mix(
         texture(material.map, coord).rgb,
         texture(material.map, vec2(0.06, 0.94)).rgb,
-        replaced,
+        replaced.max(whole),
       ),
       glassBase = inGlass.mul(float(1).sub(covered)),
       // Escaparate: hueco con cristal oscuro o persiana metálica, y rótulo encima.
       r3 = select(
         windowHash(cell, seed, float(7)).lessThan(0.2),
         windowHash(cell, seed, float(8)),
-        windowHash(whole, seed, float(8)),
+        windowHash(building, seed, float(8)),
       ),
       shopOpening = shopBay.mul(rect(0.1, 0.9, 0.1, 0.76)),
       shopClosed = shopOpening.mul(step(r3, u.shopShutter)),
@@ -211,13 +256,74 @@ export function windowWallMaterial(parameters) {
     color = mix(color, garageColor, garageDoor);
     color = mix(color, vec3(u.barsShade), bars);
     color = mix(color, plinthColor, plinth);
-    const glass = glassBase.max(shopGlass),
+    // Nave: chapa nervada del tono del edificio, zócalo de hormigón, banda de ventanas altas en
+    // cada planta y, en los frentes a la calle, portones seccionales en parte de los vanos.
+    const fy = fract(gy),
+      rib = float(1).sub(step(0.5, fract(coord.x.mul(u.naveRibs))).mul(u.naveRibShade)),
+      naveTone = select(
+        r2.lessThan(0.4),
+        naveTones[0],
+        select(r2.lessThan(0.75), naveTones[1], naveTones[2]),
+      ),
+      navePlinth = nave.mul(step(gy, u.navePlinth)),
+      naveWindow = nave
+        .mul(step(naveBand.x, fy))
+        .mul(step(fy, naveBand.y))
+        .mul(float(1).sub(step(fract(coord.x.mul(4)).sub(0.5).abs(), 0.03))),
+      naveDoor = is(7)
+        .mul(step(windowHash(cell, seed, float(21)), u.naveDoors))
+        .mul(rect(0.14, 0.86, u.navePlinth.mul(0.2), 0.68))
+        .mul(step(gy, 1)),
+      doorPanels = float(1).sub(step(0.5, fract(gy.mul(14))).mul(0.12)),
+      // Gran superficie: paño claro, franja de color arriba y cristalera continua en la entrada.
+      retailTone = select(
+        r2.lessThan(0.34),
+        retailTones[0],
+        select(r2.lessThan(0.67), retailTones[1], retailTones[2]),
+      ),
+      retailBand = retail.mul(step(u.retailBand, fy)),
+      retailGlass = is(9)
+        .mul(step(gy, u.retailGlass))
+        .mul(step(0.04, gy))
+        .mul(float(1).sub(step(fract(coord.x.mul(4)).sub(0.5).abs(), 0.025))),
+      // Bodega: cal, zócalo de color por edificio, ventanucos altos con reja y portón de madera.
+      cellarPlinthTone = select(
+        r2.lessThan(0.45),
+        cellarPlinthTones[0],
+        select(r2.lessThan(0.75), cellarPlinthTones[1], cellarPlinthTones[2]),
+      ),
+      cellarPlinth = cellar.mul(step(gy, u.cellarPlinth)),
+      cellarWindow = cellar
+        .mul(step(windowHash(cell, seed, float(31)), u.cellarWindows))
+        .mul(rect(0.42, 0.58, 0.62, 0.8)),
+      cellarBars = cellarWindow.mul(step(fract(f.x.sub(0.42).div(0.16).mul(4)), 0.18)),
+      cellarDoor = is(11)
+        .mul(step(windowHash(cell, seed, float(32)), u.cellarDoors))
+        .mul(rect(0.3, 0.7, 0, 0.74))
+        .mul(step(gy, 1)),
+      planks = float(1).sub(step(0.5, fract(f.x.mul(24))).mul(0.14)),
+      buildingGlass = naveWindow.max(retailGlass);
+    color = mix(color, naveTone.mul(rib), nave);
+    color = mix(color, vec3(0.55, 0.54, 0.51), navePlinth);
+    color = mix(color, vec3(0.74, 0.75, 0.72).mul(doorPanels), naveDoor);
+    color = mix(color, vec3(retailWall), retail);
+    color = mix(color, vec3(retailTone), retailBand);
+    color = mix(color, vec3(0.1, 0.14, 0.16).add(fy.mul(0.12)), buildingGlass);
+    color = mix(color, vec3(cellarWall), cellar);
+    color = mix(color, vec3(cellarPlinthTone), cellarPlinth);
+    color = mix(color, vec3(0.13, 0.11, 0.1), cellarWindow);
+    color = mix(color, vec3(u.barsShade), cellarBars);
+    color = mix(color, vec3(0.33, 0.21, 0.13).mul(planks), cellarDoor);
+    const glass = glassBase.max(shopGlass).max(buildingGlass),
       // Luz de noche: cada ventana con cristal visible se enciende según su hash (distinto del de
       // la persiana); el brillo varía un poco entre ventanas. Los escaparates, algo iluminados.
       windowOn = step(windowHash(cell, seed, float(11)), u.litWindows).mul(glassBase),
       windowGlow = float(0.7).add(windowHash(cell, seed, float(12)).mul(0.6)),
       shopOn = step(windowHash(cell, seed, float(13)), u.litShops).mul(shopGlass),
-      lit = windowOn.mul(windowGlow).mul(u.litStrength).add(shopOn.mul(u.litShopStrength)),
+      lit = windowOn
+        .mul(windowGlow)
+        .mul(u.litStrength)
+        .add(shopOn.max(retailGlass).mul(u.litShopStrength)),
       emissive = vec3(litColor).mul(lit).mul(skyUniforms.night);
     return {
       color,
