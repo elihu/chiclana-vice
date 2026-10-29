@@ -21,6 +21,7 @@ import { precompileShaders } from './engine/precompile.js';
 import { installPerf, resetPerf, tickPerf } from './ui/perf.js';
 import { addSigns } from './world/signs.js';
 import { addShopSigns } from './world/shop-signs.js';
+import { buildBarriers } from './world/barriers.js';
 import { buildTram } from './world/tram.js';
 import { applyHeightSamples, loadLayers } from './world/loader.js';
 import { buildBuildings } from './world/buildings.js';
@@ -180,6 +181,7 @@ async function init(startupTimings) {
     { name: 'buildRoadDetails', run: buildRoadDetails },
     { name: 'buildTram', run: buildTram },
     { name: 'buildUrbanFurniture', run: buildUrbanFurniture },
+    { name: 'buildBarriers', run: buildBarriers },
     { name: 'buildTrees', run: buildTrees },
     { name: 'prepareGroundClean', run: prepareGroundClean },
     { name: 'addSigns', run: addSigns },
