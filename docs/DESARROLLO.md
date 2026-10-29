@@ -183,7 +183,7 @@ sin bundler ni compilación:
 | `world/facades.js`              | Preparación y construcción de fachadas detalladas.                     |
 | `world/furniture.js`            | Mobiliario urbano y obstáculos de calle.                               |
 | `world/ground-clean.js`         | Máscaras y entorno limpio bajo las copas de la ortofoto.               |
-| `world/ground-floors.js`        | Bajos de edificios según su uso.                                       |
+| `world/ground-floors.js`        | Bajos según su uso; naves, grandes superficies y bodegas.              |
 | `world/loader.js`               | Carga y validación de capas y aplicación de alturas.                   |
 | `world/party-walls.js`          | Detección de muros compartidos.                                        |
 | `world/road-space.js`           | Espacio ocupado por las calzadas y sus bordes.                         |
