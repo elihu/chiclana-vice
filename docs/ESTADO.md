@@ -57,6 +57,9 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   tramos, sincronizada con sus listas; aceras sin comprobaciones repetidas. En Node, arranque
   10,3 → 7,2 s (−30 %) y `update` 0,58 → 0,27 ms por paso; huellas idénticas, sin FPS ni
   prueba en móvil.
+- **R2** (`refactor/modulos-grandes`): superficies, calles, aceras, edificios, vegetación,
+  tranvía, jugador, controles e inspector partidos en funciones con nombre; validación de
+  superficies en `world/surface-validate.js`. Huellas idénticas y arranque +0,9 %.
 
 ## Novedades de `v2.0.0`
 
@@ -210,6 +213,9 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   Reyes Católicos (lado oeste); a pie, los pies quedan unos 10 cm bajo la baldosa porque
   la acera es visual; el tráfico puede pisar el carril del tranvía y quedan parches de
   césped en la rotonda de Plaza de España. Sin revisión visual a pie de puente de la tanda 2.
+  `node tools/browser-smoke.mjs URL --surfaces` falla en `main` desde la junta del tranvía con
+  Remedios: sobre `tablero-remedios-upper` espera 0,643 m y obtiene 0,707 m. Falta decidir si
+  la comprobación espera una cota antigua o hay un escalón real de 6 cm.
 - Interfaz ([PROPUESTA-UI.md](PROPUESTA-UI.md)): alcance principal integrado y aceptado
   para `v2.0.0`. Quedan revisión de legibilidad al anochecer y dispositivos adicionales;
   modo zurdo, tamaños, preferencias persistentes, gestos, mando y vibración son opcionales.
