@@ -136,3 +136,16 @@ El ensayo se mantiene descartado por el umbral literal de su comparación.
 - Las huellas y los bancos emiten el aviso del arnés sobre `addColorStop` al
   preparar el suelo cercano, tanto en main como en la rama; no impide las huellas.
 - Sin capturas, Chrome, push ni merge. No se cambia `docs/ESTADO.md`.
+
+## Revisión: paso 2 recuperado
+
+El revisor recupera el parche del paso 2. El +3,02 % de arranque que motivó el descarte es
+ruido de medida: la rama final, con código idéntico a `main`, salió +18,6 % en arranque, y
+el cambio solo toca código que se ejecuta por fotograma. Con cinco ejecuciones alternas,
+sin otros procesos, las medianas son arranque 7.495 → 7.341 ms (−2,0 %) y `update` 0,272 →
+0,264 ms por paso (−3,0 %), dentro del ruido (`main` varía entre 6.968 y 8.469 ms). Se
+conserva porque elimina trabajo comprobable (unas 80 consultas de suelo por fotograma en el
+barrido de la cámara y la consulta del suelo cuando un coche solo se balancea) con huellas
+idénticas con y sin relieve. Lección para el plan: con este ruido, un umbral del 3 % sobre
+medianas de tres no distingue nada; los pasos que solo tocan el fotograma no se juzgan por
+el arranque.
