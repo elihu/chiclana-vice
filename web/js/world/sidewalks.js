@@ -1,9 +1,10 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { mat } from '../engine/materials.js';
-import { gfx, segments, waterAreas, world } from '../core/state.js';
+import { gfx, segments, world } from '../core/state.js';
 import { groundHeightAt, surfaceHeightAt } from '../engine/terrain-sampling.js';
-import { pInside } from '../core/math.js';
-import { inBuilding } from './spatial.js';
+import { createGrid } from '../core/grid.js';
+import { pInside, polygonBounds } from '../core/math.js';
+import { inBuilding, inWater } from './spatial.js';
 import { tramBlocks } from './tram.js';
 import { createRoadSpace, carvePavement } from './road-space.js';
 
@@ -11,18 +12,17 @@ import { createRoadSpace, carvePavement } from './road-space.js';
 // devuelve surfaceHeightAt ni la transitabilidad. Las reglas están en
 // web/city-design.json (`pavements.sidewalks`); ver docs/DESARROLLO.md («Aceras»).
 const CELL = 16;
-const cellKey = (x, z) => Math.floor(x / CELL) + ',' + Math.floor(z / CELL);
 
 // Índice espacial de tramos: cada tramo se registra cada CELL / 2 metros, y la consulta mira
 // las 3x3 celdas vecinas.
 function indexSegments() {
-  const grid = new Map();
+  const grid = createGrid(CELL);
   for (const s of segments) {
     const n = Math.max(1, Math.ceil(s.length / (CELL / 2)));
     for (let i = 0; i <= n; i++) {
-      const k = cellKey(s.a[0] + ((s.b[0] - s.a[0]) * i) / n, s.a[1] + ((s.b[1] - s.a[1]) * i) / n);
-      if (!grid.has(k)) grid.set(k, new Set());
-      grid.get(k).add(s);
+      const x = s.a[0] + ((s.b[0] - s.a[0]) * i) / n,
+        z = s.a[1] + ((s.b[1] - s.a[1]) * i) / n;
+      grid.insert(s, x, x, z, z);
     }
   }
   return grid;
@@ -35,9 +35,18 @@ export function buildSidewalks(slabs, paved, include) {
     heights = paved.layerHeights,
     grid = indexSegments(),
     platforms = world.surfaces?.platforms ?? [],
+    platformGrid = createGrid(CELL),
+    endpoints = createGrid(CELL),
     curb = [],
     stats = { sidewalkMeters: 0, sidewalkTriangles: 0, curbTriangles: 0, skirtTriangles: 0 };
 
+  for (const p of platforms) {
+    const bounds = polygonBounds(p.polygon);
+    platformGrid.insert(p, bounds.minX, bounds.maxX, bounds.minZ, bounds.maxZ);
+  }
+  for (const segment of segments)
+    for (const [x, z] of [segment.a, segment.b]) endpoints.insert(segment, x, x, z, z);
+  let continuing = new Set();
   const close = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05;
   // Tramos vecinos que continúan la misma calle (comparten extremo y casi colineales): no
   // cuentan como calzada ajena. Todo lo demás, incluida la propia vía en tramos paralelos,
@@ -48,13 +57,13 @@ export function buildSidewalks(slabs, paved, include) {
       0.9 * s.length * len;
   const halfOf = (s) => Math.max(paved.minimumHalfWidth, s.width / 2);
   // Calzadas ajenas cuyo eje queda a menos de medio ancho + margen del punto.
-  const nearOther = (x, z, a, b, len, reach = 0) => {
+  const nearOther = (x, z, reach = 0) => {
     const cx = Math.floor(x / CELL),
       cz = Math.floor(z / CELL);
     for (let i = cx - 1; i <= cx + 1; i++)
       for (let j = cz - 1; j <= cz + 1; j++)
-        for (const s of grid.get(i + ',' + j) ?? []) {
-          if (continues(s, a, b, len)) continue;
+        for (const s of grid.queryPoint(i * CELL, j * CELL)) {
+          if (continuing.has(s)) continue;
           const ex = s.b[0] - s.a[0],
             ez = s.b[1] - s.a[1],
             u = Math.max(
@@ -68,13 +77,13 @@ export function buildSidewalks(slabs, paved, include) {
         }
     return null;
   };
-  const free = (x, z, a, b, len) =>
+  const free = (x, z) =>
     !inBuilding(x, z, cfg.buildingMargin) &&
     world.surfaces?.dividerHeightAt(x, z) == null &&
-    !nearOther(x, z, a, b, len) &&
+    !nearOther(x, z) &&
     !tramBlocks(x, z, cfg.junctionMargin) &&
-    !platforms.some((p) => pInside(x, z, p.polygon)) &&
-    !waterAreas.some((w) => pInside(x, z, w.p));
+    !platformGrid.queryPoint(x, z).some((p) => pInside(x, z, p.polygon)) &&
+    !inWater(x, z);
 
   const quad = (out, a, b, c, d) => {
     for (const v of [a, b, c, a, c, d]) out.push(...v);
@@ -98,6 +107,11 @@ export function buildSidewalks(slabs, paved, include) {
         dz0 = b[1] - a[1],
         len = Math.hypot(dx0, dz0);
       if (len < 0.1) continue;
+      continuing = new Set();
+      for (const [x, z] of [a, b])
+        endpoints.queryBox(x - 0.05, x + 0.05, z - 0.05, z + 0.05, (s) => {
+          if (continues(s, a, b, len)) continuing.add(s);
+        });
       const dx = dx0 / len,
         dz = dz0 / len,
         count = Math.max(1, Math.ceil(len / cfg.step)),
@@ -112,7 +126,7 @@ export function buildSidewalks(slabs, paved, include) {
       for (let n = 0; n < 6; n++) {
         const px = a[0] + (dx0 * (n + 0.5)) / 6,
           pz = a[1] + (dz0 * (n + 0.5)) / 6,
-          hit = nearOther(px, pz, a, b, len, half + cfg.width - cfg.junctionMargin);
+          hit = nearOther(px, pz, half + cfg.width - cfg.junctionMargin);
         if (hit) crowded[(hit.x - px) * -dz + (hit.z - pz) * dx >= 0 ? 1 : -1]++;
       }
       for (let k = 0; k <= count; k++) {
@@ -132,7 +146,7 @@ export function buildSidewalks(slabs, paved, include) {
               const pts = [];
               for (const o of [half, (half + off) / 2, off])
                 for (const kk of [k, k + 0.5, k + 1]) pts.push(at(kk, o, side));
-              return pts.every((p) => free(p[0], p[1], a, b, len));
+              return pts.every((p) => free(p[0], p[1]));
             };
           // Faldón: cara vertical bajo el borde (de la calzada o de la acera) hasta un poco
           // por debajo del terreno, solo donde el terreno queda por debajo.
