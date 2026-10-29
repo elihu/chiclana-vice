@@ -131,7 +131,96 @@
         "1_residential"
       ],
       "cellarZone": "frontagePilot"
-    }
+    },
+    "families": [
+      {
+        "id": "hosteleria",
+        "types": [
+          "amenity:bar",
+          "amenity:restaurant",
+          "amenity:cafe",
+          "amenity:fast_food",
+          "amenity:pub",
+          "amenity:ice_cream",
+          "amenity:biergarten",
+          "amenity:food_court"
+        ],
+        "tone": "#7d2f2a",
+        "front": "door",
+        "awning": true
+      },
+      {
+        "id": "alimentacion",
+        "types": [
+          "shop:supermarket",
+          "shop:convenience",
+          "shop:bakery",
+          "shop:butcher",
+          "shop:greengrocer",
+          "shop:pastry",
+          "shop:deli",
+          "shop:seafood",
+          "shop:frozen_food",
+          "shop:alcohol",
+          "shop:beverages",
+          "shop:confectionery",
+          "shop:wine"
+        ],
+        "tone": "#3f6a3b",
+        "front": "wide",
+        "awning": true
+      },
+      {
+        "id": "moda",
+        "types": [
+          "shop:clothes",
+          "shop:shoes",
+          "shop:jewelry",
+          "shop:bag",
+          "shop:boutique",
+          "shop:fashion_accessories",
+          "shop:watches",
+          "shop:cosmetics",
+          "shop:perfumery"
+        ],
+        "tone": "#2e2c30",
+        "front": "wide",
+        "awning": false
+      },
+      {
+        "id": "servicios",
+        "types": [
+          "amenity:pharmacy",
+          "amenity:bank",
+          "amenity:clinic",
+          "amenity:dentist",
+          "amenity:doctors",
+          "amenity:veterinary",
+          "amenity:bureau_de_change",
+          "amenity:post_office",
+          "shop:optician",
+          "shop:hairdresser",
+          "shop:beauty",
+          "office:*"
+        ],
+        "tone": "#25495f",
+        "front": "door",
+        "awning": false
+      },
+      {
+        "id": "motor",
+        "types": [
+          "shop:car_repair",
+          "shop:tyres",
+          "shop:car",
+          "shop:car_parts",
+          "shop:motorcycle"
+        ],
+        "tone": "#8a5a22",
+        "front": "gate",
+        "awning": false
+      }
+    ]
   },
   "furniture": {
     "protectedPoints": [
