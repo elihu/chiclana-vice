@@ -15,6 +15,7 @@
     "centerLines",
     "signs",
     "tram",
+    "barriers",
     "vegetation",
     "buildings",
     "randomSeed"
@@ -636,6 +637,48 @@
         "minimumPoints": {
           "type": "integer",
           "minimum": 1
+        }
+      }
+    },
+    "barriers": {
+      "description": "Aspecto de las vallas y muros de OSM (web/barriers.json; docs/PLAN-VALLAS.md), aproximado porque OSM no trae altura ni material. Cada trazo se parte en tramos de pieceLength m apoyados en el relieve; se deja hueco donde cruza una vía de OSM (su media anchura más roadClearance) y a gateGap / 2 de cada puerta. Alturas, grosores y medidas en metros.",
+      "type": "object",
+      "required": [
+        "pieceLength",
+        "roadClearance",
+        "gateGap",
+        "wall",
+        "city_wall",
+        "hedge",
+        "fence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pieceLength": { "$ref": "#/$defs/positive" },
+        "roadClearance": { "$ref": "#/$defs/nonNegative" },
+        "gateGap": { "$ref": "#/$defs/nonNegative" },
+        "wall": { "$ref": "#/$defs/barrierSolid" },
+        "city_wall": { "$ref": "#/$defs/barrierSolid" },
+        "hedge": {
+          "type": "object",
+          "required": ["height", "thickness", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "height": { "$ref": "#/$defs/positive" },
+            "thickness": { "$ref": "#/$defs/positive" },
+            "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
+        },
+        "fence": {
+          "type": "object",
+          "required": ["height", "postSpacing", "postWidth", "color"],
+          "additionalProperties": false,
+          "properties": {
+            "height": { "$ref": "#/$defs/positive" },
+            "postSpacing": { "$ref": "#/$defs/positive" },
+            "postWidth": { "$ref": "#/$defs/positive" },
+            "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+          }
         }
       }
     },
@@ -1468,6 +1511,17 @@
     }
   },
   "$defs": {
+    "barrierSolid": {
+      "type": "object",
+      "required": ["height", "thickness", "color", "cap"],
+      "additionalProperties": false,
+      "properties": {
+        "height": { "$ref": "#/$defs/positive" },
+        "thickness": { "$ref": "#/$defs/positive" },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "cap": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    },
     "positive": {
       "type": "number",
       "exclusiveMinimum": 0

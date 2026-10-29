@@ -682,6 +682,15 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       },
       randomSeed: 7631,
       signs: { maximum: 91, offset: 0.5, minimumPoints: 3 },
+      barriers: {
+        pieceLength: 2,
+        roadClearance: 0.6,
+        gateGap: 3.5,
+        wall: { height: 2, thickness: 0.25, color: '#ece8de', cap: '#b5a487' },
+        city_wall: { height: 4, thickness: 0.9, color: '#b8a37f', cap: '#9c8a6b' },
+        hedge: { height: 1.2, thickness: 0.8, color: '#4f6b3a' },
+        fence: { height: 1.8, postSpacing: 2.5, postWidth: 0.06, color: '#5f6763' },
+      },
       tram: {
         stripWidth: 2.6,
         sampleStep: 2.5,
@@ -822,6 +831,8 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
       (c) => (c.groundFloors.families[0].tone = 'rojo'),
       /families\[0\]\.tone: se esperaba #rrggbb/,
     );
+    check((c) => delete c.barriers.hedge, /barriers\.hedge: falta/);
+    check((c) => (c.barriers.wall.height = 0), /barriers\.wall\.height: .*positivo/);
     check((c) => delete c.zones.streetLamps, /zones\.streetLamps: falta/);
     check((c) => delete c.furniture, /furniture: se esperaba un objeto/);
     check((c) => (c.furniture.extra = 1), /furniture\.extra: clave desconocida/);

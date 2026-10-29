@@ -494,6 +494,34 @@
       "blend": 0.6
     }
   },
+  "barriers": {
+    "pieceLength": 2,
+    "roadClearance": 0.6,
+    "gateGap": 3.5,
+    "wall": {
+      "height": 2,
+      "thickness": 0.25,
+      "color": "#ece8de",
+      "cap": "#b5a487"
+    },
+    "city_wall": {
+      "height": 4,
+      "thickness": 0.9,
+      "color": "#b8a37f",
+      "cap": "#9c8a6b"
+    },
+    "hedge": {
+      "height": 1.2,
+      "thickness": 0.8,
+      "color": "#4f6b3a"
+    },
+    "fence": {
+      "height": 1.8,
+      "postSpacing": 2.5,
+      "postWidth": 0.06,
+      "color": "#5f6763"
+    }
+  },
   "tram": {
     "stripWidth": 2.6,
     "sampleStep": 2.5,
