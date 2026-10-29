@@ -159,7 +159,8 @@ if (process.argv.includes('--surfaces') && state.game) {
     const cases=[];
     for(const p of m.platforms) {
       const x=p.polygon.reduce((s,q)=>s+q[0],0)/p.polygon.length,z=p.polygon.reduce((s,q)=>s+q[1],0)/p.polygon.length;
-      cases.push({id:p.id+'-upper',x,z,y:p.y,upper:true,road:null,a:0});
+      // Los tableros con perfil (pendiente entre accesos) no están a la cota nominal p.y.
+      cases.push({id:p.id+'-upper',x,z,y:p.heightAt?.(x,z)??p.y,upper:true,road:null,a:0});
       for(const road of p.lowerRoads) {
         const s=m.profiles.get(road).find(s=>{const x=(s.a[0]+s.b[0])/2,z=(s.a[1]+s.b[1])/2;return m.surfaceHeightAt(x,z)-m.surfaceHeightAt(x,z,null,road)>2.5;});
         if(s)cases.push({id:p.id+'-lower',x:(s.a[0]+s.b[0])/2,z:(s.a[1]+s.b[1])/2,y:(s.y0+s.y1)/2,upper:false,road,a:Math.atan2(s.dx,s.dz)});
