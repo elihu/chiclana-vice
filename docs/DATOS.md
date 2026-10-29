@@ -488,11 +488,18 @@ Publica `web/ground-floors.json` sin tocar `buildings.json`. Se regenera cada ve
   su mismo orden (`parts[k]` es `buildings[k]`, sin índice ni huella por parte: basta
   `buildingsSha256`); `units` es `numberOfBuildingUnits` y `dwellings`
   `numberOfDwellings`. `null` si la parte no encaja con ningún edificio catastral.
-- `shops`: puntos `[x, z, tipo]` de OSM en metros locales, dentro de `bounds`; `tipo` es
-  `shop:*`, `office:*`, `craft:*` o `amenity:*` (hostelería, banca, farmacia, sanidad…).
+- `shops`: puntos `[x, z, tipo, nombre]` de OSM en metros locales, dentro de `bounds`, con la
+  marca como quinto elemento si OSM la indica; `tipo` es `shop:*`, `office:*`, `craft:*` o
+  `amenity:*` (hostelería, banca, farmacia, sanidad…) y `nombre` el `name` de OSM o `null`.
+- `zoneKinds` (`["industrial", "retail"]`) y `zones`: un entero por parte, 0 sin indicio y
+  `n > 0` para `zoneKinds[n - 1]`, del edificio de OSM (`building=industrial|warehouse|retail`)
+  o, si no hay, del área `landuse=industrial|retail` que contiene el centroide de la parte.
+- `fuel`: gasolineras (`amenity=fuel`) dentro de `bounds`, `{x, z, name, brand, outline}`;
+  `outline` es el contorno si OSM la dibuja como área, o `null`.
 - Más `version`, `origin`, `buildingsSha256`, `source`, `license`, `attribution` y `limits`.
 
-El juego la carga como `world.groundFloors` (opcional) y de momento no la usa.
+El juego la carga como `world.groundFloors` (opcional) y usa `uses`, `parts` y la posición de
+`shops` para la clase de los bajos; los nombres, las zonas y las gasolineras aún no.
 
 ## 10. Vías y paradas del tranvía
 

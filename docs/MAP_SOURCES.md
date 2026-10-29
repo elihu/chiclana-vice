@@ -319,13 +319,20 @@ piezas; las mayores y los árboles anteriores conservan una subdivisión.
 contiene su centroide (o su punto representativo, o el de mayor solape si la simplificación lo
 deja en el borde). De OSM (`osm-ampliado.xml`) toma nodos y vías cerradas con `shop`,
 `office`, `craft` o `amenity` de comercio, hostelería, banca y sanidad, como puntos
-(centroide en las vías) dentro de los límites del mundo. Las partes se guardan en el orden de `buildings.json` como tuplas compactas (el archivo ocupa unos 75 KB). Usa el origen de `web/world.json` y
-la misma proyección que `tools/rebuild-map.py`.
+(centroide en las vías) dentro de los límites del mundo, con su `name` y, si existe, su
+`brand` (289 de 313 con nombre y 39 con marca el 29/10/2026). También toma las gasolineras
+(`amenity=fuel`: 6, cuatro como punto y dos como área con su contorno) y, por parte, un indicio
+de zona industrial o comercial: la vía cerrada `building=industrial|warehouse|retail` que
+contiene su centroide o, si no hay, el área `landuse=industrial|retail` (715 partes
+industriales y 127 comerciales; 62 por el edificio). Las relaciones de OSM no se leen, así que
+una zona dibujada como multipolígono no da indicio. Las partes se guardan en el orden de
+`buildings.json` como tuplas compactas (el archivo ocupa unos 140 KB). Usa el origen de
+`web/world.json` y la misma proyección que `tools/rebuild-map.py`.
 
 Límites: son indicios, no certeza. Más inmuebles que viviendas puede ser local, garaje o
 trastero; 4 o más viviendas sugiere un bloque de pisos, pero el recuento es del edificio
 catastral entero, no de la planta baja. Los puntos de OSM están incompletos y no se vinculan
-a una parte. No es un dato catastral certificado.
+a una parte; los nombres y marcas son los que figuran en OSM, sin comprobar. No es un dato catastral certificado.
 
 ## Vías y paradas del tranvía
 
