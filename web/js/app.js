@@ -139,24 +139,9 @@ async function init(startupTimings) {
         });
       },
     },
-    {
-      name: 'buildRoadGraph',
-      run: () => {
-        buildRoadGraph();
-      },
-    },
-    {
-      name: 'indexBuildings',
-      run: () => {
-        indexBuildings();
-      },
-    },
-    {
-      name: 'prepareTerrainPlacement',
-      run: () => {
-        prepareTerrainPlacement();
-      },
-    },
+    { name: 'buildRoadGraph', run: buildRoadGraph },
+    { name: 'indexBuildings', run: indexBuildings },
+    { name: 'prepareTerrainPlacement', run: prepareTerrainPlacement },
     {
       name: 'addGroundPlanes',
       run: () => {
@@ -169,42 +154,17 @@ async function init(startupTimings) {
         );
       },
     },
-    {
-      name: 'connectOpenSpaces',
-      run: () => {
-        connectOpenSpaces();
-      },
-    },
-    {
-      name: 'orientDriveGraph',
-      run: () => {
-        orientDriveGraph();
-      },
-    },
+    { name: 'connectOpenSpaces', run: connectOpenSpaces },
+    { name: 'orientDriveGraph', run: orientDriveGraph },
     {
       name: 'applyHeightSamples',
       run: () => {
         applyHeightSamples(heightSamples);
       },
     },
-    {
-      name: 'prepareFacades',
-      run: () => {
-        prepareFacades();
-      },
-    },
-    {
-      name: 'buildBuildings',
-      run: async () => {
-        await buildBuildings();
-      },
-    },
-    {
-      name: 'buildDetailedFacades',
-      run: () => {
-        buildDetailedFacades();
-      },
-    },
+    { name: 'prepareFacades', run: prepareFacades },
+    { name: 'buildBuildings', run: buildBuildings },
+    { name: 'buildDetailedFacades', run: buildDetailedFacades },
     {
       name: 'buildStreetSurfaces',
       run: async () => {
@@ -213,54 +173,14 @@ async function init(startupTimings) {
         buildStreetSurfaces();
       },
     },
-    {
-      name: 'buildRoadDetails',
-      run: () => {
-        buildRoadDetails();
-      },
-    },
-    {
-      name: 'buildTram',
-      run: () => {
-        buildTram();
-      },
-    },
-    {
-      name: 'buildUrbanFurniture',
-      run: () => {
-        buildUrbanFurniture();
-      },
-    },
-    {
-      name: 'buildTrees',
-      run: () => {
-        buildTrees();
-      },
-    },
-    {
-      name: 'prepareGroundClean',
-      run: () => {
-        prepareGroundClean();
-      },
-    },
-    {
-      name: 'addSigns',
-      run: () => {
-        addSigns();
-      },
-    },
-    {
-      name: 'buildShadowProxies',
-      run: () => {
-        buildShadowProxies();
-      },
-    },
-    {
-      name: 'setupPOIs',
-      run: () => {
-        setupPOIs();
-      },
-    },
+    { name: 'buildRoadDetails', run: buildRoadDetails },
+    { name: 'buildTram', run: buildTram },
+    { name: 'buildUrbanFurniture', run: buildUrbanFurniture },
+    { name: 'buildTrees', run: buildTrees },
+    { name: 'prepareGroundClean', run: prepareGroundClean },
+    { name: 'addSigns', run: addSigns },
+    { name: 'buildShadowProxies', run: buildShadowProxies },
+    { name: 'setupPOIs', run: setupPOIs },
     {
       name: 'spawnActors',
       run: () => {
