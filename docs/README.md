@@ -47,6 +47,9 @@ documento; los demás enlazan a él.
   aceptado, los límites de verificación y las mejoras opcionales.
 - [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado en calzadas,
   pavimentos, rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
+- [Plan de rendimiento, simplificación y mantenimiento](PLAN-REFACTOR.md): índices
+  espaciales, etapas de arranque medidas, módulos grandes partidos, validadores
+  declarativos, coste por fotograma y documentación al día; sin cambios visibles.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
   faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
   `v1.7.0`.
