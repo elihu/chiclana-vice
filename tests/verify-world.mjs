@@ -3,6 +3,7 @@ import './verify-road-space.mjs';
 import './verify-vegetation.mjs';
 import './verify-ground-floors.mjs';
 import './verify-tram.mjs';
+import './verify-barriers.mjs';
 import { insideBounds, validBounds } from '../web/js/world/bounds.js';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';

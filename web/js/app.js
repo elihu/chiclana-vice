@@ -67,6 +67,7 @@ async function init(startupTimings) {
     vegetation,
     groundFloors,
     tram,
+    barriers,
     terrain,
     warning,
   } = {};
@@ -88,6 +89,7 @@ async function init(startupTimings) {
           vegetation,
           groundFloors,
           tram,
+          barriers,
           terrain,
           warning,
         } = await loadLayers());
@@ -100,6 +102,7 @@ async function init(startupTimings) {
         world.vegetation = vegetation;
         world.groundFloors = groundFloors;
         world.tram = tram;
+        world.barriers = barriers;
         world.terrain = terrain;
         if (warning) toast(warning, 5);
         world.mappedStreetObjects = Array.isArray(streetObjects) ? streetObjects : [];
