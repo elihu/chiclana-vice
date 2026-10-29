@@ -91,7 +91,7 @@ tree = STRtree([c['geom'] for c in catastro])
 
 # 2. Partes de buildings.json -> edificio catastral que contiene su centroide.
 buildings = json.loads((ROOT / 'web/buildings.json').read_text())['buildings']
-parts, unmatched = [], 0  # parts[k] corresponde a buildings[k]; None si no encaja
+parts, points, unmatched = [], [], 0  # parts[k] corresponde a buildings[k]; None si no encaja
 for index, b in enumerate(buildings):
     poly = Polygon(b['p'], b.get('holes') or [])
     if not poly.is_valid:
@@ -99,6 +99,7 @@ for index, b in enumerate(buildings):
     point = poly.centroid
     if not poly.contains(point):
         point = poly.representative_point()
+    points.append(point)
     hits = [i for i in tree.query(point) if catastro[i]['geom'].contains(point)]
     if not hits:
         # Respaldo: el edificio con más solape (la simplificación puede dejar el punto en el borde).
@@ -132,22 +133,65 @@ def kind_of(t):
     return None
 
 
-shops = []
+def shop_entry(x, y, kind, t):
+    # [x, z, tipo, nombre] y la marca solo si OSM la indica.
+    entry = [round(x, 2), round(y, 2), kind, t.get('name')]
+    if t.get('brand'):
+        entry.append(t['brand'])
+    return entry
+
+
+def outline(points):
+    return [[round(x, 2), round(y, 2)] for x, y in points]
+
+
+# Indicios de zona: áreas industriales o comerciales de OSM (landuse) y edificios que OSM
+# etiqueta como nave, almacén o comercio. Vías cerradas; las relaciones no se leen.
+ZONE_KINDS = ['industrial', 'retail']
+LANDUSE = {'industrial': 'industrial', 'retail': 'retail'}
+BUILDING = {'industrial': 'industrial', 'warehouse': 'industrial', 'retail': 'retail'}
+shops, fuel, zone_areas, building_areas = [], [], [], []
 for n in r.findall('node'):
     t = {v.attrib['k']: v.attrib['v'] for v in n.findall('tag')}
     kind = kind_of(t)
     p = nodes[n.attrib['id']]
     if kind and bounds.contains(Point(p)):
-        shops.append([round(p[0], 2), round(p[1], 2), kind])
+        shops.append(shop_entry(*p, kind, t))
+    if t.get('amenity') == 'fuel' and bounds.contains(Point(p)):
+        fuel.append({'x': round(p[0], 2), 'z': round(p[1], 2), 'name': t.get('name'),
+                     'brand': t.get('brand'), 'outline': None})
 for w in r.findall('way'):
     t = {v.attrib['k']: v.attrib['v'] for v in w.findall('tag')}
     kind = kind_of(t)
     pts = [nodes[k.attrib['ref']] for k in w.findall('nd') if k.attrib['ref'] in nodes]
-    if kind and len(pts) > 3 and pts[0] == pts[-1]:
-        c = Polygon(pts).centroid
-        if bounds.contains(c):
-            shops.append([round(c.x, 2), round(c.y, 2), kind])
+    if len(pts) <= 3 or pts[0] != pts[-1]:
+        continue
+    poly = Polygon(pts)
+    if not poly.is_valid:
+        poly = poly.buffer(0)
+    c = poly.centroid
+    if kind and bounds.contains(c):
+        shops.append(shop_entry(c.x, c.y, kind, t))
+    if t.get('amenity') == 'fuel' and bounds.contains(c):
+        fuel.append({'x': round(c.x, 2), 'z': round(c.y, 2), 'name': t.get('name'),
+                     'brand': t.get('brand'), 'outline': outline(pts)})
+    if t.get('landuse') in LANDUSE:
+        zone_areas.append((poly, ZONE_KINDS.index(LANDUSE[t['landuse']]) + 1))
+    if t.get('building') in BUILDING:
+        building_areas.append((poly, ZONE_KINDS.index(BUILDING[t['building']]) + 1))
 shops.sort(key=lambda s: (s[0], s[1], s[2]))
+fuel.sort(key=lambda f: (f['x'], f['z']))
+
+
+def zone_codes(areas):
+    tree = STRtree([a[0] for a in areas])
+    return [next((areas[i][1] for i in sorted(tree.query(point)) if areas[i][0].contains(point)), 0)
+            for point in points]
+
+
+# El indicio del edificio de OSM prevalece sobre el de la zona.
+by_zone, by_building = zone_codes(zone_areas), zone_codes(building_areas)
+zones = [b or z for z, b in zip(by_zone, by_building)]
 
 layer = {
     'version': 1,
@@ -160,11 +204,17 @@ layer = {
     'format': {
         'uses': 'Valores de currentUse de Catastro que aparecen, ordenados.',
         'parts': '[índice en uses, numberOfBuildingUnits, numberOfDwellings] por cada parte de buildings.json, en su mismo orden (parts[k] es buildings[k]); null si la parte no encaja con ningún edificio catastral.',
-        'shops': '[x, z, tipo] en metros locales (como buildings.json); tipo = clave:valor de OSM (shop:*, office:*, craft:*, amenity:*).',
+        'shops': '[x, z, tipo, nombre] en metros locales (como buildings.json), más la marca como quinto elemento si OSM la indica; tipo = clave:valor de OSM (shop:*, office:*, craft:*, amenity:*); nombre = name de OSM o null.',
+        'zoneKinds': 'Indicios de zona posibles.',
+        'zones': 'Un entero por parte de buildings.json: 0 sin indicio; n > 0 es zoneKinds[n - 1]. Sale del edificio de OSM (building=industrial|warehouse|retail) o, si no hay, del área (landuse=industrial|retail) que contiene el centroide de la parte.',
+        'fuel': 'Gasolineras (amenity=fuel) dentro del mundo: {x, z, name, brand, outline}; outline es el contorno si OSM la dibuja como área, o null.',
     },
     'uses': uses,
     'parts': parts,
     'shops': shops,
+    'zoneKinds': ZONE_KINDS,
+    'zones': zones,
+    'fuel': fuel,
 }
 Path(args.out).write_text(json.dumps(layer, ensure_ascii=False, separators=(',', ':')) + '\n')
 by_use = {}
@@ -176,4 +226,9 @@ print(json.dumps({
     'blocks': sum(1 for p in matched if p[2] >= 4),
     'residentialMoreUnits': sum(1 for p in matched if uses[p[0]] == '1_residential' and p[1] > p[2]),
     'shops': len(shops),
+    'shopsNamed': sum(1 for s in shops if s[3]),
+    'shopsBranded': sum(1 for s in shops if len(s) > 4),
+    'zones': {kind: sum(1 for z in zones if z == i + 1) for i, kind in enumerate(ZONE_KINDS)},
+    'zonesFromBuilding': sum(1 for b in by_building if b),
+    'fuel': [f['name'] for f in fuel],
 }, ensure_ascii=False))

@@ -123,7 +123,7 @@
       "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
       "transformation": "Use, building units and dwellings of the cadastral building containing each game part; OSM commerce points in local metres",
       "sha256": {
-        "ground-floors.json": "b5239202b0c22c5bddb7817bf015a8395b7302ce0d8f1e67a65304883a7edd42"
+        "ground-floors.json": "29323ddb4fd25f0aa030ca7f6564c321cb8245c7c795491b2d4909fcc122ad7a"
       }
     },
     {
