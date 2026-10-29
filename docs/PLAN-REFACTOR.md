@@ -75,6 +75,12 @@ Versiones el 29/10/2026: Three.js 0.186.1 es la última publicada y no se cambia
   elemento: marca con un contador de consulta (`item` en un `Map` interno de
   sello → último sello), sin crear un `Set` por llamada. **El orden de visita es el de
   inserción**, para que «el primero que cumple» y los empates den lo mismo que hoy.
+  **Las rejillas que indexan una lista de `core/state.js`** (obstáculos, agua, tramos) se
+  sincronizan al consultarse con `syncedGrid` de `world/spatial.js`: indexan lo añadido al
+  final y se rehacen si la lista mengua o cambia su primer elemento, porque esas listas se
+  mutan directamente (`push`, `length = 0`), también en los tests. No se añaden funciones
+  `add…` obligatorias. Una rejilla de datos que no cambian tras construirse (superficies,
+  aceras) puede crearse una vez en su constructor.
 - **D2. Mismo resultado, no «casi».** Cada sustitución de una búsqueda lineal debe dar
   el mismo elemento, también en empates: entre candidatos a igual distancia gana el de
   menor índice original, como en el recorrido lineal. `nearestRoad` busca por anillos de
