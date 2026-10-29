@@ -1,7 +1,7 @@
 # Chiclana Vice
 
-Juego web 3D estático ambientado en el centro de Chiclana: conducción, paseo, encargos,
-mapa de calles, cámara libre y modo ligero.
+Juego web 3D estático ambientado en Chiclana de la Frontera (el centro, el Iro, Santa Ana y los
+polígonos del norte): conducción, paseo, encargos, mapa de calles, cámara libre y modo ligero.
 
 **[Jugar en el navegador](https://elihu.github.io/chiclana-vice/)**
 

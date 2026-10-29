@@ -54,7 +54,8 @@ se sustituye.
   bilineal a la rejilla de juego de 10 m, referencia fija en el origen y cuantización a
   0,1 m. Los originales permanecen fuera de Git; la rejilla derivada (`terrain.json`,
   `terrain.bin`) está activa en el juego desde la validación visual del usuario del
-  9/10/2026, que cubre el centro y los anexos. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
+  9/10/2026, que cubre el centro y los anexos; la rejilla ya abarcaba la caja completa del mundo
+  ampliado el 29/10/2026, que la usa sin cambios. Referencia vertical y fecha de adquisición sin confirmar. Auditorías:
   `source-data/terrain-audit.json` y `source-data/terrain-surface-audit.json`; detalle y
   aproximaciones en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
 - **Superficies de autor sobre el MDT**: áreas OSM de plaza `bridge=yes` y huella del

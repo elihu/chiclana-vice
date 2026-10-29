@@ -34,10 +34,8 @@ documento; los demás enlazan a él.
   `v2.0.0`, límites de verificación y mejoras opcionales.
 - [Revisión del mundo tras v2.0.0](REVISION-MUNDO.md): agua, arbolado, pavimentos,
   rotondas, pasos inferiores y peatones; integrada sin publicar el 29/10/2026.
-- [Plan de locales comerciales y naves](PLAN-COMERCIOS.md): datos de comercios, naves
-  industriales y grandes superficies, locales por familia, rótulos y gasolineras; hecho.
-- [Plan de vallas, muros y setos](PLAN-VALLAS.md): datos de OSM, dibujo, colisiones y cajeros
-  del río; V0 hecha.
+- [Plan de vallas, muros y setos](PLAN-VALLAS.md): V0–V2 publicadas en `v3.0.0` (datos de OSM,
+  dibujo y colisiones); V3 (cajeros del río) parada a falta de decisión; V4 a petición.
 
 ## Histórico
 
@@ -51,5 +49,6 @@ se consultan en [ESTADO.md](ESTADO.md), aunque enlacen a un plan archivado.
 - [Mejora gráfica](historico/PLAN-MEJORA-GRAFICA.md): presupuesto de render, agrupación, luz, suelo y árboles de `v1.4.0`.
 - [Motor y gráficos](historico/PLAN-MOTOR-GRAFICOS.md): WebGPU, shaders, sombras y luz de `v1.5.0`; pendientes derivados al plan visual.
 - [Terreno](historico/PLAN-TERRENO.md): plan original del MDT y la integración del relieve.
+- [Locales comerciales, naves y gasolineras](historico/PLAN-COMERCIOS.md): fases C0–C4 de `v3.0.0`; datos de comercios, naves, grandes superficies, bodegas, locales por tipo, rótulos y gasolineras.
 - [Rendimiento y mantenimiento](historico/PLAN-REFACTOR.md): fases R0–R5; arranque medido, índices, módulos, validadores y documentación.
 - [Resultado de R4](historico/RESULTADO-R4.md): medidas de CPU y motivos para no activar los avisos de complejidad.

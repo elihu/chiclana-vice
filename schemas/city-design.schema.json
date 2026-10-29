@@ -173,7 +173,7 @@
           "uniqueItems": true
         },
         "buildingKinds": {
-          "description": "Clase del edificio entero (naves industriales y grandes superficies, C1 de docs/PLAN-COMERCIOS.md): cambia todo el muro genérico. Industrial: uso de industrialUses o indicio de zona industrial de OSM (ground-floors.json → zones) salvo zoneExcludedUses. Gran superficie: uso de bigRetailUses o indicio de zona comercial, con la misma excepción. Ambas con hasta maximumFloors plantas y una planta de al menos el área mínima (m², sin patios).",
+          "description": "Clase del edificio entero (naves industriales y grandes superficies, C1 de docs/historico/PLAN-COMERCIOS.md): cambia todo el muro genérico. Industrial: uso de industrialUses o indicio de zona industrial de OSM (ground-floors.json → zones) salvo zoneExcludedUses. Gran superficie: uso de bigRetailUses o indicio de zona comercial, con la misma excepción. Ambas con hasta maximumFloors plantas y una planta de al menos el área mínima (m², sin patios).",
           "type": "object",
           "required": [
             "maximumFloors",
@@ -212,7 +212,7 @@
           }
         },
         "families": {
-          "description": "Tipos de local (C2 de docs/PLAN-COMERCIOS.md), por orden: un local con un comercio de OSM delante toma el primero cuyo types incluye su tipo (clave:valor, o clave:* como comodín). tone colorea toldo y rótulo; front es el frente del bajo (wide: escaparate amplio; door: puerta y cristalera; gate: portón); awning añade toldo a rayas. Sin tipo, el local genérico. Hasta 6 tipos.",
+          "description": "Tipos de local (C2 de docs/historico/PLAN-COMERCIOS.md), por orden: un local con un comercio de OSM delante toma el primero cuyo types incluye su tipo (clave:valor, o clave:* como comodín). tone colorea toldo y rótulo; front es el frente del bajo (wide: escaparate amplio; door: puerta y cristalera; gate: portón); awning añade toldo a rayas. Sin tipo, el local genérico. Hasta 6 tipos.",
           "type": "array",
           "maxItems": 6,
           "items": {

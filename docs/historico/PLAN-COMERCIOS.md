@@ -1,12 +1,15 @@
 # Plan: locales comerciales, grandes superficies y naves industriales
 
+> **Estado (29/10/2026)**: C0–C4 ejecutadas y publicadas en `v3.0.0`. Cada fase lleva su nota de
+> cierre con los cambios sobre lo previsto.
+
 Fecha: 29/10/2026. Referencias de línea y cifras tomadas sobre `feat/ampliar-mapa` (mapa
 ampliado a la caja `[-820, 671.835, -1120, 650]`, 11.771 partes de edificio). Este plan
 se ejecuta después de integrar esa rama en `main`.
 
 Lee antes `AGENTS.md`, `docs/DESARROLLO.md`, `docs/ESTADO.md`, `docs/KIT-FACHADAS.md`,
 `docs/DATOS.md` (§9, «Usos de los bajos») y `tests/AGENTS.md`. Si tocas `tools/`, lee
-`tools/AGENTS.md`. Antecedentes: F2b y F2c de [PLAN-VISUAL.md](PLAN-VISUAL.md), que crearon
+`tools/AGENTS.md`. Antecedentes: F2b y F2c de [PLAN-VISUAL.md](../PLAN-VISUAL.md), que crearon
 la capa de bajos y sus clases.
 
 ## Contexto

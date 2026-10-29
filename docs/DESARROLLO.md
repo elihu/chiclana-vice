@@ -479,6 +479,39 @@ transitabilidad. Parámetros de autor en `city-design.json` (sección `tram`; es
   (salvo en tramos `lane`) o a menos de `crossingClearance` de un cruce a nivel o paso peatonal:
   ahí no hay acera, bordillo ni faldón.
 
+## Bajos, comercios y vallas
+
+Todo sale de capas de datos y de reglas de `city-design.json`; no hay listas de edificios
+escritas a mano. Planes: [PLAN-COMERCIOS.md](historico/PLAN-COMERCIOS.md) y
+[PLAN-VALLAS.md](PLAN-VALLAS.md).
+
+- **Clase del bajo** (`world/ground-floors.js`, reglas en `groundFloors`): por frente, `shop`,
+  `block`, `house` o `garage`, con los indicios del Catastro y de OSM de `ground-floors.json` y el
+  tipo de la calle. `shopNear` devuelve el comercio de OSM más cercano delante del frente.
+- **Tipo de local** (`groundFloors.families`, hasta 6): un local con un comercio delante toma el
+  primer tipo cuyas etiquetas incluyen la suya (`clave:*` vale como comodín): tono de toldo y
+  rótulo, frente (`wide`, `door` o `gate`) y toldo. `windows.js` lo lee de uniformes que carga
+  `setShopFamilies`.
+- **Clase del edificio** (`groundFloors.buildingKinds`): nave industrial, gran superficie o, dentro
+  de `cellarZone` (el casco), bodega. Cambia todo el muro genérico, sin ventanas de vivienda ni
+  cornisa, y deja fuera de las fachadas con relieve las partes que la tienen.
+- **Atributo `bajo`** de los muros genéricos: 0 sin clase; 1 local, 2 bloque con locales, 3 bloque
+  con viviendas, 4 casa, 5 cochera; 6 nave y 7 nave a la calle; 8 gran superficie y 9 su entrada;
+  10 bodega y 11 bodega a la calle. A los locales se suma 16 × tipo. Constantes de dibujo en
+  `WINDOWS` (`windows.js`), en vivo con `setWindows`.
+- **Rótulos** (`world/shop-signs.js`): un atlas de canvas (hasta 336 nombres, sin pasar de 2048 px)
+  y una malla; cada comercio con nombre busca su frente con el criterio de `shopNear` y queda uno
+  por frente. Las gasolineras ponen el suyo en el canto de la marquesina.
+- **Gasolineras** (`world/fuel.js`): la marquesina es la mayor parte del Catastro de una planta
+  junto al punto de OSM; `buildings.js` la dibuja sin paredes, con un canto de color, y la receta
+  `gasolinera` pone debajo pilares e islas. `composeFront` acepta `with` para sus medidas.
+- **Vallas** (`world/barriers.js`, reglas en `barriers`): `barriers.json` en tramos de 2 m sobre
+  el relieve, una malla con color por vértice y otra con la malla metálica de las vallas. Cada
+  tramo se registra en `streetEnvironment.barrierSegments`; `spatial.js` los consulta en
+  `blocked` (`inBarrier`, sin choque a más de 2,5 m de la cota del pie) y en `crossesWall`.
+- **Contraste de la ortofoto**: `setOrthoContrast` (`engine/textures.js`) lo aplica en el shader del
+  suelo y de los tejados, sin recomprimir los JPEG del IGN.
+
 ## Cielo, entorno y color
 
 - `js/engine/sky.js`: cúpula con degradado y halo del sol (se dibuja primero, sin

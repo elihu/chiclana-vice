@@ -55,11 +55,11 @@ SwiftShader no acreditan fluidez, GPU real ni tacto físico.
 
 - **Palmeras:** el detector actual pierde copas y no clasifica especies. Combinar etiquetas
   OSM, revisión de ortofoto y colocación de autor; no deducirlas solo de la sombra.
-- **Vallas y murallas:** recuperar geometrías `barrier` disponibles y completar a mano los
-  casos sin dato fiable. Evitar levantar muros sobre límites parcelarios por suposición.
-- **Comercios:** ya hay clasificación genérica de bajos y tipos de negocio, pero faltan
-  nombre/marca en la capa. Se puede ampliar y crear familias de fachada (supermercado,
-  bar, panadería, ropa), manteniendo contornos y patios. Modelos específicos por local
-  requerirán identificar y anclar cada establecimiento.
-- **Ampliación:** hecha en `feat/ampliar-mapa` (29/10/2026): el mundo es la caja completa
-  del minimapa (de unos 1,67 a 2,64 km²), con el mismo origen y las mismas cotas.
+- **Vallas y murallas:** las de OSM, dibujadas y con colisión en `v3.0.0`
+  ([PLAN-VALLAS.md](PLAN-VALLAS.md)); quedan los cajeros del Iro y completar a mano los casos
+  sin dato fiable, sin levantar muros sobre límites parcelarios por suposición.
+- **Comercios:** locales por tipo, rótulos con el nombre de OSM, naves, grandes superficies,
+  bodegas y gasolineras en `v3.0.0` ([PLAN-COMERCIOS.md](historico/PLAN-COMERCIOS.md)).
+  Modelos específicos por local requerirán identificar y anclar cada establecimiento.
+- **Ampliación:** publicada en `v3.0.0`: el mundo es la caja completa del minimapa (de unos
+  1,67 a 2,64 km²), con el mismo origen y las mismas cotas.

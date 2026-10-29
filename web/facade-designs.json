@@ -1533,7 +1533,7 @@
       ]
     },
     "gasolinera": {
-      "description": "Lo que hay bajo la marquesina de una gasolinera de OSM (C4 de docs/PLAN-COMERCIOS.md). La marquesina es una parte del Catastro que se dibuja sin paredes, con su cubierta y un canto de color (js/world/fuel.js y buildings.js); el muro de la receta es el fondo de su caja, de frente len y fondo depth, y z crece hacia la calle principal. Pone un pilar y una isla con dos surtidores por cada una de las islands, con pilares de canopyH m (la altura libre bajo el canto). Tonos genéricos, sin colores de marca.",
+      "description": "Lo que hay bajo la marquesina de una gasolinera de OSM (C4 de docs/historico/PLAN-COMERCIOS.md). La marquesina es una parte del Catastro que se dibuja sin paredes, con su cubierta y un canto de color (js/world/fuel.js y buildings.js); el muro de la receta es el fondo de su caja, de frente len y fondo depth, y z crece hacia la calle principal. Pone un pilar y una isla con dos surtidores por cada una de las islands, con pilares de canopyH m (la altura libre bajo el canto). Tonos genéricos, sin colores de marca.",
       "params": { "depth": 20, "islands": 2, "canopyH": 2.75, "variant": 0 },
       "body": [
         {

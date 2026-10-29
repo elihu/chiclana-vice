@@ -1,7 +1,7 @@
 # Plan: vallas, muros y setos
 
 Fecha: 29/10/2026. Cifras tomadas sobre `main` (`509f311`), con el mapa ampliado a la caja
-`[-820, 671.835, -1120, 650]`. Sigue a [PLAN-COMERCIOS.md](PLAN-COMERCIOS.md) y recoge la nota
+`[-820, 671.835, -1120, 650]`. Sigue a [PLAN-COMERCIOS.md](historico/PLAN-COMERCIOS.md) y recoge la nota
 de [REVISION-MUNDO.md](REVISION-MUNDO.md): «recuperar geometrías `barrier` disponibles y
 completar a mano los casos sin dato fiable; evitar levantar muros sobre límites parcelarios por
 suposición».
