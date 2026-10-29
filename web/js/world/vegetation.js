@@ -56,6 +56,14 @@ export function buildTrees() {
   let vegetation = new THREE.Group();
   vegetation.name = 'vegetation-cells';
   gfx.scene.add(vegetation);
+  const { rules, layer, points, counts } = collectTreePoints();
+  const { dummy } = buildTreeInstances(vegetation, points, counts);
+  buildShrubs(vegetation, rules, layer, dummy);
+  streetEnvironment.treeSources = counts;
+  streetEnvironment.treeBuildMs = performance.now() - started;
+}
+
+function collectTreePoints() {
   // Densidad, separaciones y árboles de la plaza en web/city-design.json (sección `vegetation`).
   const rules = world.cityDesign.vegetation;
   const layer = world.vegetation;
@@ -125,6 +133,60 @@ export function buildTrees() {
       counts.market++;
     }
   }
+  return { rules, layer, points, counts };
+}
+
+function buildShrubs(vegetation, rules, layer, dummy) {
+  // Low shrubs use the same compact instancing approach in mapped green areas.
+  // Copas bajas de la capa (ver tools/export-vegetation.mjs): arbustos a su tamaño.
+  const layerShrubs = (layer?.shrubs ?? []).map((p) => {
+    if (p.length !== 3 || !p.every(Number.isFinite) || p[2] <= 0)
+      throw Error('Arbusto incompatible');
+    return p;
+  });
+  const shrubs = [];
+  for (const a of world.city.areas) {
+    if (a.kind !== 'park') continue;
+    for (let i = 0; i < a.p.length; i += rules.shrubEveryVertex) {
+      let p = a.p[i],
+        near = nearestRoad(...p);
+      if (
+        !insideBounds(p[0], p[1]) ||
+        inBuilding(...p, rules.shrubBuildingClearance) ||
+        !near ||
+        near.d < near.s.width / 2 + rules.shrubRoadClearance
+      )
+        continue;
+      shrubs.push(p);
+    }
+  }
+  let leaves = new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1, 1),
+    mat('#667f51'),
+    shrubs.length + layerShrubs.length,
+  );
+  shrubs.forEach((p, i) => {
+    dummy.position.set(p[0], surfaceHeightAt(...p) + 0.42, p[1]);
+    dummy.rotation.set(0, i, 0);
+    dummy.scale.set(0.8, 0.55, 0.75);
+    dummy.updateMatrix();
+    leaves.setMatrixAt(i, dummy.matrix);
+  });
+  layerShrubs.forEach(([x, z, r], i) => {
+    const w = clamp(r * 0.8, 0.6, 2.4),
+      h = clamp(r * 0.45, 0.45, 1.2);
+    dummy.position.set(x, surfaceHeightAt(x, z) + h * 0.75, z);
+    dummy.rotation.set(0, i, 0);
+    dummy.scale.set(w, h, w * 0.92);
+    dummy.updateMatrix();
+    leaves.setMatrixAt(shrubs.length + i, dummy.matrix);
+  });
+  // Arbustos de menos de 1,2 m: su sombra sobre el césped no se distingue.
+  leaves.castShadow = false;
+  addVegetationCells(vegetation, leaves, 'shrubs');
+}
+
+function buildTreeInstances(vegetation, points, counts) {
   // También las calles peatonales y caminos tienen pavimento transitable.
   const roadSpace = createRoadSpace(world.city.roads, []);
   counts.removedOnRoad = 0;
@@ -213,53 +275,5 @@ export function buildTrees() {
   addVegetationCells(vegetation, crowns, 'crowns');
   addVegetationCells(vegetation, smallCrowns, 'crowns-small');
   streetEnvironment.trees = woodK;
-  // Low shrubs use the same compact instancing approach in mapped green areas.
-  // Copas bajas de la capa (ver tools/export-vegetation.mjs): arbustos a su tamaño.
-  const layerShrubs = (layer?.shrubs ?? []).map((p) => {
-    if (p.length !== 3 || !p.every(Number.isFinite) || p[2] <= 0)
-      throw Error('Arbusto incompatible');
-    return p;
-  });
-  const shrubs = [];
-  for (const a of world.city.areas) {
-    if (a.kind !== 'park') continue;
-    for (let i = 0; i < a.p.length; i += rules.shrubEveryVertex) {
-      let p = a.p[i],
-        near = nearestRoad(...p);
-      if (
-        !insideBounds(p[0], p[1]) ||
-        inBuilding(...p, rules.shrubBuildingClearance) ||
-        !near ||
-        near.d < near.s.width / 2 + rules.shrubRoadClearance
-      )
-        continue;
-      shrubs.push(p);
-    }
-  }
-  let leaves = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(1, 1),
-    mat('#667f51'),
-    shrubs.length + layerShrubs.length,
-  );
-  shrubs.forEach((p, i) => {
-    dummy.position.set(p[0], surfaceHeightAt(...p) + 0.42, p[1]);
-    dummy.rotation.set(0, i, 0);
-    dummy.scale.set(0.8, 0.55, 0.75);
-    dummy.updateMatrix();
-    leaves.setMatrixAt(i, dummy.matrix);
-  });
-  layerShrubs.forEach(([x, z, r], i) => {
-    const w = clamp(r * 0.8, 0.6, 2.4),
-      h = clamp(r * 0.45, 0.45, 1.2);
-    dummy.position.set(x, surfaceHeightAt(x, z) + h * 0.75, z);
-    dummy.rotation.set(0, i, 0);
-    dummy.scale.set(w, h, w * 0.92);
-    dummy.updateMatrix();
-    leaves.setMatrixAt(shrubs.length + i, dummy.matrix);
-  });
-  // Arbustos de menos de 1,2 m: su sombra sobre el césped no se distingue.
-  leaves.castShadow = false;
-  addVegetationCells(vegetation, leaves, 'shrubs');
-  streetEnvironment.treeSources = counts;
-  streetEnvironment.treeBuildMs = performance.now() - started;
+  return { dummy };
 }
