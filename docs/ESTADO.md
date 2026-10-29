@@ -51,6 +51,8 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   `actions/setup-node` v7.1.0. Three.js 0.186.1 sigue siendo la última.
 - **Plan** [PLAN-REFACTOR.md](PLAN-REFACTOR.md): rendimiento, simplificación y documentación
   sin cambios visibles, por fases R0–R5.
+- **R0** (`perf/medir-arranque`): etapas de arranque medidas y `tools/bench-startup.mjs`.
+  Referencia en Node: arranque 10,5 s y 0,53 ms por paso de `update`; sin cambios visibles.
 
 ## Novedades de `v2.0.0`
 
