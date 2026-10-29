@@ -98,6 +98,13 @@ de que el hueco de una puerta sí. Commit `feat(juego): colisión con vallas y m
 
 ### V3. Muros de contención del Iro (`feat/cajeros`)
 
+> **Parada el 29/10/2026 en la comprobación previa.** El salto existe, pero el relieve lo reparte en
+> un talud: a ±2 m del trazo el desnivel mediano es 0,8 m (p90 1,3–1,6 m) y a ±6 m, 2,2–2,4 m (p90
+> 3,9–4,1 m), con el agua a 6–8 m (mediana) del trazo. Un paramento vertical sin tocar el relieve
+> quedaría medio enterrado por el lado del río y sobresaldría por el del paseo. Pendiente de decidir
+> con el usuario: pretil bajo sobre la orilla alta, cajero en el modelo de superficies (cambia el
+> relieve en la franja, con revisión) o dejarlo. El de la c/ Ánimas (227 m) no toca el agua.
+
 Los dos `retaining_wall` de 1,37 km son los cajeros del río. Se dibujan como paramento entre la
 cota de la orilla (modelo de superficies) y la lámina de agua, sin cambiar el relieve ni el agua.
 Antes, comprobar con `audit-terrain-surfaces.mjs` que la orilla y el agua dejan ese salto; si no,

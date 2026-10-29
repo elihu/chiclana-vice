@@ -264,6 +264,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo.
 - Vallas y muros ([PLAN-VALLAS.md](PLAN-VALLAS.md)): V0–V2 integradas (`barriers.json` desde OSM;
   3,5 km de muros, vallas, seto y muralla dibujados y con colisión, con hueco donde los cruza una
-  vía). Sigue V3 (cajeros del Iro); V4 solo a petición del usuario.
+  vía). V3 (cajeros del Iro) parada: el relieve reparte el salto en un talud y falta decidir
+  cómo dibujarlos; V4 solo a petición del usuario.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
