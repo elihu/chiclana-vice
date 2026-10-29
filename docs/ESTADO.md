@@ -6,7 +6,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 ## Estado
 
 - Publicado en https://elihu.github.io/chiclana-vice/ desde `main` mediante GitHub
-  Actions. Versión actual: `v2.1.0` (29/10/2026); el historial de publicaciones está en
+  Actions. Versión actual: `v3.0.0` (29/10/2026); el historial de publicaciones está en
   [Releases](https://github.com/elihu/chiclana-vice/releases).
 - `npm run check` pasa en CPU con DOM y WebGL simulados. Chrome sin interfaz
   (SwiftShader) arranca sin errores en la raíz, bajo `/chiclana-vice/` y en la web publicada. El usuario probó
@@ -41,20 +41,28 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   pantallas de proporción 2,4 o más. Cambiarlo exigiría rehacer las colisiones de la
   cámara.
 
-## Integrado en `main` sin publicar
+## Novedades de `v3.0.0`
 
-- **Mapa ampliado** a toda la caja del minimapa, `[-820, 671.835, -1120, 650]` (de unos 1,67
-  a 2,64 km²): 11.771 partes de edificio (antes 7.862) y 1.019 vías, con el mismo origen;
-  los edificios anteriores no cambian ni de forma ni de color y el relieve es el mismo.
-  Revisado por el usuario en el navegador el 29/10/2026.
-- **Ortofoto PNOA 2025-07** en las 56 teselas (antes 2022-07), con un poco más de contraste en
-  el shader (`setOrthoContrast`, 1,15). Misma resolución; la Alameda aparece ya reformada.
-  Atribuciones actualizadas con permiso del usuario.
-- **Copas** detectadas sobre la imagen de 2025 con un umbral de verdor más bajo (ExG 0,04): 2.872
-  árboles y 1.491 arbustos.
-- Plan nuevo: [PLAN-COMERCIOS.md](PLAN-COMERCIOS.md).
-- Verificación: `npm run check` y Chrome con SwiftShader (normal y ligero). Sin medidas en
-  móvil con el mapa ampliado (un 50 % más de edificios).
+Versión mayor elegida por el usuario: el mundo crece un 58 % y la ciudad gana comercios, naves,
+gasolineras y vallas. Las partidas guardadas siguen siendo compatibles.
+
+- **Mapa ampliado** a toda la caja del minimapa, `[-820, 671.835, -1120, 650]` (de unos 1,67 a
+  2,64 km², sin zonas oscuras): 11.771 partes de edificio (antes 7.862) y 1.019 vías, con el
+  mismo origen; los edificios anteriores no cambian ni de forma ni de color y el relieve es el
+  mismo. Revisado por el usuario en el navegador.
+- **Ortofoto PNOA 2025-07** en las 56 teselas (antes 2022-07), con un poco más de contraste en el
+  shader (`setOrthoContrast`, 1,15); la Alameda aparece ya reformada. **Copas** detectadas sobre
+  la imagen nueva: 2.872 árboles y 1.491 arbustos.
+- **Comercios** ([PLAN-COMERCIOS.md](historico/PLAN-COMERCIOS.md)): naves industriales de chapa con
+  portones (510), grandes superficies con franja y cristalera (22, como el Mercadona) y bodegas
+  encaladas en el casco, todas con la altura del Catastro; locales por tipo (hostelería,
+  alimentación, moda, servicios y motor) con su tono, frente y toldo; 267 rótulos con el nombre
+  de OSM, sin logotipos; y 5 gasolineras con la marquesina del Catastro, surtidores y nombre.
+- **Vallas, muros y setos** ([PLAN-VALLAS.md](PLAN-VALLAS.md)): 3,5 km desde OSM, apoyados en el
+  relieve, con hueco donde los cruza una vía y colisión para el jugador y los coches.
+- **Verificación:** `npm run check` y Chrome con SwiftShader (normal y ligero) en cada fase, con
+  capturas de las zonas nuevas; revisión del usuario de la ampliación y la ortofoto. Sin FPS
+  medidos en el móvil con el mapa ampliado ni con el shader de muros, algo más largo.
 
 ## Novedades de `v2.1.0`
 
@@ -258,7 +266,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   cercano con la ortofoto de 2025 (la limpieza de copas y sombras se ajustó con la de 2022) y
   los 114 tramos de calle que el tráfico excluye por cruzar edificios (antes 58), casi todos
   vías de servicio de OSM a través de naves.
-- Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C4 integradas (datos de
+- Comercios y naves ([PLAN-COMERCIOS.md](historico/PLAN-COMERCIOS.md)): C0–C4 integradas (datos de
   comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
   por tipo con tono, frente y toldo; 267 rótulos con el nombre de OSM; 5 de 6 gasolineras, con la
   marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo.
