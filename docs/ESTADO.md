@@ -260,7 +260,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   vías de servicio de OSM a través de naves.
 - Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C2 integradas (datos de
   comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
-  por tipo con tono, frente y toldo). Siguen C3 y C4. Sin medir en el móvil el shader de muros, algo más largo. Después,
+  por tipo con tono, frente y toldo; 267 rótulos con el nombre de OSM). Sigue C4 (gasolineras). Sin medir en el móvil el shader de muros, algo más largo. Después,
   vallas y muros de parcela.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
