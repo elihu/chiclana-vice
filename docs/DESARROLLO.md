@@ -43,10 +43,19 @@ navegador real y anotar qué no se ha verificado. El arnés común `tests/runtim
 de frentes, crea los globales simulados e importa el juego con `import()`; no modifica su
 texto. El juego expone su API de pruebas a través de `startGame()`.
 
-Para refactorizaciones sin cambios visibles hay dos herramientas aparte, que no forman parte
+Para refactorizaciones sin cambios visibles hay herramientas aparte, que no forman parte
 de `npm test`. `node tools/scene-fingerprint.mjs --out base.json` guarda una huella de la
 escena (objetos, materiales, geometría por bytes, rutas, recursos pedidos y 600 pasos de
 simulación en CPU) y `--compare base.json` la contrasta con la del árbol actual.
+`node tools/bench-startup.mjs --out arranque-base.json` mide el arranque del arnés,
+sus etapas y el coste medio de `update(1/60)` en 1.200 pasos tras 60 de calentamiento.
+`--compare arranque-base.json` imprime diferencias por etapa en ms y porcentaje; se
+informa la mediana de tres ejecuciones en procesos separados, en la misma máquina y
+versión de Node. El JSON contiene `{ node, bootMs, stages, updateMsPerFrame }`:
+`bootMs` incluye la creación del arnés y la importación del juego; las etapas cubren
+`init`, incluidas sus esperas. La API de pruebas expone una copia mediante
+`startupTimings()` (`[{ name, ms }]`), y con `#fps` o `?debug` el juego muestra las
+etapas en la consola con `console.table`. Son tiempos de CPU con DOM y WebGL simulados.
 `node tools/browser-smoke.mjs URL` abre el juego en Chrome sin interfaz (SwiftShader), recoge
 errores y cuenta mallas y triángulos. Se comparan en la misma máquina y con la misma versión
 de Node, y no acreditan GPU, rendimiento ni móvil.
