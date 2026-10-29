@@ -16,9 +16,7 @@ documento; los demás enlazan a él.
 - [Fuentes del mapa y aproximaciones](MAP_SOURCES.md).
 - [Las 15 correcciones del piloto de alturas](ALTURAS_PILOTO.md).
 - [Kit de fachadas y correcciones](KIT-FACHADAS.md): recetas, expresiones, compositor y
-  anclajes; esquemas de [fachadas](facade-designs.schema.json) y
-  [correcciones](map-corrections.schema.json). Los esquemas actuales para el editor están
-  en [`schemas/`](../schemas/).
+  anclajes. Los esquemas para el editor están en [`schemas/`](../schemas/).
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato, perfiles de
   autor y niveles superior e inferior.
 - [Relieve: implementación, validación y reproducción](TERRENO_PILOTO.md): auditoría,

@@ -21,10 +21,10 @@ esquemas vigentes están en `docs/`:
 | [HERRAMIENTAS.md](plan-modular/HERRAMIENTAS.md)                           | Código de la huella de escena, del humo en Chrome, del arnés y de los tests |
 | [INVENTARIO-DATOS.md](plan-modular/INVENTARIO-DATOS.md)                   | Qué está ya en datos y qué sigue en el código, con valores                  |
 | [KIT-FACHADAS.md](../KIT-FACHADAS.md)                                     | Formato del kit, lenguaje de expresiones y compositor                       |
-| [facade-designs.schema.json](../facade-designs.schema.json)               | Esquema JSON de las composiciones de fachada                                |
+| [facade-designs.schema.json](plan-modular/facade-designs.schema.json)     | Esquema JSON de las composiciones de fachada                                |
 | [facade-designs.example.json](plan-modular/facade-designs.example.json)   | Ejemplo completo: el Mercado, equivalente al código actual                  |
 | [city-design.example.json](plan-modular/city-design.example.json)         | Ejemplo de reglas de calle, zonas y mobiliario                              |
-| [map-corrections.schema.json](../map-corrections.schema.json)             | Esquema de la capa de correcciones manuales                                 |
+| [map-corrections.schema.json](plan-modular/map-corrections.schema.json)   | Esquema de la capa de correcciones manuales                                 |
 | [map-corrections.example.json](plan-modular/map-corrections.example.json) | Ejemplo de correcciones                                                     |
 | [TERRENO.md](plan-modular/TERRENO.md)                                     | Dónde asume el código suelo plano y dónde entrará el terreno                |
 
