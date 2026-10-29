@@ -21,7 +21,10 @@ from PIL import Image, ImageChops, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = "https://www.ign.es/wms-inspire/pnoa-ma"
-CACHE = Path.home() / ".cache/chiclana-vice/pnoa"
+# Vuelo que deben declarar todas las teselas. La caché va por vuelo: el WMS sirve el
+# mosaico vigente con la misma URL, y al cambiar de vuelo no deben reutilizarse imágenes.
+FLIGHT = "2025-07"
+CACHE = Path.home() / ".cache/chiclana-vice/pnoa" / FLIGHT
 LAT, LON = 36.4195, -6.1485
 SX, SZ = 111320 * math.cos(math.radians(LAT)), 111320
 TILE, MARGIN = 255, 20.5
@@ -132,7 +135,7 @@ def main():
             found = re.findall(r"\b\d{4}-\d{2}\b", data.decode())
             dates[f"{tile[0]}_{tile[1]}"] = found
             print(f"Fecha {tile}: {found}", flush=True)
-            if found != ["2022-07"]:
+            if found != [FLIGHT]:
                 raise ValueError(f"Fecha incompatible en {tile}: {found}; se detiene sin publicar")
     images = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
@@ -165,7 +168,7 @@ def main():
     index = dict(version=1, tile=TILE, margin=MARGIN,
                  levels=dict(hi=[1184, 0.25], lo=[592, 0.5]), tiles=tiles,
                  general=dict(file="general.jpg", box=general_box, size=size),
-                 acquisition="2022-07", consulted=datetime.date.today().isoformat(),
+                 acquisition=FLIGHT, consulted=datetime.date.today().isoformat(),
                  source=SOURCE,
                  sha256={name: hashlib.sha256(data).hexdigest() for name, data in images.items()})
     target = ROOT / "web/aerial"

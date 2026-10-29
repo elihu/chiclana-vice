@@ -1,7 +1,7 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { asset } from '../core/assets.js';
 import { gfx, player, world } from '../core/state.js';
-import { applyGroundDetail, maxAnisotropy } from '../engine/textures.js';
+import { applyGroundDetail, maxAnisotropy, orthoPhotoNode } from '../engine/textures.js';
 
 // Gris sRGB elegido en G2.2 (combinación B).
 const AERIAL_TINT = 0.78,
@@ -39,13 +39,14 @@ export function aerialMaterial(i, j, options = {}, plainColor = '#9a9b86') {
   const { detail, ...materialOptions } = options;
   const key = tileKey(i, j);
   if (!materials.has(key)) materials.set(key, new Set());
-  const m = new (detail ? THREE.MeshStandardNodeMaterial : THREE.MeshStandardMaterial)({
+  const m = new THREE.MeshStandardNodeMaterial({
     map: loaded.get(key)?.texture ?? world.groundTexture,
     ...materialOptions,
   });
   m.userData.plainColor = plainColor;
   m.color.set(m.map ? aerialTint() : plainColor);
   if (detail) applyGroundDetail(m, { ortho: true });
+  else m.colorNode = THREE.TSL.vec4(orthoPhotoNode(), 1);
   materials.get(key).add(m);
   return m;
 }

@@ -1,7 +1,7 @@
 import { aerialMaterial, aerialTint, tileKey } from './aerial-tiles.js';
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { chunks, gfx, segments, world } from '../core/state.js';
-import { facadeTexture } from '../engine/textures.js';
+import { facadeTexture, orthoPhotoNode } from '../engine/textures.js';
 import { WINDOWS, windowWallMaterial } from '../engine/windows.js';
 import { wallMaterial } from '../engine/wall-ao.js';
 import { loadProgress } from '../ui/feedback.js';
@@ -27,7 +27,7 @@ export async function buildBuildings() {
       roughness: 0.94,
       side: THREE.DoubleSide,
     }),
-    roofMat = new THREE.MeshStandardMaterial({
+    roofMat = new THREE.MeshStandardNodeMaterial({
       ...(world.groundTexture
         ? { map: world.groundTexture, color: aerialTint() }
         : { color: '#b4a58f' }),
@@ -39,6 +39,7 @@ export async function buildBuildings() {
       roughness: 0.9,
       side: THREE.DoubleSide,
     });
+  if (world.groundTexture) roofMat.colorNode = THREE.TSL.vec4(orthoPhotoNode(), 1);
   // Paleta, colores por tipo, alturas mínimas y escala UV en web/city-design.json (`buildings`).
   const rules = world.cityDesign.buildings,
     palette = rules.palette;

@@ -123,7 +123,7 @@ if (fs.existsSync(directory + '/aerial/index.json')) {
     conditions: 'CC-BY-4.0 compatible IGN terms',
     licenseUrl: 'https://www.ign.es/resources/licencia/Condiciones_licenciaUso_IGN.pdf',
     sourceUrl: aerial.source,
-    attribution: 'Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)',
+    attribution: 'Obra derivada de PNOA 2025-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es)',
     acquisitionDate: aerial.acquisition,
     acquisitionDateEvidence:
       'WMS OI.MosaicElement GetFeatureInfo at every tile centre; tools/aerial-tiles.py',

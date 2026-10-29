@@ -11,30 +11,29 @@ se sustituye.
 
 ## Fuentes
 
-- **Catastro INSPIRE BU**, municipio 11015, descarga del 4/10/2026. 7.862 partes de
-  edificio (7.419 en el centro, 333 en Santa Ana y 86 en el norte): contornos y patios
-  recortados con la unión de los rectángulos del mundo, simplificados a 0,12 m y transformados de
+- **Catastro INSPIRE BU**, municipio 11015, descarga del 4/10/2026. 11.771 partes de
+  edificio: contornos y patios recortados con el rectángulo del mundo, simplificados a 0,12 m y transformados de
   EPSG:25829 a coordenadas locales con precisión de 0,01 m. Se conservan las plantas;
   altura base = plantas × 3,05 + 0,4 m. Capa: `web/buildings.json`.
   https://www.catastro.hacienda.gob.es/INSPIRE/Buildings/11/11015-CHICLANA%20DE%20LA%20FRONTERA/A.ES.SDGC.BU.11015.zip
 - **OpenStreetMap**, extracto del 8/10/2026 (el del 5/10 no cubría los anexos y en el
-  centro no difiere): 682 vías, 83 áreas con su ID, 22 hitos y 15 árboles cartografiados; objetos de calle extraídos aparte. Anchuras y categorías de juego
+  centro no difiere): 1.019 vías, 102 áreas con su ID, 23 hitos y 20 árboles cartografiados; objetos de calle extraídos aparte. Anchuras y categorías de juego
   inferidas donde OSM no las indica. Capas: `web/osm-world.json` y
   `web/street-objects.json`.
   https://api.openstreetmap.org/api/0.6/map?bbox=-6.158,36.413,-6.141,36.430
 - **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa `OI.OrthoimageCoverage`,
   EPSG:4326, por teselas en `web/aerial/` (`tools/aerial-tiles.py`); consulta del
-  8/10 y 9/10/2026. 36 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
+  29/10/2026. 56 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
   recomprimir a 0,25 m/píxel (`hi/`) y derivados a 0,5 m/píxel (`lo/`) para el modo
   ligero y los táctiles, más una vista general de la caja envolvente en 1492 × 1770. El
   recuadro local pasa a longitud y latitud con la inversa exacta de la proyección de
   `rebuild-map.py` (`lon = -6.1485 + x / (111320 · cos 36.4195°)`,
-  `lat = 36.4195 − z / 111320`). Los 36 centros declaran vuelo 2022-07 (GetFeatureInfo
-  `OI.MosaicElement`). Las franjas comunes de los 57 pares de teselas vecinas coinciden
-  con un desplazamiento máximo de 0,005 píxeles de 0,25 m. Al generar las 24 del centro,
-  además, coincidían con la ortofoto única anterior (`aerial.jpg`, 4096 × 3072, consulta del
-  4/10/2026, retirada después) con un desplazamiento máximo de 0,091 píxeles de esa
-  imagen. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
+  `lat = 36.4195 − z / 111320`). Los 56 centros declaran vuelo 2025-07 (GetFeatureInfo
+  `OI.MosaicElement`). Las franjas comunes de los 97 pares de teselas vecinas coinciden con
+  un desplazamiento máximo de 0,004 píxeles de 0,25 m (diferencia media de luminancia de
+  5,0 sobre 255 como máximo). Hasta el 29/10/2026 se usó el vuelo 2022-07; las referencias
+  a teselas de 2022 de las fichas de monumentos de abajo conservan su valor como evidencia
+  de entonces, pero esos archivos se han sustituido. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
   Método en [DATOS.md](DATOS.md#4-ortofoto-por-teselas-opcional).
   https://www.ign.es/wms-inspire/pnoa-ma
 - **PNOA-LiDAR, primera cobertura 2008–2015** (IGN): MDSnE2,5 por WCS, consulta del
@@ -271,8 +270,23 @@ Con el recorte regenerado (consulta con margen de 20 m, acceso 13/10/2026), los 
 (unión 3.411) y por radio 3.079 (unión 3.198). El WCS ajusta ligeramente la rejilla
 al rectángulo solicitado; el SHA del recorte fija qué muestreo se ha usado.
 Tras regenerar y deduplicar quedan **3.113**: parque 1.182, plaza 82, calle 686,
-resto 1.163; `ign` 1.811, `imagen` 137 y `ambos` 1.165. La vía de imagen preserva
+resto 1.163; `ign` 1.811, `imagen` 137 y `ambos` 1.165.
+
+Al ampliar el mapa a la caja completa (29/10/2026) el recorte anterior no llegaba a la
+nueva esquina noreste y se volvió a pedir con los nuevos límites. Como el WCS ajusta la
+rejilla al rectángulo, cambian las alturas muestreadas también en el área anterior: de
+sus 3.113 candidatos, 2.322 quedan idénticos, 718 cambian altura u origen, 73 desaparecen
+y aparecen 54. Con las zonas nuevas quedan **4.542** (parque 1.461, plaza 111, calle
+1.185, resto 1.785; `ign` 2.857, `imagen` 213 y `ambos` 1.472). La vía de imagen preserva
 la fila joven de plaza en `-1_0`, aunque aún faltan algunos centros visibles.
+
+**Ortofoto 2025-07 (29/10/2026).** La imagen nueva es más pálida: en las copas con IGN
+≥ 5 m la mediana de ExG baja de 0,152 a 0,083 y solo el 37 % supera 0,10. El umbral pasa
+a **ExG > 0,04** (constante `EXG_THRESHOLD` del detector), que conserva el 77 % de esas
+copas y deja fuera el 99 % de las calzadas (percentil 99: 0,041); el resto del método no
+cambia. Quedan **4.363** candidatos (parque 1.211, plaza 115, calle 1.295, resto 1.742;
+`ign` 3.521, `imagen` 94 y `ambos` 748). No se busca igualar los de 2022: son otra
+imagen, tres años posterior. Los párrafos anteriores describen el vuelo 2022-07.
 Superposiciones de revisión en `/tmp/g5-arboles/combinado/{-1_0,-2_-3,2_0,0_0}.jpg`:
 IGN verde vivo, imagen verde claro, ambos verde oscuro y descartados rojo.
 

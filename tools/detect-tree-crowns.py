@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 ENDPOINT = 'https://wcs-mds.idee.es/mds'
+# Umbral de verdor (ExG) del vuelo PNOA 2025-07, más pálido que el de 2022 (0,10). En copas
+# con IGN >= 5 m la mediana de ExG baja de 0,152 a 0,083; 0,04 conserva el 77 % de esas copas
+# y deja fuera el 99 % de las calzadas (su percentil 99 es 0,041).
+EXG_THRESHOLD = .04
 COVERAGE = 'mdsn_v025'
 
 
@@ -166,7 +170,7 @@ def filter_crown(rgb, part, u, v, step, direction, buildings=None):
 def crowns(rgb, blocked, step, opening=1, direction=None, buildings=None, audit=None, keep_rejected=False):
     norm = rgb / np.maximum(rgb.sum(axis=2, keepdims=True), 1)
     exg = 2 * norm[:, :, 1] - norm[:, :, 0] - norm[:, :, 2]
-    raw = (exg > .10) & (rgb.mean(axis=2) >= 45) & ~blocked
+    raw = (exg > EXG_THRESHOLD) & (rgb.mean(axis=2) >= 45) & ~blocked
     mask = ndi.binary_opening(raw, iterations=opening)
     mask = ndi.binary_fill_holes(ndi.binary_closing(mask, iterations=3)) & ~blocked
     labels, _ = ndi.label(mask)
@@ -315,7 +319,7 @@ def main():
                       inputs={f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in files},
                       versions={p: importlib.metadata.version(p) for p in ['numpy', 'pillow', 'scipy', 'shapely', 'rasterio', 'pyproj']})
     output = dict(version=1, provenance=provenance,
-                  method=dict(exgThreshold=.10, brightnessMin=45, opening=args.opening, closing=3,
+                  method=dict(exgThreshold=EXG_THRESHOLD, brightnessMin=45, opening=args.opening, closing=3,
                               minimumArea=3, imageMinimumArea=6,
                               height=dict(minimumMetres=3, windowCells=1, statistic='máximo válido no negativo',
                               decision='(detección amplia y IGN >= 3 m) o filtro de imagen',
@@ -326,7 +330,7 @@ def main():
                               buildingDarkFractions=rates.tolist(), luminanceMax=65, crownLuminanceRatio=.65,
                               alongRadii=[.8, 2.5], acrossRadius=.8, minimumConnectedArea=.5,
                               minimumCrownAreaRatio=.08, excludeBuildings=True),
-                              colourDecision='ExG 0,10 y brillo 45 conservados; sin mínimo de saturación: césped ExG 0,279 y pavimento ExG 0,030; endurecer color pierde copas apagadas',
+                              colourDecision='ExG 0,04 para el vuelo 2025-07 (0,10 en 2022-07) y brillo 45; sin mínimo de saturación; endurecer color pierde copas apagadas',
                               peakSeparation=3, pixelSize=step,
                               radius='sqrt(área segmentada/pi)', score='ExG medio; no probabilidad'),
                   counts=counts, sourceCounts={source: sum(c['source'] == source for c in candidates)

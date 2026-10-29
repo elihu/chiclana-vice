@@ -305,9 +305,8 @@ y el color viven en `SKY`, `SUN` y `GRADE` ([Cielo, entorno y color](#cielo-ento
 ## Mundo y límites
 
 `world.json.bounds` declara una lista de rectángulos `[x0, x1, z0, z1]` en
-coordenadas locales: x hacia el este y z hacia el sur. Hoy son tres: el centro
-`[-671.835, 671.835, -500.94, 500.94]`, Santa Ana `[-420, -60, 500.94, 650]` y el norte
-`[-820, -380, -1120, -500.94]`, contiguos al centro.
+coordenadas locales: x hacia el este y z hacia el sur. Hoy es uno,
+`[-820, 671.835, -1120, 650]`: la caja que envolvía el centro, Santa Ana y el norte.
 El cargador convierte también el antiguo `size` de copias locales a un rectángulo.
 
 `world/bounds.js` centraliza pertenencia, margen interior, proximidad al borde y caja

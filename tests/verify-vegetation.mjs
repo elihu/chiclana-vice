@@ -30,7 +30,7 @@ const child = spawnSync(
 assert.ifError(child.error);
 assert.equal(child.status, 0, child.stderr);
 assert.deepEqual(JSON.parse(child.stdout), {
-  vegetation: '5df5ba6b1216aa5106573e4a27253e38378c193c01437e3db80fa8a397960228',
-  trace: '848c1c778ef5c87bda89ce863c3ddcbbf88c83062f28bd97d0ceb2d70048e201',
+  vegetation: '44a0ab5a1498ea77265a347837c043d0fe55a28106b96a88687d7984155dfcc1',
+  trace: 'e0c098cc01ad31a6e5ad1e508d3d31c8a0fe6d6f79878571b5399f14c670b2e2',
 });
 console.log('Copas publicadas y arbolado de respaldo conservados; recorridos peatonales renovados');

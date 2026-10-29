@@ -2,8 +2,30 @@ import * as THREE from '../../vendor/three.webgpu.min.js';
 import { gfx } from '../core/state.js';
 import { applyGroundNearQuality, groundNearColor, groundTintNode } from './ground-near.js';
 
-const { texture, uniform, positionWorld, cameraPosition, smoothstep, mix, vec3, vec4, float } =
+const { texture, uniform, positionWorld, cameraPosition, smoothstep, mix, vec3, vec4, float, max } =
   THREE.TSL;
+
+// Contraste de la ortofoto (suelo y tejados), en el shader para no recomprimir los JPEG del IGN.
+// El vuelo PNOA 2025-07 es más plano que el de 2022; se estira alrededor de un gris medio lineal.
+const orthoContrast = uniform(1.15),
+  ORTHO_PIVOT = 0.2;
+let orthoPhoto = null;
+
+// Color del material (color × mapa) con el contraste aplicado; lo comparten suelo y tejados.
+export function orthoPhotoNode() {
+  orthoPhoto ??= max(
+    THREE.TSL.materialColor.rgb.sub(ORTHO_PIVOT).mul(orthoContrast).add(ORTHO_PIVOT),
+    vec3(0),
+  );
+  return orthoPhoto;
+}
+
+// Cambia en vivo desde la consola con `(await import('./js/engine/textures.js')).setOrthoContrast(1.25)`.
+export function setOrthoContrast(value) {
+  if (!Number.isFinite(value) || value <= 0) throw Error('Contraste de ortofoto inválido: > 0');
+  orthoContrast.value = value;
+  gfx.needsRender = true;
+}
 
 // Anisotropía máxima del equipo; WebGPURenderer la expone en el propio renderizador.
 export const maxAnisotropy = () =>
@@ -34,7 +56,7 @@ export function groundDetailNode(ortho = false) {
       smoothstep(u.uDetailNear, u.uDetailFar, positionWorld.distance(cameraPosition)),
     ),
     grain = u.uDetailMap.sample(positionWorld.xz.div(u.uDetailScale)).rgb.mul(2),
-    photo = THREE.TSL.materialColor.rgb,
+    photo = ortho ? orthoPhotoNode() : THREE.TSL.materialColor.rgb,
     base = ortho ? groundNearColor(photo, groundTintNode(), fade) : photo,
     node = vec4(base.mul(mix(vec3(1), grain, fade.mul(u.uDetailStrength))), 1);
   if (ortho) orthoColor = node;

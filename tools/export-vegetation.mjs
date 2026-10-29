@@ -24,10 +24,10 @@ const trees = accepted.filter((c) => !isShrub(c)).map(round),
   shrubs = accepted.filter(isShrub).map(round);
 const layer = {
   version: 1,
-  source: 'PNOA 2022-07 + MDSnV 2008–2015; detección y tamaños estimados por el proyecto',
+  source: 'PNOA 2025-07 + MDSnV 2008–2015; detección y tamaños estimados por el proyecto',
   license: 'CC-BY-4.0',
   attribution:
-    'Obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es) y de MDSNV 2008-2015 CC-BY 4.0 scne.es; detección de copas y tamaños estimados por el proyecto, posiciones aproximadas, no un inventario de arbolado',
+    'Obra derivada de PNOA 2025-07 CC-BY 4.0 IGN / PNOA / SCNE (scne.es) y de MDSNV 2008-2015 CC-BY 4.0 scne.es; detección de copas y tamaños estimados por el proyecto, posiciones aproximadas, no un inventario de arbolado',
   shrubMaxHeight: SHRUB_MAX_HEIGHT,
   trees,
   shrubs,

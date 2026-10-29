@@ -61,7 +61,5 @@ SwiftShader no acreditan fluidez, GPU real ni tacto físico.
   nombre/marca en la capa. Se puede ampliar y crear familias de fachada (supermercado,
   bar, panadería, ropa), manteniendo contornos y patios. Modelos específicos por local
   requerirán identificar y anclar cada establecimiento.
-- **Ampliación:** el minimapa usa la caja que envuelve tres rectángulos jugables. Completarla
-  supone pasar de unos 1,67 a 2,64 km² (aproximadamente +58 %), no estirar la escena actual.
-  Requiere regenerar edificios, vías, derivados y vegetación de los huecos, manteniendo el
-  origen y las cotas existentes; revisar los presupuestos de móvil antes de publicarlo.
+- **Ampliación:** hecha en `feat/ampliar-mapa` (29/10/2026): el mundo es la caja completa
+  del minimapa (de unos 1,67 a 2,64 km²), con el mismo origen y las mismas cotas.
