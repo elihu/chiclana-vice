@@ -47,6 +47,10 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   Centenario separados; peatones sobre recorridos continuos; separadores entre ramales
   como calzada; junta del tranvía con Remedios. `npm run check` pasa; sin FPS medidos ni
   prueba en móvil.
+- **Herramientas** (`chore/versiones`): eslint 10.13.0, prettier 3.9.10 y
+  `actions/setup-node` v7.1.0. Three.js 0.186.1 sigue siendo la última.
+- **Plan** [PLAN-REFACTOR.md](PLAN-REFACTOR.md): rendimiento, simplificación y documentación
+  sin cambios visibles, por fases R0–R5.
 
 ## Novedades de `v2.0.0`
 
