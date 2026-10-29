@@ -38,6 +38,37 @@ export function buildSidewalks(slabs, paved, include) {
     curb = [],
     stats = { sidewalkMeters: 0, sidewalkTriangles: 0, curbTriangles: 0, skirtTriangles: 0 };
 
+  const { nearOther, free, quad } = createSidewalkQueries(paved, cfg, grid, platforms);
+  buildSidewalkRuns(slabs, paved, include, cfg, heights, curb, stats, nearOther, free, quad);
+  if (!curb.length) return stats;
+  // También las caras verticales se recortan: recortar solo la baldosa dejaba
+  // tabiques de bordillo atravesando los cruces. Conservar el borde propio (2 cm).
+  const roadSpace = createRoadSpace(
+      world.city.roads.map((r) => ({ ...r, w: Math.max(0.1, r.w - 0.04) })),
+      paved.nonDrivableTypes,
+      (x, z, id) => surfaceHeightAt(x, z, null, id),
+      true,
+    ),
+    cut = carvePavement(curb, [], roadSpace, (x, z) => surfaceHeightAt(x, z)),
+    visible = [];
+  for (let i = 0; i < cut.position.length; i += 9) {
+    const x = (cut.position[i] + cut.position[i + 3] + cut.position[i + 6]) / 3,
+      z = (cut.position[i + 2] + cut.position[i + 5] + cut.position[i + 8]) / 3;
+    if (world.surfaces?.dividerHeightAt(x, z) != null) continue;
+    visible.push(...cut.position.slice(i, i + 9));
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(visible, 3));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, mat(cfg.curbColor, { side: THREE.DoubleSide, roughness: 0.95 }));
+  mesh.name = 'street-curbs';
+  mesh.receiveShadow = true;
+  mesh.userData.stats = stats;
+  gfx.scene.add(mesh);
+  return stats;
+}
+
+function createSidewalkQueries(paved, cfg, grid, platforms) {
   const close = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.05;
   // Tramos vecinos que continúan la misma calle (comparten extremo y casi colineales): no
   // cuentan como calzada ajena. Todo lo demás, incluida la propia vía en tramos paralelos,
@@ -79,7 +110,93 @@ export function buildSidewalks(slabs, paved, include) {
   const quad = (out, a, b, c, d) => {
     for (const v of [a, b, c, a, c, d]) out.push(...v);
   };
+  return { nearOther, free, quad };
+}
 
+function createSidewalkEmitter(
+  slabs,
+  cfg,
+  curb,
+  stats,
+  quad,
+  half,
+  edgeTop,
+  len,
+  count,
+  k,
+  y0,
+  y1,
+  pointAt,
+  skirt,
+  width,
+) {
+  const emit = () => {
+    const top0 = y0 + cfg.curbHeight,
+      top1 = y1 + cfg.curbHeight,
+      lip = half + cfg.curbWidth,
+      outer = half + width;
+    // Cara vertical del bordillo hacia la calzada, tapa del bordillo y baldosa.
+    quad(
+      curb,
+      pointAt(k, half, y0 + edgeTop),
+      pointAt(k + 1, half, y1 + edgeTop),
+      pointAt(k + 1, half, top1),
+      pointAt(k, half, top0),
+    );
+    quad(
+      curb,
+      pointAt(k, half, top0),
+      pointAt(k + 1, half, top1),
+      pointAt(k + 1, lip, top1),
+      pointAt(k, lip, top0),
+    );
+    const s = [
+      pointAt(k, lip, top0),
+      pointAt(k + 1, lip, top1),
+      pointAt(k + 1, outer, top1),
+      pointAt(k, outer, top0),
+    ];
+    quad(slabs.p, ...s);
+    for (const v of [s[0], s[1], s[2], s[0], s[2], s[3]]) slabs.uv.push(v[0] / 4, -v[2] / 4);
+    skirt(outer, cfg.curbHeight, cfg.curbHeight);
+    stats.curbTriangles += 4;
+    stats.sidewalkTriangles += 2;
+    stats.sidewalkMeters += len / count;
+  };
+  return { emit };
+}
+
+function emitSidewalkRuns(cfg, roadRuns) {
+  // Un tramo suelto de acera (corto y aislado entre huecos) no se dibuja: queda solo el faldón.
+  for (const list of Object.values(roadRuns)) {
+    for (let n = 0; n < list.length;) {
+      if (!list[n]) {
+        n++;
+        continue;
+      }
+      let end = n,
+        total = 0;
+      while (end < list.length && list[end]) total += list[end++].length;
+      for (const piece of list.slice(n, end))
+        if (total >= cfg.minimumRun) piece.emit();
+        else piece.fallback();
+      n = end;
+    }
+  }
+}
+
+function buildSidewalkRuns(
+  slabs,
+  paved,
+  include,
+  cfg,
+  heights,
+  curb,
+  stats,
+  nearOther,
+  free,
+  quad,
+) {
   for (const road of world.city.roads) {
     if (road.bridge || !include(road)) continue;
     let roadLength = 0;
@@ -181,85 +298,27 @@ export function buildSidewalks(slabs, paved, include) {
             roadRuns[side].push(null);
             fallback();
           } else {
-            const emit = () => {
-              const top0 = y0 + cfg.curbHeight,
-                top1 = y1 + cfg.curbHeight,
-                lip = half + cfg.curbWidth,
-                outer = half + width;
-              // Cara vertical del bordillo hacia la calzada, tapa del bordillo y baldosa.
-              quad(
-                curb,
-                pointAt(k, half, y0 + edgeTop),
-                pointAt(k + 1, half, y1 + edgeTop),
-                pointAt(k + 1, half, top1),
-                pointAt(k, half, top0),
-              );
-              quad(
-                curb,
-                pointAt(k, half, top0),
-                pointAt(k + 1, half, top1),
-                pointAt(k + 1, lip, top1),
-                pointAt(k, lip, top0),
-              );
-              const s = [
-                pointAt(k, lip, top0),
-                pointAt(k + 1, lip, top1),
-                pointAt(k + 1, outer, top1),
-                pointAt(k, outer, top0),
-              ];
-              quad(slabs.p, ...s);
-              for (const v of [s[0], s[1], s[2], s[0], s[2], s[3]])
-                slabs.uv.push(v[0] / 4, -v[2] / 4);
-              skirt(outer, cfg.curbHeight, cfg.curbHeight);
-              stats.curbTriangles += 4;
-              stats.sidewalkTriangles += 2;
-              stats.sidewalkMeters += len / count;
-            };
+            const { emit } = createSidewalkEmitter(
+              slabs,
+              cfg,
+              curb,
+              stats,
+              quad,
+              half,
+              edgeTop,
+              len,
+              count,
+              k,
+              y0,
+              y1,
+              pointAt,
+              skirt,
+              width,
+            );
             roadRuns[side].push({ emit, fallback, length: len / count });
           }
         }
     }
-    // Un tramo suelto de acera (corto y aislado entre huecos) no se dibuja: queda solo el faldón.
-    for (const list of Object.values(roadRuns)) {
-      for (let n = 0; n < list.length;) {
-        if (!list[n]) {
-          n++;
-          continue;
-        }
-        let end = n,
-          total = 0;
-        while (end < list.length && list[end]) total += list[end++].length;
-        for (const piece of list.slice(n, end))
-          if (total >= cfg.minimumRun) piece.emit();
-          else piece.fallback();
-        n = end;
-      }
-    }
+    emitSidewalkRuns(cfg, roadRuns);
   }
-  if (!curb.length) return stats;
-  // También las caras verticales se recortan: recortar solo la baldosa dejaba
-  // tabiques de bordillo atravesando los cruces. Conservar el borde propio (2 cm).
-  const roadSpace = createRoadSpace(
-      world.city.roads.map((r) => ({ ...r, w: Math.max(0.1, r.w - 0.04) })),
-      paved.nonDrivableTypes,
-      (x, z, id) => surfaceHeightAt(x, z, null, id),
-      true,
-    ),
-    cut = carvePavement(curb, [], roadSpace, (x, z) => surfaceHeightAt(x, z)),
-    visible = [];
-  for (let i = 0; i < cut.position.length; i += 9) {
-    const x = (cut.position[i] + cut.position[i + 3] + cut.position[i + 6]) / 3,
-      z = (cut.position[i + 2] + cut.position[i + 5] + cut.position[i + 8]) / 3;
-    if (world.surfaces?.dividerHeightAt(x, z) != null) continue;
-    visible.push(...cut.position.slice(i, i + 9));
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(visible, 3));
-  geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, mat(cfg.curbColor, { side: THREE.DoubleSide, roughness: 0.95 }));
-  mesh.name = 'street-curbs';
-  mesh.receiveShadow = true;
-  mesh.userData.stats = stats;
-  gfx.scene.add(mesh);
-  return stats;
 }

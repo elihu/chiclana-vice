@@ -256,163 +256,10 @@ function buildStops(layer, cfg, stats) {
       outer = away > 0 ? Math.max(...local.map((p) => p[1])) : Math.min(...local.map((p) => p[1])),
       at = (u, v, y) => [entry.x + t[0] * u + n[0] * v, y, entry.z + t[1] * u + n[1] * v];
 
-    // Cara superior triangulada y canto vertical bajo cada lado hasta la cota del suelo.
-    const geo = flatGeometry(polygon),
-      index = geo.index,
-      pos = geo.getAttribute('position');
-    for (let i = 0; i < index.count; i += 3)
-      paint(
-        body,
-        stop.platformColor,
-        [0, 1, 2].map((k) => {
-          const x = pos.getX(index.getX(i + k)),
-            z = pos.getZ(index.getX(i + k));
-          return [x, top(x, z), z];
-        }),
-      );
-    geo.dispose();
-    for (let i = 0; i < polygon.length; i++) {
-      const a = polygon[i],
-        b = polygon[(i + 1) % polygon.length];
-      paint(
-        body,
-        stop.edgeColor,
-        faceOf(
-          [a[0], top(...a), a[1]],
-          [b[0], top(...b), b[1]],
-          [b[0], ground(...b) - 0.1, b[1]],
-          [a[0], ground(...a) - 0.1, a[1]],
-        ),
-      );
-    }
-    // Banda táctil: el lado largo del andén que queda más cerca del eje de la vía.
-    let edge = null;
-    for (let i = 0; i < polygon.length; i++) {
-      const a = polygon[i],
-        b = polygon[(i + 1) % polygon.length],
-        length = Math.hypot(b[0] - a[0], b[1] - a[1]),
-        d = Math.min(
-          ...[0.25, 0.5, 0.75].map((f) =>
-            tramDistance(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f),
-          ),
-        );
-      if (length > 5 && (!edge || d < edge.d)) edge = { a, b, d };
-    }
-    if (edge) {
-      const length = Math.hypot(edge.b[0] - edge.a[0], edge.b[1] - edge.a[1]),
-        dx = (edge.b[0] - edge.a[0]) / length,
-        dz = (edge.b[1] - edge.a[1]) / length,
-        mid = [(edge.a[0] + edge.b[0]) / 2, (edge.a[1] + edge.b[1]) / 2],
-        perp = [-dz, dx],
-        toward = (entry.x - mid[0]) * perp[0] + (entry.z - mid[1]) * perp[1],
-        into = toward > 0 ? -1 : 1,
-        off = [perp[0] * stop.tactileWidth * into, perp[1] * stop.tactileWidth * into],
-        lift = 0.004;
-      const p = [
-        edge.a,
-        edge.b,
-        [edge.b[0] + off[0], edge.b[1] + off[1]],
-        [edge.a[0] + off[0], edge.a[1] + off[1]],
-      ].map((q) => [q[0], top(q[0], q[1]) + lift, q[1]]);
-      paint(body, stop.tactileColor, faceOf(...p));
-    }
-
-    // Marquesina: cristal trasero y laterales, cuatro postes y tejado, junto al borde exterior.
-    const v1 = outer - away * shelter.backMargin,
-      v0 = v1 - away * shelter.depth,
-      u0 = -shelter.length / 2,
-      u1 = shelter.length / 2,
-      yb = (u, v) => top(...[at(u, v, 0)[0], at(u, v, 0)[2]]),
-      post = (u, v) => {
-        const w = shelter.postWidth / 2,
-          y0 = yb(u, v),
-          c = [
-            at(u - w, v - w, 0),
-            at(u + w, v - w, 0),
-            at(u + w, v + w, 0),
-            at(u - w, v + w, 0),
-          ].map((q) => [q[0], q[2]]);
-        for (let k = 0; k < 4; k++) {
-          const a = c[k],
-            b = c[(k + 1) % 4];
-          paint(
-            body,
-            shelter.frameColor,
-            faceOf(
-              [a[0], y0, a[1]],
-              [b[0], y0, b[1]],
-              [b[0], y0 + shelter.height, b[1]],
-              [a[0], y0 + shelter.height, a[1]],
-            ),
-          );
-        }
-      };
-    for (const u of [u0 + 0.2, u1 - 0.2]) for (const v of [v0, v1]) post(u, v);
-    const roof = (y) => [at(u0, v0, y), at(u1, v0, y), at(u1, v1, y), at(u0, v1, y)],
-      y0 = yb(0, (v0 + v1) / 2),
-      high = roof(y0 + shelter.height + shelter.roofThickness),
-      low = roof(y0 + shelter.height);
-    paint(body, shelter.frameColor, faceOf(...high));
-    paint(body, shelter.frameColor, faceOf(low[3], low[2], low[1], low[0]));
-    for (let k = 0; k < 4; k++)
-      paint(body, shelter.frameColor, faceOf(low[k], low[(k + 1) % 4], high[(k + 1) % 4], high[k]));
-    // Cristal: pared trasera y los dos laterales hasta la cota del tejado.
-    const g = (ua, va, ub, vb) =>
-      glass.push(
-        ...faceOf(
-          at(ua, va, y0 + 0.15),
-          at(ub, vb, y0 + 0.15),
-          at(ub, vb, y0 + shelter.height),
-          at(ua, va, y0 + shelter.height),
-        ).flat(),
-      );
-    g(u0 + 0.2, v1, u1 - 0.2, v1);
-    g(u0 + 0.2, v0, u0 + 0.2, v1);
-    g(u1 - 0.2, v0, u1 - 0.2, v1);
-
-    // Poste con el nombre: placa perpendicular a la vía, visible a lo largo del andén.
-    const su = sign.alongOffset,
-      sv = outer - away * sign.backMargin,
-      sy = yb(su, sv),
-      pw = sign.poleWidth / 2,
-      pc = [
-        at(su - pw, sv - pw, 0),
-        at(su + pw, sv - pw, 0),
-        at(su + pw, sv + pw, 0),
-        at(su - pw, sv + pw, 0),
-      ];
-    for (let k = 0; k < 4; k++) {
-      const a = pc[k],
-        b = pc[(k + 1) % 4];
-      paint(
-        body,
-        sign.poleColor,
-        faceOf(
-          [a[0], sy, a[2]],
-          [b[0], sy, b[2]],
-          [b[0], sy + sign.poleHeight, b[2]],
-          [a[0], sy + sign.poleHeight, a[2]],
-        ),
-      );
-    }
-    const slot = names.length,
-      base = plates.position.length / 3;
-    names.push(entry.name);
-    for (const [u, v] of [
-      [0, 1],
-      [1, 1],
-      [0, 0],
-      [1, 0],
-    ]) {
-      const q = at(
-        su,
-        sv + (u - 0.5) * sign.plateWidth,
-        sy + sign.plateBase + v * sign.plateHeight,
-      );
-      plates.position.push(...q);
-      plates.uv.push(u, slot + v);
-    }
-    plates.index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
+    buildStopPlatform(stop, body, polygon, ground, top);
+    buildStopTactile(stop, body, entry, polygon, top);
+    const { yb } = buildStopShelter(shelter, body, glass, top, away, outer, at);
+    buildStopSign(sign, body, plates, names, entry, away, outer, at, yb);
   }
   let triangles = 0;
   if (body.position.length) {
@@ -506,149 +353,10 @@ export function buildTram() {
       level = (p) => surfaceHeightAt(p[0], p[1], null, support),
       floor = (p) => level(p) + cfg.bedHeight;
 
-    // Franja: un cuadrilátero por muestra. Empotrada (lane, paved): cota del eje en ambos lados
-    // (sigue a la calzada, plana en sentido transversal); de césped: cota de cada esquina.
-    for (let i = 1; i < points.length; i++) {
-      const centre = [i - 1, i].map((k) => level(points[k])),
-        kind = kinds[i - 1],
-        flat = kind !== 'grass',
-        corner = (k, s, w = half, lift = 0) => {
-          const p = side(k, w * s);
-          return [
-            p[0],
-            flat
-              ? centre[k - (i - 1)] + cfg.bedHeight + lift
-              : Math.max(floor(p), centre[k - (i - 1)]),
-            p[1],
-          ];
-        };
-      if (kind === 'lane') {
-        // Carril exclusivo: hormigón claro con una línea blanca continua en cada borde.
-        paint(
-          lane,
-          cfg.laneColor,
-          faceOf(corner(i - 1, -1), corner(i, -1), corner(i, 1), corner(i - 1, 1)),
-        );
-        for (const s of [-1, 1]) {
-          const outer = half - cfg.laneMargin / 2,
-            inner = outer - cfg.laneLineWidth;
-          paint(
-            lane,
-            cfg.laneLineColor,
-            faceOf(
-              corner(i - 1, s, outer, 0.004),
-              corner(i, s, outer, 0.004),
-              corner(i, s, inner, 0.004),
-              corner(i - 1, s, inner, 0.004),
-            ),
-          );
-        }
-      } else
-        quad(
-          flat ? paved : grass,
-          corner(i - 1, -1),
-          corner(i, -1),
-          corner(i, 1),
-          corner(i - 1, 1),
-        );
-      stats.meters += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-    }
-
-    // Raíles: separación igual al ancho de vía de OSM.
-    for (const s of [-1, 1]) {
-      const line = points.map((_, i) => side(i, (track.gauge / 2) * s)),
-        base = line.map(floor);
-      beam(
-        rails,
-        line,
-        normal,
-        cfg.rails.width / 2,
-        base,
-        base.map((y) => y + cfg.rails.height),
-      );
-    }
-
-    // Hilo de contacto: tramos rectos de `wireStep` sobre el eje.
-    const wire = thin(points, cat.wireStep),
-      wireNormal = normals(wire),
-      wireY = wire.map((p) => floor(p) + cat.wireHeight);
-    beam(
-      wires,
-      wire,
-      wireNormal,
-      cat.wireWidth / 2,
-      wireY.map((y) => y - cat.wireWidth),
-      wireY,
-    );
-
-    // Postes cada `poleSpacing` metros, por el lado con más sitio libre y fuera de edificios.
-    let distance = cat.poleSpacing / 2,
-      walked = 0;
-    for (let i = 1; i < points.length; i++) {
-      const segment = Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-      while (distance <= walked + segment) {
-        const t = (distance - walked) / (segment || 1),
-          x = points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
-          z = points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
-          n = [(normal[i - 1][0] + normal[i][0]) / 2, (normal[i - 1][1] + normal[i][1]) / 2],
-          offset = half + cat.poleOffset,
-          choices = [1, -1]
-            .map((s) => {
-              const p = [x + n[0] * offset * s, z + n[1] * offset * s],
-                road = nearestRoad(p[0], p[1], true);
-              return {
-                p,
-                clear: road ? road.d - road.s.width / 2 : 99,
-                blocked: inBuilding(p[0], p[1], cat.buildingClearance),
-              };
-            })
-            .filter((c) => !c.blocked)
-            .sort((a, b) => b.clear - a.clear);
-        distance += cat.poleSpacing;
-        if (!choices.length) continue;
-        const [px, pz] = choices[0].p,
-          y0 = surfaceHeightAt(px, pz),
-          w = cat.poleWidth / 2;
-        // Poste: cuatro caras y tapa; brazo horizontal hasta el eje de la vía.
-        const corners = [
-          [px - w, pz - w],
-          [px + w, pz - w],
-          [px + w, pz + w],
-          [px - w, pz + w],
-        ].map(([cx, cz]) => [
-          [cx, y0, cz],
-          [cx, y0 + cat.poleHeight, cz],
-        ]);
-        for (let k = 0; k < 4; k++) {
-          const a = corners[k],
-            b = corners[(k + 1) % 4];
-          quad(wires, a[0], b[0], b[1], a[1]);
-        }
-        quad(wires, corners[0][1], corners[1][1], corners[2][1], corners[3][1]);
-        const arm = [
-            [px, pz],
-            [x, z],
-          ],
-          dx = x - px,
-          dz = z - pz,
-          length = Math.hypot(dx, dz) || 1,
-          an = [
-            [-dz / length, dx / length],
-            [-dz / length, dx / length],
-          ],
-          armEnd = floor([x, z]) + cat.armHeight;
-        beam(
-          wires,
-          arm,
-          an,
-          cat.armWidth / 2,
-          [y0 + cat.armHeight - cat.armWidth, armEnd - cat.armWidth],
-          [y0 + cat.armHeight, armEnd],
-        );
-        stats.poles++;
-      }
-      walked += segment;
-    }
+    buildTramBed(cfg, half, paved, grass, lane, stats, points, kinds, side, level, floor);
+    buildTramRails(cfg, rails, track, points, normal, side, floor);
+    buildTramWire(cat, wires, points, floor);
+    buildTramPoles(half, cat, wires, stats, points, normal, floor);
   }
 
   stats.triangles +=
@@ -690,4 +398,314 @@ export function buildTram() {
   buildStops(layer, cfg, stats);
   world.tramStats = stats;
   return stats;
+}
+
+function buildStopPlatform(stop, body, polygon, ground, top) {
+  // Cara superior triangulada y canto vertical bajo cada lado hasta la cota del suelo.
+  const geo = flatGeometry(polygon),
+    index = geo.index,
+    pos = geo.getAttribute('position');
+  for (let i = 0; i < index.count; i += 3)
+    paint(
+      body,
+      stop.platformColor,
+      [0, 1, 2].map((k) => {
+        const x = pos.getX(index.getX(i + k)),
+          z = pos.getZ(index.getX(i + k));
+        return [x, top(x, z), z];
+      }),
+    );
+  geo.dispose();
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i],
+      b = polygon[(i + 1) % polygon.length];
+    paint(
+      body,
+      stop.edgeColor,
+      faceOf(
+        [a[0], top(...a), a[1]],
+        [b[0], top(...b), b[1]],
+        [b[0], ground(...b) - 0.1, b[1]],
+        [a[0], ground(...a) - 0.1, a[1]],
+      ),
+    );
+  }
+}
+
+function buildStopTactile(stop, body, entry, polygon, top) {
+  // Banda táctil: el lado largo del andén que queda más cerca del eje de la vía.
+  let edge = null;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i],
+      b = polygon[(i + 1) % polygon.length],
+      length = Math.hypot(b[0] - a[0], b[1] - a[1]),
+      d = Math.min(
+        ...[0.25, 0.5, 0.75].map((f) =>
+          tramDistance(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f),
+        ),
+      );
+    if (length > 5 && (!edge || d < edge.d)) edge = { a, b, d };
+  }
+  if (edge) {
+    const length = Math.hypot(edge.b[0] - edge.a[0], edge.b[1] - edge.a[1]),
+      dx = (edge.b[0] - edge.a[0]) / length,
+      dz = (edge.b[1] - edge.a[1]) / length,
+      mid = [(edge.a[0] + edge.b[0]) / 2, (edge.a[1] + edge.b[1]) / 2],
+      perp = [-dz, dx],
+      toward = (entry.x - mid[0]) * perp[0] + (entry.z - mid[1]) * perp[1],
+      into = toward > 0 ? -1 : 1,
+      off = [perp[0] * stop.tactileWidth * into, perp[1] * stop.tactileWidth * into],
+      lift = 0.004;
+    const p = [
+      edge.a,
+      edge.b,
+      [edge.b[0] + off[0], edge.b[1] + off[1]],
+      [edge.a[0] + off[0], edge.a[1] + off[1]],
+    ].map((q) => [q[0], top(q[0], q[1]) + lift, q[1]]);
+    paint(body, stop.tactileColor, faceOf(...p));
+  }
+}
+
+function buildStopShelter(shelter, body, glass, top, away, outer, at) {
+  // Marquesina: cristal trasero y laterales, cuatro postes y tejado, junto al borde exterior.
+  const v1 = outer - away * shelter.backMargin,
+    v0 = v1 - away * shelter.depth,
+    u0 = -shelter.length / 2,
+    u1 = shelter.length / 2,
+    yb = (u, v) => top(...[at(u, v, 0)[0], at(u, v, 0)[2]]),
+    post = (u, v) => {
+      const w = shelter.postWidth / 2,
+        y0 = yb(u, v),
+        c = [
+          at(u - w, v - w, 0),
+          at(u + w, v - w, 0),
+          at(u + w, v + w, 0),
+          at(u - w, v + w, 0),
+        ].map((q) => [q[0], q[2]]);
+      for (let k = 0; k < 4; k++) {
+        const a = c[k],
+          b = c[(k + 1) % 4];
+        paint(
+          body,
+          shelter.frameColor,
+          faceOf(
+            [a[0], y0, a[1]],
+            [b[0], y0, b[1]],
+            [b[0], y0 + shelter.height, b[1]],
+            [a[0], y0 + shelter.height, a[1]],
+          ),
+        );
+      }
+    };
+  for (const u of [u0 + 0.2, u1 - 0.2]) for (const v of [v0, v1]) post(u, v);
+  const roof = (y) => [at(u0, v0, y), at(u1, v0, y), at(u1, v1, y), at(u0, v1, y)],
+    y0 = yb(0, (v0 + v1) / 2),
+    high = roof(y0 + shelter.height + shelter.roofThickness),
+    low = roof(y0 + shelter.height);
+  paint(body, shelter.frameColor, faceOf(...high));
+  paint(body, shelter.frameColor, faceOf(low[3], low[2], low[1], low[0]));
+  for (let k = 0; k < 4; k++)
+    paint(body, shelter.frameColor, faceOf(low[k], low[(k + 1) % 4], high[(k + 1) % 4], high[k]));
+  // Cristal: pared trasera y los dos laterales hasta la cota del tejado.
+  const g = (ua, va, ub, vb) =>
+    glass.push(
+      ...faceOf(
+        at(ua, va, y0 + 0.15),
+        at(ub, vb, y0 + 0.15),
+        at(ub, vb, y0 + shelter.height),
+        at(ua, va, y0 + shelter.height),
+      ).flat(),
+    );
+  g(u0 + 0.2, v1, u1 - 0.2, v1);
+  g(u0 + 0.2, v0, u0 + 0.2, v1);
+  g(u1 - 0.2, v0, u1 - 0.2, v1);
+  return { yb };
+}
+
+function buildStopSign(sign, body, plates, names, entry, away, outer, at, yb) {
+  // Poste con el nombre: placa perpendicular a la vía, visible a lo largo del andén.
+  const su = sign.alongOffset,
+    sv = outer - away * sign.backMargin,
+    sy = yb(su, sv),
+    pw = sign.poleWidth / 2,
+    pc = [
+      at(su - pw, sv - pw, 0),
+      at(su + pw, sv - pw, 0),
+      at(su + pw, sv + pw, 0),
+      at(su - pw, sv + pw, 0),
+    ];
+  for (let k = 0; k < 4; k++) {
+    const a = pc[k],
+      b = pc[(k + 1) % 4];
+    paint(
+      body,
+      sign.poleColor,
+      faceOf(
+        [a[0], sy, a[2]],
+        [b[0], sy, b[2]],
+        [b[0], sy + sign.poleHeight, b[2]],
+        [a[0], sy + sign.poleHeight, a[2]],
+      ),
+    );
+  }
+  const slot = names.length,
+    base = plates.position.length / 3;
+  names.push(entry.name);
+  for (const [u, v] of [
+    [0, 1],
+    [1, 1],
+    [0, 0],
+    [1, 0],
+  ]) {
+    const q = at(su, sv + (u - 0.5) * sign.plateWidth, sy + sign.plateBase + v * sign.plateHeight);
+    plates.position.push(...q);
+    plates.uv.push(u, slot + v);
+  }
+  plates.index.push(base, base + 2, base + 1, base + 2, base + 3, base + 1);
+}
+
+function buildTramBed(cfg, half, paved, grass, lane, stats, points, kinds, side, level, floor) {
+  // Franja: un cuadrilátero por muestra. Empotrada (lane, paved): cota del eje en ambos lados
+  // (sigue a la calzada, plana en sentido transversal); de césped: cota de cada esquina.
+  for (let i = 1; i < points.length; i++) {
+    const centre = [i - 1, i].map((k) => level(points[k])),
+      kind = kinds[i - 1],
+      flat = kind !== 'grass',
+      corner = (k, s, w = half, lift = 0) => {
+        const p = side(k, w * s);
+        return [
+          p[0],
+          flat
+            ? centre[k - (i - 1)] + cfg.bedHeight + lift
+            : Math.max(floor(p), centre[k - (i - 1)]),
+          p[1],
+        ];
+      };
+    if (kind === 'lane') {
+      // Carril exclusivo: hormigón claro con una línea blanca continua en cada borde.
+      paint(
+        lane,
+        cfg.laneColor,
+        faceOf(corner(i - 1, -1), corner(i, -1), corner(i, 1), corner(i - 1, 1)),
+      );
+      for (const s of [-1, 1]) {
+        const outer = half - cfg.laneMargin / 2,
+          inner = outer - cfg.laneLineWidth;
+        paint(
+          lane,
+          cfg.laneLineColor,
+          faceOf(
+            corner(i - 1, s, outer, 0.004),
+            corner(i, s, outer, 0.004),
+            corner(i, s, inner, 0.004),
+            corner(i - 1, s, inner, 0.004),
+          ),
+        );
+      }
+    } else
+      quad(flat ? paved : grass, corner(i - 1, -1), corner(i, -1), corner(i, 1), corner(i - 1, 1));
+    stats.meters += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  }
+}
+
+function buildTramRails(cfg, rails, track, points, normal, side, floor) {
+  // Raíles: separación igual al ancho de vía de OSM.
+  for (const s of [-1, 1]) {
+    const line = points.map((_, i) => side(i, (track.gauge / 2) * s)),
+      base = line.map(floor);
+    beam(
+      rails,
+      line,
+      normal,
+      cfg.rails.width / 2,
+      base,
+      base.map((y) => y + cfg.rails.height),
+    );
+  }
+}
+
+function buildTramWire(cat, wires, points, floor) {
+  // Hilo de contacto: tramos rectos de `wireStep` sobre el eje.
+  const wire = thin(points, cat.wireStep),
+    wireNormal = normals(wire),
+    wireY = wire.map((p) => floor(p) + cat.wireHeight);
+  beam(
+    wires,
+    wire,
+    wireNormal,
+    cat.wireWidth / 2,
+    wireY.map((y) => y - cat.wireWidth),
+    wireY,
+  );
+}
+
+function buildTramPoles(half, cat, wires, stats, points, normal, floor) {
+  // Postes cada `poleSpacing` metros, por el lado con más sitio libre y fuera de edificios.
+  let distance = cat.poleSpacing / 2,
+    walked = 0;
+  for (let i = 1; i < points.length; i++) {
+    const segment = Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+    while (distance <= walked + segment) {
+      const t = (distance - walked) / (segment || 1),
+        x = points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
+        z = points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
+        n = [(normal[i - 1][0] + normal[i][0]) / 2, (normal[i - 1][1] + normal[i][1]) / 2],
+        offset = half + cat.poleOffset,
+        choices = [1, -1]
+          .map((s) => {
+            const p = [x + n[0] * offset * s, z + n[1] * offset * s],
+              road = nearestRoad(p[0], p[1], true);
+            return {
+              p,
+              clear: road ? road.d - road.s.width / 2 : 99,
+              blocked: inBuilding(p[0], p[1], cat.buildingClearance),
+            };
+          })
+          .filter((c) => !c.blocked)
+          .sort((a, b) => b.clear - a.clear);
+      distance += cat.poleSpacing;
+      if (!choices.length) continue;
+      const [px, pz] = choices[0].p,
+        y0 = surfaceHeightAt(px, pz),
+        w = cat.poleWidth / 2;
+      // Poste: cuatro caras y tapa; brazo horizontal hasta el eje de la vía.
+      const corners = [
+        [px - w, pz - w],
+        [px + w, pz - w],
+        [px + w, pz + w],
+        [px - w, pz + w],
+      ].map(([cx, cz]) => [
+        [cx, y0, cz],
+        [cx, y0 + cat.poleHeight, cz],
+      ]);
+      for (let k = 0; k < 4; k++) {
+        const a = corners[k],
+          b = corners[(k + 1) % 4];
+        quad(wires, a[0], b[0], b[1], a[1]);
+      }
+      quad(wires, corners[0][1], corners[1][1], corners[2][1], corners[3][1]);
+      const arm = [
+          [px, pz],
+          [x, z],
+        ],
+        dx = x - px,
+        dz = z - pz,
+        length = Math.hypot(dx, dz) || 1,
+        an = [
+          [-dz / length, dx / length],
+          [-dz / length, dx / length],
+        ],
+        armEnd = floor([x, z]) + cat.armHeight;
+      beam(
+        wires,
+        arm,
+        an,
+        cat.armWidth / 2,
+        [y0 + cat.armHeight - cat.armWidth, armEnd - cat.armWidth],
+        [y0 + cat.armHeight, armEnd],
+      );
+      stats.poles++;
+    }
+    walked += segment;
+  }
 }

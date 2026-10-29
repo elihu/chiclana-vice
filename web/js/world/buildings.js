@@ -42,6 +42,111 @@ export async function buildBuildings() {
   // Paleta, colores por tipo, alturas mínimas y escala UV en web/city-design.json (`buildings`).
   const rules = world.cityDesign.buildings,
     palette = rules.palette;
+  const { bucket } = createBuildingBuckets(groups);
+  const { orientation, windowWall, partyWall } = createBuildingWalls({ rules });
+  setBuildingHeights(rules);
+  // Muro compartido con un vecino: oculto hasta su tejado, medianera ciega por encima.
+  const shared = sharedWallSpans(
+      world.city.buildings,
+      world.city.buildings.map((b) => b.baseY + b.renderH),
+    ),
+    partyTint = new THREE.Color(rules.partyWall.color),
+    stats = { hiddenArea: 0, partyArea: 0 };
+  world.wallStats = stats;
+  // Clase del bajo de cada arista exterior de los muros genéricos (indicios del Catastro y de OSM
+  // más el tipo de la calle más cercana, con las reglas de city-design.json → groundFloors).
+  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors),
+    roadTypeAt = createRoadLookup(segments, world.cityDesign.frontages.maximumRoadDistance);
+  function groundOf(index, b, start, end, length) {
+    const nx = ((end[1] - start[1]) / length) * orientation.outward,
+      nz = (-(end[0] - start[0]) / length) * orientation.outward,
+      mx = (start[0] + end[0]) / 2 + nx,
+      mz = (start[1] + end[1]) / 2 + nz;
+    return groundCode(
+      groundFloors.classify(index, b.floors, start, end, nx, nz, roadTypeAt(mx, mz)),
+    );
+  }
+
+  let count = 0;
+  for (const [index, b] of world.city.buildings.entries()) {
+    let g = bucket(b),
+      h = b.renderH,
+      top = b.baseY + h;
+    if (!Number.isInteger(b.paletteIndex) || b.paletteIndex < 0 || b.paletteIndex >= palette.length)
+      throw Error('Índice de paleta de edificio incompatible; regenera buildings.json');
+    let col = new THREE.Color(
+        b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
+      ),
+      partyCol = col.clone().lerp(partyTint, rules.partyWall.blend);
+    [b.p, ...b.holes].forEach((ring, ringIndex) => {
+      let area = 0;
+      for (let i = 0; i < ring.length; i++) {
+        const [x0, z0] = ring[i],
+          [x1, z1] = ring[(i + 1) % ring.length];
+        area += x0 * z1 - x1 * z0;
+      }
+      orientation.outward = (area > 0 ? 1 : -1) * (ringIndex === 0 ? 1 : -1);
+      for (let i = 0; i < ring.length; i++) {
+        const start = ring[i],
+          end = ring[(i + 1) % ring.length],
+          length = Math.hypot(end[0] - start[0], end[1] - start[1]),
+          bays = Math.max(1, Math.round(length / rules.wallUvWidth)),
+          uScale = length > 0 ? bays / length : 0,
+          spans = shared.get(edgeKey(index, ringIndex, i)),
+          code =
+            b.detailType || ringIndex > 0 || length < 1
+              ? 0
+              : groundOf(index, b, start, end, length);
+        if (!spans) {
+          windowWall(g, b, col, h, start, end, 0, uScale, code);
+          continue;
+        }
+        const at = (t) => [
+          start[0] + ((end[0] - start[0]) * t) / length,
+          start[1] + ((end[1] - start[1]) * t) / length,
+        ];
+        for (const { t0, t1, cover } of spans) {
+          const a = at(t0),
+            q = at(t1),
+            ground = Math.min(groundHeightAt(...a), groundHeightAt(...q));
+          if (cover >= top - 0.01) stats.hiddenArea += (t1 - t0) * (top - ground);
+          else if (cover > ground + 0.3) {
+            stats.hiddenArea += (t1 - t0) * (cover - ground);
+            stats.partyArea += (t1 - t0) * (top - cover);
+            partyWall(g, b, partyCol, a, q, cover, top);
+          } else windowWall(g, b, col, h, a, q, t0 * uScale, uScale, code);
+        }
+      }
+    });
+    let outer = b.p.map((p) => new THREE.Vector2(...p)),
+      holes = b.holes.map((r) => r.map((p) => new THREE.Vector2(...p))),
+      all = [...outer, ...holes.flat()],
+      tris = THREE.ShapeUtils.triangulateShape(outer, holes);
+    const fits =
+      b.minX >= g.i * tileSize - margin &&
+      b.maxX <= (g.i + 1) * tileSize + margin &&
+      b.minZ >= g.j * tileSize - margin &&
+      b.maxZ <= (g.j + 1) * tileSize + margin;
+    const roofs = fits ? g : overflow;
+    if (!fits) overflow.parts++;
+    for (const tr of tris)
+      for (const i of tr) {
+        let p = all[i];
+        roofs.r.push(p.x, b.baseY + h + 0.02, p.y);
+        roofs.ru.push((p.x - ax0) / aw, 1 - (p.y - az0) / ah);
+      }
+    if (++count % 900 === 0) {
+      loadProgress(
+        'Reconstruyendo las manzanas y los patios…',
+        30 + (count / world.city.buildings.length) * 25,
+      );
+      await sleepFrame();
+    }
+  }
+  emitBuildingMeshes({ roofMaterials, overflow, groups, wallMat, roofMat, plainWallMat });
+}
+
+function createBuildingBuckets(groups) {
   function bucket(b) {
     let cx = (b.minX + b.maxX) / 2,
       cz = (b.minZ + b.maxZ) / 2,
@@ -64,19 +169,23 @@ export async function buildBuildings() {
       });
     return groups.get(k);
   }
+  return { bucket };
+}
+
+function createBuildingWalls({ rules }) {
   const floorHeight = world.facadeProfiles.heightPolicy.floorHeight,
     wallBase = world.terrain.kind === 'flat' ? 0.02 : -0.08;
   // Cornisa: banda de remate en lo alto del muro (cara frontal y cara inferior) que sobresale
   // `WINDOWS.corniceOut` m hacia fuera. Va en la misma malla que el muro (0 llamadas nuevas) y
   // toma el texel liso del enlucido, oscurecido con `corniceTint`.
-  let outward = 1;
+  const orientation = { outward: 1 };
   const corniceColor = new THREE.Color();
   function cornice(out, a, q, ground0, ground1, top, col) {
     const dx = q[0] - a[0],
       dz = q[1] - a[1],
       len = Math.hypot(dx, dz),
-      nx = (dz / len) * outward * WINDOWS.corniceOut,
-      nz = (-dx / len) * outward * WINDOWS.corniceOut,
+      nx = (dz / len) * orientation.outward * WINDOWS.corniceOut,
+      nz = (-dx / len) * orientation.outward * WINDOWS.corniceOut,
       y0 = top - WINDOWS.cornice;
     corniceColor.copy(col).multiplyScalar(WINDOWS.corniceTint);
     const at = (p, y) => [p[0], y, p[1]],
@@ -171,7 +280,10 @@ export async function buildBuildings() {
       out[4]?.push(0);
     }
   }
+  return { orientation, windowWall, partyWall };
+}
 
+function setBuildingHeights(rules) {
   // Altura de render de todos los edificios antes de los muros: un muro compartido necesita
   // la cota del tejado vecino.
   for (const b of world.city.buildings) {
@@ -187,104 +299,9 @@ export async function buildBuildings() {
         h = Math.max(h, m.height);
     b.renderH = h;
   }
-  // Muro compartido con un vecino: oculto hasta su tejado, medianera ciega por encima.
-  const shared = sharedWallSpans(
-      world.city.buildings,
-      world.city.buildings.map((b) => b.baseY + b.renderH),
-    ),
-    partyTint = new THREE.Color(rules.partyWall.color),
-    stats = { hiddenArea: 0, partyArea: 0 };
-  world.wallStats = stats;
-  // Clase del bajo de cada arista exterior de los muros genéricos (indicios del Catastro y de OSM
-  // más el tipo de la calle más cercana, con las reglas de city-design.json → groundFloors).
-  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors),
-    roadTypeAt = createRoadLookup(segments, world.cityDesign.frontages.maximumRoadDistance);
-  function groundOf(index, b, start, end, length) {
-    const nx = ((end[1] - start[1]) / length) * outward,
-      nz = (-(end[0] - start[0]) / length) * outward,
-      mx = (start[0] + end[0]) / 2 + nx,
-      mz = (start[1] + end[1]) / 2 + nz;
-    return groundCode(
-      groundFloors.classify(index, b.floors, start, end, nx, nz, roadTypeAt(mx, mz)),
-    );
-  }
+}
 
-  let count = 0;
-  for (const [index, b] of world.city.buildings.entries()) {
-    let g = bucket(b),
-      h = b.renderH,
-      top = b.baseY + h;
-    if (!Number.isInteger(b.paletteIndex) || b.paletteIndex < 0 || b.paletteIndex >= palette.length)
-      throw Error('Índice de paleta de edificio incompatible; regenera buildings.json');
-    let col = new THREE.Color(
-        b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
-      ),
-      partyCol = col.clone().lerp(partyTint, rules.partyWall.blend);
-    [b.p, ...b.holes].forEach((ring, ringIndex) => {
-      let area = 0;
-      for (let i = 0; i < ring.length; i++) {
-        const [x0, z0] = ring[i],
-          [x1, z1] = ring[(i + 1) % ring.length];
-        area += x0 * z1 - x1 * z0;
-      }
-      outward = (area > 0 ? 1 : -1) * (ringIndex === 0 ? 1 : -1);
-      for (let i = 0; i < ring.length; i++) {
-        const start = ring[i],
-          end = ring[(i + 1) % ring.length],
-          length = Math.hypot(end[0] - start[0], end[1] - start[1]),
-          bays = Math.max(1, Math.round(length / rules.wallUvWidth)),
-          uScale = length > 0 ? bays / length : 0,
-          spans = shared.get(edgeKey(index, ringIndex, i)),
-          code =
-            b.detailType || ringIndex > 0 || length < 1
-              ? 0
-              : groundOf(index, b, start, end, length);
-        if (!spans) {
-          windowWall(g, b, col, h, start, end, 0, uScale, code);
-          continue;
-        }
-        const at = (t) => [
-          start[0] + ((end[0] - start[0]) * t) / length,
-          start[1] + ((end[1] - start[1]) * t) / length,
-        ];
-        for (const { t0, t1, cover } of spans) {
-          const a = at(t0),
-            q = at(t1),
-            ground = Math.min(groundHeightAt(...a), groundHeightAt(...q));
-          if (cover >= top - 0.01) stats.hiddenArea += (t1 - t0) * (top - ground);
-          else if (cover > ground + 0.3) {
-            stats.hiddenArea += (t1 - t0) * (cover - ground);
-            stats.partyArea += (t1 - t0) * (top - cover);
-            partyWall(g, b, partyCol, a, q, cover, top);
-          } else windowWall(g, b, col, h, a, q, t0 * uScale, uScale, code);
-        }
-      }
-    });
-    let outer = b.p.map((p) => new THREE.Vector2(...p)),
-      holes = b.holes.map((r) => r.map((p) => new THREE.Vector2(...p))),
-      all = [...outer, ...holes.flat()],
-      tris = THREE.ShapeUtils.triangulateShape(outer, holes);
-    const fits =
-      b.minX >= g.i * tileSize - margin &&
-      b.maxX <= (g.i + 1) * tileSize + margin &&
-      b.minZ >= g.j * tileSize - margin &&
-      b.maxZ <= (g.j + 1) * tileSize + margin;
-    const roofs = fits ? g : overflow;
-    if (!fits) overflow.parts++;
-    for (const tr of tris)
-      for (const i of tr) {
-        let p = all[i];
-        roofs.r.push(p.x, b.baseY + h + 0.02, p.y);
-        roofs.ru.push((p.x - ax0) / aw, 1 - (p.y - az0) / ah);
-      }
-    if (++count % 900 === 0) {
-      loadProgress(
-        'Reconstruyendo las manzanas y los patios…',
-        30 + (count / world.city.buildings.length) * 25,
-      );
-      await sleepFrame();
-    }
-  }
+function emitBuildingMeshes({ roofMaterials, overflow, groups, wallMat, roofMat, plainWallMat }) {
   for (const g of [...groups.values(), overflow]) {
     const key = tileKey(g.i, g.j);
     if (g !== overflow && !roofMaterials.has(key))
