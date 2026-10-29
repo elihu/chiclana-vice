@@ -88,6 +88,10 @@ Andalucía. Una medida de `scene-budget` frente a `main`.
 
 ### V2. Colisiones (`feat/vallas-colision`)
 
+> **Hecha el 29/10/2026**: 1.828 tramos con colisión (`inBarrier` y `crossesWall` en
+> `spatial.js`), sin choque a más de 2,5 m de la cota del pie. En 30 s de juego los 24 coches y
+> 28 peatones de prueba se mueven y ninguno queda dentro de un muro.
+
 Segmentos de vallas en una rejilla propia de `spatial.js`; `blocked` y `crossesWall` los
 consultan (D5). Prueba en `tests/` de que un punto al otro lado no se alcanza en línea recta y
 de que el hueco de una puerta sí. Commit `feat(juego): colisión con vallas y muros`.
