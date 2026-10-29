@@ -40,6 +40,40 @@ const colliderIndex = syncedGrid(
   () => (colliderReach = 0),
 );
 
+// Vallas y muros: tramos con su media anchura; se indexan por su caja ampliada en esa anchura.
+let barrierReach = 0;
+const barrierIndex = syncedGrid(
+  streetEnvironment.barrierSegments,
+  16,
+  (grid, s) => {
+    barrierReach = Math.max(barrierReach, s.half);
+    grid.insert(
+      s,
+      Math.min(s.a[0], s.b[0]),
+      Math.max(s.a[0], s.b[0]),
+      Math.min(s.a[1], s.b[1]),
+      Math.max(s.a[1], s.b[1]),
+    );
+  },
+  () => (barrierReach = 0),
+);
+
+// ¿Toca el círculo (x, z, radio) una valla o un muro? `reference` es la cota de quien se mueve:
+// sobre un puente, a más de `BARRIER_LEVEL` m del pie de la valla, no choca con ella.
+const BARRIER_LEVEL = 2.5;
+export function inBarrier(x, z, radius = 0, reference = null) {
+  const reach = radius + barrierReach;
+  return barrierIndex().queryBox(
+    x - reach,
+    x + reach,
+    z - reach,
+    z + reach,
+    (s) =>
+      pointSeg(x, z, s.a, s.b).d < s.half + radius &&
+      (reference === null || Math.abs(reference - s.y) < BARRIER_LEVEL),
+  );
+}
+
 export function someCollider(x, z, radius, test) {
   const grid = colliderIndex(),
     reach = radius + colliderReach;
@@ -67,11 +101,23 @@ export function inBuilding(x, z, pad = 0.3) {
 
 const side = (a, b, x, z) => (b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0]);
 
-// ¿Corta el segmento (x0, z0)–(x1, z1) algún muro (contorno o patio) de un edificio?
+// ¿Corta el segmento (x0, z0)–(x1, z1) algún muro (contorno o patio) de un edificio, o una valla?
 export function crossesWall(x0, z0, x1, z1) {
   const seen = new Set(),
     p = [x0, z0],
     q = [x1, z1];
+  if (
+    barrierIndex().queryBox(
+      Math.min(x0, x1),
+      Math.max(x0, x1),
+      Math.min(z0, z1),
+      Math.max(z0, z1),
+      (s) =>
+        side(s.a, s.b, x0, z0) * side(s.a, s.b, x1, z1) <= 0 &&
+        side(p, q, s.a[0], s.a[1]) * side(p, q, s.b[0], s.b[1]) <= 0,
+    )
+  )
+    return true;
   for (let gx = Math.floor(Math.min(x0, x1) / 25); gx <= Math.floor(Math.max(x0, x1) / 25); gx++)
     for (let gz = Math.floor(Math.min(z0, z1) / 25); gz <= Math.floor(Math.max(z0, z1) / 25); gz++)
       for (const b of buildingGrid.get(gx + ',' + gz) || []) {
@@ -195,6 +241,7 @@ export function inWater(x, z) {
 export function blocked(x, z, r = 0.3, reference = null) {
   if (!insideBounds(x, z, 5)) return true;
   if (inBuilding(x, z, r)) return true;
+  if (inBarrier(x, z, r, reference)) return true;
   if (
     someCollider(
       x,
