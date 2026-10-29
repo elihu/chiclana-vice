@@ -187,6 +187,11 @@ de `scene-budget` frente a `main`.
 
 ### C3. Rótulos con nombre (`feat/rotulos`)
 
+> **Hecha el 29/10/2026** (commit `3e9bd7b`): `world/shop-signs.js`, 267 rótulos de 289
+> comercios con nombre, atlas de 1856 × 1632 px y una llamada de dibujo más. No se ocultan a
+> distancia: son 267 cuadriláteros en una malla. Los créditos no cambian, porque OSM ya figura en
+> la pantalla de fuentes.
+
 1. **Rótulos**: módulo nuevo junto a `signs.js`, con un atlas de canvas con los nombres
    (D4), un material y una malla fusionada (+1 llamada). Cada comercio con nombre pone su
    rótulo sobre el frente que lo clasificó (`shopNear`), encima del escaparate; en

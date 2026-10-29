@@ -498,8 +498,9 @@ Publica `web/ground-floors.json` sin tocar `buildings.json`. Se regenera cada ve
   `outline` es el contorno si OSM la dibuja como área, o `null`.
 - Más `version`, `origin`, `buildingsSha256`, `source`, `license`, `attribution` y `limits`.
 
-El juego la carga como `world.groundFloors` (opcional) y usa `uses`, `parts` y la posición de
-`shops` para la clase de los bajos; los nombres, las zonas y las gasolineras aún no.
+El juego la carga como `world.groundFloors` (opcional): `uses`, `parts` y `shops` deciden la
+clase y el tipo de los bajos, `zones` la de los edificios (naves, grandes superficies y bodegas)
+y los nombres de `shops` los rótulos de los comercios. Las gasolineras (`fuel`) aún no.
 
 ## 10. Vías y paradas del tranvía
 
