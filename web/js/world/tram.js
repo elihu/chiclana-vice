@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.webgpu.min.js';
 import { flatGeometry, mat } from '../engine/materials.js';
+import { createGrid } from '../core/grid.js';
 import { gfx, world } from '../core/state.js';
 import { surfaceHeightAt } from '../engine/terrain-sampling.js';
 import { inBuilding, nearestRoad } from './spatial.js';
@@ -8,7 +9,6 @@ import { inBuilding, nearestRoad } from './spatial.js';
 // Todo es visual: no cambia cotas ni transitabilidad. Parámetros en web/city-design.json
 // (sección `tram`); ver docs/DESARROLLO.md («Tranvía»).
 const CELL = 16;
-const cellKey = (x, z) => Math.floor(x / CELL) + ',' + Math.floor(z / CELL);
 
 // Disposición de cada vía dibujada (se calcula una vez; la capa es estática y pequeña):
 // puntos remuestreados y, por punto, su tipo de franja:
@@ -26,7 +26,7 @@ function layout() {
     half = cfg.stripWidth / 2,
     level = layer.crossings.filter((c) => c.kind === 'level'),
     tracks = [],
-    grid = new Map();
+    grid = createGrid(CELL);
   for (const track of layer.tracks) {
     const original = resample(track.p, cfg.sampleStep),
       kinds = [],
@@ -87,9 +87,9 @@ function layout() {
         },
         n = Math.max(1, Math.ceil(segment.length / (CELL / 2)));
       for (let k = 0; k <= n; k++) {
-        const key = cellKey(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
-        if (!grid.has(key)) grid.set(key, new Set());
-        grid.get(key).add(segment);
+        const x = a[0] + ((b[0] - a[0]) * k) / n,
+          z = a[1] + ((b[1] - a[1]) * k) / n;
+        grid.insert(segment, x, x, z, z);
       }
     }
   }
@@ -108,7 +108,7 @@ export function tramDistance(x, z, skipLane = false) {
     cz = Math.floor(z / CELL);
   for (let i = cx - 1; i <= cx + 1; i++)
     for (let j = cz - 1; j <= cz + 1; j++)
-      for (const s of m.grid.get(i + ',' + j) ?? []) {
+      for (const s of m.grid.queryPoint(i * CELL, j * CELL)) {
         if (skipLane && s.lane) continue;
         const ex = s.b[0] - s.a[0],
           ez = s.b[1] - s.a[1],
