@@ -53,6 +53,10 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   sin cambios visibles, por fases R0–R5.
 - **R0** (`perf/medir-arranque`): etapas de arranque medidas y `tools/bench-startup.mjs`.
   Referencia en Node: arranque 10,5 s y 0,53 ms por paso de `update`; sin cambios visibles.
+- **R1** (`perf/indices-espaciales`): rejilla común `core/grid.js` para obstáculos, agua y
+  tramos, sincronizada con sus listas; aceras sin comprobaciones repetidas. En Node, arranque
+  10,3 → 7,2 s (−30 %) y `update` 0,58 → 0,27 ms por paso; huellas idénticas, sin FPS ni
+  prueba en móvil.
 
 ## Novedades de `v2.0.0`
 
