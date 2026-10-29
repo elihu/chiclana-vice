@@ -150,10 +150,8 @@ for (let i = 0; i < cut.position.length; i += 9) {
 const islands = roundaboutIslands(layer.roads);
 const bounds = JSON.parse(fs.readFileSync('web/world.json')).bounds;
 assert(
-  dividerFaces(layer.roads, bounds).some(
-    (f) => f.roads.includes('142805121') && f.roads.includes('142805152'),
-  ),
-  'el separador de Descubrimientos también se completa al quedar cortado por el mapa',
+  dividerFaces(layer.roads, bounds).some((f) => f.roads.some((id) => id.startsWith('cap:'))),
+  'los separadores cortados por el borde del mapa también se completan',
 );
 assert(islands.length >= 5, 'se reconstruyen las glorietas cartografiadas por tramos');
 for (const island of islands)

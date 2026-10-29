@@ -109,7 +109,7 @@ for (let i = 0; i < 30; i++) g.update(0.016);
   const net = g.driveNetwork,
     drive = (i) => g.graph[i].adj.some((e) => e.s?.drive && !e.s.blocked);
   assert(net.oneway > 0 && net.relaxed < net.oneway / 2, 'oneway respected on most segments');
-  assert(net.blocked < 100, 'few alleys excluded from traffic');
+  assert(net.blocked < g.segments.length / 25, 'few alleys excluded from traffic');
   for (const s of g.segments) {
     const open = s.drive && !s.blocked;
     assert(s.forward.drive === open, 'forward direction drivable');

@@ -30,6 +30,22 @@
       -2
     ],
     [
+      -4,
+      -1
+    ],
+    [
+      -4,
+      0
+    ],
+    [
+      -4,
+      1
+    ],
+    [
+      -4,
+      2
+    ],
+    [
       -3,
       -5
     ],
@@ -56,6 +72,10 @@
     [
       -3,
       1
+    ],
+    [
+      -3,
+      2
     ],
     [
       -2,
@@ -91,6 +111,18 @@
     ],
     [
       -1,
+      -5
+    ],
+    [
+      -1,
+      -4
+    ],
+    [
+      -1,
+      -3
+    ],
+    [
+      -1,
       -2
     ],
     [
@@ -111,6 +143,18 @@
     ],
     [
       0,
+      -5
+    ],
+    [
+      0,
+      -4
+    ],
+    [
+      0,
+      -3
+    ],
+    [
+      0,
       -2
     ],
     [
@@ -126,6 +170,22 @@
       1
     ],
     [
+      0,
+      2
+    ],
+    [
+      1,
+      -5
+    ],
+    [
+      1,
+      -4
+    ],
+    [
+      1,
+      -3
+    ],
+    [
       1,
       -2
     ],
@@ -142,6 +202,22 @@
       1
     ],
     [
+      1,
+      2
+    ],
+    [
+      2,
+      -5
+    ],
+    [
+      2,
+      -4
+    ],
+    [
+      2,
+      -3
+    ],
+    [
       2,
       -2
     ],
@@ -156,6 +232,10 @@
     [
       2,
       1
+    ],
+    [
+      2,
+      2
     ]
   ],
   "general": {
@@ -172,8 +252,34 @@
     ]
   },
   "acquisition": "2022-07",
-  "consulted": "2026-10-09",
+  "consulted": "2026-10-29",
   "source": "https://www.ign.es/wms-inspire/pnoa-ma",
+  "historic": {
+    "source": "https://www.ign.es/wms/pnoa-historico",
+    "layer": "PNOA2022",
+    "tiles": [
+      "-1_-3",
+      "-1_-4",
+      "-1_-5",
+      "-3_2",
+      "-4_-1",
+      "-4_0",
+      "-4_1",
+      "-4_2",
+      "0_-3",
+      "0_-4",
+      "0_-5",
+      "0_2",
+      "1_-3",
+      "1_-4",
+      "1_-5",
+      "1_2",
+      "2_-3",
+      "2_-4",
+      "2_-5",
+      "2_2"
+    ]
+  },
   "sha256": {
     "hi/-4_-5.jpg": "314b14c7860104c51300873a3afc74ec4311df4560d216c933eb525fb12f6864",
     "lo/-4_-5.jpg": "2d04a8b66ee0251262dfe27a0c59cf292141bc4fc6268f043596b061797383fd",
@@ -183,6 +289,14 @@
     "lo/-4_-3.jpg": "7554ecaa3ca665ee966ca0cd6d1f2efe592a254d900534b10661ee6a5896f3c9",
     "hi/-4_-2.jpg": "5c4fe4b2164dde70d8ed28038a9e73271d1d4a72618ba0339009e473c89dce00",
     "lo/-4_-2.jpg": "c4d9b065f24d675f9505cbef469710c6d472aaeffadd71417715e592a9e5e78c",
+    "hi/-4_-1.jpg": "9a849243eab66f1a8163c5ff6cb3726c1d8d3eb57319cc42dee63cd4242a5df7",
+    "lo/-4_-1.jpg": "6d9d1827b0f35d546130ad474b37698de101ed2a3d52ed89fc9c617a728da912",
+    "hi/-4_0.jpg": "e71b1abac45bb5d6014c06cd9f445a3f41fa52146d3e1501462180c913050145",
+    "lo/-4_0.jpg": "ebfb797ba98d7606151c86d7e8d7b1521c1b01423aaa2ad7e5d90c86fefb16b3",
+    "hi/-4_1.jpg": "b885378d94634e3032ab6df9fa41e1a174681e3974932c0f73b0649e73055d22",
+    "lo/-4_1.jpg": "19eb7775a659e444be94e253855a5c1fc1f8a9ccfb1ecf598e78d663d3c6f2cf",
+    "hi/-4_2.jpg": "3532d1cac3ae86300179823b8020fc52028f3a59728db260ac95d7789022a3c6",
+    "lo/-4_2.jpg": "fc92311bef6302522b48289c00cd13f4698e361e1b391a8dd63b68a679f70da9",
     "hi/-3_-5.jpg": "81b1c64950b4a3559e0b46f17cd9c3dde064cce9bb1782d3e3f6ebf3a8c69e31",
     "lo/-3_-5.jpg": "77269bd2be3a3a13b80564c24641f04ca5a428fa78f7a8426a65a03c87ceabe4",
     "hi/-3_-4.jpg": "456ab481ca708c57301aae170c18d011095dfac3c596b72b062116220b1c6a4e",
@@ -197,6 +311,8 @@
     "lo/-3_0.jpg": "982401b3e74ffbfd57bc56a13c08577d53f8c3ff8d31a64e0e8fb761e0f88222",
     "hi/-3_1.jpg": "205494ceff33e43e9c2738689c82328198a1e98849483c00108068a3154b2967",
     "lo/-3_1.jpg": "61a84a6f39cfda246567db118f964987b202c58b938a98e7da30f45304664a94",
+    "hi/-3_2.jpg": "64739df3f2cff2b2eeee084d929d6feb491dd7c537eec093451896b0e23762a2",
+    "lo/-3_2.jpg": "b394d1e8afa679a6b4d6340e5124323f8f1e9dd12126fd399adaa9b9104f822a",
     "hi/-2_-5.jpg": "ac21c32546fd5353562216befc79cb794e3c9c8332bd1c2e0e497eb35838e8f3",
     "lo/-2_-5.jpg": "11c86eb5b63e840fda2c18f3285aba9e152687526d24044f1c195fe4783d3a1a",
     "hi/-2_-4.jpg": "ed0bd85701c908115fdc8781bf9de80ad1ec055e8e7933c8b5a09072b6aca589",
@@ -213,6 +329,12 @@
     "lo/-2_1.jpg": "4984ddbcb0610a307602a3db0b60edf45064451f07cf49b077071b5ea7fbce99",
     "hi/-2_2.jpg": "319c32dd91e3e0dc4fbbe6f47a4de75d5b2916c814a465641340470949c72faa",
     "lo/-2_2.jpg": "eb84b4d39083adf50081d7d6c885f00d97526284c1041140a0456da9e6078926",
+    "hi/-1_-5.jpg": "b81e1ced8eb92665bf194a33749bbe767ec262fb5964462d6f3eae8fc56bfd5c",
+    "lo/-1_-5.jpg": "520c577dab888e1035546d42d8b903142d8118861b2804546f7300cabcaef7f3",
+    "hi/-1_-4.jpg": "7591fd693d7740bf6e2c09b7a74387fec0cb2c9ec096e90612f6a7a99f90effa",
+    "lo/-1_-4.jpg": "2a57c97e14a4b9dbe0d9bf5b4dd7086bc7abf7dd97f887a75767aab1bb981793",
+    "hi/-1_-3.jpg": "a819e33f67d61b675f4aff41fb3cf03ef5e25ae638e93e8e05846a832c13cbee",
+    "lo/-1_-3.jpg": "9e6d936271b7a8ec1306147c1b31043b4413d623c51d3cd2f093bde3a0c22113",
     "hi/-1_-2.jpg": "22f2e07f96d557bdc3e180478b5c61dded80bfb910ba1aa5cc556c30be8c929d",
     "lo/-1_-2.jpg": "e60efb3fa64f783154d68fdb23ffa681414b305378446aa8f5c341a2def2f4c0",
     "hi/-1_-1.jpg": "f0b7fa86f98139ce30525ce39e4acb5f11731b39e2f5179c027b04ef23fc369a",
@@ -223,6 +345,12 @@
     "lo/-1_1.jpg": "18e6fa3b9ad514c4ce08b7db89ed86e78bc09b85283e0def984af370b582b961",
     "hi/-1_2.jpg": "20af5a9597f8b55b87257421850e1f11cfc39d5c98d06cba35f7bda2cd8b1d58",
     "lo/-1_2.jpg": "b282b07fa22f7c690a95089d6166f9228536b3c1f9916dee507842ad3d574c7c",
+    "hi/0_-5.jpg": "a9898c0828e2775f1518cee2b50c17a3abbdaf2ed23c9cfa6bc9d5728c3cd00e",
+    "lo/0_-5.jpg": "40a64b6ef7d95de75054e177251c2c3b0af5b9fb6bf082e828e700ffad17bbf3",
+    "hi/0_-4.jpg": "9be931d16b36d535887d0fa489c91d85ace2e1ba0d754e857ce1596f743919c0",
+    "lo/0_-4.jpg": "c93cc5675bc3a57f307b2fda567088781655ca74db427b24f86a2387fd71e353",
+    "hi/0_-3.jpg": "bde029603f10b3edc9f3c23aa020de706c333e6911314cf4150ded28ff51f878",
+    "lo/0_-3.jpg": "32489fabd6f283a44947c93aadc769017b97161523d154c11e1ea0ec614ac96b",
     "hi/0_-2.jpg": "ff81fa3ff0e270e4b172421d43b260eecf9decd1572a462434177c2d5adc89ee",
     "lo/0_-2.jpg": "eb432aae527ddd3a4ccae4303da2177a08fcc36127bcbcd54d269fd46b37535b",
     "hi/0_-1.jpg": "b4a5b17367329d4ef9b53591df15cbc704bacdee538ad8acc026c5f8f607e977",
@@ -231,6 +359,14 @@
     "lo/0_0.jpg": "282c0cfd819bbc6ec603701788cf7205b1ee375a5dcba6fb88e1a76a82f047f7",
     "hi/0_1.jpg": "50934e205543d5d8218eddda864ceedb89eb3a90ca34cc763b1c7f3f6fe3f039",
     "lo/0_1.jpg": "86d153fae31fce0144c699a147021184a2105106632441c4a2d1095aa7ccf8a7",
+    "hi/0_2.jpg": "69635debb395e329eecb50b85d7ca0079239e99b1e632ca9fc63fd23a78070e5",
+    "lo/0_2.jpg": "9e51c91b59a2d8476c7648a66e7deb1cf588ef53a1e7687270b40067ebb13758",
+    "hi/1_-5.jpg": "276310d090b87feb8cc3247b9e73e98a412006cc63cbad5fffc67194e5ac43e6",
+    "lo/1_-5.jpg": "6b367c72fd0e3a5f90e15864ca8794dc3a99bbe5de2cda6e53ebe6f41afbf643",
+    "hi/1_-4.jpg": "43f90b886799a117f3fdf547686143fd1b6e5c829e49d77a21b5c0978700c312",
+    "lo/1_-4.jpg": "c5fb73401c9e4aa9ed09c0776f885f3115bdc9ec670c5fa015253eb001d02e37",
+    "hi/1_-3.jpg": "2f658dfe0786e1a726e47a593f928e0da0c92809d1964549eb9dfac0f8049680",
+    "lo/1_-3.jpg": "65840e5b506d89b65411d0cea93f3f4124389b4384b8dd808b883edc3c6c9d7e",
     "hi/1_-2.jpg": "b00b2bbb19a1037531aea6065233b0f18a48a5c4ec913e2f0efcd0577f5e2cf6",
     "lo/1_-2.jpg": "6d83ad47aefb76031d8ce344ccfb485c3ed6c760d84e3db734d5b067c034e1b6",
     "hi/1_-1.jpg": "189b65d996fdb0fcefbb378acf2980bbde2c11375fe261b6e1097afd90adf0cc",
@@ -239,6 +375,14 @@
     "lo/1_0.jpg": "d0731b8ba365d122c57b3fe3a871fb8b90cf932f11d11cac1632401a354f6c15",
     "hi/1_1.jpg": "6a2836a616e75c6337f3883b335899719ebddc1f79f9454f7ba8a067e811dbcb",
     "lo/1_1.jpg": "055c4505ece2255f9a86ecac2565cc1aef1ce50e8b005a01f2f2b13a06deeee1",
+    "hi/1_2.jpg": "a9b8ab6375131997e217856ce5bf839fb1eb4ffac2391f51ea83385297095293",
+    "lo/1_2.jpg": "ee7ff0a6143ca606d678caf49ce69a842780a62b3f0672fb9e9af28f55b09005",
+    "hi/2_-5.jpg": "1c2bdea08893236e46bde7627add003a0a4f594c9b7bcdc2ff7bdf6031e93c6b",
+    "lo/2_-5.jpg": "7c7e2970b02e81404affa8e6a11c9bc1488fbf5148d05188c99079575c2bca53",
+    "hi/2_-4.jpg": "d0e867fda09a3ccd3f3f53bfd433d815fceef3d1bef17d73bef8f0e4b248b569",
+    "lo/2_-4.jpg": "fa275abf97965b661b95cd2205aaa2a9278e59e41ec7334f5791536158f727fd",
+    "hi/2_-3.jpg": "3ae07a4cfbd8efa23faf594b0bfbe8170b5a35dcf81551c2062609498ce851a6",
+    "lo/2_-3.jpg": "92f49710a9cf50e13f4e6ca13319465388d41ac1be16db5091adf126150f9803",
     "hi/2_-2.jpg": "44d9420be24fa8f91ac65bb0556a9c283906ee50fe4b1c02ea5ff210fd4052fc",
     "lo/2_-2.jpg": "31da03fde46c19a1e122afe71a115ca1ff9db861ebd45c35b336f0a5fdf46c1c",
     "hi/2_-1.jpg": "8adcc738c5788a5846e9db9e4f9205763438e1e2dceb1f52aaa3530b17bb8dab",
@@ -247,6 +391,8 @@
     "lo/2_0.jpg": "dccc33f680a9439ddd45e2f511ccfd17287917643d53df0a2f29206fe9dd699a",
     "hi/2_1.jpg": "e601acbcd45036ca0fec6200f8e8d91ac32378f056f892472923d603b536bc25",
     "lo/2_1.jpg": "450f9edc6b00d4d47d72eab43b60fdd8edeb0b58e29779632882597de2f92d80",
+    "hi/2_2.jpg": "44c53b48906423494c3377319f6d35f0fd9814802a9c8934c5241aae34dec8f1",
+    "lo/2_2.jpg": "029361cdd3fd8093e9754fefad02bb33c6278fb9181797e8304ead014aa84069",
     "general.jpg": "8f6c9d46f8ad8581843f92a8337e8a18241ad620a4ad9ca168bb77882a85230b"
   }
 }

@@ -27,7 +27,7 @@
       "id": "fix-002",
       "op": "area.remove",
       "area": {
-        "index": 23,
+        "index": 27,
         "expectFirst": [
           136.05,
           -194.64

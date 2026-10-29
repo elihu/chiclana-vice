@@ -9,9 +9,9 @@ regenerar los datos.
 El navegador carga `web/world.json`, un manifiesto que referencia las capas
 `buildings.json` (Catastro) y `osm-world.json` (OSM) con sus checksums. Sus límites se describen
 con `bounds`, una lista no vacía de
-rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene
-`[-671.835, 671.835, -500.94, 500.94]` (centro), `[-420, -60, 500.94, 650]` (Santa Ana) y
-`[-820, -380, -1120, -500.94]` (norte: Puente VII Centenario y ferial). La pertenencia se consulta sobre la unión,
+rectángulos `[x0, x1, z0, z1]` finitos y de área positiva; hoy contiene uno,
+`[-820, 671.835, -1120, 650]`, la caja que envolvía el centro, Santa Ana y el norte
+(Puente VII Centenario y ferial). La pertenencia se consulta sobre la unión,
 mientras que mapa y cobertura del terreno usan la caja envolvente. `prepare-world.mjs`
 genera este formato y admite también entradas antiguas con `size`; el cargador
 conserva esa compatibilidad para copias locales. Carga además la
@@ -131,8 +131,9 @@ modifican al resolver los índices.
 `randomSeed` fija por separado el inicio de la secuencia de vegetación y actores.
 La migración desde `main b007ac5` conserva 7.683 muestras de paleta y fija esa semilla
 a `2165021796`, el estado que antes quedaba tras consumirlas desde `7631`.
-`tests/verify-building-variation.mjs` compara los 7.862 índices contra la referencia
-capturada en `60c3e7a` (`source-data/building-variation-baseline.json`), exige conservar
+`tests/verify-building-variation.mjs` compara los 11.771 índices contra la referencia
+capturada en `60c3e7a` y ampliada con el mapa del 29/10/2026 (los 7.692 edificios
+anteriores conservan su índice) (`source-data/building-variation-baseline.json`), exige conservar
 la semilla del entorno y ejecuta una sonda aislada de vegetación y 600 pasos de actores.
 La referencia no se regenera automáticamente: solo se actualiza si se adopta
 deliberadamente otro mapa, diseño de colores o comportamiento del juego.
@@ -222,7 +223,11 @@ o errores de red hace hasta tres reintentos, con esperas de 2, 4 y 8 segundos;
 los demás errores HTTP se propagan sin reintento. No añade dependencias
 al proyecto. Si falla una consulta, se puede repetir el comando usando la caché.
 
-Antes de escribir datos comprueba que todos los centros declaran vuelo `2022-07` y
+Si el centro de una tesela no declara vuelo `2022-07` en el mosaico vigente (el IGN ya
+sirve vuelos de 2025 en parte del mundo), la pide a la capa `PNOA2022` del servicio
+histórico (`https://www.ign.es/wms/pnoa-historico`), la ortoimagen de Andalucía 2022 a
+0,25 m, y la anota en `historic` de `index.json`. La alineación con las vecinas comprueba
+después que encaja con el resto. Antes de escribir datos comprueba
 que cada par de teselas vecinas se alinea en su franja común (41 m, 164 píxeles a
 0,25 m). Busca el máximo de correlación normalizada de luminancia en ±2 píxeles y
 estima el pico subpíxel mediante parábolas por eje. Exige desplazamiento menor de
