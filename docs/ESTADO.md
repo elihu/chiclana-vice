@@ -19,8 +19,12 @@ y en las releases. Se actualiza en `main` al integrar ramas.
   `localhost`. La interfaz de la `v2.0.0` se revisó por tandas en el móvil del usuario por
   red local, con ajustes de distribución y sensibilidad; el usuario la considera lista
   para sacar versión el 28/10/2026. Sin registro de modelo/navegador ni FPS de esa sesión.
-- No verificado: la `v1.6.0` junta con FPS medidos, la `v1.5.0` en el portátil, iOS, FPS medidos en un móvil físico, y el relieve y la ortofoto por
-  teselas en móvil.
+  La `v2.1.0` publicada, el 29/10/2026 en un Nothing Phone 3 con Chrome (`#fps`), por la
+  Alameda, el puente de los Remedios, la avenida Solano, el Mercado, Santa Ana y San Telmo:
+  90 FPS estables y peor frame de 11 ms, igual con WebGPU, con WebGL 2 y en modo ligero;
+  sin tirones en giros rápidos y ortofoto por teselas correcta. Los 90 FPS son
+  probablemente el tope de la sincronización vertical, así que no miden el margen que queda.
+- No verificado: la `v1.5.0` en el portátil, iOS y otros móviles Android.
 
 ## Decisiones vigentes
 
@@ -200,7 +204,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 ## Pendientes
 
 - Ampliación ([PLAN-AMPLIACION.md](historico/PLAN-AMPLIACION.md)): fases 0–5 publicadas en la
-  `v1.3.0`. Falta probar la ortofoto por teselas en un móvil Android. Veracruz: el patio
+  `v1.3.0`. Veracruz: el patio
   delante de la puerta queda unos 6,5 m sobre la calle (en la realidad, algo elevado y
   con la verja casi a pie de calle), porque la parte catastral 4909 incluye el patio y la
   ermita se apoya en la cota máxima; el usuario no quiere recortar el dato catastral ni
@@ -211,8 +215,7 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   junto a las calzadas en cuesta ya no se hunde (a 1 m del borde, los puntos más de 1 m
   por debajo de la calzada bajan del 6,4 % al 1,2 %;
   [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)). Pendiente: localizar y corregir los
-  pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo); probarlo
-  en un móvil físico (las comprobaciones con SwiftShader no acreditan GPU).
+  pequeños defectos visuales señalados en la revisión del 8/10/2026; zócalos y accesos de edificios en pendiente (`baseY` máximo).
 - Suelo ([PLAN-SUELO.md](PLAN-SUELO.md)): tanda 1 en `v1.7.0`, tandas 2, T y 3 en
   `v2.0.0`. Pendientes: revisar las franjas de acera junto al acceso norte del puente de
   Reyes Católicos (lado oeste); a pie, los pies quedan unos 10 cm bajo la baldosa porque
@@ -232,9 +235,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   [PLAN-SUELO.md](PLAN-SUELO.md); queda la noche cerrada (luces reales
   cercanas, farolas en todas las calles y bloom), apoyo de peatones en aceras, patios y pretiles. Los bajos con
   relieve suben los triángulos un 12–31 % en «sigue» con SwiftShader (más del 25 % en
-  Alameda, Mercado y San Telmo): medir FPS en el móvil y, si hace falta, simplificar balcones
-  y postigos de las plantas altas.
-- Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo y medir FPS en
-  el móvil con la luz y el ahorro de render juntos.
+  Alameda, Mercado y San Telmo), pero el móvil se mantiene a 90 FPS en las tres (ver
+  «Estado»): simplificar balcones y postigos solo si un móvil más modesto lo pide.
+- Comprobar que la cámara de sombras cubre las sombras más largas del sol bajo.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
