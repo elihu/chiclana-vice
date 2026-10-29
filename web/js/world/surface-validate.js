@@ -8,6 +8,12 @@ export const anchoredArea = (anchor) => (a) =>
   a.p.length === anchor.vertexCount &&
   a.p.some((v) => v[0] === anchor.vertex[0] && v[1] === anchor.vertex[1]);
 
+// Prolongación de un extremo del tablero: un número no negativo o un par [inicio, fin].
+const extensionValid = (v) => {
+  const valid = (e) => Number.isFinite(e) && e >= 0;
+  return Array.isArray(v) ? v.length === 2 && v.every(valid) : valid(v);
+};
+
 export function validateSurfaceDesign(design, city = null) {
   if (design === undefined) return [];
   const errors = [],
@@ -132,11 +138,11 @@ export function validateSurfaceDesign(design, city = null) {
         max: 3,
         message: 'grosor positivo hasta 3 m',
       });
-    if (p.roadAnchor?.endExtension !== undefined)
-      kit.number('platforms.' + i + '.roadAnchor.endExtension', p.roadAnchor.endExtension, {
-        min: 0,
-        message: 'se esperaba una prolongación no negativa',
-      });
+    if (p.roadAnchor?.endExtension !== undefined && !extensionValid(p.roadAnchor.endExtension))
+      fail(
+        'platforms.' + i + '.roadAnchor.endExtension',
+        'se esperaba una prolongación no negativa o un par [inicio, fin]',
+      );
     if (p.roadAnchor?.lateralOffset !== undefined)
       kit.number(`platforms.${i}.roadAnchor.lateralOffset`, p.roadAnchor.lateralOffset);
     if (p.profile !== undefined)
@@ -156,7 +162,7 @@ export function validateSurfaceDesign(design, city = null) {
         !['asphalt', 'stone', 'slabs'].includes(band.material) ||
         !positive(band.roadAnchor?.width) ||
         (band.roadAnchor?.endExtension !== undefined &&
-          (!Number.isFinite(band.roadAnchor.endExtension) || band.roadAnchor.endExtension < 0)) ||
+          !extensionValid(band.roadAnchor.endExtension)) ||
         !Number.isFinite(band.roadAnchor?.lateralOffset) ||
         typeof band.roadAnchor?.roadId !== 'string' ||
         (city && city.roads.filter((r) => r.id === band.roadAnchor.roadId).length !== 1)

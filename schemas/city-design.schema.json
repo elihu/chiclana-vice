@@ -1273,9 +1273,16 @@
                     "type": "number"
                   },
                   "endExtension": {
-                    "type": "number",
-                    "minimum": 0,
-                    "description": "Prolongación de autor en metros en ambos extremos del corredor; por defecto 0."
+                    "oneOf": [
+                      { "type": "number", "minimum": 0 },
+                      {
+                        "type": "array",
+                        "items": { "type": "number", "minimum": 0 },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    ],
+                    "description": "Prolongación de autor en metros: un número para ambos extremos del corredor o un par [inicio, fin] en el sentido de la vía; por defecto 0."
                   }
                 }
               },
@@ -1361,9 +1368,16 @@
                           "type": "number"
                         },
                         "endExtension": {
-                          "type": "number",
-                          "minimum": 0,
-                          "description": "Prolongación de autor en metros en ambos extremos del corredor; por defecto 0."
+                          "oneOf": [
+                            { "type": "number", "minimum": 0 },
+                            {
+                              "type": "array",
+                              "items": { "type": "number", "minimum": 0 },
+                              "minItems": 2,
+                              "maxItems": 2
+                            }
+                          ],
+                          "description": "Prolongación de autor en metros: un número para ambos extremos del corredor o un par [inicio, fin] en el sentido de la vía; por defecto 0."
                         }
                       }
                     }

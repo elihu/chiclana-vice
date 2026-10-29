@@ -365,3 +365,6 @@ Tanda local del 28/10/2026, pendiente de revisión visual del usuario:
   unir tablero y accesos. No se añade al grafo de calles. La prolongación de 2 m del
   tablero es de autor y evita que su junta oblicua deje fuera el extremo del tranvía;
   franja y raíles siguen el perfil común en lugar del terreno rebajado bajo el puente.
+  El extremo norte se prolonga 5,25 m (el sur sigue en 2 m) para cubrir el talud de la orilla
+  entre el tablero y las vías del norte, donde quedaba un hueco hasta el cauce; es una
+  aproximación de autor sin cotas medidas.
