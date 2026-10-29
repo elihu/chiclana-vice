@@ -355,6 +355,19 @@ export function roundaboutIslands(roads) {
       }
       polygon.push([b[0] + (nx * (half + 0.12)) / den, b[1] + (nz * (half + 0.12)) / den]);
     }
+    // En anillos muy pequeños, el desplazamiento de un vértice cae sobre un tramo vecino.
+    const clear = (p) =>
+      ring.every((a, i) => {
+        const b = ring[(i + 1) % ring.length],
+          dx = b[0] - a[0],
+          dz = b[1] - a[1],
+          t = Math.max(
+            0,
+            Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / (dx * dx + dz * dz || 1)),
+          );
+        return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) > half;
+      });
+    polygon.splice(0, polygon.length, ...polygon.filter(clear));
     if (polygon.length < 3) continue;
     const surface = Math.abs(area(polygon.map(([x, z]) => [x, 0, z]))) / 2;
     if (surface > 3 && surface < Math.abs(signed) / 2)
