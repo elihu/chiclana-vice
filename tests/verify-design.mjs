@@ -591,6 +591,7 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
           bigRetailUses: ['4_2_retail'],
           bigRetailMinimumArea: 400,
           zoneExcludedUses: ['1_residential'],
+          cellarZone: 'frontagePilot',
         },
       },
       furniture: {
@@ -804,6 +805,10 @@ console.log('Design expressions: ' + checked + ' evaluations match JavaScript; e
     check(
       (c) => (c.groundFloors.buildingKinds.industrialMinimumArea = 0),
       /buildingKinds\.industrialMinimumArea: .*positivo/,
+    );
+    check(
+      (c) => (c.groundFloors.buildingKinds.cellarZone = 'nada'),
+      /cellarZone: zona desconocida «nada»/,
     );
     check((c) => delete c.zones.streetLamps, /zones\.streetLamps: falta/);
     check((c) => delete c.furniture, /furniture: se esperaba un objeto/);
@@ -1297,4 +1302,24 @@ console.log('Facade kit, validator, composer and map corrections passed');
     null,
     'sin datos de Catastro',
   );
+  // Zona de bodegas: lo industrial dentro de ella es `cellar`; lo demás no cambia.
+  const { createGroundFloors } = await import('../web/js/world/ground-floors.js');
+  const layer = {
+      uses,
+      parts: [
+        [1, 1, 0],
+        [2, 1, 0],
+      ],
+      zones: [0, 0],
+      zoneKinds,
+      shops: [],
+    },
+    zoned = createGroundFloors(
+      layer,
+      { buildingKinds: { ...rules, cellarZone: 'centro' } },
+      { centro: [0, 100, 0, 100] },
+    );
+  assert.equal(zoned.building(0, 1, 300, 50, 50), 'cellar', 'nave en el centro: bodega');
+  assert.equal(zoned.building(0, 1, 300, 150, 50), 'industrial', 'nave fuera del centro');
+  assert.equal(zoned.building(1, 1, 500, 50, 50), 'bigRetail', 'la zona solo cambia lo industrial');
 }

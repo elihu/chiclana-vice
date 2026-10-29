@@ -179,7 +179,8 @@
             "industrialMinimumArea",
             "bigRetailUses",
             "bigRetailMinimumArea",
-            "zoneExcludedUses"
+            "zoneExcludedUses",
+            "cellarZone"
           ],
           "additionalProperties": false,
           "properties": {
@@ -200,6 +201,11 @@
               "type": "array",
               "items": { "type": "string", "minLength": 1 },
               "uniqueItems": true
+            },
+            "cellarZone": {
+              "description": "Nombre de una zona de zones: dentro, lo industrial se dibuja como bodega encalada (cellar) en vez de nave de chapa.",
+              "type": "string",
+              "minLength": 1
             }
           }
         }

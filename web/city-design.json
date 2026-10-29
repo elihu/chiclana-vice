@@ -129,7 +129,8 @@
       "bigRetailMinimumArea": 400,
       "zoneExcludedUses": [
         "1_residential"
-      ]
+      ],
+      "cellarZone": "frontagePilot"
     }
   },
   "furniture": {

@@ -9,7 +9,13 @@ import { sleepFrame } from '../core/dom.js';
 import { groundHeightAt } from '../engine/terrain-sampling.js';
 import { terrainEdge } from '../engine/terrain-drape.js';
 import { edgeKey, sharedWallSpans } from './party-walls.js';
-import { createGroundFloors, createRoadLookup, groundCode } from './ground-floors.js';
+import {
+  BUILDING_CODES,
+  createGroundFloors,
+  createRoadLookup,
+  groundCode,
+  partArea,
+} from './ground-floors.js';
 
 export async function buildBuildings() {
   // UV de tejados en el recuadro de la ortofoto.
@@ -56,7 +62,11 @@ export async function buildBuildings() {
   world.wallStats = stats;
   // Clase del bajo de cada arista exterior de los muros genéricos (indicios del Catastro y de OSM
   // más el tipo de la calle más cercana, con las reglas de city-design.json → groundFloors).
-  const groundFloors = createGroundFloors(world.groundFloors, world.cityDesign.groundFloors),
+  const groundFloors = createGroundFloors(
+      world.groundFloors,
+      world.cityDesign.groundFloors,
+      world.cityDesign.zones,
+    ),
     roadTypeAt = createRoadLookup(segments, world.cityDesign.frontages.maximumRoadDistance);
   function groundOf(index, b, start, end, length) {
     const nx = ((end[1] - start[1]) / length) * orientation.outward,
@@ -66,6 +76,59 @@ export async function buildBuildings() {
     return groundCode(
       groundFloors.classify(index, b.floors, start, end, nx, nz, roadTypeAt(mx, mz)),
     );
+  }
+  // Clase del edificio entero (naves y grandes superficies) y código de cada arista exterior: la
+  // nave lleva portones en las que dan a una calle; la gran superficie, su entrada en la arista
+  // con un comercio de OSM delante o, si no hay, en la más larga que da a una calle.
+  function buildingCodes(index, b) {
+    const kind = b.detailType
+      ? null
+      : groundFloors.building(
+          index,
+          b.floors,
+          partArea(b),
+          (b.minX + b.maxX) / 2,
+          (b.minZ + b.maxZ) / 2,
+        );
+    if (!kind) return null;
+    const signed = b.p.reduce((sum, [x0, z0], i) => {
+        const [x1, z1] = b.p[(i + 1) % b.p.length];
+        return sum + x0 * z1 - x1 * z0;
+      }, 0),
+      outward = signed > 0 ? 1 : -1,
+      edges = b.p.map((start, i) => {
+        const end = b.p[(i + 1) % b.p.length],
+          length = Math.hypot(end[0] - start[0], end[1] - start[1]),
+          nx = length ? ((end[1] - start[1]) / length) * outward : 0,
+          nz = length ? (-(end[0] - start[0]) / length) * outward : 0,
+          street =
+            length >= 1 &&
+            roadTypeAt((start[0] + end[0]) / 2 + nx, (start[1] + end[1]) / 2 + nz) !== null;
+        return {
+          length,
+          street,
+          shop: length >= 1 && groundFloors.shopNear(start, end, nx, nz),
+        };
+      });
+    if (kind === 'industrial' || kind === 'cellar') {
+      const [base, street] =
+        kind === 'cellar'
+          ? [BUILDING_CODES.cellar, BUILDING_CODES.cellarStreet]
+          : [BUILDING_CODES.industrial, BUILDING_CODES.industrialStreet];
+      return { base, edges: edges.map((e) => (e.street ? street : base)) };
+    }
+    let entrance = edges.findIndex((e) => e.shop);
+    if (entrance < 0)
+      entrance = edges.reduce(
+        (best, e, i) => (e.street && (best < 0 || e.length > edges[best].length) ? i : best),
+        -1,
+      );
+    return {
+      base: BUILDING_CODES.bigRetail,
+      edges: edges.map((_, i) =>
+        i === entrance ? BUILDING_CODES.bigRetailEntrance : BUILDING_CODES.bigRetail,
+      ),
+    };
   }
 
   let count = 0;
@@ -79,6 +142,7 @@ export async function buildBuildings() {
         b.detailType ? rules.detailColors[b.detailType] : palette[b.paletteIndex],
       ),
       partyCol = col.clone().lerp(partyTint, rules.partyWall.blend);
+    const kindCodes = buildingCodes(index, b);
     [b.p, ...b.holes].forEach((ring, ringIndex) => {
       let area = 0;
       for (let i = 0; i < ring.length; i++) {
@@ -94,8 +158,11 @@ export async function buildBuildings() {
           bays = Math.max(1, Math.round(length / rules.wallUvWidth)),
           uScale = length > 0 ? bays / length : 0,
           spans = shared.get(edgeKey(index, ringIndex, i)),
-          code =
-            b.detailType || ringIndex > 0 || length < 1
+          code = kindCodes
+            ? ringIndex > 0
+              ? kindCodes.base
+              : kindCodes.edges[i]
+            : b.detailType || ringIndex > 0 || length < 1
               ? 0
               : groundOf(index, b, start, end, length);
         if (!spans) {
@@ -247,9 +314,13 @@ function createBuildingWalls({ rules }) {
       u = u1;
     }
     // Una sola cornisa por arista: lo alto del muro es horizontal aunque el pie siga el terreno.
+    // Las naves y grandes superficies (códigos desde BUILDING_CODES.industrial) no la llevan.
     const first = edge[0],
       last = edge[edge.length - 1];
-    if (Math.hypot(last[0] - first[0], last[1] - first[1]) >= 0.1)
+    if (
+      code < BUILDING_CODES.industrial &&
+      Math.hypot(last[0] - first[0], last[1] - first[1]) >= 0.1
+    )
       cornice(
         out,
         first,
