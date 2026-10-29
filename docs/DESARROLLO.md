@@ -189,6 +189,7 @@ sin bundler ni compilación:
 | `world/road-space.js`           | Espacio ocupado por las calzadas y sus bordes.                         |
 | `world/shadow-proxies.js`       | Geometrías estáticas sustitutas para el pase de sombras.               |
 | `world/sidewalks.js`            | Aceras, bordillos y faldones.                                          |
+| `world/shop-signs.js`           | Rótulos con el nombre de los comercios de OSM.                         |
 | `world/signs.js`                | Señales y rótulos de calle.                                            |
 | `world/spatial.js`              | Índices, proximidad a vías, agua, obstáculos y colisiones.             |
 | `world/streets.js`              | Calzadas, juntas, marcas y detalles de calle.                          |
