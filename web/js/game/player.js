@@ -182,11 +182,11 @@ function updateOnFoot(dt, steer, gas, brake, boost) {
     iy = (gas ? 1 : 0) - (brake ? 1 : 0);
   }
   let mag = Math.min(1, Math.hypot(ix, iy)),
-    heading = player.a + view.orbit;
-  let a = heading - Math.atan2(ix, iy),
     v = (boost ? 6.1 : 3.2) * mag;
   if (mag > 0.1) {
-    let nx = player.x + Math.sin(a) * v * dt,
+    let heading = player.a + view.orbit,
+      a = heading - Math.atan2(ix, iy),
+      nx = player.x + Math.sin(a) * v * dt,
       nz = player.z + Math.cos(a) * v * dt;
     if (!blocked(nx, player.z, 0.28, player.surfaceY ?? null)) player.x = nx;
     if (!blocked(player.x, nz, 0.28, player.surfaceY ?? null)) player.z = nz;

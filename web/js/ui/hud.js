@@ -29,6 +29,7 @@ export function updateHUD() {
 }
 
 export function updateHudReadouts(goal) {
+  const goalDistance = goal && !goal.escape ? d(player, goal) : Infinity;
   setText('speed', String(Math.round(Math.abs(player.speed) * 3.6)));
   setText('modeName', player.car ? 'COSTA GT' : input.boost || keys.Shift ? 'CORRIENDO' : 'A PIE');
   setStyle('conditionFill', 'width', state.health + '%');
@@ -38,9 +39,7 @@ export function updateHudReadouts(goal) {
     goal
       ? goal.escape
         ? 'Evita a las patrullas'
-        : Math.round(d(player, goal)) +
-          ' m · ' +
-          (session.hold > 0 ? 'Entregando…' : 'Señal dorada')
+        : Math.round(goalDistance) + ' m · ' + (session.hold > 0 ? 'Entregando…' : 'Señal dorada')
       : state.found.size + '/' + pois.length + ' lugares descubiertos',
   );
   setText(
@@ -54,7 +53,7 @@ export function updateHudReadouts(goal) {
   let hint = '';
   if (!player.car && nearestCar())
     hint = 'Coche disponible · ' + (gfx.coarse ? 'SUBIR' : 'E para subir');
-  else if (goal && !goal.escape && d(player, goal) < 12 && Math.abs(player.speed) > 1.8)
+  else if (goal && !goal.escape && goalDistance < 12 && Math.abs(player.speed) > 1.8)
     hint = 'Detente en el círculo dorado para entregar';
   else if (state.wanted)
     hint = 'Búsqueda activa · ' + Math.ceil(state.heat) + ' s para despistarlos';
