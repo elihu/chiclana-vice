@@ -23,23 +23,19 @@ se sustituye.
   https://api.openstreetmap.org/api/0.6/map?bbox=-6.158,36.413,-6.141,36.430
 - **Ortofoto PNOA máxima actualidad** (IGN), WMS 1.1.1, capa `OI.OrthoimageCoverage`,
   EPSG:4326, por teselas en `web/aerial/` (`tools/aerial-tiles.py`); consulta del
-  8/10, 9/10 y 29/10/2026. 56 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
+  29/10/2026. 56 teselas de 255 m con 20,5 m de margen por lado, JPEG del WMS sin
   recomprimir a 0,25 m/píxel (`hi/`) y derivados a 0,5 m/píxel (`lo/`) para el modo
   ligero y los táctiles, más una vista general de la caja envolvente en 1492 × 1770. El
   recuadro local pasa a longitud y latitud con la inversa exacta de la proyección de
   `rebuild-map.py` (`lon = -6.1485 + x / (111320 · cos 36.4195°)`,
-  `lat = 36.4195 − z / 111320`). Los 36 centros del mapa anterior declaran vuelo 2022-07
-  (GetFeatureInfo `OI.MosaicElement`). En las 20 teselas añadidas el 29/10/2026 el
-  mosaico vigente ya sirve un vuelo de 2025, así que salen de la capa `PNOA2022`
-  (Andalucía 2022, 0,25 m) del WMS histórico del IGN, anotadas en `historic` de
-  `index.json`. Las franjas comunes de los 97 pares de teselas vecinas coinciden con un
-  desplazamiento máximo de 0,010 píxeles de 0,25 m (diferencia media de luminancia de 8,3
-  sobre 255 como máximo en los pares con teselas históricas). Al generar las 24 del centro,
-  además, coincidían con la ortofoto única anterior (`aerial.jpg`, 4096 × 3072, consulta del
-  4/10/2026, retirada después) con un desplazamiento máximo de 0,091 píxeles de esa
-  imagen. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
+  `lat = 36.4195 − z / 111320`). Los 56 centros declaran vuelo 2025-07 (GetFeatureInfo
+  `OI.MosaicElement`). Las franjas comunes de los 97 pares de teselas vecinas coinciden con
+  un desplazamiento máximo de 0,004 píxeles de 0,25 m (diferencia media de luminancia de
+  5,0 sobre 255 como máximo). Hasta el 29/10/2026 se usó el vuelo 2022-07; las referencias
+  a teselas de 2022 de las fichas de monumentos de abajo conservan su valor como evidencia
+  de entonces, pero esos archivos se han sustituido. Son comprobaciones de coincidencia de imágenes, no de precisión topográfica.
   Método en [DATOS.md](DATOS.md#4-ortofoto-por-teselas-opcional).
-  https://www.ign.es/wms-inspire/pnoa-ma y https://www.ign.es/wms/pnoa-historico
+  https://www.ign.es/wms-inspire/pnoa-ma
 - **PNOA-LiDAR, primera cobertura 2008–2015** (IGN): MDSnE2,5 por WCS, consulta del
   5/10/2026. Recorte local EPSG:3042 de unos 2,5 m por píxel con valores enteros en
   metros, ya normalizado al terreno. De 1.399 candidatos, 274 tienen al menos 12 muestras
@@ -283,6 +279,14 @@ sus 3.113 candidatos, 2.322 quedan idénticos, 718 cambian altura u origen, 73 d
 y aparecen 54. Con las zonas nuevas quedan **4.542** (parque 1.461, plaza 111, calle
 1.185, resto 1.785; `ign` 2.857, `imagen` 213 y `ambos` 1.472). La vía de imagen preserva
 la fila joven de plaza en `-1_0`, aunque aún faltan algunos centros visibles.
+
+**Ortofoto 2025-07 (29/10/2026).** La imagen nueva es más pálida: en las copas con IGN
+≥ 5 m la mediana de ExG baja de 0,152 a 0,083 y solo el 37 % supera 0,10. El umbral pasa
+a **ExG > 0,04** (constante `EXG_THRESHOLD` del detector), que conserva el 77 % de esas
+copas y deja fuera el 99 % de las calzadas (percentil 99: 0,041); el resto del método no
+cambia. Quedan **4.363** candidatos (parque 1.211, plaza 115, calle 1.295, resto 1.742;
+`ign` 3.521, `imagen` 94 y `ambos` 748). No se busca igualar los de 2022: son otra
+imagen, tres años posterior. Los párrafos anteriores describen el vuelo 2022-07.
 Superposiciones de revisión en `/tmp/g5-arboles/combinado/{-1_0,-2_-3,2_0,0_0}.jpg`:
 IGN verde vivo, imagen verde claro, ambos verde oscuro y descartados rojo.
 

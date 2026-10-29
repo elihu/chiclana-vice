@@ -223,11 +223,10 @@ o errores de red hace hasta tres reintentos, con esperas de 2, 4 y 8 segundos;
 los demás errores HTTP se propagan sin reintento. No añade dependencias
 al proyecto. Si falla una consulta, se puede repetir el comando usando la caché.
 
-Si el centro de una tesela no declara vuelo `2022-07` en el mosaico vigente (el IGN ya
-sirve vuelos de 2025 en parte del mundo), la pide a la capa `PNOA2022` del servicio
-histórico (`https://www.ign.es/wms/pnoa-historico`), la ortoimagen de Andalucía 2022 a
-0,25 m, y la anota en `historic` de `index.json`. La alineación con las vecinas comprueba
-después que encaja con el resto. Antes de escribir datos comprueba
+El vuelo esperado es la constante `FLIGHT` del generador (hoy `2025-07`) y la caché va en
+una subcarpeta por vuelo (`~/.cache/chiclana-vice/pnoa/2025-07/`): el WMS sirve el mosaico
+vigente con la misma URL, y al cambiar de vuelo no deben reutilizarse imágenes antiguas.
+Antes de escribir datos comprueba que todos los centros declaran ese vuelo y
 que cada par de teselas vecinas se alinea en su franja común (41 m, 164 píxeles a
 0,25 m). Busca el máximo de correlación normalizada de luminancia en ±2 píxeles y
 estima el pico subpíxel mediante parábolas por eje. Exige desplazamiento menor de

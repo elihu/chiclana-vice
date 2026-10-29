@@ -21,7 +21,7 @@ export const GROUND_CLEAN = {
   crownGrow: 1.12, // la máscara cubre la copa por este factor...
   crownMargin: 0.9, // ...más estos metros, para tapar la sombra y el borde de la copa
   edge: 0.45, // fracción del radio de la máscara en que baja de 1 a 0
-  // Zona de sombra: en la ortofoto (PNOA 2022-07) el oscuro de cada árbol llega a unas dos veces
+  // Zona de sombra: en la ortofoto (PNOA 2022-07, con el que se ajustó) el oscuro de cada árbol llega a unas dos veces
   // el radio detectado y se alarga hacia el norte y el noroeste (medido sobre todas las copas).
   zoneGrow: 2.2,
   zoneMargin: 1.5,

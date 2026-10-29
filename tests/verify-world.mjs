@@ -32,7 +32,7 @@ assert(validBounds(manifest.bounds), 'rectángulos válidos');
   assert.equal(aerial.tile, 255);
   assert.equal(aerial.margin, 20.5);
   assert.deepEqual(aerial.levels, { hi: [1184, 0.25], lo: [592, 0.5] });
-  assert.equal(aerial.acquisition, '2022-07');
+  assert.equal(aerial.acquisition, '2025-07');
   const expected = new Set();
   for (const [x0, x1, z0, z1] of manifest.bounds)
     for (let i = Math.floor(x0 / 255); i < Math.ceil(x1 / 255); i++)

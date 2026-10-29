@@ -50,12 +50,12 @@ https://opendatacommons.org/licenses/odbl/1-0/
 
 ## IGN / PNOA / SCNE: imagen y alturas
 
-Obra derivada de PNOA 2022-07,
-CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 8/10/2026.
+Obra derivada de PNOA 2025-07,
+CC-BY 4.0 IGN / PNOA / SCNE (scne.es). Consulta: 29/10/2026.
 Obra derivada de PNOA-LiDAR MDSnE2,5 2008–2015 CC-BY 4.0 scne.es.
 La fecha de consulta no sustituye a la fecha de adquisición del producto.
-Ortofoto: GetFeatureInfo OI.MosaicElement indica 2022-07 en el centro de cada
-tesela. `aerial/`: ortofoto PNOA máxima actualidad consultada 8/10/2026, WMS IGN,
+Ortofoto: GetFeatureInfo OI.MosaicElement indica 2025-07 en el centro de cada
+tesela. `aerial/`: ortofoto PNOA máxima actualidad consultada 29/10/2026, WMS IGN,
 en teselas de 255 m con 20,5 m de margen; usada en suelo, tejados y mapa.
 `aerial/hi/` conserva los JPEG del WMS (0,25 m/píxel); `aerial/lo/` son obras
 derivadas remuestreadas a 0,5 m/píxel (Lanczos, JPEG calidad 82) con
@@ -78,7 +78,7 @@ origen y cuantizadas a 0,1 m. No se distribuye el ráster original. Fecha exacta
 adquisición y referencia vertical del recorte sin confirmar; la cuantización no
 implica precisión de 10 cm.
 Fuente: https://servicios.idee.es/wcs-inspire/mdt
-`vegetation.json`: obra derivada de PNOA 2022-07 CC-BY 4.0 IGN / PNOA / SCNE
+`vegetation.json`: obra derivada de PNOA 2025-07 CC-BY 4.0 IGN / PNOA / SCNE
 (scne.es) y de MDSNV 2008-2015 CC-BY 4.0 scne.es, consultado el 13/10/2026.
 Detección de copas y tamaños estimados por el proyecto, con filtros de imagen y
 altura normalizada de vegetación; centros y radios redondeados a 0,01 m y selección
