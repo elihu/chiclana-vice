@@ -163,12 +163,16 @@ simulados. Las referencias y los JSON se guardan fuera del repositorio en
   mutable de vecinos continuos se actualizaba por tramo, pero los `fallback` de aceras
   cortas se ejecutan al terminar la calle: consultaban los vecinos del último tramo,
   en lugar de los de su tramo original. Se revierte el paso completo sin rehacerlo.
-- **Paso 7: sustitución directa en bajos y tranvía.** Se conservan las muestras,
-  candidatos, orden y empates. `shadow-proxies.js` queda sin sustituir: agrupa buffers
-  por material y celda y luego los itera; `createGrid` no ofrece esa operación y el
-  reemplazo no es directo. Tras revertir el paso 6, las huellas con y sin relieve son
-  idénticas a `main`.
+- **Paso 7 revertido tras medirlo aislado.** Se probaron las sustituciones directas en
+  bajos y tranvía. La mejora observada junto al paso 6 descartado no se confirmó al medir
+  el paso 7 solo: frente al inicio de esta continuación, `buildBuildings` pasó de
+  552,91 a 561,60 ms, `buildDetailedFacades` de 1.159,20 a 1.218,48 ms y `buildTram`
+  de 8,11 a 8,13 ms. Sus dos huellas sí eran idénticas a `main`; se revierte por tiempos.
+  `shadow-proxies.js` no se sustituyó: agrupa buffers por material y celda y luego los
+  itera; `createGrid` no ofrece esa operación y el reemplazo no es directo.
 
+Los pasos 5–7 no dejan cambios en el código del juego. Se conservan los pasos 1, 2 y 4
+anteriores y la sincronización de `ff2b1be`.
 El paso 3 sigue descartado por no mejorar, según la ejecución anterior. No se modifica
 `docs/ESTADO.md`; no se ejecutan Chrome, capturas, push ni merge. Estas medidas no
 acreditan GPU, FPS ni móvil.
