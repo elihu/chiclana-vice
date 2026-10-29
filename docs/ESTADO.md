@@ -262,8 +262,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
   por tipo con tono, frente y toldo; 267 rótulos con el nombre de OSM; 5 de 6 gasolineras, con la
   marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo.
-- Vallas y muros ([PLAN-VALLAS.md](PLAN-VALLAS.md)): V0 y V1 integradas (`barriers.json` desde OSM;
-  3,5 km de muros, vallas, seto y muralla dibujados, con hueco donde los cruza una vía). Siguen
-  V2 (colisiones) y V3 (cajeros del Iro); V4 solo a petición del usuario.
+- Vallas y muros ([PLAN-VALLAS.md](PLAN-VALLAS.md)): V0–V2 integradas (`barriers.json` desde OSM;
+  3,5 km de muros, vallas, seto y muralla dibujados y con colisión, con hueco donde los cruza una
+  vía). Sigue V3 (cajeros del Iro); V4 solo a petición del usuario.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
