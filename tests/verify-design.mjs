@@ -1,3 +1,4 @@
+import './verify-validate-kit.mjs';
 import './verify-building-variation.mjs';
 // Diseños desde datos: intérprete de expresiones y, más adelante, kit y compositor.
 import assert from 'node:assert/strict';

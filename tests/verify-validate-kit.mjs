@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { createValidationKit } from '../web/js/world/validate-kit.js';
+const kit = createValidationKit();
+for (const v of [NaN, Infinity, -Infinity, '1', null, undefined])
+  assert.equal(kit.number('n', v), false);
+assert.equal(kit.number('n', 0, { min: 0 }), true);
+assert.equal(kit.number('n', 0, { min: 0, exclusiveMin: true }), false);
+assert.equal(kit.number('n', 2, { max: 2, integer: true }), true);
+assert.equal(kit.number('n', 2.5, { max: 2 }), false);
+assert.equal(kit.number('n', 1.5, { integer: true }), false);
+assert.equal(kit.oneOf('v', 1, [1, 2], 'opción inválida'), true);
+assert.equal(kit.oneOf('v', '1', [1, 2], 'opción inválida'), false);
+assert.equal(kit.array('a', [], { min: 1 }), false);
+assert.equal(kit.array('a', [1], { min: 1, max: 1 }), true);
+assert.equal(kit.array('a', [1, 2], { max: 1 }), false);
+for (const v of [null, [], 'x', undefined]) assert.equal(kit.object('o', v), false);
+assert.equal(kit.object('o', { x: 1, y: 2 }, { keys: ['x'] }), true);
+assert.equal(kit.errors.at(-1), 'o.y: clave desconocida');
+const errors = new Set();
+const prefixed = createValidationKit(errors, { prefix: 'terrainSurfaces.' });
+for (let i = 0; i < 2; i++) prefixed.number('roads.x', -1, { min: 0, message: 'positivo' });
+assert.deepEqual([...errors], ['terrainSurfaces.roads.x: positivo']);
+console.log('Ayudante de validación: límites, tipos, claves, mensajes y acumulación correctos.');
