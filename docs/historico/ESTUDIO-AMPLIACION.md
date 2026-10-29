@@ -104,5 +104,5 @@ día el mapa crece mucho más.
 El orden y los pasos están en [PLAN-AMPLIACION.md](PLAN-AMPLIACION.md): límites con
 rectángulos, teselas de ortofoto, anexos y modelos.
 
-Fuentes: las de [MAP_SOURCES.md](MAP_SOURCES.md) (Catastro INSPIRE BU, OpenStreetMap,
+Fuentes: las de [MAP_SOURCES.md](../MAP_SOURCES.md) (Catastro INSPIRE BU, OpenStreetMap,
 PNOA del IGN); no se añaden fuentes ni licencias nuevas.

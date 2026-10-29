@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://elihu.github.io/chiclana-vice/schemas/facade-designs.schema.json",
   "title": "Chiclana Vice: composiciones de fachada",
-  "description": "Documentación para el editor. La referencia normativa es web/js/world/design-validate.js (docs/plan-modular/KIT-FACHADAS.md).",
+  "description": "Documentación para el editor. La referencia normativa es web/js/world/design-validate.js (docs/KIT-FACHADAS.md).",
   "type": "object",
   "required": ["version", "kit", "recipes", "buildings"],
   "additionalProperties": false,

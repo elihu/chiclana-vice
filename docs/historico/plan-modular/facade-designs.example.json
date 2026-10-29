@@ -1,5 +1,5 @@
 {
-  "$schema": "./facade-designs.schema.json",
+  "$schema": "../../facade-designs.schema.json",
   "version": 1,
   "kit": 1,
   "description": "Approximate authored facade compositions; parametric primitives interpreted from references, no photographic textures. References and conditions in THIRD_PARTY_NOTICES.md.",

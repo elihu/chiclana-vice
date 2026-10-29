@@ -1,7 +1,7 @@
 import { createValidationKit } from './validate-kit.js';
 // Validador de los diseños de fachada: lo usan el juego (error claro al cargar) y
 // tests/verify-world.mjs. Devuelve una lista de errores con la ruta JSON; vacía si todo cuadra.
-// Referencia normativa: docs/plan-modular/KIT-FACHADAS.md (K3 y K5).
+// Referencia normativa: docs/KIT-FACHADAS.md (K3 y K5).
 import { freeNames } from '../engine/expr.js';
 
 // Argumentos de cada pieza tras el grupo `g`: [mínimo, máximo].

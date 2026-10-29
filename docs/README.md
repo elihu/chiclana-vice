@@ -21,22 +21,22 @@ documento; los demás enlazan a él.
 ## Estado
 
 - [Estado actual y pendientes](ESTADO.md).
-- [Propuesta de convenciones](PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
+- [Propuesta de convenciones](historico/PROPUESTA-CONVENCIONES.md): decisiones sobre agentes,
   documentación, Git y CI, ya aplicadas; se conserva como registro.
-- [Plan de modularización y diseño desde datos](PLAN-MODULAR.md): plan por fases, ya
+- [Plan de modularización y diseño desde datos](historico/PLAN-MODULAR.md): plan por fases, ya
   ejecutado (fases 0 a 3). Se conserva como registro; la referencia vigente está en
   [DESARROLLO.md](DESARROLLO.md) y [DATOS.md](DATOS.md), salvo el formato de recetas y
-  correcciones de [KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md).
+  correcciones de [KIT-FACHADAS.md](KIT-FACHADAS.md).
 
-- [Estudio de ampliación y ortofoto por teselas](ESTUDIO-AMPLIACION.md): Santa Ana, Puente VII
+- [Estudio de ampliación y ortofoto por teselas](historico/ESTUDIO-AMPLIACION.md): Santa Ana, Puente VII
   Centenario, ferial y carga de la ortofoto alrededor del jugador; preliminar.
-- [Plan de ampliación y ortofoto por teselas](PLAN-AMPLIACION.md): relieve anclado al
+- [Plan de ampliación y ortofoto por teselas](historico/PLAN-AMPLIACION.md): relieve anclado al
   origen, límites con rectángulos, teselas, anexos y modelos; publicado en `v1.3.0`. Se
   conserva como registro.
-- [Plan de mejora gráfica y presupuesto de render](PLAN-MEJORA-GRAFICA.md): medición de
+- [Plan de mejora gráfica y presupuesto de render](historico/PLAN-MEJORA-GRAFICA.md): medición de
   llamadas y triángulos, agrupación de fachadas, luz, modo ligero, suelo cercano y árboles
   sobre la ortofoto; terminado y publicado en `v1.4.0`. Se conserva como registro.
-- [Plan de motor WebGPU, eficiencia y gráficos](PLAN-MOTOR-GRAFICOS.md): three.js 0.186.1
+- [Plan de motor WebGPU, eficiencia y gráficos](historico/PLAN-MOTOR-GRAFICOS.md): three.js 0.186.1
   con WebGPU, shaders sin tirones, pase de sombras, llamadas, cielo, luz y color; E0, E1,
   E2, V1 y VL publicadas en `v1.5.0`; lo pendiente pasa al plan siguiente.
 - [Plan de río, ventanas, árboles y horas del día](PLAN-VISUAL.md): agua del Iro,
@@ -53,7 +53,7 @@ documento; los demás enlazan a él.
 - [Plan de suelo de cerca, aceras, juntas y puentes](PLAN-SUELO.md): aceras con bordillo,
   faldones, puentes inclinados, pasos de cebra y ortofoto de cerca; tanda 1 publicada en
   `v1.7.0`.
-- [Plan de implementación del relieve](PLAN-TERRENO.md): datos del MDT, malla, edificios,
+- [Plan de implementación del relieve](historico/PLAN-TERRENO.md): datos del MDT, malla, edificios,
   puentes, actores y validación por fases.
 - [Superficies transitables del relieve](SUPERFICIES_TERRENO.md): contrato generalizable,
   perfiles de autor y niveles superior/inferior.

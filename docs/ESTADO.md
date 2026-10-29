@@ -71,7 +71,7 @@ y en las releases. Se actualiza en `main` al integrar ramas.
 - **R4** (`perf/fotograma`): sin consultas de suelo repetidas en el barrido de cámara, el
   balanceo del coche y el HUD; huellas idénticas. Con cinco ejecuciones alternas, `update`
   0,272 → 0,264 ms por paso, dentro del ruido. Reglas de complejidad de ESLint sin activar:
-  quedan 11 funciones por encima ([RESULTADO-R4.md](RESULTADO-R4.md)).
+  quedan 11 funciones por encima ([RESULTADO-R4.md](historico/RESULTADO-R4.md)).
 
 ## Novedades de `v2.0.0`
 
@@ -154,7 +154,7 @@ Plan: [PLAN-VISUAL.md](PLAN-VISUAL.md). Cada fase la revisó el usuario antes de
 
 - **Relieve junto a las calzadas**: el terreno ya no queda escalonado respecto a las
   calles en cuesta ([SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md)).
-- **Mejora gráfica** ([PLAN-MEJORA-GRAFICA.md](PLAN-MEJORA-GRAFICA.md)): luz y
+- **Mejora gráfica** ([PLAN-MEJORA-GRAFICA.md](historico/PLAN-MEJORA-GRAFICA.md)): luz y
   exposición nuevas, ventanas continuas en los muros genéricos, sombras más estables,
   grano cercano en suelo y pavimento, menos llamadas de dibujo en las fachadas, y el modo
   ligero oculta fachadas y vegetación lejanas.
@@ -171,7 +171,7 @@ Plan: [PLAN-VISUAL.md](PLAN-VISUAL.md). Cada fase la revisó el usuario antes de
 ## Novedades de `v1.3.0`
 
 - **Mapa ampliado** a Santa Ana y al norte (Puente VII Centenario y ferial), con los
-  límites del mundo como lista de rectángulos ([PLAN-AMPLIACION.md](PLAN-AMPLIACION.md)).
+  límites del mundo como lista de rectángulos ([PLAN-AMPLIACION.md](historico/PLAN-AMPLIACION.md)).
 - **Ortofoto por teselas** PNOA 2022-07 a 0,25 m alrededor del jugador (0,5 m en modo
   ligero y táctil), con una vista general de respaldo.
 - **Relieve** desde la rejilla nativa del MDT por teselas: ampliar el mapa ya no cambia
@@ -202,11 +202,11 @@ eje de agua común.
 
 Auditoría y reproducción: [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Contrato genérico
 y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
-[PLAN-TERRENO.md](PLAN-TERRENO.md).
+[PLAN-TERRENO.md](historico/PLAN-TERRENO.md).
 
 ## Pendientes
 
-- Ampliación ([PLAN-AMPLIACION.md](PLAN-AMPLIACION.md)): fases 0–5 publicadas en la
+- Ampliación ([PLAN-AMPLIACION.md](historico/PLAN-AMPLIACION.md)): fases 0–5 publicadas en la
   `v1.3.0`. Falta probar la ortofoto por teselas en un móvil Android. Veracruz: el patio
   delante de la puerta queda unos 6,5 m sobre la calle (en la realidad, algo elevado y
   con la verja casi a pie de calle), porque la parte catastral 4909 incluye el patio y la

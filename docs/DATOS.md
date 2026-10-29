@@ -36,7 +36,7 @@ Cuatro archivos de `web/` no los genera ninguna herramienta: `facade-designs.jso
 la paleta de fachadas, `facadeCellSize` y la política de alturas, que sí escribe
 `export-height-policy.mjs`). Cada uno lleva un `$schema` hacia `schemas/` para que el
 editor ofrezca ayuda; el validador de `web/js/world/design-validate.js` es la referencia
-(formato en [plan-modular/KIT-FACHADAS.md](plan-modular/KIT-FACHADAS.md)).
+(formato en [KIT-FACHADAS.md](KIT-FACHADAS.md)).
 
 Orden al editarlos:
 
@@ -48,7 +48,7 @@ npm test                            # comprobaciones cruzadas con las capas de b
 
 (`npm test` antes de `export-provenance` falla solo por el checksum desfasado.) Un cambio de
 aspecto no idéntico va en un commit `feat` propio; ver las condiciones en
-[PLAN-MODULAR.md](PLAN-MODULAR.md#111-decisiones-tras-la-parada-de-24-6102026).
+[PLAN-MODULAR.md](historico/PLAN-MODULAR.md#111-decisiones-tras-la-parada-de-24-6102026).
 
 - `facade-designs.json`: recetas de fachada y los edificios que las aplican a frentes
   anclados (`front`, `ring`, `landmarkRing`, segmento o `world`). Un anclaje `front` usa un

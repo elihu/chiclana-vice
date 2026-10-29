@@ -1,6 +1,6 @@
 // Intérprete de expresiones aritméticas para los diseños JSON. Sin eval ni Function.
 // Misma precedencia y asociatividad que JavaScript para que la coma flotante coincida;
-// `==` y `!=` se evalúan como `===` y `!==`. Detalle en docs/plan-modular/KIT-FACHADAS.md (K2).
+// `==` y `!=` se evalúan como `===` y `!==`. Detalle en docs/KIT-FACHADAS.md (K2).
 
 const FUNCTIONS = {
   min: Math.min,

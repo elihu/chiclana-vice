@@ -1,6 +1,6 @@
 # Plan de implementación del relieve del terreno
 
-Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **implementado y validado para el juego el 8/10/2026** (revisión visual del usuario; véase [TERRENO_PILOTO.md](TERRENO_PILOTO.md#validación-8102026)). Este documento permite ejecutar la incorporación del terreno tras la
+Fecha: 7/10/2026. Base revisada: `main` en `d11e1d0` (versión 1.1.0). Estado: **implementado y validado para el juego el 8/10/2026** (revisión visual del usuario; véase [TERRENO_PILOTO.md](../TERRENO_PILOTO.md#validación-8102026)). Este documento permite ejecutar la incorporación del terreno tras la
 fase 3 del [plan modular](PLAN-MODULAR.md). Complementa el inventario de
 [plan-modular/TERRENO.md](plan-modular/TERRENO.md); en las decisiones de implementación
 que difieran, seguir este documento y actualizar después el inventario.
@@ -15,7 +15,7 @@ planta, contornos, patios, plantas, calles, misiones, controles y modo ligero.
 La física y las rutas siguen en planta. La revisión del usuario amplía el alcance para
 permitir circulación encima y debajo de plataformas: selección por continuidad y vía,
 en un diseño validado y generalizable. No implementar gravedad, saltos ni dinámica de
-suspensión. El contrato actualizado está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Las alturas
+suspensión. El contrato actualizado está en [SUPERFICIES_TERRENO.md](../SUPERFICIES_TERRENO.md). Las alturas
 `b.h`, `visualH` y `renderH` siguen siendo alturas relativas del edificio; la cota del
 terreno se suma por separado. No usar `height-samples.json` como terreno: contiene
 alturas de edificios normalizadas al suelo.
@@ -24,7 +24,7 @@ La ejecución está solicitada el 7/10/2026, en una rama y worktree propios. No 
 push, etiquetas, publicación, nuevas dependencias ni cambios de atribuciones. Preparar
 las propuestas concretas y pedir las autorizaciones que exige `AGENTS.md` cuando
 corresponda. Los textos legales se mantienen exclusivamente en
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+[THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).
 
 ## 2. Datos comprobados y decisiones
 
@@ -196,7 +196,7 @@ de esta fase; no se arreglan cambiando el trazado OSM sin una tarea específica.
 
 ## 7. Fase E: actores, objetos, cámaras e inspector
 
-Seguir el inventario de [Desarrollo](DESARROLLO.md#terreno), incluyendo:
+Seguir el inventario de [Desarrollo](../DESARROLLO.md#terreno), incluyendo:
 
 - `world/furniture.js`, `vegetation.js`, `signs.js`: sumar la base a las instancias sin
   perder lotes; postes y troncos siguen verticales. Elegir suelo o superficie de paso
@@ -264,7 +264,7 @@ plano; no sustituir las cotas por valores inventados para cerrar los tests.
 
 ## 10. Avance de la rama `feat/relieve-terreno`
 
-La implementación y evidencia están en [TERRENO_PILOTO.md](TERRENO_PILOTO.md).
+La implementación y evidencia están en [TERRENO_PILOTO.md](../TERRENO_PILOTO.md).
 
 | Fase | Estado de aceptación                                                                                  |
 | ---- | ----------------------------------------------------------------------------------------------------- |

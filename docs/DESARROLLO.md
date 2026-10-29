@@ -217,7 +217,7 @@ explícitas de interfaz.
   que ejecuta `world/facade-composer.js` con las piezas de `world/facade-kit.js`
   (`engine/expr.js` evalúa las expresiones). `web/city-design.json` fija qué calles y zonas
   reciben frentes y con qué receta. `world/design-validate.js` valida ambos al cargar y en
-  `tests/verify-world.mjs`; el formato está en `docs/plan-modular/KIT-FACHADAS.md`.
+  `tests/verify-world.mjs`; el formato está en `docs/KIT-FACHADAS.md`.
 - **Variación de edificios**: `tools/building-variation.mjs` resuelve los colores al
   generar `buildings.json` y guarda un `paletteIndex` por parte. El navegador lee el
   índice, sin calcular hashes ni consumir azar. La identidad del generador normaliza
@@ -348,7 +348,7 @@ está en [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md).
 La implementación, la validación y los límites del recorte están en
 [TERRENO_PILOTO.md](TERRENO_PILOTO.md). Los perfiles de pasarelas, accesos y agua son
 aproximaciones de autor revisadas visualmente, no mediciones. El inventario anterior se conserva como historia en
-[plan-modular/TERRENO.md](plan-modular/TERRENO.md).
+[TERRENO.md](historico/plan-modular/TERRENO.md).
 
 En los corredores de plataforma, `roadAnchor.endExtension` admite un número no negativo
 (prolonga ambos extremos por igual) o un par `[inicio, fin]` en metros, según el orden de
