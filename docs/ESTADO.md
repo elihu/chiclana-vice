@@ -220,6 +220,11 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
   césped en la rotonda de Plaza de España. Sin revisión visual a pie de puente de la tanda 2.
   En la esquina suroeste del tablero de Remedios (x ≈ 329, z ≈ −157, junto a la vía 757857214) hay un escalón de hasta 12,6 cm en medio metro cuadrado; pendiente de revisión
   visual del usuario.
+  `tests/verify-bridges.mjs` informa además de la caída justo fuera de los extremos de cada
+  tablero (`endDrop`, sin aserción). Quedan dos fosos anteriores: 1,57 m en la esquina
+  suroeste de Remedios (x ≈ 329, z ≈ −159), entre el tablero y dos aceras a 1,41 m, y 3,3 m
+  en VII Centenario junto a la rampa del túnel peatonal (x ≈ −458, z ≈ −535), que puede ser
+  real. Alargar el extremo sur de Remedios lo empeora porque pasa sobre su paso inferior.
 - Interfaz ([PROPUESTA-UI.md](PROPUESTA-UI.md)): alcance principal integrado y aceptado
   para `v2.0.0`. Quedan revisión de legibilidad al anochecer y dispositivos adicionales;
   modo zurdo, tamaños, preferencias persistentes, gestos, mando y vibración son opcionales.
