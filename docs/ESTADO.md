@@ -261,7 +261,8 @@ y evidencia: [SUPERFICIES_TERRENO.md](SUPERFICIES_TERRENO.md). Plan original:
 - Comercios y naves ([PLAN-COMERCIOS.md](PLAN-COMERCIOS.md)): C0–C4 integradas (datos de
   comercios; naves, grandes superficies y bodegas del casco con la altura del Catastro; locales
   por tipo con tono, frente y toldo; 267 rótulos con el nombre de OSM; 5 de 6 gasolineras, con la
-  marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo. Después,
-  vallas y muros de parcela.
+  marquesina del Catastro sin paredes). Plan completo; la Gasolinera CLC queda sin marquesina. Sin medir en el móvil el shader de muros, algo más largo.
+- Vallas y muros ([PLAN-VALLAS.md](PLAN-VALLAS.md)): V0 integrada (`barriers.json` desde OSM, 49
+  trazos y 3 puertas, sin dibujar todavía). Siguen V1–V3; V4 solo a petición del usuario.
 
 - Verificación en iOS, incluidas zonas seguras con `env()`, y revisión visual de las fachadas en FrontSide.
